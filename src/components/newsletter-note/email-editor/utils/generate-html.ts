@@ -1,6 +1,5 @@
 import type { EmailComponent } from 'src/types/saved-note';
 import type { BannerOption } from 'src/components/newsletter-note/banner-selector';
-import type { NewsletterHeader, NewsletterFooter } from 'src/types/newsletter-note';
 
 export async function generateEmailHtml(
   components: EmailComponent[],
@@ -8,12 +7,10 @@ export async function generateEmailHtml(
   selectedBanner: string | null,
   bannerOptions: BannerOption[],
   emailBackground: string,
-  header: NewsletterHeader,
-  footer: NewsletterFooter
+  showGradient: boolean,
+  gradientColors: string[]
 ): Promise<string> {
   try {
-    console.log('Generando HTML con header:', header, 'y footer:', footer); // Para depuración
-
     console.log(
       'Generando HTML para template:',
       activeTemplate,
@@ -24,7 +21,7 @@ export async function generateEmailHtml(
 
     // Crear HTML básico manualmente para asegurar que tenemos algo válido
     let emailHtml =
-      '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Email Template</title>\n</head>\n<body>\n';
+      '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>Email Template</title>\n</head>\n<body>\n';
 
     // Determinar el estilo de fondo basado en la selección
     let backgroundStyle = '';
@@ -46,20 +43,10 @@ export async function generateEmailHtml(
       } else {
         backgroundStyle = `background-color: ${emailBackground};`;
       }
+    } else if (showGradient) {
+      backgroundStyle = `background: linear-gradient(to bottom, ${gradientColors[0]}, ${gradientColors[1]});`;
     } else {
       backgroundStyle = `background-color: ${emailBackground};`;
-    }
-
-    // Generar el HTML del header
-    let headerHtml = '';
-    if (header) {
-      headerHtml = generateHeaderHtml(header);
-    }
-
-    // Generar el HTML del footer
-    let footerHtml = '';
-    if (footer) {
-      footerHtml = generateFooterHtml(footer);
     }
 
     // Añadir contenido según el template con el fondo personalizado
@@ -492,80 +479,4 @@ const toRoman = (num: number): string => {
   }
 
   return result;
-};
-
-// Función para generar el HTML del header
-const generateHeaderHtml = (header: NewsletterHeader): string => {
-  let headerStyle = '';
-
-  // Aplicar estilo de fondo (color sólido o gradiente)
-  if (header.showGradient && header.gradientColors && header.gradientColors.length >= 2) {
-    // Usar gradiente lineal para el fondo
-    headerStyle = `background: linear-gradient(to right, ${header.gradientColors[0]}, ${header.gradientColors[1]});`;
-  } else {
-    // Usar color sólido para el fondo
-    headerStyle = `background-color: ${header.backgroundColor};`;
-  }
-
-  let headerHtml = `<tr><td style="${headerStyle} padding: 20px; text-align: ${header.alignment}; color: ${header.textColor};">`;
-
-  // Añadir logo superior si existe
-  if (header.logo) {
-    headerHtml += `<div style="margin-bottom: 15px;"><img src="${header.logo}" alt="Logo" style="max-width: 150px; height: auto;"></div>`;
-  }
-
-  // Añadir título y subtítulo
-  headerHtml += `<h1 style="margin: 0; font-size: 28px; color: ${header.textColor};">${header.title}</h1>`;
-  if (header.subtitle) {
-    headerHtml += `<p style="margin: 5px 0 0; font-size: 16px; color: ${header.textColor};">${header.subtitle}</p>`;
-  }
-
-  // Añadir imagen de banner si existe
-  if (header.bannerImage) {
-    headerHtml += `<div style="margin-top: 20px;"><img src="${header.bannerImage}" alt="Banner" style="max-width: 100%; height: auto;"></div>`;
-  }
-
-  headerHtml += `</td></tr>`;
-
-  return headerHtml;
-};
-
-// Función para generar el HTML del footer
-const generateFooterHtml = (footer: NewsletterFooter): string => {
-  let footerStyle = '';
-
-  // Aplicar estilo de fondo (color sólido o gradiente)
-  if (footer.showGradient && footer.gradientColors && footer.gradientColors.length >= 2) {
-    // Usar gradiente lineal para el fondo
-    footerStyle = `background: linear-gradient(to right, ${footer.gradientColors[0]}, ${footer.gradientColors[1]});`;
-  } else {
-    // Usar color sólido para el fondo
-    footerStyle = `background-color: ${footer.backgroundColor};`;
-  }
-
-  let footerHtml = `<tr><td style="${footerStyle} padding: 20px; text-align: center; color: ${footer.textColor};">`;
-
-  footerHtml += `<p style="margin: 0 0 10px; font-size: 14px;">${footer.companyName}</p>`;
-
-  if (footer.address) {
-    footerHtml += `<p style="margin: 0 0 10px; font-size: 12px;">${footer.address}</p>`;
-  }
-
-  footerHtml += `<p style="margin: 0 0 10px; font-size: 12px;">${footer.contactEmail}</p>`;
-
-  // Añadir enlaces a redes sociales
-  if (footer.socialLinks && footer.socialLinks.length > 0) {
-    footerHtml += `<div style="margin: 15px 0;">`;
-    footer.socialLinks.forEach((link) => {
-      footerHtml += `<a href="${link.url}" style="color: ${footer.textColor}; text-decoration: none; margin: 0 5px; font-size: 12px;">${link.platform}</a>`;
-    });
-    footerHtml += `</div>`;
-  }
-
-  // Añadir enlace para darse de baja
-  footerHtml += `<p style="margin: 15px 0 0; font-size: 11px;"><a href="${footer.unsubscribeLink}" style="color: ${footer.textColor}; text-decoration: underline;">Unsubscribe</a></p>`;
-
-  footerHtml += `</td></tr>`;
-
-  return footerHtml;
 };

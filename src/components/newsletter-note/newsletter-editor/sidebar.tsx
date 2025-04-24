@@ -2,7 +2,6 @@
 
 import type { NewsletterNote } from 'src/types/newsletter';
 
-import React from 'react';
 import { Icon } from '@iconify/react';
 
 import {
@@ -53,23 +52,6 @@ export default function Sidebar({
         gradientColors: ['#4158D0', '#C850C0'],
         showGradient: true,
         textColor: '#ffffff',
-        alignment: 'center',
-      },
-    },
-    {
-      id: 'mercado-libre',
-      name: 'Mercado Libre Style',
-      preview: '/assets/headers/mercado-libre-preview.jpg',
-      description: 'Header con estilo Mercado Libre, logo y gradiente suave',
-      template: {
-        title: 'Newsletter ADAC',
-        subtitle: 'Another Day Another Concept',
-        logo: '/assets/adac-logo.png',
-        bannerImage: '/assets/mercado-libre-logo.png',
-        backgroundColor: '#ffffff',
-        gradientColors: ['#e3f2fd', '#fff9c4'],
-        showGradient: true,
-        textColor: '#333333',
         alignment: 'center',
       },
     },
@@ -135,56 +117,6 @@ export default function Sidebar({
         textColor: '#333333',
         alignment: 'center',
         showGradient: false,
-      },
-    },
-    {
-      id: 'modern-gradient',
-      name: 'Gradiente Moderno',
-      preview: '/assets/headers/modern-gradient-preview.jpg',
-      description: 'Header con gradiente moderno y diseño elegante',
-      template: {
-        title: 'Newsletter Title',
-        subtitle: 'Your weekly newsletter',
-        logo: '/assets/logo-white.png',
-        bannerImage: '',
-        backgroundColor: '#ffffff',
-        gradientColors: ['#6a11cb', '#2575fc'],
-        showGradient: true,
-        textColor: '#ffffff',
-        alignment: 'center',
-      },
-    },
-    {
-      id: 'tech-dark',
-      name: 'Tech Oscuro',
-      preview: '/assets/headers/tech-dark-preview.jpg',
-      description: 'Header con fondo oscuro ideal para tecnología',
-      template: {
-        title: 'Tech Newsletter',
-        subtitle: 'Latest updates and innovations',
-        logo: '/assets/logo-tech.png',
-        bannerImage: '',
-        backgroundColor: '#121212',
-        textColor: '#ffffff',
-        alignment: 'center',
-        showGradient: false,
-      },
-    },
-    {
-      id: 'creative-colorful',
-      name: 'Creativo Colorido',
-      preview: '/assets/headers/creative-colorful-preview.jpg',
-      description: 'Header colorido para newsletters creativas',
-      template: {
-        title: 'Creative Newsletter',
-        subtitle: 'Inspiration for your week',
-        logo: '/assets/logo-creative.png',
-        bannerImage: '',
-        backgroundColor: '#ffffff',
-        gradientColors: ['#ff9a9e', '#fad0c4'],
-        showGradient: true,
-        textColor: '#333333',
-        alignment: 'center',
       },
     },
   ];
@@ -291,70 +223,16 @@ export default function Sidebar({
         companyName: 'Your Company',
         address: '123 Main St, City, Country',
         contactEmail: 'contact@example.com',
-        socialLinks: [{ platform: 'twitter', url: 'https://twitter.com' }],
+        socialLinks: [
+          { platform: 'twitter', url: 'https://twitter.com' },
+          { platform: 'facebook', url: 'https://facebook.com' },
+          { platform: 'instagram', url: 'https://instagram.com' },
+        ],
         unsubscribeLink: '#unsubscribe',
         backgroundColor: '#ffffff',
         textColor: '#ffffff',
         showGradient: true,
         gradientColors: ['#4158D0', '#C850C0'],
-      },
-    },
-    {
-      id: 'modern-minimal',
-      name: 'Moderno Minimalista',
-      preview: '/assets/footers/modern-minimal-preview.jpg',
-      description: 'Footer moderno con diseño minimalista y elegante',
-      template: {
-        companyName: 'Your Company',
-        address: '',
-        contactEmail: 'contact@example.com',
-        socialLinks: [
-          { platform: 'twitter', url: 'https://twitter.com' },
-          { platform: 'instagram', url: 'https://instagram.com' },
-        ],
-        unsubscribeLink: '#unsubscribe',
-        backgroundColor: '#fafafa',
-        textColor: '#555555',
-      },
-    },
-    {
-      id: 'tech-dark',
-      name: 'Tech Oscuro',
-      preview: '/assets/footers/tech-dark-preview.jpg',
-      description: 'Footer con estilo tech y fondo oscuro',
-      template: {
-        companyName: 'Tech Company',
-        address: 'Silicon Valley, CA',
-        contactEmail: 'hello@techcompany.com',
-        socialLinks: [
-          { platform: 'twitter', url: 'https://twitter.com' },
-          { platform: 'github', url: 'https://github.com' },
-          { platform: 'linkedin', url: 'https://linkedin.com' },
-        ],
-        unsubscribeLink: '#unsubscribe',
-        backgroundColor: '#121212',
-        textColor: '#ffffff',
-      },
-    },
-    {
-      id: 'creative-colorful',
-      name: 'Creativo Colorido',
-      preview: '/assets/footers/creative-colorful-preview.jpg',
-      description: 'Footer colorido para newsletters creativas',
-      template: {
-        companyName: 'Creative Studio',
-        address: 'Design District, NY',
-        contactEmail: 'hello@creativestudio.com',
-        socialLinks: [
-          { platform: 'instagram', url: 'https://instagram.com' },
-          { platform: 'pinterest', url: 'https://pinterest.com' },
-          { platform: 'behance', url: 'https://behance.net' },
-        ],
-        unsubscribeLink: '#unsubscribe',
-        backgroundColor: '#ffffff',
-        textColor: '#333333',
-        showGradient: true,
-        gradientColors: ['#ff9a9e', '#fad0c4'],
       },
     },
   ];
@@ -396,72 +274,53 @@ export default function Sidebar({
             Selected Notes ({selectedNotes.length})
           </Typography>
           {selectedNotes.length > 0 ? (
-            <Box>
+            <Box sx={{ mb: 3 }}>
               {selectedNotes.map((note) => (
                 <Paper
                   key={note.noteId}
                   variant="outlined"
                   sx={{ mb: 1, p: 1.5, position: 'relative' }}
                 >
-                  <Box>
+                  <Box sx={{ pr: 6 }}>
                     <Typography variant="body2" fontWeight="medium" noWrap>
                       {note.noteData.title}
                     </Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {new Date(
-                          note.noteData.dateModified || note.noteData.dateCreated
-                        ).toLocaleDateString()}
-                      </Typography>
-                      <Chip
-                        size="small"
-                        label={note.noteData.templateType}
-                        sx={{ height: 18, fontSize: '0.625rem' }}
-                      />
-                    </Box>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {new Date(
+                        note.noteData.dateModified || note.noteData.dateCreated
+                      ).toLocaleDateString()}
+                    </Typography>
                   </Box>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleRemoveNote(note.noteId)}
-                    sx={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      color: 'text.secondary',
-                      p: 0.5,
-                    }}
-                  >
-                    <Icon icon="mdi:close" width={16} />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleEditNote(note.noteData)}
-                    sx={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 28,
-                      color: 'text.secondary',
-                      p: 0.5,
-                    }}
-                  >
-                    <Icon icon="mdi:pencil" width={16} />
-                  </IconButton>
+                  <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+                    <IconButton size="small" onClick={() => handleEditNote(note.noteData)}>
+                      <Icon icon="mdi:pencil" width={16} />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => handleRemoveNote(note.noteId)}>
+                      <Icon icon="mdi:close" width={16} />
+                    </IconButton>
+                  </Box>
                 </Paper>
               ))}
             </Box>
           ) : (
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
+            <Paper sx={{ p: 2, textAlign: 'center', mb: 3 }}>
               <Typography variant="body2" color="text.secondary">
-                No notes selected
+                No notes selected yet
               </Typography>
             </Paper>
           )}
 
           <Divider sx={{ my: 2 }} />
 
-          <Typography variant="subtitle1" gutterBottom>
-            Available Notes
-          </Typography>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
+          >
+            <Typography variant="subtitle1">Available Notes</Typography>
+            <Button size="small" startIcon={<Icon icon="mdi:plus" />} onClick={handleCreateNewNote}>
+              New
+            </Button>
+          </Box>
+
           {notes.length > 0 ? (
             <Box>
               {notes

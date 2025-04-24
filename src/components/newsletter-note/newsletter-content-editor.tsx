@@ -1,36 +1,41 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import type { Editor } from '@tiptap/react';
+import type { Newsletter } from 'src/types/newsletter';
+import type { NewsletterComponent } from 'src/types/newsletter-component';
+
+import { v4 as uuidv4 } from 'uuid';
+import { Icon } from '@iconify/react';
+import React, { useRef, useState, useEffect } from 'react';
+
 import {
   Box,
-  Typography,
-  Button,
-  IconButton,
-  Paper,
-  TextField,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Grid,
+  Menu,
+  Paper,
+  Button,
   Dialog,
+  Switch,
+  Slider,
+  Divider,
+  MenuItem,
+  TextField,
+  Accordion,
+  Typography,
+  IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
+  AccordionSummary,
+  AccordionDetails,
   CircularProgress,
-  Menu,
-  MenuItem,
+  FormControlLabel,
 } from '@mui/material';
-import { Icon } from '@iconify/react';
-import { v4 as uuidv4 } from 'uuid';
-import SimpleTipTapEditor from 'src/components/newsletter-note/simple-tiptap-editor';
-import type { Editor } from '@tiptap/react';
-import type { Newsletter } from 'src/types/newsletter';
+
 import ColorPicker from 'src/components/newsletter-note/color-picker';
-import BannerSelector, { type BannerOption } from 'src/components/newsletter-note/banner-selector';
-import React from 'react';
-import type { NewsletterComponent } from 'src/types/newsletter-component';
+import SimpleTipTapEditor from 'src/components/newsletter-note/simple-tiptap-editor';
 import GalleryEditorDialog from 'src/components/newsletter-note/gallery-editor-dialog';
+import BannerSelector, { type BannerOption } from 'src/components/newsletter-note/banner-selector';
 
 // Define types for newsletter components
 interface NewsletterHeader {
@@ -38,9 +43,12 @@ interface NewsletterHeader {
   subtitle?: string;
   logo?: string;
   bannerImage?: string;
-  backgroundColor?: string;
+  backgroundColor: string;
   textColor?: string;
-  alignment?: 'left' | 'center' | 'right';
+  alignment: 'left' | 'center' | 'right';
+  useGradient?: boolean;
+  gradientColors?: string[];
+  gradientDirection?: number;
 }
 
 interface NewsletterFooter {
@@ -49,7 +57,7 @@ interface NewsletterFooter {
   contactEmail?: string;
   socialLinks?: { platform: string; url: string }[];
   unsubscribeLink?: string;
-  backgroundColor?: string;
+  backgroundColor: string;
   textColor?: string;
 }
 
@@ -78,6 +86,7 @@ const CustomSnackbar = ({
       }, 6000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [open, onClose]);
 
   if (!open) return null;
@@ -476,15 +485,23 @@ export default function NewsletterContentEditor({
   const generateEmailHtml = async () => {
     setGeneratingEmail(true);
     try {
-      // Create basic HTML structure - simplified to avoid template literal issues
+      // Determinar el estilo de fondo del encabezado
+      let headerBackgroundStyle = '';
+      if (header.useGradient && header.gradientColors && header.gradientColors.length >= 2) {
+        headerBackgroundStyle = `background: linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]});`;
+      } else {
+        headerBackgroundStyle = `background-color: ${header.backgroundColor};`;
+      }
+
+      // Crear estructura HTML básica con el estilo de fondo actualizado
       let html =
         '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' +
         title +
         '</title><style>body{font-family:Arial,Helvetica,sans-serif;line-height:1.6;margin:0;padding:0;background-color:#f9f9f9}.container{max-width:600px;margin:0 auto;background-color:#ffffff}.header{padding:20px;text-align:' +
         header.alignment +
-        ';background-color:' +
-        header.backgroundColor +
-        ';color:' +
+        ';' +
+        headerBackgroundStyle +
+        'color:' +
         header.textColor +
         '}.content{padding:20px}.footer{padding:20px;text-align:center;font-size:12px;background-color:' +
         footer.backgroundColor +
@@ -525,7 +542,7 @@ export default function NewsletterContentEditor({
             const categoryItems = component.props?.items || [component.content];
 
             html += `<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">\n`;
-            categoryItems.forEach((item, index) => {
+            categoryItems.forEach((item: string, index: number) => {
               const itemColor = categoryColors[index % categoryColors.length] || '#4caf50';
               html += `<div style="display: inline-block; background-color: ${itemColor}; color: white; padding: 4px 12px; border-radius: 16px; font-size: 14px;">${item}</div>\n`;
             });
@@ -595,6 +612,8 @@ export default function NewsletterContentEditor({
             break;
           case 'spacer':
             html += '<div style="height: 32px;"></div>';
+            break;
+          default:
             break;
         }
       });
@@ -692,67 +711,143 @@ export default function NewsletterContentEditor({
     };
 
     switch (component.type) {
-      case 'gallery':
-        const galleryImages = component.props?.images || [];
-        const galleryLayout = component.props?.layout || 'single';
+      case 'category':
+        const categoryColors = Array.isArray(component.props?.color)
+          ? component.props.color
+          : [component.props?.color || '#4caf50'];
+        const categoryItems = component.props?.items || [component.content];
 
         return (
           <Box sx={componentStyle} onClick={handleClick} key={component.id}>
             <Box sx={{ mb: 2, ...(component.style || {}) }}>
-              {galleryLayout === 'single' && (
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                {categoryItems.map((item: string, index: number) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: 'inline-block',
+                      backgroundColor: categoryColors[index % categoryColors.length] || '#4caf50',
+                      color: 'white',
+                      padding: '4px 12px',
+                      borderRadius: '16px',
+                      fontSize: '14px',
+                    }}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </Box>
+            {isSelected && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  display: 'flex',
+                  gap: '4px',
+                  background: 'white',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '4px',
+                  padding: '2px',
+                }}
+              >
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const newItems = [...categoryItems, 'New item'];
+                    updateComponentProps(component.id, { items: newItems });
+                  }}
+                >
+                  <Icon icon="mdi:plus" width={16} />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={() => moveComponent(component.id, 'up')}
+                  disabled={index === 0}
+                >
+                  <Icon icon="mdi:arrow-up" width={16} />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={() => moveComponent(component.id, 'down')}
+                  disabled={index === components.length - 1}
+                >
+                  <Icon icon="mdi:arrow-down" width={16} />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => removeComponent(component.id)}
+                >
+                  <Icon icon="mdi:delete" width={16} />
+                </IconButton>
+              </Box>
+            )}
+          </Box>
+        );
+
+      case 'gallery':
+        const layout = component.props?.layout || 'single';
+        const images = component.props?.images || [];
+
+        return (
+          <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+            <Box sx={{ mb: 2, ...(component.style || {}) }}>
+              {layout === 'single' && (
                 <img
-                  src={galleryImages[0]?.src || '/placeholder.svg'}
-                  alt={galleryImages[0]?.alt || 'Gallery image'}
+                  src={images[0]?.src || '/placeholder.svg'}
+                  alt={images[0]?.alt || 'Gallery image'}
                   style={{ width: '100%', borderRadius: '8px' }}
                 />
               )}
 
-              {galleryLayout === 'double' && (
+              {layout === 'double' && (
                 <Grid container spacing={1}>
-                  <Grid item xs={6}>
+                  <Grid component="div" item xs={6}>
                     <img
-                      src={galleryImages[0]?.src || '/placeholder.svg'}
-                      alt={galleryImages[0]?.alt || 'Gallery image'}
+                      src={images[0]?.src || '/placeholder.svg'}
+                      alt={images[0]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px' }}
                     />
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid component="div" item xs={6}>
                     <img
-                      src={galleryImages[1]?.src || '/placeholder.svg'}
-                      alt={galleryImages[1]?.alt || 'Gallery image'}
+                      src={images[1]?.src || '/placeholder.svg'}
+                      alt={images[1]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px' }}
                     />
                   </Grid>
                 </Grid>
               )}
 
-              {galleryLayout === 'grid' && (
+              {layout === 'grid' && (
                 <Grid container spacing={1}>
-                  <Grid item xs={6}>
+                  <Grid component="div" item xs={6}>
                     <img
-                      src={galleryImages[0]?.src || '/placeholder.svg'}
-                      alt={galleryImages[0]?.alt || 'Gallery image'}
+                      src={images[0]?.src || '/placeholder.svg'}
+                      alt={images[0]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px', marginBottom: '8px' }}
                     />
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid component="div" item xs={6}>
                     <img
-                      src={galleryImages[1]?.src || '/placeholder.svg'}
-                      alt={galleryImages[1]?.alt || 'Gallery image'}
+                      src={images[1]?.src || '/placeholder.svg'}
+                      alt={images[1]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px', marginBottom: '8px' }}
                     />
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid component="div" item xs={6}>
                     <img
-                      src={galleryImages[2]?.src || '/placeholder.svg'}
-                      alt={galleryImages[2]?.alt || 'Gallery image'}
+                      src={images[2]?.src || '/placeholder.svg'}
+                      alt={images[2]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px' }}
                     />
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid component="div" item xs={6}>
                     <img
-                      src={galleryImages[3]?.src || '/placeholder.svg'}
-                      alt={galleryImages[3]?.alt || 'Gallery image'}
+                      src={images[3]?.src || '/placeholder.svg'}
+                      alt={images[3]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px' }}
                     />
                   </Grid>
@@ -812,7 +907,7 @@ export default function NewsletterContentEditor({
         );
 
       case 'heading':
-        const HeadingTag = `h${component.props?.level || 2}` as keyof JSX.IntrinsicElements;
+        const HeadingTag = `h${component.props?.level || 2}` as React.ElementType;
         return (
           <Box sx={componentStyle} onClick={handleClick} key={component.id}>
             <HeadingTag style={component.style || {}}>
@@ -1152,7 +1247,7 @@ export default function NewsletterContentEditor({
       case 'spacer':
         return (
           <Box sx={componentStyle} onClick={handleClick} key={component.id}>
-            <Box sx={{ height: '32px', mb: 2, ...(component.style || {}) }}></Box>
+            <Box sx={{ height: '32px', mb: 2, ...(component.style || {}) }} />
             {isSelected && (
               <Box
                 sx={{
@@ -1208,10 +1303,22 @@ export default function NewsletterContentEditor({
 
   // Render the newsletter header
   const renderHeader = () => {
+    let backgroundStyle = {};
+
+    if (header.useGradient && header.gradientColors && header.gradientColors.length >= 2) {
+      backgroundStyle = {
+        background: `linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]})`,
+      };
+    } else {
+      backgroundStyle = {
+        backgroundColor: header.backgroundColor,
+      };
+    }
+
     return (
       <Box
         sx={{
-          backgroundColor: header.backgroundColor,
+          ...backgroundStyle,
           color: header.textColor,
           padding: '20px',
           textAlign: header.alignment as 'left' | 'center' | 'right',
@@ -1251,67 +1358,65 @@ export default function NewsletterContentEditor({
   };
 
   // Render the newsletter footer
-  const renderFooter = () => {
-    return (
-      <Box
-        sx={{
-          backgroundColor: footer.backgroundColor,
-          color: footer.textColor,
-          padding: '20px',
-          textAlign: 'center',
-          fontSize: '12px',
-          position: 'relative',
-        }}
-      >
-        <Typography variant="subtitle1" component="p" fontWeight="bold">
-          {footer.companyName}
+  const renderFooter = () => (
+    <Box
+      sx={{
+        backgroundColor: footer.backgroundColor,
+        color: footer.textColor,
+        padding: '20px',
+        textAlign: 'center',
+        fontSize: '12px',
+        position: 'relative',
+      }}
+    >
+      <Typography variant="subtitle1" component="p" fontWeight="bold">
+        {footer.companyName}
+      </Typography>
+      {footer.address && <Typography variant="body2">{footer.address}</Typography>}
+      {footer.contactEmail && (
+        <Typography variant="body2">
+          Contact: <a href={`mailto:${footer.contactEmail}`}>{footer.contactEmail}</a>
         </Typography>
-        {footer.address && <Typography variant="body2">{footer.address}</Typography>}
-        {footer.contactEmail && (
-          <Typography variant="body2">
-            Contact: <a href={`mailto:${footer.contactEmail}`}>{footer.contactEmail}</a>
-          </Typography>
-        )}
+      )}
 
-        <Box sx={{ marginTop: '10px' }}>
-          {footer.socialLinks?.map((link, index) => (
-            <React.Fragment key={link.platform}>
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: footer.textColor }}
-              >
-                {link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
-              </a>
-              {index < (footer.socialLinks?.length || 0) - 1 && <span> | </span>}
-            </React.Fragment>
-          ))}
-        </Box>
-
-        <Box sx={{ marginTop: '15px' }}>
-          <a href={footer.unsubscribeLink || '#'} style={{ color: footer.textColor }}>
-            Unsubscribe
-          </a>{' '}
-          |{' '}
-          <a href="#" style={{ color: footer.textColor }}>
-            View in browser
-          </a>
-        </Box>
-
-        <Typography variant="body2" sx={{ marginTop: '10px' }}>
-          &copy; {new Date().getFullYear()} {footer.companyName}. All rights reserved.
-        </Typography>
-
-        <IconButton
-          sx={{ position: 'absolute', top: '8px', right: '8px', color: footer.textColor }}
-          onClick={() => setOpenFooterDialog(true)}
-        >
-          <Icon icon="mdi:pencil" />
-        </IconButton>
+      <Box sx={{ marginTop: '10px' }}>
+        {footer.socialLinks?.map((link, index) => (
+          <React.Fragment key={link.platform}>
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: footer.textColor }}
+            >
+              {link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+            </a>
+            {index < (footer.socialLinks?.length || 0) - 1 && <span> | </span>}
+          </React.Fragment>
+        ))}
       </Box>
-    );
-  };
+
+      <Box sx={{ marginTop: '15px' }}>
+        <a href={footer.unsubscribeLink || '#'} style={{ color: footer.textColor }}>
+          Unsubscribe
+        </a>{' '}
+        |{' '}
+        <a href="#" style={{ color: footer.textColor }}>
+          View in browser
+        </a>
+      </Box>
+
+      <Typography variant="body2" sx={{ marginTop: '10px' }}>
+        &copy; {new Date().getFullYear()} {footer.companyName}. All rights reserved.
+      </Typography>
+
+      <IconButton
+        sx={{ position: 'absolute', top: '8px', right: '8px', color: footer.textColor }}
+        onClick={() => setOpenFooterDialog(true)}
+      >
+        <Icon icon="mdi:pencil" />
+      </IconButton>
+    </Box>
+  );
 
   // Determine the background style based on the selected options
   const getBackgroundStyle = () => {
@@ -1738,7 +1843,7 @@ export default function NewsletterContentEditor({
         <DialogTitle>Edit Newsletter Header</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={6}>
+            <Grid component="div" item xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Header Title"
@@ -1788,7 +1893,7 @@ export default function NewsletterContentEditor({
                 </Grid>
               </Box>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid component="div" item xs={12} md={6}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <ColorPicker
                   color={header.backgroundColor || '#3f51b5'}
@@ -1800,6 +1905,75 @@ export default function NewsletterContentEditor({
                   onChange={(color) => setHeader({ ...header, textColor: color })}
                   label="Text Color"
                 />
+              </Box>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Gradient Background
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={header.useGradient || false}
+                      onChange={(e) => setHeader({ ...header, useGradient: e.target.checked })}
+                    />
+                  }
+                  label="Enable Gradient"
+                />
+
+                {header.useGradient && (
+                  <>
+                    <Grid component="div" container spacing={2} sx={{ mt: 1 }}>
+                      <Grid component="div" item xs={6}>
+                        <ColorPicker
+                          color={(header.gradientColors && header.gradientColors[0]) || '#3f51b5'}
+                          onChange={(color) => {
+                            const newColors = [
+                              ...(header.gradientColors || ['#3f51b5', '#757de8']),
+                            ];
+                            newColors[0] = color;
+                            setHeader({ ...header, gradientColors: newColors });
+                          }}
+                          label="Start Color"
+                        />
+                      </Grid>
+                      <Grid component="div" item xs={6}>
+                        <ColorPicker
+                          color={(header.gradientColors && header.gradientColors[1]) || '#757de8'}
+                          onChange={(color) => {
+                            const newColors = [
+                              ...(header.gradientColors || ['#3f51b5', '#757de8']),
+                            ];
+                            newColors[1] = color;
+                            setHeader({ ...header, gradientColors: newColors });
+                          }}
+                          label="End Color"
+                        />
+                      </Grid>
+                    </Grid>
+
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Gradient Direction
+                      </Typography>
+                      <Slider
+                        value={header.gradientDirection || 180}
+                        min={0}
+                        max={360}
+                        step={45}
+                        marks={[
+                          { value: 0, label: '0°' },
+                          { value: 90, label: '90°' },
+                          { value: 180, label: '180°' },
+                          { value: 270, label: '270°' },
+                          { value: 360, label: '360°' },
+                        ]}
+                        onChange={(_, value) =>
+                          setHeader({ ...header, gradientDirection: value as number })
+                        }
+                      />
+                    </Box>
+                  </>
+                )}
               </Box>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
@@ -2041,7 +2215,7 @@ export default function NewsletterContentEditor({
 
       {/* Gallery Editor Dialog */}
       <GalleryEditorDialog
-        open={openGalleryDialog}
+        open={Boolean(openGalleryDialog)}
         onClose={() => {
           setOpenGalleryDialog(false);
           setEditingGalleryId(null);

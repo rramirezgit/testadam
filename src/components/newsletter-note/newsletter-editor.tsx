@@ -1,6 +1,6 @@
 'use client';
 
-import type { SavedNote, EmailComponent } from 'src/types/saved-note';
+import type { SavedNote } from 'src/types/saved-note';
 import type { Newsletter, NewsletterNote } from 'src/types/newsletter';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -9,9 +9,10 @@ import React, { useState, useEffect } from 'react';
 
 import {
   Box,
+  Tab,
   Chip,
   Grid,
-  Card,
+  Tabs,
   Paper,
   Switch,
   AppBar,
@@ -20,25 +21,18 @@ import {
   Toolbar,
   Divider,
   TextField,
-  CardMedia,
   Typography,
   IconButton,
   DialogTitle,
-  CardContent,
   DialogContent,
   DialogActions,
+  FormControlLabel,
   CircularProgress,
 } from '@mui/material';
 
 import { useStore } from 'src/lib/store';
 
 import EmailEditor from 'src/components/newsletter-note/email-editor';
-import { generateEmailHtml } from 'src/components/newsletter-note/email-editor/utils/generate-html';
-
-import Sidebar from './newsletter-editor/sidebar';
-import DesignTab from './newsletter-editor/tabs/design-tab';
-
-import type { HeaderTemplate, FooterTemplate } from './newsletter-editor/types';
 
 // Custom Snackbar component
 const CustomSnackbar = ({
@@ -123,6 +117,8 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
   const [generatedHtml, setGeneratedHtml] = useState('');
   const [openHtmlPreview, setOpenHtmlPreview] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [activeHtmlTab, setActiveHtmlTab] = useState('preview');
+  const [escapedHtml, setEscapedHtml] = useState('');
 
   const [header, setHeader] = useState({
     title: '',
@@ -132,8 +128,9 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     backgroundColor: '#3f51b5',
     textColor: '#ffffff',
     alignment: 'center',
-    showGradient: false,
-    gradientColors: ['#4158D0', '#C850C0'],
+    useGradient: false,
+    gradientColors: ['#3f51b5', '#2196f3'],
+    gradientDirection: 180,
   });
 
   const [footer, setFooter] = useState({
@@ -148,8 +145,9 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     unsubscribeLink: '#unsubscribe',
     backgroundColor: '#f5f5f5',
     textColor: '#666666',
-    showGradient: false,
-    gradientColors: ['#4158D0', '#C850C0'],
+    useGradient: false,
+    gradientColors: ['#f5f5f5', '#e0e0e0'],
+    gradientDirection: 180,
   });
 
   const [openHeaderDialog, setOpenHeaderDialog] = useState(false);
@@ -158,13 +156,6 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
   const [bannerImageUrl, setBannerImageUrl] = useState('');
   const [openLogoDialog, setOpenLogoDialog] = useState(false);
   const [openBannerDialog, setOpenBannerDialog] = useState(false);
-
-  const [currentHeaderTemplate, setCurrentHeaderTemplate] = useState<HeaderTemplate | undefined>(
-    undefined
-  );
-  const [currentFooterTemplate, setCurrentFooterTemplate] = useState<FooterTemplate | undefined>(
-    undefined
-  );
 
   // Use Zustand store
   const {
@@ -206,15 +197,6 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
       setNewsletterId(uuidv4());
     }
   }, [initialNewsletter, storeSelectedNotes]);
-
-  // Añadir un efecto para depurar cambios en header y footer
-  useEffect(() => {
-    console.log('Header actualizado:', header);
-  }, [header]);
-
-  useEffect(() => {
-    console.log('Footer actualizado:', footer);
-  }, [footer]);
 
   const handleAddNote = (note: NewsletterNote) => {
     setSelectedNotes((prev) => [...prev, note]);
@@ -564,68 +546,165 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     return false;
   };
 
-  // Actualizar la función handleGenerateHtml para pasar correctamente el header y footer
-  const handleGenerateHtml = async () => {
+  // Función para escapar el HTML para AWS SES
+  const escapeHtmlForSES = (html: string) =>
+    html.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+
+  // Modificar la función que genera el HTML para también generar la versión escapada
+  const generateNewsletterHtml = () => {
     setGenerating(true);
     try {
-      // Crear componentes de email a partir de las notas seleccionadas
-      const emailComponents: EmailComponent[] = [];
+      // Configurar el estilo del fondo del encabezado según si usa gradiente o color sólido
+      let headerBackgroundStyle = `background-color: ${header.backgroundColor};`;
+      if (header.useGradient && header.gradientColors && header.gradientColors.length >= 2) {
+        headerBackgroundStyle = `background: linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]});`;
+      }
 
-      // Procesar cada nota seleccionada
-      selectedNotes.forEach((note) => {
-        // Convertir los componentes de la nota a componentes de email
-        note.noteData.objdata.forEach((component) => {
-          emailComponents.push({
-            id: uuidv4(),
-            type: component.type,
-            content: component.content,
-            props: component.props || {},
-            style: component.style || {},
-          });
-        });
+      // Configurar el estilo del fondo del footer según si usa gradiente o color sólido
+      let footerBackgroundStyle = `background-color: ${footer.backgroundColor};`;
+      if (footer.useGradient && footer.gradientColors && footer.gradientColors.length >= 2) {
+        footerBackgroundStyle = `background: linear-gradient(${footer.gradientDirection || 180}deg, ${footer.gradientColors[0]}, ${footer.gradientColors[1]});`;
+      }
 
-        // Añadir un divisor entre notas
-        emailComponents.push({
-          id: uuidv4(),
-          type: 'divider',
-          content: '',
-          props: {},
-          style: {},
-        });
+      // Start with basic HTML structure
+      let html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${title || 'Newsletter'}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    .content-wrapper {
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .newsletter-header {
+      text-align: ${header.alignment};
+      margin-bottom: 0;
+      ${headerBackgroundStyle}
+      color: ${header.textColor};
+      padding: 20px;
+      border-radius: 8px 8px 0 0;
+    }
+    .newsletter-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .newsletter-subtitle {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    .newsletter-description {
+      font-size: 16px;
+      color: #666;
+      margin: 20px;
+    }
+    .notes-container {
+      padding: 20px;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: ${footer.textColor};
+      padding: 20px;
+      ${footerBackgroundStyle}
+      border-radius: 0 0 8px 8px;
+    }
+    .social-links {
+      margin: 10px 0;
+    }
+    .social-link {
+      display: inline-block;
+      margin: 0 5px;
+      color: ${footer.textColor};
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="content-wrapper">
+    <div class="newsletter-header">
+      ${header.logo ? `<img src="${header.logo}" alt="Logo" style="max-height: 50px; margin-bottom: 10px;"><br>` : ''}
+      <div class="newsletter-title">${header.title || title || 'Newsletter'}</div>
+      ${header.subtitle ? `<div class="newsletter-subtitle">${header.subtitle}</div>` : ''}
+      ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 10px;">` : ''}
+    </div>
+    
+    ${description ? `<div class="newsletter-description">${description}</div>` : ''}
+    
+    <div class="notes-container">`;
+
+      // Add each note's content using the dedicated function
+      selectedNotes.forEach((newsletterNote) => {
+        html += generateNoteHtml(newsletterNote.noteData);
       });
 
-      console.log('Header antes de generar HTML:', header);
-      console.log('Footer antes de generar HTML:', footer);
+      // Close notes container and add footer
+      html += `</div>
+    
+    <div class="footer">
+      <p style="margin: 5px 0;"><strong>${footer.companyName}</strong></p>
+      ${footer.address ? `<p style="margin: 5px 0;">${footer.address}</p>` : ''}
+      ${footer.contactEmail ? `<p style="margin: 5px 0;">Contact: <a href="mailto:${footer.contactEmail}" style="color: ${footer.textColor}">${footer.contactEmail}</a></p>` : ''}
+      <div class="social-links">
+        ${
+          footer.socialLinks
+            ?.map(
+              (link) =>
+                `<a href="${link.url}" class="social-link" target="_blank" style="color: ${footer.textColor};">${link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}</a>`
+            )
+            .join(' | ') || ''
+        }
+      </div>
+      <p style="margin-top: 10px;">
+        <a href="${footer.unsubscribeLink || '#'}" style="color: ${footer.textColor}">Unsubscribe</a> |
+        <a href="#" style="color: ${footer.textColor}">View in browser</a>
+      </p>
+      <p style="margin: 5px 0;">© ${new Date().getFullYear()} ${footer.companyName}. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>`;
 
-      // Generar el HTML del email
-      const html = await generateEmailHtml(
-        emailComponents,
-        'news', // Template activo
-        null, // Banner seleccionado
-        [], // Opciones de banner
-        '#ffffff', // Fondo del email
-        header, // Pasar el header completo
-        footer // Pasar el footer completo
-      );
-
+      // Después de generar el HTML normal
       setGeneratedHtml(html);
+
+      // Generar la versión escapada para AWS SES
+      const escaped = escapeHtmlForSES(html);
+      setEscapedHtml(escaped);
+
       setOpenHtmlPreview(true);
     } catch (error) {
       console.error('Error generating HTML:', error);
-      showSnackbar('Error generating HTML', 'error');
+      showSnackbar('Error al generar el HTML', 'error');
     } finally {
       setGenerating(false);
     }
   };
 
-  const handleCopyHtml = () => {
+  // Modificar la función para copiar el HTML para manejar ambas versiones
+  const handleCopyHtml = (useEscaped = false) => {
+    const htmlToCopy = useEscaped ? escapedHtml : generatedHtml;
     navigator.clipboard
-      .writeText(generatedHtml)
+      .writeText(htmlToCopy)
       .then(() => {
-        showSnackbar('HTML copied to clipboard', 'success');
+        showSnackbar('HTML copiado al portapapeles', 'success');
       })
-      .catch(() => {
-        showSnackbar('Failed to copy HTML', 'error');
+      .catch((err) => {
+        console.error('Error al copiar HTML:', err);
+        showSnackbar('Error al copiar HTML', 'error');
       });
   };
 
@@ -686,418 +765,6 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     return result;
   };
 
-  // Función para manejar la selección de un header template
-  const handleSelectHeader = (headerTemplate: HeaderTemplate) => {
-    setCurrentHeaderTemplate(headerTemplate);
-    // Aplicar el template al header actual
-    const newHeader = {
-      ...headerTemplate.template,
-      // Asegurarse de que las propiedades opcionales estén definidas
-      showGradient: headerTemplate.template.showGradient || false,
-      gradientColors: headerTemplate.template.gradientColors || ['#4158D0', '#C850C0'],
-    };
-    console.log('Nuevo header seleccionado:', newHeader);
-    setHeader(newHeader);
-  };
-
-  // Función para manejar la selección de un footer template
-  const handleSelectFooter = (footerTemplate: FooterTemplate) => {
-    setCurrentFooterTemplate(footerTemplate);
-    // Aplicar el template al footer actual
-    const newFooter = {
-      ...footerTemplate.template,
-      // Asegurarse de que las propiedades opcionales estén definidas
-      showGradient: footerTemplate.template.showGradient || false,
-      gradientColors: footerTemplate.template.gradientColors || ['#4158D0', '#C850C0'],
-    };
-    setFooter(newFooter);
-    console.log('Footer actualizado:', newFooter); // Para depuración
-  };
-
-  // Actualizar el componente HeaderDialog para incluir opciones de templates y gradiente
-  const HeaderDialog = ({
-    open,
-    onClose,
-    header,
-    setHeader,
-    availableHeaders,
-    currentHeaderTemplate,
-    setCurrentHeaderTemplate,
-  }: {
-    open: boolean;
-    onClose: () => void;
-    header: any;
-    setHeader: (header: any) => void;
-    availableHeaders: HeaderTemplate[];
-    currentHeaderTemplate: HeaderTemplate | undefined;
-    setCurrentHeaderTemplate: (template: HeaderTemplate | undefined) => void;
-  }) => {
-    const [localHeader, setLocalHeader] = useState({ ...header });
-    const [gradientColor1, setGradientColor1] = useState(header.gradientColors?.[0] || '#4158D0');
-    const [gradientColor2, setGradientColor2] = useState(header.gradientColors?.[1] || '#C850C0');
-
-    useEffect(() => {
-      setLocalHeader({ ...header });
-      setGradientColor1(header.gradientColors?.[0] || '#4158D0');
-      setGradientColor2(header.gradientColors?.[1] || '#C850C0');
-    }, [header]);
-
-    const handleApply = () => {
-      // Actualizar los colores del gradiente si está habilitado
-      const updatedHeader = {
-        ...localHeader,
-        gradientColors: localHeader.showGradient
-          ? [gradientColor1, gradientColor2]
-          : ['#4158D0', '#C850C0'],
-      };
-      console.log('Header actualizado en diálogo:', updatedHeader);
-      setHeader(updatedHeader);
-      onClose();
-    };
-
-    return (
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle>Header Design</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Header Templates
-            </Typography>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              {availableHeaders.map((headerTemplate) => (
-                <Grid item xs={6} sm={4} key={headerTemplate.id}>
-                  <Card
-                    variant="outlined"
-                    sx={{
-                      border:
-                        currentHeaderTemplate?.id === headerTemplate.id
-                          ? '2px solid #3f51b5'
-                          : '1px solid rgba(0, 0, 0, 0.12)',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => {
-                      setCurrentHeaderTemplate(headerTemplate);
-                      setLocalHeader(headerTemplate.template);
-                      if (headerTemplate.template.gradientColors) {
-                        setGradientColor1(headerTemplate.template.gradientColors[0]);
-                        setGradientColor2(headerTemplate.template.gradientColors[1]);
-                      }
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="80"
-                      image={headerTemplate.preview}
-                      alt={headerTemplate.name}
-                    />
-                    <CardContent sx={{ p: 1 }}>
-                      <Typography variant="subtitle2">{headerTemplate.name}</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-
-            <Divider sx={{ my: 3 }} />
-
-            <Typography variant="subtitle1" gutterBottom>
-              Header Settings
-            </Typography>
-
-            <Box sx={{ px: 3, pb: 3 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Header Title"
-                    value={localHeader.title}
-                    onChange={(e) => setLocalHeader({ ...localHeader, title: e.target.value })}
-                    margin="normal"
-                  />
-                  <TextField
-                    fullWidth
-                    label="Subtitle"
-                    value={localHeader.subtitle}
-                    onChange={(e) => setLocalHeader({ ...localHeader, subtitle: e.target.value })}
-                    margin="normal"
-                  />
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Text Alignment
-                    </Typography>
-                    <Grid container spacing={1}>
-                      <Grid item xs={4}>
-                        <Button
-                          variant={localHeader.alignment === 'left' ? 'contained' : 'outlined'}
-                          fullWidth
-                          onClick={() => setLocalHeader({ ...localHeader, alignment: 'left' })}
-                          startIcon={<Icon icon="mdi:format-align-left" />}
-                        >
-                          Left
-                        </Button>
-                      </Grid>
-                      <Grid item xs={4}>
-                        <Button
-                          variant={localHeader.alignment === 'center' ? 'contained' : 'outlined'}
-                          fullWidth
-                          onClick={() => setLocalHeader({ ...localHeader, alignment: 'center' })}
-                          startIcon={<Icon icon="mdi:format-align-center" />}
-                        >
-                          Center
-                        </Button>
-                      </Grid>
-                      <Grid item xs={4}>
-                        <Button
-                          variant={localHeader.alignment === 'right' ? 'contained' : 'outlined'}
-                          fullWidth
-                          onClick={() => setLocalHeader({ ...localHeader, alignment: 'right' })}
-                          startIcon={<Icon icon="mdi:format-align-right" />}
-                        >
-                          Right
-                        </Button>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Background
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="body2" sx={{ mr: 2 }}>
-                        Use Gradient:
-                      </Typography>
-                      <Switch
-                        checked={localHeader.showGradient || false}
-                        onChange={(e) => {
-                          setLocalHeader({
-                            ...localHeader,
-                            showGradient: e.target.checked,
-                          });
-                        }}
-                      />
-                    </Box>
-
-                    {localHeader.showGradient ? (
-                      <Box sx={{ mt: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="body2" sx={{ width: 100 }}>
-                            Color 1:
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 1,
-                              bgcolor: gradientColor1,
-                              mr: 1,
-                              border: '1px solid #ddd',
-                            }}
-                          />
-                          <TextField
-                            size="small"
-                            value={gradientColor1}
-                            onChange={(e) => setGradientColor1(e.target.value)}
-                            sx={{ width: 120 }}
-                          />
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="body2" sx={{ width: 100 }}>
-                            Color 2:
-                          </Typography>
-                          <Box
-                            sx={{
-                              width: 36,
-                              height: 36,
-                              borderRadius: 1,
-                              bgcolor: gradientColor2,
-                              mr: 1,
-                              border: '1px solid #ddd',
-                            }}
-                          />
-                          <TextField
-                            size="small"
-                            value={gradientColor2}
-                            onChange={(e) => setGradientColor2(e.target.value)}
-                            sx={{ width: 120 }}
-                          />
-                        </Box>
-                        <Box
-                          sx={{
-                            mt: 2,
-                            height: 40,
-                            borderRadius: 1,
-                            background: `linear-gradient(to right, ${gradientColor1}, ${gradientColor2})`,
-                          }}
-                        />
-                      </Box>
-                    ) : (
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body2" sx={{ width: 100 }}>
-                          Background:
-                        </Typography>
-                        <Box
-                          sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 1,
-                            bgcolor: localHeader.backgroundColor,
-                            mr: 1,
-                            border: '1px solid #ddd',
-                          }}
-                        />
-                        <TextField
-                          size="small"
-                          value={localHeader.backgroundColor}
-                          onChange={(e) =>
-                            setLocalHeader({ ...localHeader, backgroundColor: e.target.value })
-                          }
-                          sx={{ width: 120 }}
-                        />
-                      </Box>
-                    )}
-                  </Box>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Text Color
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 1,
-                          bgcolor: localHeader.textColor,
-                          mr: 1,
-                          border: '1px solid #ddd',
-                        }}
-                      />
-                      <TextField
-                        size="small"
-                        value={localHeader.textColor}
-                        onChange={(e) =>
-                          setLocalHeader({ ...localHeader, textColor: e.target.value })
-                        }
-                        sx={{ width: 120 }}
-                      />
-                    </Box>
-                  </Box>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Logo
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {localHeader.logo ? (
-                        <Box sx={{ mr: 1 }}>
-                          <img
-                            src={localHeader.logo}
-                            alt="Logo"
-                            style={{ maxWidth: 100, maxHeight: 40 }}
-                          />
-                        </Box>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                          No logo
-                        </Typography>
-                      )}
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => setOpenLogoDialog(true)}
-                      >
-                        Change
-                      </Button>
-                    </Box>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>
-                      Banner Image
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      {localHeader.bannerImage ? (
-                        <Box sx={{ mr: 1 }}>
-                          <img
-                            src={localHeader.bannerImage}
-                            alt="Banner"
-                            style={{ maxWidth: 100, maxHeight: 40 }}
-                          />
-                        </Box>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-                          No banner
-                        </Typography>
-                      )}
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => setOpenBannerDialog(true)}
-                      >
-                        Change
-                      </Button>
-                    </Box>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleApply}>
-            Apply
-          </Button>
-        </DialogActions>
-      </Dialog>
-    );
-  };
-
-  // Definir los headers disponibles
-  const availableHeaders = [
-    {
-      id: 'gradient-logo',
-      name: 'Gradient con Logo',
-      preview: '/assets/headers/gradient-logo-preview.jpg',
-      description: 'Header con gradiente, logo superior y logo inferior',
-      template: {
-        title: 'Newsletter Title',
-        subtitle: 'Your weekly newsletter',
-        logo: '/assets/logo.png',
-        bannerImage: '/assets/banner.jpg',
-        backgroundColor: '#ffffff',
-        gradientColors: ['#4158D0', '#C850C0'],
-        showGradient: true,
-        textColor: '#ffffff',
-        alignment: 'center',
-      },
-    },
-    // ... otros headers
-  ];
-
-  // Definir los footers disponibles
-  const availableFooters = [
-    {
-      id: 'standard',
-      name: 'Estándar',
-      preview: '/assets/footers/standard-preview.jpg',
-      description: 'Footer estándar con información de contacto y redes sociales',
-      template: {
-        companyName: 'Your Company',
-        address: '123 Main St, City, Country',
-        contactEmail: 'contact@example.com',
-        socialLinks: [
-          { platform: 'twitter', url: 'https://twitter.com' },
-          { platform: 'facebook', url: 'https://facebook.com' },
-          { platform: 'instagram', url: 'https://instagram.com' },
-        ],
-        unsubscribeLink: '#unsubscribe',
-        backgroundColor: '#f5f5f5',
-        textColor: '#666666',
-      },
-    },
-    // ... otros footers
-  ];
-
   return (
     <>
       <AppBar position="static" color="default" elevation={1}>
@@ -1135,7 +802,7 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
           <Button
             variant="outlined"
             startIcon={<Icon icon="mdi:code-tags" />}
-            onClick={handleGenerateHtml}
+            onClick={generateNewsletterHtml}
             disabled={generating || selectedNotes.length === 0}
             sx={{ mr: 2 }}
           >
@@ -1155,21 +822,159 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
 
       <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
         {/* Left Sidebar */}
-        <Sidebar
-          sidebarTab={sidebarTab}
-          setSidebarTab={setSidebarTab}
-          selectedNotes={selectedNotes}
-          notes={notes}
-          handleAddNote={handleAddNote}
-          handleRemoveNote={handleRemoveNote}
-          handleEditNote={handleEditNote}
-          handleCreateNewNote={handleCreateNewNote}
-          activeTab={activeTab}
-          onSelectHeader={handleSelectHeader}
-          onSelectFooter={handleSelectFooter}
-          currentHeader={currentHeaderTemplate}
-          currentFooter={currentFooterTemplate}
-        />
+        {openSidebar && (
+          <Box sx={{ width: 280, borderRight: '1px solid rgba(0, 0, 0, 0.12)' }}>
+            <Box sx={{ display: 'flex', borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}>
+              <Button
+                variant={sidebarTab === 'notes' ? 'contained' : 'text'}
+                onClick={() => setSidebarTab('notes')}
+                sx={{ flex: 1, borderRadius: 0, py: 1 }}
+              >
+                NOTES
+              </Button>
+              <Button
+                variant={sidebarTab === 'create' ? 'contained' : 'text'}
+                onClick={() => setSidebarTab('create')}
+                sx={{ flex: 1, borderRadius: 0, py: 1 }}
+              >
+                CREATE
+              </Button>
+            </Box>
+
+            {sidebarTab === 'notes' && (
+              <Box sx={{ p: 2, height: 'calc(100% - 48px)', overflow: 'auto' }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Selected Notes ({selectedNotes.length})
+                </Typography>
+                {selectedNotes.length > 0 ? (
+                  <Box sx={{ mb: 3 }}>
+                    {selectedNotes.map((note, index) => (
+                      <Paper
+                        key={note.noteId}
+                        variant="outlined"
+                        sx={{ mb: 1, p: 1.5, position: 'relative' }}
+                      >
+                        <Box sx={{ pr: 6 }}>
+                          <Typography variant="body2" fontWeight="medium" noWrap>
+                            {note.noteData.title}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            {new Date(
+                              note.noteData.dateModified || note.noteData.dateCreated
+                            ).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+                          <IconButton size="small" onClick={() => handleEditNote(note.noteData)}>
+                            <Icon icon="mdi:pencil" width={16} />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => handleRemoveNote(note.noteId)}>
+                            <Icon icon="mdi:close" width={16} />
+                          </IconButton>
+                        </Box>
+                      </Paper>
+                    ))}
+                  </Box>
+                ) : (
+                  <Paper sx={{ p: 2, textAlign: 'center', mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No notes selected yet
+                    </Typography>
+                  </Paper>
+                )}
+
+                <Divider sx={{ my: 2 }} />
+
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="subtitle1">Available Notes</Typography>
+                  <Button
+                    size="small"
+                    startIcon={<Icon icon="mdi:plus" />}
+                    onClick={handleCreateNewNote}
+                  >
+                    New
+                  </Button>
+                </Box>
+
+                {notes.length > 0 ? (
+                  <Box>
+                    {notes
+                      .filter(
+                        (note) => !selectedNotes.some((selected) => selected.noteId === note.id)
+                      )
+                      .map((note) => (
+                        <Paper
+                          key={note.id}
+                          variant="outlined"
+                          sx={{ mb: 1, p: 1.5, position: 'relative', cursor: 'pointer' }}
+                          onClick={() => {
+                            const newNote: NewsletterNote = {
+                              noteId: note.id,
+                              order: selectedNotes.length,
+                              noteData: note,
+                            };
+                            handleAddNote(newNote);
+                          }}
+                        >
+                          <Box>
+                            <Typography variant="body2" fontWeight="medium" noWrap>
+                              {note.title}
+                            </Typography>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(
+                                  note.dateModified || note.dateCreated
+                                ).toLocaleDateString()}
+                              </Typography>
+                              <Chip
+                                size="small"
+                                label={note.templateType}
+                                sx={{ height: 18, fontSize: '0.625rem' }}
+                              />
+                            </Box>
+                          </Box>
+                        </Paper>
+                      ))}
+                  </Box>
+                ) : (
+                  <Paper sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No notes available
+                    </Typography>
+                  </Paper>
+                )}
+              </Box>
+            )}
+
+            {sidebarTab === 'create' && (
+              <Box sx={{ p: 2, height: 'calc(100% - 48px)', overflow: 'auto' }}>
+                <Typography variant="h6" gutterBottom>
+                  Create New Note
+                </Typography>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<Icon icon="mdi:plus" />}
+                  onClick={handleCreateNewNote}
+                  sx={{ mb: 2 }}
+                >
+                  Create Note
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  Create a new note to add to your newsletter. You can use any of the available
+                  templates or start from scratch.
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        )}
 
         {/* Main Content */}
         <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
@@ -1412,20 +1217,156 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
             )}
 
             {activeTab === 'design' && (
-              <DesignTab
-                header={header}
-                footer={footer}
-                setHeader={setHeader}
-                setFooter={setFooter}
-                setOpenHeaderDialog={setOpenHeaderDialog}
-                setOpenFooterDialog={setOpenFooterDialog}
-                availableHeaders={availableHeaders}
-                availableFooters={availableFooters}
-                currentHeaderTemplate={currentHeaderTemplate}
-                setCurrentHeaderTemplate={setCurrentHeaderTemplate}
-                currentFooterTemplate={currentFooterTemplate}
-                setCurrentFooterTemplate={setCurrentFooterTemplate}
-              />
+              <Box>
+                <Paper sx={{ p: 3, mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Header Design
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      mb: 2,
+                    }}
+                  >
+                    <Typography variant="body1">Customize the newsletter header</Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<Icon icon="mdi:pencil" />}
+                      onClick={() => setOpenHeaderDialog(true)}
+                    >
+                      Edit Header
+                    </Button>
+                  </Box>
+
+                  {/* Header Preview */}
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      ...(header.useGradient &&
+                      header.gradientColors &&
+                      header.gradientColors.length >= 2
+                        ? {
+                            background: `linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]})`,
+                          }
+                        : { backgroundColor: header.backgroundColor }),
+                      color: header.textColor,
+                      textAlign: header.alignment as 'left' | 'center' | 'right',
+                      borderRadius: 1,
+                    }}
+                  >
+                    {header.logo && (
+                      <Box sx={{ mb: 1 }}>
+                        <img
+                          src={header.logo || '/placeholder.svg'}
+                          alt="Logo"
+                          style={{ maxHeight: '40px' }}
+                        />
+                      </Box>
+                    )}
+                    <Typography variant="h5" component="div" gutterBottom>
+                      {header.title || title || 'Newsletter Title'}
+                    </Typography>
+                    {header.subtitle && (
+                      <Typography variant="subtitle1" gutterBottom>
+                        {header.subtitle}
+                      </Typography>
+                    )}
+                    {header.bannerImage && (
+                      <Box sx={{ mt: 1 }}>
+                        <img
+                          src={header.bannerImage || '/placeholder.svg'}
+                          alt="Banner"
+                          style={{ maxWidth: '100%' }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                </Paper>
+
+                <Paper sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Footer Design
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      mb: 2,
+                    }}
+                  >
+                    <Typography variant="body1">Customize the newsletter footer</Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<Icon icon="mdi:pencil" />}
+                      onClick={() => setOpenFooterDialog(true)}
+                    >
+                      Edit Footer
+                    </Button>
+                  </Box>
+
+                  {/* Footer Preview */}
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      ...(footer.useGradient &&
+                      footer.gradientColors &&
+                      footer.gradientColors.length >= 2
+                        ? {
+                            background: `linear-gradient(${footer.gradientDirection || 180}deg, ${footer.gradientColors[0]}, ${footer.gradientColors[1]})`,
+                          }
+                        : { backgroundColor: footer.backgroundColor }),
+                      color: footer.textColor,
+                      textAlign: 'center',
+                      borderRadius: 1,
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    <Typography variant="subtitle1" component="div" fontWeight="bold">
+                      {footer.companyName}
+                    </Typography>
+                    {footer.address && <Typography variant="body2">{footer.address}</Typography>}
+                    {footer.contactEmail && (
+                      <Typography variant="body2">
+                        Contact:{' '}
+                        <Box component="span" sx={{ textDecoration: 'underline' }}>
+                          {footer.contactEmail}
+                        </Box>
+                      </Typography>
+                    )}
+
+                    <Box sx={{ mt: 1, mb: 1 }}>
+                      {footer.socialLinks?.map((link, index) => (
+                        <React.Fragment key={link.platform}>
+                          <Box component="span" sx={{ textDecoration: 'underline' }}>
+                            {link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                          </Box>
+                          {index < (footer.socialLinks?.length || 0) - 1 && <span> | </span>}
+                        </React.Fragment>
+                      ))}
+                    </Box>
+
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <Box component="span" sx={{ textDecoration: 'underline' }}>
+                        Unsubscribe
+                      </Box>{' '}
+                      |{' '}
+                      <Box component="span" sx={{ textDecoration: 'underline' }}>
+                        View in browser
+                      </Box>
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      © {new Date().getFullYear()} {footer.companyName}. All rights reserved.
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Box>
             )}
 
             {activeTab === 'preview' && (
@@ -1443,6 +1384,13 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
                     <Box
                       sx={{
                         backgroundColor: header.backgroundColor,
+                        ...(header.useGradient &&
+                        header.gradientColors &&
+                        header.gradientColors.length >= 2
+                          ? {
+                              background: `linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]})`,
+                            }
+                          : {}),
                         color: header.textColor,
                         textAlign: header.alignment as 'left' | 'center' | 'right',
                         p: 3,
@@ -1791,6 +1739,13 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
                     <Box
                       sx={{
                         backgroundColor: footer.backgroundColor,
+                        ...(footer.useGradient &&
+                        footer.gradientColors &&
+                        footer.gradientColors.length >= 2
+                          ? {
+                              background: `linear-gradient(${footer.gradientDirection || 180}deg, ${footer.gradientColors[0]}, ${footer.gradientColors[1]})`,
+                            }
+                          : {}),
                         color: footer.textColor,
                         textAlign: 'center',
                         p: 3,
@@ -1846,12 +1801,10 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
       {/* Note Editor Dialog */}
       <Dialog fullScreen open={openNoteEditor} onClose={() => setOpenNoteEditor(false)}>
         <EmailEditor
-          initialComponents={[]}
-          onSave={(components) => {
-            // Manejar guardado de componentes
-          }}
-          header={header}
-          footer={footer}
+          onClose={() => setOpenNoteEditor(false)}
+          initialNote={editingNote}
+          isNewsletterMode
+          onSave={handleSaveNote}
         />
       </Dialog>
 
@@ -1873,26 +1826,60 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
           </Toolbar>
         </AppBar>
         <Box sx={{ p: 2 }}>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2,
-              maxHeight: '400px',
-              overflow: 'auto',
-              fontFamily: 'monospace',
-              fontSize: '12px',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}
+          <Tabs
+            value={activeHtmlTab || 'preview'}
+            onChange={(e, newValue) => setActiveHtmlTab(newValue)}
           >
-            {generatedHtml}
-          </Paper>
+            <Tab value="preview" label="Vista Previa" />
+            <Tab value="escaped" label="HTML Escapado (AWS SES)" />
+          </Tabs>
+
+          {activeHtmlTab === 'preview' && (
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                mt: 2,
+                maxHeight: '400px',
+                overflow: 'auto',
+                fontFamily: 'monospace',
+                fontSize: '12px',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {generatedHtml}
+            </Paper>
+          )}
+
+          {activeHtmlTab === 'escaped' && (
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                mt: 2,
+                maxHeight: '400px',
+                overflow: 'auto',
+                fontFamily: 'monospace',
+                fontSize: '12px',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
+              {escapedHtml}
+            </Paper>
+          )}
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
             <Button onClick={() => setOpenHtmlPreview(false)} sx={{ mr: 1 }}>
-              Close
+              Cerrar
             </Button>
-            <Button onClick={handleCopyHtml} variant="contained" color="primary">
-              Copy HTML
+            <Button
+              onClick={() => handleCopyHtml(activeHtmlTab === 'escaped')}
+              variant="contained"
+              color="primary"
+            >
+              Copiar HTML {activeHtmlTab === 'escaped' ? 'Escapado' : ''}
             </Button>
           </Box>
         </Box>
@@ -1913,15 +1900,238 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
         maxWidth="md"
         fullWidth
       >
-        <HeaderDialog
-          open={openHeaderDialog}
-          onClose={() => setOpenHeaderDialog(false)}
-          header={header}
-          setHeader={setHeader}
-          availableHeaders={availableHeaders}
-          currentHeaderTemplate={currentHeaderTemplate}
-          setCurrentHeaderTemplate={setCurrentHeaderTemplate}
-        />
+        <DialogTitle>Edit Newsletter Header</DialogTitle>
+        <Box sx={{ px: 3, pb: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Header Title"
+                value={header.title}
+                onChange={(e) => setHeader({ ...header, title: e.target.value })}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Subtitle"
+                value={header.subtitle}
+                onChange={(e) => setHeader({ ...header, subtitle: e.target.value })}
+                margin="normal"
+              />
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Text Alignment
+                </Typography>
+                <Grid container spacing={1}>
+                  <Grid item xs={4}>
+                    <Button
+                      variant={header.alignment === 'left' ? 'contained' : 'outlined'}
+                      fullWidth
+                      onClick={() => setHeader({ ...header, alignment: 'left' })}
+                    >
+                      <Icon icon="mdi:format-align-left" />
+                    </Button>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Button
+                      variant={header.alignment === 'center' ? 'contained' : 'outlined'}
+                      fullWidth
+                      onClick={() => setHeader({ ...header, alignment: 'center' })}
+                    >
+                      <Icon icon="mdi:format-align-center" />
+                    </Button>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Button
+                      variant={header.alignment === 'right' ? 'contained' : 'outlined'}
+                      fullWidth
+                      onClick={() => setHeader({ ...header, alignment: 'right' })}
+                    >
+                      <Icon icon="mdi:format-align-right" />
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="caption" display="block" gutterBottom>
+                    Background
+                  </Typography>
+                  <input
+                    type="color"
+                    value={header.backgroundColor}
+                    onChange={(e) => setHeader({ ...header, backgroundColor: e.target.value })}
+                    style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                  />
+                </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="caption" display="block" gutterBottom>
+                    Text Color
+                  </Typography>
+                  <input
+                    type="color"
+                    value={header.textColor}
+                    onChange={(e) => setHeader({ ...header, textColor: e.target.value })}
+                    style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                  />
+                </Box>
+              </Box>
+
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Gradient Background
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={header.useGradient || false}
+                      onChange={(e) => setHeader({ ...header, useGradient: e.target.checked })}
+                    />
+                  }
+                  label="Enable Gradient"
+                />
+
+                {header.useGradient && (
+                  <>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography variant="caption" display="block" gutterBottom>
+                          Start Color
+                        </Typography>
+                        <input
+                          type="color"
+                          value={header.gradientColors?.[0] || '#3f51b5'}
+                          onChange={(e) => {
+                            const newColors = [
+                              ...(header.gradientColors || ['#3f51b5', '#2196f3']),
+                            ];
+                            newColors[0] = e.target.value;
+                            setHeader({ ...header, gradientColors: newColors });
+                          }}
+                          style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                        />
+                      </Box>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography variant="caption" display="block" gutterBottom>
+                          End Color
+                        </Typography>
+                        <input
+                          type="color"
+                          value={header.gradientColors?.[1] || '#2196f3'}
+                          onChange={(e) => {
+                            const newColors = [
+                              ...(header.gradientColors || ['#3f51b5', '#2196f3']),
+                            ];
+                            newColors[1] = e.target.value;
+                            setHeader({ ...header, gradientColors: newColors });
+                          }}
+                          style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                        />
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Gradient Direction (degrees)
+                      </Typography>
+                      <Box sx={{ px: 1 }}>
+                        <input
+                          type="range"
+                          min="0"
+                          max="360"
+                          step="45"
+                          value={header.gradientDirection || 180}
+                          onChange={(e) =>
+                            setHeader({ ...header, gradientDirection: Number(e.target.value) })
+                          }
+                          style={{ width: '100%' }}
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                          <Typography variant="caption">0°</Typography>
+                          <Typography variant="caption">90°</Typography>
+                          <Typography variant="caption">180°</Typography>
+                          <Typography variant="caption">270°</Typography>
+                          <Typography variant="caption">360°</Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </>
+                )}
+              </Box>
+
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Logo
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Logo URL"
+                    value={header.logo || ''}
+                    onChange={(e) => setHeader({ ...header, logo: e.target.value })}
+                  />
+                  <Button
+                    variant="outlined"
+                    sx={{ ml: 1, minWidth: 'auto' }}
+                    onClick={() => setOpenLogoDialog(true)}
+                  >
+                    <Icon icon="mdi:upload" />
+                  </Button>
+                </Box>
+                {header.logo && (
+                  <Box sx={{ mt: 1, textAlign: 'center' }}>
+                    <img
+                      src={header.logo || '/placeholder.svg'}
+                      alt="Logo"
+                      style={{ maxHeight: '50px' }}
+                    />
+                  </Box>
+                )}
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Banner Image
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Banner Image URL"
+                    value={header.bannerImage || ''}
+                    onChange={(e) => setHeader({ ...header, bannerImage: e.target.value })}
+                  />
+                  <Button
+                    variant="outlined"
+                    sx={{ ml: 1, minWidth: 'auto' }}
+                    onClick={() => setOpenBannerDialog(true)}
+                  >
+                    <Icon icon="mdi:upload" />
+                  </Button>
+                </Box>
+                {header.bannerImage && (
+                  <Box sx={{ mt: 1, textAlign: 'center' }}>
+                    <img
+                      src={header.bannerImage || '/placeholder.svg'}
+                      alt="Banner"
+                      style={{ maxWidth: '100%' }}
+                    />
+                  </Box>
+                )}
+              </Box>
+            </Grid>
+          </Grid>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+            <Button onClick={() => setOpenHeaderDialog(false)} sx={{ mr: 1 }}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={() => setOpenHeaderDialog(false)}>
+              Apply
+            </Button>
+          </Box>
+        </Box>
       </Dialog>
 
       {/* Footer Edit Dialog */}
@@ -1965,148 +2175,177 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Background
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="body2" sx={{ mr: 2 }}>
-                    Use Gradient:
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="caption" display="block" gutterBottom>
+                    Background
                   </Typography>
-                  <Switch
-                    checked={footer.showGradient || false}
-                    onChange={(e) => setFooter({ ...footer, showGradient: e.target.checked })}
+                  <input
+                    type="color"
+                    value={footer.backgroundColor}
+                    onChange={(e) => setFooter({ ...footer, backgroundColor: e.target.value })}
+                    style={{ width: 40, height: 40, padding: 0, border: 'none' }}
                   />
                 </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography variant="caption" display="block" gutterBottom>
+                    Text Color
+                  </Typography>
+                  <input
+                    type="color"
+                    value={footer.textColor}
+                    onChange={(e) => setFooter({ ...footer, textColor: e.target.value })}
+                    style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                  />
+                </Box>
+              </Box>
 
-                {footer.showGradient ? (
-                  <Box sx={{ mt: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="body2" sx={{ width: 100 }}>
-                        Color 1:
-                      </Typography>
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 1,
-                          bgcolor: footer.gradientColors?.[0] || '#4158D0',
-                          mr: 1,
-                          border: '1px solid #ddd',
-                        }}
-                      />
-                      <TextField
-                        size="small"
-                        value={footer.gradientColors?.[0] || '#4158D0'}
-                        onChange={(e) =>
-                          setFooter({
-                            ...footer,
-                            gradientColors: [
-                              e.target.value,
-                              footer.gradientColors?.[1] || '#C850C0',
-                            ],
-                          })
-                        }
-                        sx={{ width: 120 }}
-                      />
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Gradient Background
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={footer.useGradient || false}
+                      onChange={(e) => setFooter({ ...footer, useGradient: e.target.checked })}
+                    />
+                  }
+                  label="Enable Gradient"
+                />
+
+                {footer.useGradient && (
+                  <>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography variant="caption" display="block" gutterBottom>
+                          Start Color
+                        </Typography>
+                        <input
+                          type="color"
+                          value={footer.gradientColors?.[0] || '#f5f5f5'}
+                          onChange={(e) => {
+                            const newColors = [
+                              ...(footer.gradientColors || ['#f5f5f5', '#e0e0e0']),
+                            ];
+                            newColors[0] = e.target.value;
+                            setFooter({ ...footer, gradientColors: newColors });
+                          }}
+                          style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                        />
+                      </Box>
+                      <Box sx={{ textAlign: 'center' }}>
+                        <Typography variant="caption" display="block" gutterBottom>
+                          End Color
+                        </Typography>
+                        <input
+                          type="color"
+                          value={footer.gradientColors?.[1] || '#e0e0e0'}
+                          onChange={(e) => {
+                            const newColors = [
+                              ...(footer.gradientColors || ['#f5f5f5', '#e0e0e0']),
+                            ];
+                            newColors[1] = e.target.value;
+                            setFooter({ ...footer, gradientColors: newColors });
+                          }}
+                          style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                        />
+                      </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography variant="body2" sx={{ width: 100 }}>
-                        Color 2:
+
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Gradient Direction (degrees)
                       </Typography>
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 1,
-                          bgcolor: footer.gradientColors?.[1] || '#C850C0',
-                          mr: 1,
-                          border: '1px solid #ddd',
-                        }}
-                      />
-                      <TextField
-                        size="small"
-                        value={footer.gradientColors?.[1] || '#C850C0'}
-                        onChange={(e) =>
-                          setFooter({
-                            ...footer,
-                            gradientColors: [
-                              footer.gradientColors?.[0] || '#4158D0',
-                              e.target.value,
-                            ],
-                          })
-                        }
-                        sx={{ width: 120 }}
-                      />
+                      <Box sx={{ px: 1 }}>
+                        <input
+                          type="range"
+                          min="0"
+                          max="360"
+                          step="45"
+                          value={footer.gradientDirection || 180}
+                          onChange={(e) =>
+                            setFooter({ ...footer, gradientDirection: Number(e.target.value) })
+                          }
+                          style={{ width: '100%' }}
+                        />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                          <Typography variant="caption">0°</Typography>
+                          <Typography variant="caption">90°</Typography>
+                          <Typography variant="caption">180°</Typography>
+                          <Typography variant="caption">270°</Typography>
+                          <Typography variant="caption">360°</Typography>
+                        </Box>
+                      </Box>
                     </Box>
-                    <Box
-                      sx={{
-                        mt: 2,
-                        height: 40,
-                        borderRadius: 1,
-                        background: `linear-gradient(to right, ${
-                          footer.gradientColors?.[0] || '#4158D0'
-                        }, ${footer.gradientColors?.[1] || '#C850C0'})`,
-                      }}
-                    />
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body2" sx={{ width: 100 }}>
-                      Background:
-                    </Typography>
-                    <Box
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 1,
-                        bgcolor: footer.backgroundColor,
-                        mr: 1,
-                        border: '1px solid #ddd',
-                      }}
-                    />
-                    <TextField
-                      size="small"
-                      value={footer.backgroundColor}
-                      onChange={(e) => setFooter({ ...footer, backgroundColor: e.target.value })}
-                      sx={{ width: 120 }}
-                    />
-                  </Box>
+                  </>
                 )}
               </Box>
 
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Text Color
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 1,
-                      bgcolor: footer.textColor,
-                      mr: 1,
-                      border: '1px solid #ddd',
+              <Typography variant="subtitle2" gutterBottom>
+                Social Links
+              </Typography>
+              {footer.socialLinks?.map((link, index) => (
+                <Box key={index} sx={{ display: 'flex', mb: 1 }}>
+                  <TextField
+                    size="small"
+                    label="Platform"
+                    value={link.platform}
+                    onChange={(e) => {
+                      const newLinks = [...(footer.socialLinks || [])];
+                      newLinks[index] = { ...newLinks[index], platform: e.target.value };
+                      setFooter({ ...footer, socialLinks: newLinks });
                     }}
+                    sx={{ width: '40%' }}
                   />
                   <TextField
                     size="small"
-                    value={footer.textColor}
-                    onChange={(e) => setFooter({ ...footer, textColor: e.target.value })}
-                    sx={{ width: 120 }}
+                    label="URL"
+                    value={link.url}
+                    onChange={(e) => {
+                      const newLinks = [...(footer.socialLinks || [])];
+                      newLinks[index] = { ...newLinks[index], url: e.target.value };
+                      setFooter({ ...footer, socialLinks: newLinks });
+                    }}
+                    sx={{ width: '60%', ml: 1 }}
                   />
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => {
+                      const newLinks = [...(footer.socialLinks || [])];
+                      newLinks.splice(index, 1);
+                      setFooter({ ...footer, socialLinks: newLinks });
+                    }}
+                  >
+                    <Icon icon="mdi:delete" />
+                  </IconButton>
                 </Box>
-              </Box>
+              ))}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Icon icon="mdi:plus" />}
+                onClick={() => {
+                  const newLinks = [...(footer.socialLinks || [])];
+                  newLinks.push({ platform: 'new', url: '#' });
+                  setFooter({ ...footer, socialLinks: newLinks });
+                }}
+                sx={{ mt: 1 }}
+              >
+                Add Social Link
+              </Button>
             </Grid>
           </Grid>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+            <Button onClick={() => setOpenFooterDialog(false)} sx={{ mr: 1 }}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={() => setOpenFooterDialog(false)}>
+              Apply
+            </Button>
+          </Box>
         </Box>
-        <DialogActions>
-          <Button onClick={() => setOpenFooterDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={() => setOpenFooterDialog(false)}>
-            Apply
-          </Button>
-        </DialogActions>
       </Dialog>
 
       {/* Logo Upload Dialog */}

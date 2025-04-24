@@ -25,6 +25,7 @@ export const EmailList: React.FC<EmailListProps> = ({
   const items = component.props.items || ['List item'];
   const listStyle = component.props.listStyle || 'disc';
   const listColor = component.props.listColor || '#000000';
+  const textColor = component.props.textColor || '#000000';
 
   // Determinar si es una lista ordenada
   const isOrderedList =
@@ -144,32 +145,40 @@ export const EmailList: React.FC<EmailListProps> = ({
           }}
         >
           {isOrderedList ? (
-            // Marcador para listas ordenadas - Estilo unificado con círculo y número
+            // Marcador para listas ordenadas (círculo con número/letra dentro)
             <Box
               sx={{
-                minWidth: '24px',
+                minWidth: '30px',
                 mr: 2,
-                backgroundColor: listColor,
-                borderRadius: '50%',
-                color: 'white',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                height: '24px',
-                width: '24px',
-                lineHeight: '24px',
-                textAlign: 'center',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              {getOrderedListMarker(index + 1, listStyle)}
+              <Box
+                sx={{
+                  backgroundColor: listColor,
+                  borderRadius: '50%',
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  height: '24px',
+                  width: '24px',
+                  lineHeight: '24px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {getOrderedListMarker(index + 1, listStyle)}
+              </Box>
             </Box>
           ) : (
-            // Para listas no ordenadas, también usamos círculos para mantener consistencia
+            // Marcador para listas no ordenadas
             <Box
               sx={{
-                minWidth: '24px',
+                minWidth: '30px',
                 mr: 2,
                 display: 'flex',
                 alignItems: 'center',
@@ -183,6 +192,7 @@ export const EmailList: React.FC<EmailListProps> = ({
                     height: '8px',
                     borderRadius: '50%',
                     backgroundColor: listColor,
+                    margin: '8px 0',
                   }}
                 />
               )}
@@ -193,7 +203,7 @@ export const EmailList: React.FC<EmailListProps> = ({
                     height: '8px',
                     borderRadius: '50%',
                     border: `1px solid ${listColor}`,
-                    backgroundColor: 'transparent',
+                    margin: '8px 0',
                   }}
                 />
               )}
@@ -203,8 +213,21 @@ export const EmailList: React.FC<EmailListProps> = ({
                     width: '8px',
                     height: '8px',
                     backgroundColor: listColor,
+                    margin: '8px 0',
                   }}
                 />
+              )}
+              {!['disc', 'circle', 'square'].includes(listStyle) && (
+                <Box
+                  sx={{
+                    fontSize: '18px',
+                    lineHeight: '18px',
+                    color: listColor,
+                    textAlign: 'center',
+                  }}
+                >
+                  &bull;
+                </Box>
               )}
             </Box>
           )}
@@ -213,7 +236,7 @@ export const EmailList: React.FC<EmailListProps> = ({
             <SimpleEditable
               value={item}
               onChange={(newValue) => updateListItem(component.id, index, newValue)}
-              style={{ flexGrow: 1 }}
+              style={{ flexGrow: 1, color: textColor }}
               onKeyDown={(e) => handleKeyDown(e, index)}
               data-list-item={component.id}
             />

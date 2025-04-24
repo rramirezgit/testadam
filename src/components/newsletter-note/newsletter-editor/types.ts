@@ -76,7 +76,7 @@ export interface HeaderTemplate {
     backgroundColor: string;
     textColor: string;
     alignment: string;
-    showGradient: boolean;
+    showGradient?: boolean;
     gradientColors?: string[];
   };
 }
@@ -94,8 +94,6 @@ export interface FooterTemplate {
     unsubscribeLink: string;
     backgroundColor: string;
     textColor: string;
-    showGradient?: boolean;
-    gradientColors?: string[];
   };
 }
 
