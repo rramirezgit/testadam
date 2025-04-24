@@ -212,7 +212,49 @@ export default function LeftPanel({
               <AccordionDetails>
                 <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
                   <Button
-                    onClick={() => addComponent('image')}
+                    onClick={() => {
+                      // Crear un input de tipo file oculto y activarlo
+                      const fileInput = document.createElement('input');
+                      fileInput.type = 'file';
+                      fileInput.accept = 'image/png,image/jpeg,image/jpg,image/webp,image/gif';
+                      fileInput.style.display = 'none';
+
+                      // Cuando se seleccione un archivo
+                      fileInput.onchange = (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        // Verificar el tipo de archivo
+                        const validTypes = [
+                          'image/png',
+                          'image/jpeg',
+                          'image/jpg',
+                          'image/webp',
+                          'image/gif',
+                        ];
+                        if (!validTypes.includes(file.type)) {
+                          alert(
+                            'Tipo de archivo no válido. Por favor selecciona una imagen PNG, JPG, JPEG, WEBP o GIF.'
+                          );
+                          return;
+                        }
+
+                        // Convertir a base64
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const base64String = reader.result as string;
+
+                          // Añadir el componente de imagen con la imagen en base64
+                          addComponent('image', { src: base64String, alt: file.name });
+                        };
+                        reader.readAsDataURL(file);
+                      };
+
+                      // Activar el input
+                      document.body.appendChild(fileInput);
+                      fileInput.click();
+                      document.body.removeChild(fileInput);
+                    }}
                     sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                   >
                     <Icon icon="mdi:image" fontSize="large" />

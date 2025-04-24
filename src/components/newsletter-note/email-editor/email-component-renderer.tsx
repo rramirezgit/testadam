@@ -5,10 +5,13 @@ import type { Editor } from '@tiptap/react';
 import type { EmailComponent } from 'src/types/saved-note';
 
 import { Icon } from '@iconify/react';
+import { useRef, useState } from 'react';
 
 import { Box, Chip, Button, Divider, TextField, Typography, IconButton } from '@mui/material';
 
 import SimpleTipTapEditor from 'src/components/newsletter-note/simple-tiptap-editor';
+
+import IconPicker from './icon-picker';
 
 interface EmailComponentRendererProps {
   component: EmailComponent;
@@ -162,10 +165,80 @@ export default function EmailComponentRenderer({
     return result;
   };
 
+  const ImageComponent = ({ data, onUpdate }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageClick = () => {
+      fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Verificar el tipo de archivo
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        alert(
+          'Tipo de archivo no válido. Por favor selecciona una imagen PNG, JPG, JPEG, WEBP o GIF.'
+        );
+        return;
+      }
+
+      // Convertir a base64
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        onUpdate(component.id, { src: base64String, alt: file.name });
+      };
+      reader.readAsDataURL(file);
+    };
+
+    return (
+      <div className="image-component-wrapper">
+        {data.src ? (
+          <img
+            src={data.src}
+            alt={data.alt || 'Newsletter image'}
+            style={{ maxWidth: '100%', cursor: 'pointer' }}
+            onClick={handleImageClick}
+          />
+        ) : (
+          <div
+            className="image-placeholder"
+            onClick={handleImageClick}
+            style={{
+              border: '2px dashed #ccc',
+              borderRadius: '4px',
+              padding: '20px',
+              textAlign: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            Haz clic para seleccionar una imagen
+          </div>
+        )}
+        <input
+          type="file"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+          onChange={handleFileChange}
+        />
+      </div>
+    );
+  };
+
   switch (component.type) {
     case 'category':
       const categoryColor = component.props?.color || '#4caf50';
       const categoryItems = component.props?.items || [component.content];
+      // Obtener las propiedades de estilo
+      const borderRadius = component.props?.borderRadius || 16;
+      const padding = component.props?.padding || 4;
+      const textColor = component.props?.textColor || 'white';
+      const fontWeight = component.props?.fontWeight || 'bold';
+      const fontSize = component.props?.fontSize || 14;
 
       return (
         <Box
@@ -191,9 +264,31 @@ export default function EmailComponentRenderer({
                     typeof categoryColor === 'string'
                       ? categoryColor
                       : categoryColor[index % categoryColor.length],
-                  color: 'white',
-                  fontWeight: 'bold',
-                  '& .MuiChip-label': { px: 2 },
+                  color: textColor,
+                  fontWeight,
+                  fontSize: `${fontSize}px`,
+                  borderRadius: `${borderRadius}px`,
+                  '& .MuiChip-label': { px: padding * 3, py: padding },
+                  position: 'relative',
+                  cursor: isSelected ? 'pointer' : 'default',
+                  '&:hover': isSelected
+                    ? {
+                        opacity: 0.9,
+                        '&::after': {
+                          content: '"✎"',
+                          position: 'absolute',
+                          right: '8px',
+                          fontSize: '12px',
+                        },
+                      }
+                    : {},
+                }}
+                onClick={(e) => {
+                  if (isSelected) {
+                    e.stopPropagation();
+                    // No necesitamos hacer nada aquí, solo evitar que se propague el evento
+                    // para que el usuario pueda editar en el panel derecho
+                  }
                 }}
               />
             ))}
@@ -228,6 +323,16 @@ export default function EmailComponentRenderer({
               </Button>
             )}
           </Box>
+
+          {isSelected && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', textAlign: 'center', mb: 1 }}
+            >
+              Edita el texto y los colores en el panel derecho →
+            </Typography>
+          )}
         </Box>
       );
 
@@ -282,6 +387,35 @@ export default function EmailComponentRenderer({
       );
 
     case 'summary':
+      const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
+      const iconRef = useRef<HTMLDivElement>(null);
+
+      const handleSelectIcon = (iconName: string) => {
+        updateComponentProps(component.id, { icon: iconName });
+      };
+
+      const iconColor = component.props?.iconColor || '#000000';
+      const iconSize = component.props?.iconSize || 24;
+      const titleColor = component.props?.titleColor || '#000000';
+      const titleFontWeight = component.props?.titleFontWeight || 'normal';
+      const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+
+      // Configuración del gradiente
+      const useGradient = component.props?.useGradient || false;
+      const gradientType = component.props?.gradientType || 'linear';
+      const gradientDirection = component.props?.gradientDirection || 'to right';
+      const gradientColor1 = component.props?.gradientColor1 || '#f5f7fa';
+      const gradientColor2 = component.props?.gradientColor2 || '#c3cfe2';
+
+      const backgroundStyle = useGradient
+        ? {
+            background:
+              gradientType === 'linear'
+                ? `linear-gradient(${gradientDirection}, ${gradientColor1}, ${gradientColor2})`
+                : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`,
+          }
+        : { backgroundColor: component.props?.backgroundColor || '#f5f7fa' };
+
       return (
         <Box
           sx={{
@@ -298,23 +432,43 @@ export default function EmailComponentRenderer({
           {isSelected && <ComponentToolbar />}
           <Box
             sx={{
-              backgroundColor: '#f5f7fa',
               padding: '16px',
-              borderLeft: '4px solid #4caf50',
+              borderLeft: `4px solid ${component.props?.borderColor || '#4caf50'}`,
               borderRadius: '4px',
               mb: 3,
+              ...backgroundStyle,
               ...(component.style || {}),
             }}
           >
             <Typography
               variant="subtitle2"
               gutterBottom
-              sx={{ display: 'flex', alignItems: 'center' }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                color: titleColor,
+                fontWeight: titleFontWeight,
+                fontFamily: titleFontFamily,
+              }}
             >
-              <Icon
-                icon={component.props?.icon || 'mdi:text-box-outline'}
-                style={{ marginRight: 8 }}
-              />
+              <Box
+                ref={iconRef}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mr: 1,
+                }}
+              >
+                <Icon
+                  icon={component.props?.icon || 'mdi:text-box-outline'}
+                  style={{
+                    color: iconColor,
+                    width: iconSize,
+                    height: iconSize,
+                  }}
+                />
+              </Box>
               {component.props?.label || 'Resumen'}
             </Typography>
             <Typography variant="body2">
@@ -326,20 +480,13 @@ export default function EmailComponentRenderer({
               />
             </Typography>
           </Box>
-          {isSelected && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="caption" display="block" gutterBottom>
-                Etiqueta
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                value={component.props?.label || 'Resumen'}
-                onChange={(e) => updateComponentProps(component.id, { label: e.target.value })}
-                sx={{ mb: 2 }}
-              />
-            </Box>
-          )}
+
+          <IconPicker
+            open={isIconPickerOpen}
+            onClose={() => setIsIconPickerOpen(false)}
+            onSelectIcon={handleSelectIcon}
+            currentIcon={component.props?.icon || 'mdi:text-box-outline'}
+          />
         </Box>
       );
 
@@ -647,32 +794,10 @@ export default function EmailComponentRenderer({
         >
           {isSelected && <ComponentToolbar />}
           <Box sx={{ textAlign: 'center', mb: 2, ...(component.style || {}) }}>
-            <img
-              src={component.props?.src || '/placeholder.svg'}
-              alt={component.props?.alt || 'Image'}
-              style={{
-                maxWidth: '100%',
-                height: 'auto',
-                margin: '0 auto',
-                borderRadius: '8px',
-              }}
+            <ImageComponent
+              data={component.props || {}}
+              onUpdate={(id, props) => updateComponentProps(id, props)}
             />
-            {isSelected && (
-              <TextField
-                size="small"
-                placeholder="URL de la imagen"
-                value={component.props?.src || ''}
-                onChange={(e) => updateComponentProps(component.id, { src: e.target.value })}
-                fullWidth
-                margin="normal"
-                sx={{
-                  mt: 1,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                  },
-                }}
-              />
-            )}
           </Box>
         </Box>
       );

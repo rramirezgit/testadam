@@ -57,151 +57,134 @@ export async function generateEmailHtml(
         // Procesar componentes de noticias
         components.forEach((component) => {
           switch (component.type) {
-            case 'category':
-              const categoryColors = Array.isArray(component.props?.color)
-                ? component.props.color
-                : [component.props?.color || '#4caf50'];
-              const categoryItems = component.props?.items || [component.content];
+            case 'heading': {
+              const level = component.props?.level || 2;
+              emailHtml += `<h${level} style="color: #333; margin-bottom: 16px; line-height: 1.3;">${component.content}</h${level}>\n`;
+              break;
+            }
 
-              emailHtml += `<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">\n`;
-              categoryItems.forEach((item, index) => {
-                const itemColor = categoryColors[index % categoryColors.length] || '#4caf50';
-                emailHtml += `<div style="display: inline-block; background-color: ${itemColor}; color: white; padding: 4px 12px; border-radius: 16px; font-size: 14px;">${item}</div>\n`;
-              });
-              emailHtml += `</div>\n`;
+            case 'paragraph': {
+              emailHtml += `<p style="color: #333; font-size: 16px; line-height: 1.6; margin: 16px 0;">${component.content}</p>\n`;
               break;
-            case 'heading':
-              emailHtml += `<h${component.props?.level || 1} style="color: #333; font-size: ${component.props?.level === 1 ? '28px' : '22px'}; margin: 16px 0 20px 0; line-height: 1.3;">${component.content}</h${component.props?.level || 1}>\n`;
+            }
+
+            case 'image': {
+              emailHtml += `<div style="text-align: center; margin: 24px 0;"><img src="${component.props?.src || '/placeholder.svg'}" alt="${component.props?.alt || 'Image'}" style="max-width: 100%; height: auto; border-radius: 8px;"></div>\n`;
               break;
-            case 'author':
-              emailHtml += `<div style="color: #666; font-size: 14px; margin-bottom: 20px;">${component.props?.author ? component.props.author : component.content}${component.props?.date ? ` • ${component.props.date}` : ''}</div>\n`;
+            }
+
+            case 'button': {
+              emailHtml += `<div style="text-align: center; margin: 24px 0;">
+                <a href="#" style="background-color: #4caf50; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; display: inline-block; font-weight: bold;">${component.content}</a>
+              </div>\n`;
               break;
-            case 'summary':
-              emailHtml += `<div style="background-color: #f5f7fa; padding: 16px; border-left: 4px solid #4caf50; margin-bottom: 24px; border-radius: 4px;">
-                <div style="font-weight: bold; margin-bottom: 8px; display: flex; align-items: center;">
+            }
+
+            case 'divider': {
+              emailHtml += `<hr style="border: 0; border-top: 1px solid #eaeaea; margin: 24px 0;">\n`;
+              break;
+            }
+
+            case 'summary': {
+              const summaryBgStyle = component.props?.useGradient
+                ? `background: ${
+                    component.props?.gradientType === 'linear'
+                      ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                      : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                  };`
+                : `background-color: ${component.props?.backgroundColor || '#f5f7fa'};`;
+
+              const iconColor = component.props?.iconColor || '#000000';
+              const iconSize = component.props?.iconSize || '24px';
+              const titleColor = component.props?.titleColor || '#000000';
+              const titleFontWeight = component.props?.titleFontWeight || 'normal';
+              const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+              const borderColor = component.props?.borderColor || '#4caf50';
+
+              emailHtml += `<div style="${summaryBgStyle} padding: 16px; border-left: 4px solid ${borderColor}; margin-bottom: 24px; border-radius: 4px;">
+                <div style="font-weight: ${titleFontWeight}; margin-bottom: 8px; display: flex; align-items: center; color: ${titleColor}; font-family: ${titleFontFamily};">
+                  <img src="https://api.iconify.design/${(component.props?.icon || 'mdi:text-box-outline').replace(':', '/')}.svg?color=${encodeURIComponent(iconColor)}&height=${iconSize}" style="margin-right: 8px;" width="${iconSize}" height="${iconSize}" />
                   ${component.props?.label || 'Resumen'}
                 </div>
                 <div style="color: #444; font-size: 15px;">${component.content}</div>
               </div>\n`;
               break;
-            case 'paragraph':
-              emailHtml += `<p style="color: #333; font-size: 16px; line-height: 1.6; margin: 16px 0;">${component.content}</p>\n`;
+            }
+
+            case 'category': {
+              const categoryColor = component.props?.color || '#4caf50';
+              const categoryItems = component.props?.items || [component.content];
+              // Obtener las propiedades de estilo
+              const borderRadius = component.props?.borderRadius || 16;
+              const padding = component.props?.padding || 4;
+              const textColor = component.props?.textColor || 'white';
+              const fontWeight = component.props?.fontWeight || 'bold';
+              const fontSize = component.props?.fontSize || 14;
+
+              emailHtml += `<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">\n`;
+
+              if (Array.isArray(categoryItems)) {
+                categoryItems.forEach((item, index) => {
+                  const itemColor = Array.isArray(categoryColor)
+                    ? categoryColor[index % categoryColor.length]
+                    : categoryColor;
+
+                  emailHtml += `<span style="display: inline-block; background-color: ${itemColor}; color: ${textColor}; padding: ${padding}px ${padding * 3}px; border-radius: ${borderRadius}px; font-size: ${fontSize}px; font-weight: ${fontWeight};">${item}</span>\n`;
+                });
+              } else {
+                emailHtml += `<span style="display: inline-block; background-color: ${categoryColor}; color: ${textColor}; padding: ${padding}px ${padding * 3}px; border-radius: ${borderRadius}px; font-size: ${fontSize}px; font-weight: ${fontWeight};">${component.content}</span>\n`;
+              }
+
+              emailHtml += `</div>\n`;
               break;
-            case 'image':
-              emailHtml += `<div style="text-align: center; margin: 24px 0;"><img src="${component.props?.src || '/placeholder.svg'}" alt="${component.props?.alt || 'Image'}" style="max-width: 100%; height: auto; border-radius: 8px;"></div>\n`;
-              break;
-            case 'button':
-              emailHtml += `<div style="text-align: center; margin: 24px 0;">
-                <a href="#" style="background-color: #4caf50; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; display: inline-block; font-weight: bold;">${component.content}</a>
+            }
+
+            case 'author': {
+              emailHtml += `<div style="margin-bottom: 24px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: bold; color: #555;">${component.props?.author || 'Author'}</span>
+                ${component.props?.date ? `<span style="color: #777; font-size: 14px;">${component.props.date}</span>` : ''}
+                <span style="color: #777; font-size: 14px;">${component.content}</span>
               </div>\n`;
               break;
-            case 'divider':
-              emailHtml += `<hr style="border: 0; border-top: 1px solid #eaeaea; margin: 24px 0;">\n`;
-              break;
-            case 'bulletList':
+            }
+
+            case 'bulletList': {
               const items = component.props?.items || [];
-              const listStyle = component.props?.listStyle || 'disc';
-              const listColor = component.props?.listColor || '#000000';
-
-              // Determinar si es una lista ordenada
-              const isOrderedList =
-                listStyle === 'decimal' ||
-                listStyle === 'lower-alpha' ||
-                listStyle === 'upper-alpha' ||
-                listStyle === 'lower-roman' ||
-                listStyle === 'upper-roman';
-
-              // Para listas compatibles con email, usamos tablas
-              let listHtml = '';
-
-              items.forEach((item, index) => {
-                if (isOrderedList) {
-                  // Estilo para listas ordenadas con números/letras
-                  const marker = getOrderedListMarker(index + 1, listStyle);
-
-                  // Usar un formato altamente compatible con clientes de email
-                  listHtml += `
-                    <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:12px;">
-                      <tbody>
-                        <tr>
-                          <td width="30" valign="top" style="padding-right:10px;">
-                            <div style="background-color:${listColor};border-radius:50%;color:white;font-size:12px;font-weight:bold;height:24px;width:24px;line-height:24px;text-align:center;">${marker}</div>
-                          </td>
-                          <td valign="top">
-                            <div style="font-size:14px;line-height:24px;margin:0;">${item}</div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  `;
-                } else {
-                  // Estilo para listas no ordenadas con diferentes tipos de viñetas
-                  let bulletHtml = '';
-
-                  // Usar formatos simples y altamente compatibles
-                  if (listStyle === 'disc' || listStyle === 'circle') {
-                    // Círculo sólido o hueco
-                    bulletHtml = `<div style="background-color:${listStyle === 'disc' ? listColor : 'transparent'};border:${listStyle === 'circle' ? `1px solid ${listColor}` : '0'};border-radius:50%;height:8px;width:8px;margin-top:8px;"></div>`;
-                  } else if (listStyle === 'square') {
-                    // Cuadrado
-                    bulletHtml = `<div style="background-color:${listColor};height:8px;width:8px;margin-top:8px;"></div>`;
-                  } else {
-                    // Bullet estándar como fallback
-                    bulletHtml = `<div style="font-size:18px;line-height:18px;color:${listColor};">&bull;</div>`;
-                  }
-
-                  // Usar un formato altamente compatible con clientes de email
-                  listHtml += `
-                    <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:12px;">
-                      <tbody>
-                        <tr>
-                          <td width="30" valign="top" style="padding-right:10px;">
-                            <div style="text-align:center;">${bulletHtml}</div>
-                          </td>
-                          <td valign="top">
-                            <div style="font-size:14px;line-height:24px;margin:0;">${item}</div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  `;
-                }
-              });
-
-              emailHtml += listHtml;
-              break;
-            case 'spacer':
-              emailHtml += `<div style="height: 32px;"></div>\n`;
-              break;
-            case 'gallery':
-              const galleryLayout = component.props?.layout || 'single';
-              const galleryImages = component.props?.images || [];
-
-              if (galleryLayout === 'single' && galleryImages.length > 0) {
-                emailHtml += `<div style="text-align: center; margin: 24px 0;"><img src="${galleryImages[0]?.src || '/placeholder.svg'}" alt="${galleryImages[0]?.alt || 'Gallery image'}" style="max-width: 100%; height: auto; border-radius: 8px;"></div>\n`;
-              } else if (galleryLayout === 'double' && galleryImages.length > 0) {
-                emailHtml += `<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0;"><tr>`;
-                for (let i = 0; i < Math.min(2, galleryImages.length); i++) {
-                  emailHtml += `<td width="50%" style="padding: 0 4px;"><img src="${galleryImages[i]?.src || '/placeholder.svg'}" alt="${galleryImages[i]?.alt || `Gallery image ${i + 1}`}" style="width: 100%; height: auto; border-radius: 8px;"></td>`;
-                }
-                emailHtml += `</tr></table>\n`;
-              } else if (galleryLayout === 'grid' && galleryImages.length > 0) {
-                emailHtml += `<table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0;">`;
-                for (let row = 0; row < 2; row++) {
-                  emailHtml += `<tr>`;
-                  for (let col = 0; col < 2; col++) {
-                    const idx = row * 2 + col;
-                    if (idx < galleryImages.length) {
-                      emailHtml += `<td width="50%" style="padding: 4px;"><img src="${galleryImages[idx]?.src || '/placeholder.svg'}" alt="${galleryImages[idx]?.alt || `Gallery image ${idx + 1}`}" style="width: 100%; height: auto; border-radius: 8px;"></td>`;
-                    } else {
-                      emailHtml += `<td width="50%" style="padding: 4px;"></td>`;
-                    }
-                  }
-                  emailHtml += `</tr>`;
-                }
-                emailHtml += `</table>\n`;
+              if (items.length > 0) {
+                emailHtml += '<ul style="margin: 16px 0; padding-left: 24px;">\n';
+                items.forEach((item) => {
+                  emailHtml += `<li style="margin-bottom: 8px; color: #333;">${item}</li>\n`;
+                });
+                emailHtml += '</ul>\n';
               }
               break;
+            }
+
+            case 'gallery': {
+              const images = component.props?.images || [];
+              if (images.length > 0) {
+                emailHtml +=
+                  '<div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 24px 0;">\n';
+                images.forEach((img) => {
+                  const imgWidth = 100 / Math.min(images.length, 3);
+                  emailHtml += `<div style="flex: 0 0 ${imgWidth}%; max-width: ${imgWidth}%;">
+                    <img src="${img.src}" alt="${img.alt || ''}" style="width: 100%; border-radius: 4px; height: auto;">
+                  </div>\n`;
+                });
+                emailHtml += '</div>\n';
+              }
+              break;
+            }
+
+            case 'spacer': {
+              const height = component.props?.height || 32;
+              emailHtml += `<div style="height: ${height}px;"></div>\n`;
+              break;
+            }
+
+            default: {
+              break;
+            }
           }
         });
 
@@ -244,6 +227,31 @@ export async function generateEmailHtml(
             case 'image':
               emailHtml += `<div style="text-align: center; margin: 20px 0;"><img src="${component.props?.src || '/placeholder.svg'}" alt="${component.props?.alt || 'Image'}" style="max-width: 100%; height: auto;"></div>\n`;
               break;
+            case 'summary': {
+              const summaryBgStyle = component.props?.useGradient
+                ? `background: ${
+                    component.props?.gradientType === 'linear'
+                      ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                      : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                  };`
+                : `background-color: ${component.props?.backgroundColor || '#f5f7fa'};`;
+
+              const iconColor = component.props?.iconColor || '#000000';
+              const iconSize = component.props?.iconSize || '24px';
+              const titleColor = component.props?.titleColor || '#000000';
+              const titleFontWeight = component.props?.titleFontWeight || 'normal';
+              const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+              const borderColor = component.props?.borderColor || '#2754C5';
+
+              emailHtml += `<div style="${summaryBgStyle} padding: 16px; border-left: 4px solid ${borderColor}; margin-bottom: 24px; border-radius: 4px;">
+                <div style="font-weight: ${titleFontWeight}; margin-bottom: 8px; display: flex; align-items: center; color: ${titleColor}; font-family: ${titleFontFamily};">
+                  <img src="https://api.iconify.design/${(component.props?.icon || 'mdi:text-box-outline').replace(':', '/')}.svg?color=${encodeURIComponent(iconColor)}&height=${iconSize}" style="margin-right: 8px;" width="${iconSize}" height="${iconSize}" />
+                  ${component.props?.label || 'Resumen'}
+                </div>
+                <div style="color: #333; font-size: 14px;">${component.content}</div>
+              </div>\n`;
+              break;
+            }
             case 'spacer':
               emailHtml += `<div style="height: 32px;"></div>\n`;
               break;
@@ -294,6 +302,31 @@ export async function generateEmailHtml(
             case 'image':
               emailHtml += `<div style="text-align: center; margin: 20px 0;"><img src="${component.props?.src || '/placeholder.svg'}" alt="${component.props?.alt || 'Image'}" style="max-width: 100%; height: auto;"></div>\n`;
               break;
+            case 'summary': {
+              const summaryBgStyle = component.props?.useGradient
+                ? `background: ${
+                    component.props?.gradientType === 'linear'
+                      ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                      : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                  };`
+                : `background-color: ${component.props?.backgroundColor || '#f5f7fa'};`;
+
+              const iconColor = component.props?.iconColor || '#000000';
+              const iconSize = component.props?.iconSize || '24px';
+              const titleColor = component.props?.titleColor || '#000000';
+              const titleFontWeight = component.props?.titleFontWeight || 'normal';
+              const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+              const borderColor = component.props?.borderColor || '#0a85ea';
+
+              emailHtml += `<tr><td style="padding: 0 20px;"><div style="${summaryBgStyle} padding: 16px; border-left: 4px solid ${borderColor}; margin: 20px 0; border-radius: 4px;">
+                <div style="font-weight: ${titleFontWeight}; margin-bottom: 8px; display: flex; align-items: center; color: ${titleColor}; font-family: ${titleFontFamily};">
+                  <img src="https://api.iconify.design/${(component.props?.icon || 'mdi:text-box-outline').replace(':', '/')}.svg?color=${encodeURIComponent(iconColor)}&height=${iconSize}" style="margin-right: 8px;" width="${iconSize}" height="${iconSize}" />
+                  ${component.props?.label || 'Resumen'}
+                </div>
+                <div style="font-size: 16px; line-height: 1.5; margin: 0;">${component.content}</div>
+              </div></td></tr>\n`;
+              break;
+            }
             case 'spacer':
               emailHtml += `<div style="height: 32px;"></div>\n`;
               break;
@@ -338,6 +371,31 @@ export async function generateEmailHtml(
             case 'image':
               emailHtml += `<div style="text-align: center; margin: 20px 0;"><img src="${component.props?.src || '/placeholder.svg'}" alt="${component.props?.alt || 'Image'}" style="max-width: 100%; height: auto;"></div>\n`;
               break;
+            case 'summary': {
+              const summaryBgStyle = component.props?.useGradient
+                ? `background: ${
+                    component.props?.gradientType === 'linear'
+                      ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                      : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                  };`
+                : `background-color: ${component.props?.backgroundColor || '#f5f7fa'};`;
+
+              const iconColor = component.props?.iconColor || '#000000';
+              const iconSize = component.props?.iconSize || '24px';
+              const titleColor = component.props?.titleColor || '#000000';
+              const titleFontWeight = component.props?.titleFontWeight || 'normal';
+              const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+              const borderColor = component.props?.borderColor || '#656ee8';
+
+              emailHtml += `<div style="${summaryBgStyle} padding: 16px; border-left: 4px solid ${borderColor}; margin-bottom: 24px; border-radius: 4px;">
+                <div style="font-weight: ${titleFontWeight}; margin-bottom: 8px; display: flex; align-items: center; color: ${titleColor}; font-family: ${titleFontFamily};">
+                  <img src="https://api.iconify.design/${(component.props?.icon || 'mdi:text-box-outline').replace(':', '/')}.svg?color=${encodeURIComponent(iconColor)}&height=${iconSize}" style="margin-right: 8px;" width="${iconSize}" height="${iconSize}" />
+                  ${component.props?.label || 'Resumen'}
+                </div>
+                <div style="color: #525f7f; font-size: 16px; line-height: 24px; text-align: left;">${component.content}</div>
+              </div>\n`;
+              break;
+            }
             case 'spacer':
               emailHtml += `<div style="height: 32px;"></div>\n`;
               break;
@@ -397,6 +455,31 @@ You received this email because you're a Stripe user.
             case 'image':
               emailHtml += `<tr><td style="padding: 20px; text-align: center;"><img src="${component.props?.src || '/placeholder.svg'}" alt="${component.props?.alt || 'Image'}" style="max-width: 100%; height: auto;"></td></tr>\n`;
               break;
+            case 'summary': {
+              const summaryBgStyle = component.props?.useGradient
+                ? `background: ${
+                    component.props?.gradientType === 'linear'
+                      ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                      : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                  };`
+                : `background-color: ${component.props?.backgroundColor || '#f5f7fa'};`;
+
+              const iconColor = component.props?.iconColor || '#000000';
+              const iconSize = component.props?.iconSize || '24px';
+              const titleColor = component.props?.titleColor || '#000000';
+              const titleFontWeight = component.props?.titleFontWeight || 'normal';
+              const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+              const borderColor = component.props?.borderColor || '#000000';
+
+              emailHtml += `<tr><td style="padding: 0 20px;"><div style="${summaryBgStyle} padding: 16px; border-left: 4px solid ${borderColor}; margin: 20px 0; border-radius: 4px;">
+                <div style="font-weight: ${titleFontWeight}; margin-bottom: 8px; display: flex; align-items: center; color: ${titleColor}; font-family: ${titleFontFamily};">
+                  <img src="https://api.iconify.design/${(component.props?.icon || 'mdi:text-box-outline').replace(':', '/')}.svg?color=${encodeURIComponent(iconColor)}&height=${iconSize}" style="margin-right: 8px;" width="${iconSize}" height="${iconSize}" />
+                  ${component.props?.label || 'Resumen'}
+                </div>
+                <div style="font-size: 16px; line-height: 1.5; margin: 0;">${component.content}</div>
+              </div></td></tr>\n`;
+              break;
+            }
             case 'spacer':
               emailHtml += `<tr><td style="height: 32px;"></td></tr>\n`;
               break;

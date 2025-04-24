@@ -13,6 +13,7 @@ import { useStore } from 'src/lib/store';
 
 import LeftPanel from './left-panel';
 import RightPanel from './right-panel';
+import IconPicker from './icon-picker';
 import EditorHeader from './editor-header';
 import EmailContent from './email-content';
 import { CustomDialog } from './ui/custom-dialog';
@@ -665,6 +666,12 @@ export default function EmailEditor({
     }
   };
 
+  // Estado para controlar el selector de iconos
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [hasTextSelection, setHasTextSelection] = useState(false);
+  const [listStyle, setListStyle] = useState<string>('disc');
+  const [listColor, setListColor] = useState('#000000');
+
   return (
     <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
       {/* Barra de navegación superior */}
@@ -757,6 +764,12 @@ export default function EmailEditor({
           setGradientColors={setGradientColors}
           bannerOptions={bannerOptions}
           hasTextSelection={!!activeEditor && activeEditor.isActive('textStyle')}
+          listStyle={listStyle}
+          updateListStyle={setListStyle}
+          listColor={listColor}
+          updateListColor={setListColor}
+          convertTextToList={() => {}}
+          setShowIconPicker={setShowIconPicker}
         />
       </Box>
 
@@ -835,6 +848,25 @@ export default function EmailEditor({
           fullWidth
         />
       </CustomDialog>
+
+      {/* IconPicker dialog */}
+      {selectedComponentId && (
+        <IconPicker
+          open={showIconPicker}
+          onClose={() => setShowIconPicker(false)}
+          onSelectIcon={(iconName) => {
+            const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
+            if (component && component.type === 'summary') {
+              updateComponentProps(selectedComponentId, { icon: iconName });
+            }
+            setShowIconPicker(false);
+          }}
+          currentIcon={
+            getActiveComponents().find((comp) => comp.id === selectedComponentId)?.props?.icon ||
+            'mdi:text-box-outline'
+          }
+        />
+      )}
     </Box>
   );
 }

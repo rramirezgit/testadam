@@ -13,6 +13,7 @@ import { useStore } from 'src/lib/store';
 
 import LeftPanel from './left-panel';
 import RightPanel from './right-panel';
+import IconPicker from './icon-picker';
 import EditorHeader from './editor-header';
 import EmailContent from './email-content';
 import { CustomDialog } from './ui/custom-dialog';
@@ -143,6 +144,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     | 'upper-roman'
   >('disc');
   const [listColor, setListColor] = useState('#000000');
+
+  // Estado para el selector de iconos
+  const [showIconPicker, setShowIconPicker] = useState(false);
 
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = () => {
@@ -1018,6 +1022,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           listColor={listColor}
           updateListColor={updateListColor}
           convertTextToList={convertTextToList}
+          setShowIconPicker={setShowIconPicker}
         />
       </Box>
 
@@ -1096,6 +1101,25 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           fullWidth
         />
       </CustomDialog>
+
+      {/* IconPicker dialog */}
+      {selectedComponentId && (
+        <IconPicker
+          open={showIconPicker}
+          onClose={() => setShowIconPicker(false)}
+          onSelectIcon={(iconName) => {
+            const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
+            if (component && component.type === 'summary') {
+              updateComponentProps(selectedComponentId, { icon: iconName });
+            }
+            setShowIconPicker(false);
+          }}
+          currentIcon={
+            getActiveComponents().find((comp) => comp.id === selectedComponentId)?.props?.icon ||
+            'mdi:text-box-outline'
+          }
+        />
+      )}
     </Box>
   );
 };

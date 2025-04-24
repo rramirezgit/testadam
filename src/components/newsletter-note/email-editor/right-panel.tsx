@@ -15,7 +15,9 @@ import {
   AppBar,
   Button,
   Select,
+  Switch,
   Toolbar,
+  Divider,
   MenuItem,
   TextField,
   Typography,
@@ -23,6 +25,7 @@ import {
   InputLabel,
   FormControl,
   ToggleButton,
+  FormControlLabel,
   ToggleButtonGroup,
 } from '@mui/material';
 
@@ -67,7 +70,118 @@ interface RightPanelProps {
   listColor?: string;
   updateListColor: (listId: string, color: string) => void;
   convertTextToList: (componentId: string | null, listType: 'ordered' | 'unordered') => void;
+  setShowIconPicker: (show: boolean) => void;
 }
+
+// Componente para opciones de estilo de lista (extraído fuera del componente principal)
+const ListStyleOptions = ({
+  selectedComponentId,
+  listStyle,
+  updateListStyle,
+  listColor,
+  updateListColor,
+}: {
+  selectedComponentId: string | null;
+  listStyle?: string;
+  updateListStyle: (listId: string, listStyleType: string) => void;
+  listColor?: string;
+  updateListColor: (listId: string, color: string) => void;
+}) => {
+  if (!selectedComponentId) return null;
+
+  // Determinar si es una lista ordenada
+  const isOrderedList =
+    listStyle === 'decimal' ||
+    listStyle === 'lower-alpha' ||
+    listStyle === 'upper-alpha' ||
+    listStyle === 'lower-roman' ||
+    listStyle === 'upper-roman';
+
+  // Opciones para listas no ordenadas
+  const unorderedListOptions = [
+    { value: 'disc', label: 'Punto (•)' },
+    { value: 'circle', label: 'Círculo (○)' },
+    { value: 'square', label: 'Cuadrado (■)' },
+  ];
+
+  // Opciones para listas ordenadas
+  const orderedListOptions = [
+    { value: 'decimal', label: 'Números (1, 2, 3)' },
+    { value: 'lower-alpha', label: 'Letras minúsculas (a, b, c)' },
+    { value: 'upper-alpha', label: 'Letras mayúsculas (A, B, C)' },
+    { value: 'lower-roman', label: 'Números romanos minúsculos (i, ii, iii)' },
+    { value: 'upper-roman', label: 'Números romanos mayúsculos (I, II, III)' },
+  ];
+
+  return (
+    <Box sx={{ mt: 2 }}>
+      <Typography variant="subtitle2" gutterBottom>
+        Tipo de Estilo de Lista
+      </Typography>
+      <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+        <InputLabel id="list-type-label">Tipo de Lista</InputLabel>
+        <Select
+          labelId="list-type-label"
+          id="list-type"
+          value={isOrderedList ? 'ordered' : 'unordered'}
+          label="Tipo de Lista"
+          onChange={(e) => {
+            if (e.target.value === 'ordered' && selectedComponentId) {
+              updateListStyle(selectedComponentId, 'decimal');
+            } else if (e.target.value === 'unordered' && selectedComponentId) {
+              updateListStyle(selectedComponentId, 'disc');
+            }
+          }}
+        >
+          <MenuItem value="unordered">Lista con viñetas</MenuItem>
+          <MenuItem value="ordered">Lista numerada</MenuItem>
+        </Select>
+      </FormControl>
+
+      <Typography variant="subtitle2" gutterBottom>
+        Estilo de viñeta
+      </Typography>
+      <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+        <InputLabel id="bullet-style-label">Estilo de Viñeta</InputLabel>
+        <Select
+          labelId="bullet-style-label"
+          id="bullet-style"
+          value={listStyle}
+          label="Estilo de Viñeta"
+          onChange={(e) => {
+            if (selectedComponentId) {
+              updateListStyle(selectedComponentId, e.target.value);
+            }
+          }}
+        >
+          {isOrderedList
+            ? orderedListOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))
+            : unorderedListOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+        </Select>
+      </FormControl>
+
+      <Typography variant="subtitle2" gutterBottom>
+        Color
+      </Typography>
+      <TextColorPicker
+        selectedColor={listColor || '#000000'}
+        applyTextColor={(color) => {
+          if (selectedComponentId) {
+            updateListColor(selectedComponentId, color);
+          }
+        }}
+      />
+    </Box>
+  );
+};
 
 export default function RightPanel({
   selectedComponentId,
@@ -108,6 +222,7 @@ export default function RightPanel({
   listColor,
   updateListColor,
   convertTextToList,
+  setShowIconPicker,
 }: RightPanelProps) {
   // Si no hay componente seleccionado, mostrar un mensaje
   const renderEmptyState = () => (
@@ -157,16 +272,36 @@ export default function RightPanel({
   const renderImageOptions = () => (
     <>
       <Typography variant="subtitle2" gutterBottom>
-        URL de la imagen
+        Vista previa
       </Typography>
-      <TextField
-        fullWidth
-        size="small"
-        placeholder="URL de la imagen"
-        value={selectedComponent.props?.src || ''}
-        onChange={(e) => updateComponentProps(selectedComponentId!, { src: e.target.value })}
-        sx={{ mb: 3 }}
-      />
+      <Box sx={{ mb: 3, textAlign: 'center' }}>
+        {selectedComponent.props?.src ? (
+          <img
+            src={selectedComponent.props.src}
+            alt={selectedComponent.props.alt || 'Vista previa'}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '200px',
+              border: '1px solid #e0e0e0',
+              borderRadius: '4px',
+            }}
+          />
+        ) : (
+          <Box
+            sx={{
+              height: '100px',
+              border: '2px dashed #ccc',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'text.secondary',
+            }}
+          >
+            No hay imagen seleccionada
+          </Box>
+        )}
+      </Box>
 
       <Typography variant="subtitle2" gutterBottom>
         Texto alternativo
@@ -228,6 +363,34 @@ export default function RightPanel({
         >
           <Icon icon="mdi:format-align-right" />
         </IconButton>
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          fullWidth
+          startIcon={<Icon icon="mdi:content-save" />}
+          onClick={() => {
+            // Aquí iría la lógica para guardar la imagen en el backend
+            alert('Imagen guardada en formato base64');
+          }}
+        >
+          Guardar imagen
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="error"
+          fullWidth
+          startIcon={<Icon icon="mdi:delete" />}
+          onClick={() => {
+            // Eliminar la imagen
+            updateComponentProps(selectedComponentId!, { src: '' });
+          }}
+        >
+          Eliminar
+        </Button>
       </Box>
     </>
   );
@@ -994,113 +1157,463 @@ export default function RightPanel({
     </>
   );
 
-  // Añadir un nuevo componente para las opciones de lista
-  const ListStyleOptions = ({
-    selectedComponentId,
-    listStyle,
-    updateListStyle,
-    listColor,
-    updateListColor,
-  }: {
-    selectedComponentId: string | null;
-    listStyle?: string;
-    updateListStyle: (listId: string, listStyleType: string) => void;
-    listColor?: string;
-    updateListColor: (listId: string, color: string) => void;
-  }) => {
-    if (!selectedComponentId) return null;
-
-    // Determinar si es una lista ordenada
-    const isOrderedList =
-      listStyle === 'decimal' ||
-      listStyle === 'lower-alpha' ||
-      listStyle === 'upper-alpha' ||
-      listStyle === 'lower-roman' ||
-      listStyle === 'upper-roman';
-
-    // Opciones para listas no ordenadas
-    const unorderedListOptions = [
-      { value: 'disc', label: 'Punto (•)' },
-      { value: 'circle', label: 'Círculo (○)' },
-      { value: 'square', label: 'Cuadrado (■)' },
-    ];
-
-    // Opciones para listas ordenadas
-    const orderedListOptions = [
-      { value: 'decimal', label: 'Números (1, 2, 3)' },
-      { value: 'lower-alpha', label: 'Letras minúsculas (a, b, c)' },
-      { value: 'upper-alpha', label: 'Letras mayúsculas (A, B, C)' },
-      { value: 'lower-roman', label: 'Números romanos minúsculos (i, ii, iii)' },
-      { value: 'upper-roman', label: 'Números romanos mayúsculos (I, II, III)' },
-    ];
-
-    // Opciones a mostrar según el tipo de lista
-    const listStyleOptions = isOrderedList ? orderedListOptions : unorderedListOptions;
-
-    // Botón para cambiar entre lista ordenada y no ordenada
-    const toggleListType = () => {
-      if (isOrderedList) {
-        // Cambiar a lista no ordenada
-        updateListStyle(selectedComponentId, 'disc');
-      } else {
-        // Cambiar a lista ordenada
-        updateListStyle(selectedComponentId, 'decimal');
-      }
-    };
+  // Renderizar las opciones específicas para el componente summary
+  const renderSummaryOptions = () => {
+    const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
+    if (!component) return null;
 
     return (
-      <Box sx={{ mt: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Typography variant="subtitle2">Estilo de lista</Typography>
-          <Button
+      <Box sx={{ p: 2 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Configuración del resumen
+        </Typography>
+
+        <Typography variant="subtitle2" gutterBottom>
+          Etiqueta
+        </Typography>
+        <TextField
+          fullWidth
+          size="small"
+          value={component.props?.label || 'Resumen'}
+          onChange={(e) => updateComponentProps(selectedComponentId!, { label: e.target.value })}
+          sx={{ mb: 3 }}
+        />
+
+        <Typography variant="subtitle2" gutterBottom>
+          Color del borde
+        </Typography>
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+            {['#4caf50', '#2196f3', '#f44336', '#ff9800', '#9c27b0', '#607d8b', '#000000'].map(
+              (color) => (
+                <IconButton
+                  key={color}
+                  onClick={() => updateComponentProps(selectedComponentId!, { borderColor: color })}
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: color,
+                    border: '1px solid #ddd',
+                    '&:hover': { backgroundColor: color, opacity: 0.9 },
+                  }}
+                />
+              )
+            )}
+          </Box>
+          <TextField
+            type="color"
+            fullWidth
             size="small"
-            onClick={toggleListType}
-            startIcon={
-              <Icon
-                icon={isOrderedList ? 'mdi:format-list-bulleted' : 'mdi:format-list-numbered'}
-              />
+            value={component.props?.borderColor || '#4caf50'}
+            onChange={(e) =>
+              updateComponentProps(selectedComponentId!, { borderColor: e.target.value })
             }
+          />
+        </Box>
+
+        <Typography variant="subtitle2" gutterBottom>
+          Icono
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Box
+            sx={{
+              mr: 2,
+              p: 1,
+              border: '1px solid #ddd',
+              borderRadius: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 40,
+              height: 40,
+            }}
           >
-            Cambiar a {isOrderedList ? 'viñetas' : 'números'}
+            <Icon icon={component.props?.icon || 'mdi:text-box-outline'} />
+          </Box>
+          <Button variant="outlined" size="small" onClick={() => setShowIconPicker(true)}>
+            Cambiar icono
           </Button>
         </Box>
 
-        <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-          <InputLabel>Tipo de {isOrderedList ? 'numeración' : 'viñeta'}</InputLabel>
-          <Select
-            value={listStyle || (isOrderedList ? 'decimal' : 'disc')}
-            onChange={(e) => updateListStyle(selectedComponentId, e.target.value)}
-            label={`Tipo de ${isOrderedList ? 'numeración' : 'viñeta'}`}
-          >
-            {listStyleOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <Typography variant="subtitle2" gutterBottom>
+          Color del icono
+        </Typography>
+        <TextField
+          type="color"
+          fullWidth
+          size="small"
+          value={component.props?.iconColor || '#000000'}
+          onChange={(e) =>
+            updateComponentProps(selectedComponentId!, { iconColor: e.target.value })
+          }
+          sx={{ mb: 3 }}
+        />
 
         <Typography variant="subtitle2" gutterBottom>
-          Color de {isOrderedList ? 'números' : 'viñetas'}
+          Tamaño del icono
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Box
-            sx={{
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              backgroundColor: listColor || '#000000',
-              mr: 1,
-              border: '1px solid #ddd',
-            }}
-          />
-          <input
+        <TextField
+          type="number"
+          fullWidth
+          size="small"
+          InputProps={{
+            inputProps: { min: 16, max: 48 },
+            endAdornment: <Typography variant="caption">px</Typography>,
+          }}
+          value={component.props?.iconSize || 24}
+          onChange={(e) =>
+            updateComponentProps(selectedComponentId!, { iconSize: Number(e.target.value) })
+          }
+          sx={{ mb: 3 }}
+        />
+
+        <Typography variant="subtitle2" gutterBottom>
+          Título
+        </Typography>
+        <Box sx={{ mb: 3 }}>
+          <TextField
             type="color"
-            value={listColor || '#000000'}
-            onChange={(e) => updateListColor(selectedComponentId, e.target.value)}
-            style={{ width: '100%' }}
+            fullWidth
+            size="small"
+            label="Color del título"
+            value={component.props?.titleColor || '#000000'}
+            onChange={(e) =>
+              updateComponentProps(selectedComponentId!, { titleColor: e.target.value })
+            }
+            sx={{ mb: 2 }}
           />
+
+          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+            <InputLabel id="font-weight-label">Grosor del título</InputLabel>
+            <Select
+              labelId="font-weight-label"
+              value={component.props?.titleFontWeight || 'normal'}
+              label="Grosor del título"
+              onChange={(e) =>
+                updateComponentProps(selectedComponentId!, { titleFontWeight: e.target.value })
+              }
+            >
+              <MenuItem value="normal">Normal</MenuItem>
+              <MenuItem value="bold">Negrita</MenuItem>
+              <MenuItem value="lighter">Fino</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small">
+            <InputLabel id="font-family-label">Fuente del título</InputLabel>
+            <Select
+              labelId="font-family-label"
+              value={component.props?.titleFontFamily || 'inherit'}
+              label="Fuente del título"
+              onChange={(e) =>
+                updateComponentProps(selectedComponentId!, { titleFontFamily: e.target.value })
+              }
+            >
+              <MenuItem value="inherit">Por defecto</MenuItem>
+              <MenuItem value="'Roboto', sans-serif">Roboto</MenuItem>
+              <MenuItem value="'Playfair Display', serif">Playfair Display</MenuItem>
+              <MenuItem value="'Montserrat', sans-serif">Montserrat</MenuItem>
+              <MenuItem value="'Open Sans', sans-serif">Open Sans</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
+
+        <Typography variant="subtitle2" gutterBottom>
+          Fondo
+        </Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={component.props?.useGradient || false}
+              onChange={(e) =>
+                updateComponentProps(selectedComponentId!, { useGradient: e.target.checked })
+              }
+            />
+          }
+          label="Usar gradiente"
+          sx={{ mb: 2 }}
+        />
+
+        {component.props?.useGradient ? (
+          <>
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <InputLabel id="gradient-type-label">Tipo de gradiente</InputLabel>
+              <Select
+                labelId="gradient-type-label"
+                value={component.props?.gradientType || 'linear'}
+                label="Tipo de gradiente"
+                onChange={(e) =>
+                  updateComponentProps(selectedComponentId!, { gradientType: e.target.value })
+                }
+              >
+                <MenuItem value="linear">Lineal</MenuItem>
+                <MenuItem value="radial">Radial</MenuItem>
+              </Select>
+            </FormControl>
+
+            {component.props?.gradientType === 'linear' && (
+              <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                <InputLabel id="gradient-direction-label">Dirección</InputLabel>
+                <Select
+                  labelId="gradient-direction-label"
+                  value={component.props?.gradientDirection || 'to right'}
+                  label="Dirección"
+                  onChange={(e) =>
+                    updateComponentProps(selectedComponentId!, {
+                      gradientDirection: e.target.value,
+                    })
+                  }
+                >
+                  <MenuItem value="to right">Hacia la derecha</MenuItem>
+                  <MenuItem value="to left">Hacia la izquierda</MenuItem>
+                  <MenuItem value="to bottom">Hacia abajo</MenuItem>
+                  <MenuItem value="to top">Hacia arriba</MenuItem>
+                  <MenuItem value="to bottom right">Hacia abajo-derecha</MenuItem>
+                  <MenuItem value="to bottom left">Hacia abajo-izquierda</MenuItem>
+                  <MenuItem value="to top right">Hacia arriba-derecha</MenuItem>
+                  <MenuItem value="to top left">Hacia arriba-izquierda</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+
+            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+              <TextField
+                type="color"
+                fullWidth
+                size="small"
+                label="Color 1"
+                value={component.props?.gradientColor1 || '#f5f7fa'}
+                onChange={(e) =>
+                  updateComponentProps(selectedComponentId!, { gradientColor1: e.target.value })
+                }
+              />
+              <TextField
+                type="color"
+                fullWidth
+                size="small"
+                label="Color 2"
+                value={component.props?.gradientColor2 || '#c3cfe2'}
+                onChange={(e) =>
+                  updateComponentProps(selectedComponentId!, { gradientColor2: e.target.value })
+                }
+              />
+            </Box>
+          </>
+        ) : (
+          <TextField
+            type="color"
+            fullWidth
+            size="small"
+            label="Color de fondo"
+            value={component.props?.backgroundColor || '#f5f7fa'}
+            onChange={(e) =>
+              updateComponentProps(selectedComponentId!, { backgroundColor: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+        )}
+      </Box>
+    );
+  };
+
+  // Renderizar opciones para componentes de categoría
+  const renderCategoryOptions = () => {
+    if (!selectedComponentId) return null;
+
+    const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
+    if (!component || component.type !== 'category') return null;
+
+    const categoryItems = component.props?.items || [component.content];
+    const categoryColors = Array.isArray(component.props?.color)
+      ? component.props.color
+      : [component.props?.color || '#4caf50'];
+
+    // Propiedades de estilo
+    const borderRadius = component.props?.borderRadius || 16;
+    const padding = component.props?.padding || 4;
+    const textColor = component.props?.textColor || 'white';
+    const fontWeight = component.props?.fontWeight || 'bold';
+    const fontSize = component.props?.fontSize || 14;
+
+    return (
+      <Box sx={{ p: 2 }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Categorías
+        </Typography>
+
+        {categoryItems.map((item, index) => (
+          <Box key={index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: '4px' }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Categoría {index + 1}
+            </Typography>
+
+            <TextField
+              fullWidth
+              size="small"
+              label="Texto"
+              value={item}
+              onChange={(e) => {
+                const newItems = [...categoryItems];
+                newItems[index] = e.target.value;
+                updateComponentProps(selectedComponentId, { items: newItems });
+              }}
+              sx={{ mb: 2 }}
+            />
+
+            <TextField
+              type="color"
+              fullWidth
+              size="small"
+              label="Color de fondo"
+              value={categoryColors[index] || '#4caf50'}
+              onChange={(e) => {
+                const newColors = [...categoryColors];
+                newColors[index] = e.target.value;
+                updateComponentProps(selectedComponentId, { color: newColors });
+              }}
+              sx={{ mb: 1 }}
+            />
+          </Box>
+        ))}
+
+        {categoryItems.length < 5 && (
+          <Button
+            variant="outlined"
+            fullWidth
+            startIcon={<Icon icon="mdi:plus" />}
+            onClick={() => {
+              const newItems = [...categoryItems, 'Nueva categoría'];
+              const newColors = [...categoryColors, '#2196f3'];
+              updateComponentProps(selectedComponentId, {
+                items: newItems,
+                color: newColors,
+              });
+            }}
+            sx={{ mb: 2 }}
+          >
+            Añadir categoría
+          </Button>
+        )}
+
+        {categoryItems.length > 1 && (
+          <Button
+            variant="outlined"
+            color="error"
+            fullWidth
+            startIcon={<Icon icon="mdi:minus" />}
+            onClick={() => {
+              const newItems = categoryItems.slice(0, -1);
+              const newColors = categoryColors.slice(0, -1);
+              updateComponentProps(selectedComponentId, {
+                items: newItems,
+                color: newColors,
+              });
+            }}
+            sx={{ mb: 3 }}
+          >
+            Eliminar última categoría
+          </Button>
+        )}
+
+        <Divider sx={{ mb: 2 }} />
+
+        <Typography variant="subtitle1" gutterBottom>
+          Estilo de Categorías
+        </Typography>
+
+        <Typography variant="subtitle2" gutterBottom>
+          Bordes redondeados
+        </Typography>
+        <TextField
+          type="number"
+          fullWidth
+          size="small"
+          InputProps={{
+            inputProps: { min: 0, max: 50 },
+            endAdornment: <Typography variant="caption">px</Typography>,
+          }}
+          value={borderRadius}
+          onChange={(e) =>
+            updateComponentProps(selectedComponentId, {
+              borderRadius: Number(e.target.value),
+            })
+          }
+          sx={{ mb: 2 }}
+        />
+
+        <Typography variant="subtitle2" gutterBottom>
+          Relleno interno
+        </Typography>
+        <TextField
+          type="number"
+          fullWidth
+          size="small"
+          InputProps={{
+            inputProps: { min: 0, max: 20 },
+            endAdornment: <Typography variant="caption">px</Typography>,
+          }}
+          value={padding}
+          onChange={(e) =>
+            updateComponentProps(selectedComponentId, {
+              padding: Number(e.target.value),
+            })
+          }
+          sx={{ mb: 2 }}
+        />
+
+        <Typography variant="subtitle2" gutterBottom>
+          Color del texto
+        </Typography>
+        <TextField
+          type="color"
+          fullWidth
+          size="small"
+          value={textColor}
+          onChange={(e) =>
+            updateComponentProps(selectedComponentId, {
+              textColor: e.target.value,
+            })
+          }
+          sx={{ mb: 2 }}
+        />
+
+        <Typography variant="subtitle2" gutterBottom>
+          Tamaño de fuente
+        </Typography>
+        <TextField
+          type="number"
+          fullWidth
+          size="small"
+          InputProps={{
+            inputProps: { min: 10, max: 24 },
+            endAdornment: <Typography variant="caption">px</Typography>,
+          }}
+          value={fontSize}
+          onChange={(e) =>
+            updateComponentProps(selectedComponentId, {
+              fontSize: Number(e.target.value),
+            })
+          }
+          sx={{ mb: 2 }}
+        />
+
+        <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+          <InputLabel id="font-weight-label">Grosor de fuente</InputLabel>
+          <Select
+            labelId="font-weight-label"
+            value={fontWeight}
+            label="Grosor de fuente"
+            onChange={(e) =>
+              updateComponentProps(selectedComponentId, {
+                fontWeight: e.target.value,
+              })
+            }
+          >
+            <MenuItem value="normal">Normal</MenuItem>
+            <MenuItem value="bold">Negrita</MenuItem>
+            <MenuItem value="lighter">Fino</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
     );
   };
@@ -1109,7 +1622,6 @@ export default function RightPanel({
     <Box
       sx={{
         width: 280,
-        maxWidth: 280,
         borderLeft: '1px solid #e0e0e0',
         display: 'flex',
         flexDirection: 'column',
@@ -1127,7 +1639,8 @@ export default function RightPanel({
       <Tabs
         value={rightPanelTab}
         onChange={(e, newValue) => setRightPanelTab(newValue)}
-        variant="fullWidth"
+        variant="scrollable"
+        scrollButtons="auto"
         sx={{ borderBottom: 1, borderColor: 'divider' }}
       >
         <Tab
@@ -1138,19 +1651,25 @@ export default function RightPanel({
                 ? 'Botón'
                 : componentType === 'gallery'
                   ? 'Galería'
-                  : 'Tipografía'
+                  : componentType === 'summary'
+                    ? 'Texto'
+                    : componentType === 'category'
+                      ? 'Categorías'
+                      : 'Tipografía'
           }
         />
+        {componentType === 'summary' && <Tab label="Summary" />}
         <Tab label="Diseño" />
         <Tab label="Fondo" />
       </Tabs>
 
-      <Box sx={{ p: 2, overflow: 'auto' }}>
+      <Box sx={{ overflow: 'auto' }}>
         {rightPanelTab === 0 && (
           <>
             {componentType === 'image' && renderImageOptions()}
             {componentType === 'gallery' && renderGalleryOptions()}
             {componentType === 'button' && renderButtonOptions()}
+            {componentType === 'category' && renderCategoryOptions()}
             {(componentType === 'heading' ||
               componentType === 'paragraph' ||
               componentType === 'bulletList' ||
@@ -1159,8 +1678,9 @@ export default function RightPanel({
           </>
         )}
 
-        {rightPanelTab === 1 && renderDesignOptions()}
-        {rightPanelTab === 2 && renderBackgroundOptions()}
+        {rightPanelTab === 1 && componentType === 'summary' && renderSummaryOptions()}
+        {rightPanelTab === (componentType === 'summary' ? 2 : 1) && renderDesignOptions()}
+        {rightPanelTab === (componentType === 'summary' ? 3 : 2) && renderBackgroundOptions()}
       </Box>
     </Box>
   );
