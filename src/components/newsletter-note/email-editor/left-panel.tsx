@@ -5,17 +5,21 @@ import { Icon } from '@iconify/react';
 
 import {
   Box,
-  Tab,
+  Grid,
   List,
   Chip,
-  Tabs,
   Button,
   TextField,
   Accordion,
+  Typography,
+  ToggleButton,
   AccordionSummary,
   AccordionDetails,
   CircularProgress,
+  ToggleButtonGroup,
 } from '@mui/material';
+
+import TemplateCard from './TemplateCard';
 
 import type { ComponentType } from './types';
 
@@ -25,18 +29,20 @@ interface LeftPanelProps {
   expandedCategories: Record<string, boolean>;
   setExpandedCategories: (categories: Record<string, boolean>) => void;
   addComponent: (type: ComponentType) => void;
-  emailTemplates: Array<{
+  emailTemplates: {
     id: string;
     name: string;
     description: string;
-    icon: string;
     image: string;
-  }>;
+    icon?: string;
+  }[];
   activeTemplate: string;
   setActiveTemplate: (template: string) => void;
   generatingEmail: boolean;
   handleGenerateEmailHtml: () => void;
   setOpenSaveDialog: (open: boolean) => void;
+  activeVersion: string;
+  setActiveVersion: (version: 'web' | 'newsletter') => void;
 }
 
 export default function LeftPanel({
@@ -51,53 +57,95 @@ export default function LeftPanel({
   generatingEmail,
   handleGenerateEmailHtml,
   setOpenSaveDialog,
+  activeVersion,
+  setActiveVersion,
 }: LeftPanelProps) {
-  const [activeTab, setActiveTab] = React.useState(0);
+  const [activeTab, setActiveTab] = React.useState('templates');
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+  const handleTabChange = (event: React.MouseEvent<HTMLElement>, newValue: string) => {
+    if (newValue !== null) {
+      setActiveTab(newValue);
+    }
   };
 
   return (
     <Box
       sx={{
-        width: 280,
+        minWidth: 280,
+        maxWidth: 280,
         borderRight: '1px solid #e0e0e0',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth">
-        <Tab label="Templates" />
-        <Tab label="Contenido" />
-      </Tabs>
+      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+        <ToggleButtonGroup
+          value={activeTab}
+          exclusive
+          onChange={handleTabChange}
+          aria-label="Opciones de panel"
+          size="small"
+          color="primary"
+          sx={{ mb: 2, width: '100%', border: 'none' }}
+        >
+          <ToggleButton value="templates" aria-label="templates" sx={{ width: '50%' }}>
+            Plantillas
+          </ToggleButton>
+          <ToggleButton value="content" aria-label="content" sx={{ width: '50%' }}>
+            Contenido
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
 
-      {activeTab === 0 && (
+      {activeTab === 'templates' && (
         <List sx={{ flexGrow: 1, overflow: 'auto' }}>
-          {/* Plantillas de email */}
+          {/* Acordeón de Noticias */}
           <Accordion>
             <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
-              <Chip label="Plantillas" variant="filled" size="small" />
+              <Chip label="Noticias" variant="filled" size="small" />
             </AccordionSummary>
             <AccordionDetails>
-              {emailTemplates.map((template) => (
-                <Button
-                  key={template.id}
-                  variant={activeTemplate === template.id ? 'contained' : 'outlined'}
-                  fullWidth
-                  startIcon={<Icon icon={template.icon} />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => setActiveTemplate(template.id)}
-                >
-                  {template.name}
-                </Button>
-              ))}
+              <Grid container spacing={2}>
+                {emailTemplates
+                  .filter((template) => template.id === 'news')
+                  .map((template) => (
+                    <Grid size={6} key={template.id}>
+                      <TemplateCard
+                        template={template}
+                        activeTemplate={activeTemplate}
+                        setActiveTemplate={setActiveTemplate}
+                      />
+                    </Grid>
+                  ))}
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Acordeón de Otras Plantillas */}
+          <Accordion>
+            <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+              <Chip label="Otras Plantillas" variant="filled" size="small" />
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                {emailTemplates
+                  .filter((template) => template.id !== 'news')
+                  .map((template) => (
+                    <Grid size={6} key={template.id}>
+                      <TemplateCard
+                        template={template}
+                        activeTemplate={activeTemplate}
+                        setActiveTemplate={setActiveTemplate}
+                      />
+                    </Grid>
+                  ))}
+              </Grid>
             </AccordionDetails>
           </Accordion>
         </List>
       )}
 
-      {activeTab === 1 && (
+      {activeTab === 'content' && (
         <>
           {/* Búsqueda de componentes */}
           <TextField
@@ -122,33 +170,29 @@ export default function LeftPanel({
                 <Chip label="Texto" variant="filled" size="small" />
               </AccordionSummary>
               <AccordionDetails>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:format-header-1" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('heading')}
-                >
-                  Añadir Título
-                </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:format-paragraph" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('paragraph')}
-                >
-                  Añadir Párrafo
-                </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:format-list-bulleted" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('bulletList')}
-                >
-                  Añadir Lista
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
+                  <Button
+                    onClick={() => addComponent('heading')}
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                  >
+                    <Icon icon="mdi:format-header-1" fontSize="large" />
+                    <Typography variant="caption">Títulos</Typography>
+                  </Button>
+                  <Button
+                    onClick={() => addComponent('paragraph')}
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                  >
+                    <Icon icon="mdi:format-paragraph" fontSize="large" />
+                    <Typography variant="caption">Textos</Typography>
+                  </Button>
+                  <Button
+                    onClick={() => addComponent('bulletList')}
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                  >
+                    <Icon icon="mdi:format-list-bulleted" fontSize="large" />
+                    <Typography variant="caption">Listas</Typography>
+                  </Button>
+                </Box>
               </AccordionDetails>
             </Accordion>
 
@@ -166,24 +210,22 @@ export default function LeftPanel({
                 <Chip label="Multimedia" variant="filled" size="small" />
               </AccordionSummary>
               <AccordionDetails>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:image" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('image')}
-                >
-                  Añadir Imagen
-                </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:image-multiple" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('gallery')}
-                >
-                  Añadir Galería
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
+                  <Button
+                    onClick={() => addComponent('image')}
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                  >
+                    <Icon icon="mdi:image" fontSize="large" />
+                    <Typography variant="caption">Imagen</Typography>
+                  </Button>
+                  <Button
+                    onClick={() => addComponent('gallery')}
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                  >
+                    <Icon icon="mdi:image-multiple" fontSize="large" />
+                    <Typography variant="caption">Galería</Typography>
+                  </Button>
+                </Box>
               </AccordionDetails>
             </Accordion>
 
@@ -198,33 +240,30 @@ export default function LeftPanel({
                 <Chip label="Diseño" variant="filled" size="small" />
               </AccordionSummary>
               <AccordionDetails>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:button-cursor" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('button')}
-                >
-                  Añadir Botón
-                </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:minus" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('divider')}
-                >
-                  Añadir Separador
-                </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:arrow-expand-vertical" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('spacer')}
-                >
-                  Añadir Espaciador
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('button')}
+                  >
+                    <Icon icon="mdi:button-cursor" />
+                    Añadir Botón
+                  </Button>
+
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('divider')}
+                  >
+                    <Icon icon="mdi:minus" />
+                    Añadir Separador
+                  </Button>
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('spacer')}
+                  >
+                    <Icon icon="mdi:arrow-expand-vertical" />
+                    Añadir Espaciador
+                  </Button>
+                </Box>
               </AccordionDetails>
             </Accordion>
 
@@ -234,33 +273,29 @@ export default function LeftPanel({
                 <Chip label="Componentes de Noticias" variant="filled" size="small" />
               </AccordionSummary>
               <AccordionDetails>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:tag" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('category')}
-                >
-                  Añadir Categoría
-                </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:account" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('author')}
-                >
-                  Añadir Autor
-                </Button>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:text-box-outline" />}
-                  sx={{ mb: 1, justifyContent: 'flex-start' }}
-                  onClick={() => addComponent('summary')}
-                >
-                  Añadir Resumen
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('category')}
+                  >
+                    <Icon icon="mdi:tag" />
+                    Añadir Categoría
+                  </Button>
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('author')}
+                  >
+                    <Icon icon="mdi:account" />
+                    Añadir Autor
+                  </Button>
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('summary')}
+                  >
+                    <Icon icon="mdi:text-box-outline" />
+                    Añadir Resumen
+                  </Button>
+                </Box>
               </AccordionDetails>
             </Accordion>
           </List>

@@ -1,36 +1,38 @@
 'use client';
 
 import type React from 'react';
-
-import { useState, useRef, useEffect } from 'react';
 import type { Editor } from '@tiptap/react';
+import type { SavedNote, EmailComponent } from 'src/types/saved-note';
+
 import { v4 as uuidv4 } from 'uuid';
+import { useRef, useState, useEffect } from 'react';
+
 import { Box, Button, TextField } from '@mui/material';
 
-import type { SavedNote, EmailComponent } from 'src/types/saved-note';
 import { useStore } from 'src/lib/store';
 
-import EditorHeader from './editor-header';
 import LeftPanel from './left-panel';
 import RightPanel from './right-panel';
+import EditorHeader from './editor-header';
 import EmailContent from './email-content';
 import { CustomDialog } from './ui/custom-dialog';
 import { CustomSnackbar } from './ui/custom-snackbar';
 import { bannerOptions } from './data/banner-options';
 import { emailTemplates } from './data/email-templates';
-import {
-  notionComponents,
-  notionComponentsWeb,
-  plaidComponents,
-  plaidComponentsWeb,
-  stripeComponents,
-  stripeComponentsWeb,
-  vercelComponents,
-  vercelComponentsWeb,
-  newsComponents,
-  newsComponentsWeb,
-} from './data/template-components';
 import { generateEmailHtml } from './utils/generate-html';
+import {
+  newsComponents,
+  plaidComponents,
+  notionComponents,
+  stripeComponents,
+  vercelComponents,
+  newsComponentsWeb,
+  plaidComponentsWeb,
+  notionComponentsWeb,
+  stripeComponentsWeb,
+  vercelComponentsWeb,
+} from './data/template-components';
+
 import type { ComponentType } from './types';
 
 // Update the interface to include initialNote, isNewsletterMode, and onSave
@@ -114,11 +116,17 @@ export default function EmailEditor({
   const [showGradient, setShowGradient] = useState(false);
   const [gradientColors, setGradientColors] = useState(['#f6f9fc', '#e9f2ff']);
 
+  // Estado para los componentes de cada plantilla
+  const [blankComponentsState, setBlankComponents] = useState<EmailComponent[]>([]);
+  const [blankComponentsWebState, setBlankComponentsWeb] = useState<EmailComponent[]>([]);
+
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = () => {
     if (activeVersion === 'web') {
       // Retornar componentes de la versión web
       switch (activeTemplate) {
+        case 'blank':
+          return blankComponentsWebState;
         case 'news':
           return newsComponentsWebState;
         case 'notion':
@@ -130,11 +138,13 @@ export default function EmailEditor({
         case 'vercel':
           return vercelComponentsWebState;
         default:
-          return [];
+          return blankComponentsWebState;
       }
     } else {
       // Retornar componentes de la versión newsletter
       switch (activeTemplate) {
+        case 'blank':
+          return blankComponentsState;
         case 'news':
           return newsComponentsState;
         case 'notion':
@@ -146,7 +156,7 @@ export default function EmailEditor({
         case 'vercel':
           return vercelComponentsState;
         default:
-          return [];
+          return blankComponentsState;
       }
     }
   };
@@ -156,6 +166,9 @@ export default function EmailEditor({
     if (activeVersion === 'web') {
       // Actualizar componentes de la versión web
       switch (activeTemplate) {
+        case 'blank':
+          setBlankComponentsWeb(components);
+          break;
         case 'news':
           setNewsComponentsWeb(components);
           break;
@@ -171,10 +184,15 @@ export default function EmailEditor({
         case 'vercel':
           setVercelComponentsWeb(components);
           break;
+        default:
+          break;
       }
     } else {
       // Actualizar componentes de la versión newsletter
       switch (activeTemplate) {
+        case 'blank':
+          setBlankComponents(components);
+          break;
         case 'news':
           setNewsComponents(components);
           break;
@@ -189,6 +207,8 @@ export default function EmailEditor({
           break;
         case 'vercel':
           setVercelComponents(components);
+          break;
+        default:
           break;
       }
     }
@@ -339,7 +359,6 @@ export default function EmailEditor({
           break;
         case 'notion':
           if (notionComponentsWebState.length === 0) {
-            // Clonar componentes de newsletter y añadir sufijo -web a los IDs
             const webComponents = notionComponentsState.map((comp) => ({
               ...comp,
               id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
@@ -373,6 +392,17 @@ export default function EmailEditor({
             }));
             setVercelComponentsWeb(webComponents);
           }
+          break;
+        case 'blank':
+          if (blankComponentsWebState.length === 0) {
+            const webComponents = blankComponentsState.map((comp) => ({
+              ...comp,
+              id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
+            }));
+            setBlankComponentsWeb(webComponents);
+          }
+          break;
+        default:
           break;
       }
     }
@@ -413,6 +443,12 @@ export default function EmailEditor({
         objdata = vercelComponentsState;
         objdataWeb = vercelComponentsWebState;
         break;
+      case 'blank':
+        objdata = blankComponentsState;
+        objdataWeb = blankComponentsWebState;
+        break;
+      default:
+        break;
     }
 
     const note: SavedNote = {
@@ -421,8 +457,8 @@ export default function EmailEditor({
       templateType: activeTemplate,
       dateCreated: currentNoteId ? undefined : new Date().toISOString(),
       dateModified: new Date().toISOString(),
-      objdata: objdata,
-      objdataWeb: objdataWeb,
+      objdata,
+      objdataWeb,
       emailBackground,
       selectedBanner,
       showGradient,
@@ -478,6 +514,10 @@ export default function EmailEditor({
 
     // Load the components for newsletter version
     switch (note.templateType) {
+      case 'blank':
+        setBlankComponents(note.objdata);
+        if (note.objdataWeb) setBlankComponentsWeb(note.objdataWeb);
+        break;
       case 'news':
         setNewsComponents(note.objdata);
         if (note.objdataWeb) setNewsComponentsWeb(note.objdataWeb);
@@ -565,6 +605,8 @@ export default function EmailEditor({
       case 'strikethrough':
         activeEditor.chain().focus().toggleStrike().run();
         break;
+      default:
+        break;
     }
   };
 
@@ -643,6 +685,8 @@ export default function EmailEditor({
           setSearchQuery={setSearchQuery}
           expandedCategories={expandedCategories}
           setExpandedCategories={setExpandedCategories}
+          activeVersion={activeVersion}
+          setActiveVersion={setActiveVersion}
           addComponent={addComponent}
           emailTemplates={emailTemplates}
           activeTemplate={activeTemplate}
@@ -684,6 +728,7 @@ export default function EmailEditor({
           rightPanelTab={rightPanelTab}
           setRightPanelTab={setRightPanelTab}
           getActiveComponents={getActiveComponents}
+          setSelectedAlignment={setSelectedAlignment}
           updateComponentProps={updateComponentProps}
           updateComponentStyle={updateComponentStyle}
           updateComponentContent={updateComponentContent}
@@ -711,6 +756,7 @@ export default function EmailEditor({
           gradientColors={gradientColors}
           setGradientColors={setGradientColors}
           bannerOptions={bannerOptions}
+          hasTextSelection={!!activeEditor && activeEditor.isActive('textStyle')}
         />
       </Box>
 

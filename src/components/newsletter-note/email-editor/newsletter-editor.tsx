@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Box, Button, Typography, Paper } from '@mui/material';
-import { EmailEditorMain } from './main';
-import { useStore } from 'src/lib/store';
 import type { SavedNote } from 'src/types/saved-note';
+
+import { useState } from 'react';
+
+import { Box, Paper, Button, Typography } from '@mui/material';
+
+import { useStore } from 'src/lib/store';
+
+import { EmailEditorMain } from './main';
 
 interface NewsletterEditorProps {
   onClose: () => void;
@@ -107,7 +111,7 @@ export default function NewsletterEditor({ onClose }: NewsletterEditorProps) {
         // Editor de email para editar o crear una nota
         <EmailEditorMain
           initialNote={editingNote}
-          isNewsletterMode={true}
+          isNewsletterMode
           onSave={handleSaveEditedNote}
           onClose={() => setIsEditing(false)}
         />

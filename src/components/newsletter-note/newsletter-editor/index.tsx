@@ -1,16 +1,19 @@
 'use client';
 
-import { AppBar, Box, Dialog } from '@mui/material';
+import { Box, AppBar, Dialog } from '@mui/material';
+
 import EmailEditor from 'src/components/newsletter-note/email-editor';
+
+import Sidebar from './sidebar';
+import Toolbar from './components/toolbar';
 import CustomSnackbar from './ui/custom-snackbar';
 import HeaderDialog from './dialogs/header-dialog';
 import FooterDialog from './dialogs/footer-dialog';
-import HtmlPreviewDialog from './dialogs/html-preview-dialog';
-import Sidebar from './sidebar';
-import useNewsletterEditor from './hooks/use-newsletter-editor';
-import Toolbar from './components/toolbar';
-import TabNavigation from './components/tab-navigation';
 import MainContent from './components/main-content';
+import TabNavigation from './components/tab-navigation';
+import HtmlPreviewDialog from './dialogs/html-preview-dialog';
+import useNewsletterEditor from './hooks/use-newsletter-editor';
+
 import type { NewsletterEditorProps } from './types';
 
 export default function NewsletterEditor({ onClose, initialNewsletter }: NewsletterEditorProps) {
@@ -122,7 +125,7 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
         <EmailEditor
           onClose={() => setOpenNoteEditor(false)}
           initialNote={editingNote}
-          isNewsletterMode={true}
+          isNewsletterMode
           onSave={handleSaveNote}
         />
       </Dialog>

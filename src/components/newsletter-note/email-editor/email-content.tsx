@@ -1,12 +1,15 @@
 'use client';
 
 import type React from 'react';
-
-import { Box, Typography, Button } from '@mui/material';
-import { Icon } from '@iconify/react';
+import type { Editor } from '@tiptap/react';
 import type { EmailComponent } from 'src/types/saved-note';
 import type { BannerOption } from 'src/components/newsletter-note/banner-selector';
-import type { Editor } from '@tiptap/react';
+
+import { Icon } from '@iconify/react';
+
+import { Box, Button, Typography } from '@mui/material';
+
+import EmailList from './email-list';
 import EmailComponentRenderer from './email-component-renderer';
 
 interface EmailContentProps {
@@ -26,6 +29,9 @@ interface EmailContentProps {
   emailBackground: string;
   showGradient: boolean;
   gradientColors: string[];
+  addListItem: (listId: string) => void;
+  removeListItem: (listId: string, itemIndex: number) => void;
+  updateListItem: (listId: string, itemIndex: number, content: string) => void;
 }
 
 export default function EmailContent({
@@ -45,6 +51,9 @@ export default function EmailContent({
   emailBackground,
   showGradient,
   gradientColors,
+  addListItem,
+  removeListItem,
+  updateListItem,
 }: EmailContentProps) {
   const components = getActiveComponents();
 
@@ -144,6 +153,65 @@ export default function EmailContent({
     );
   }
 
+  const renderBulletList = (component: EmailComponent) => (
+    <EmailList
+      component={component}
+      updateListItem={updateListItem}
+      removeListItem={removeListItem}
+      addListItem={addListItem}
+      updateComponentProps={updateComponentProps}
+    />
+  );
+
+  // Función auxiliar para generar el marcador de lista ordenada
+  const getOrderedListMarker = (index: number, listStyle: string): string => {
+    switch (listStyle) {
+      case 'decimal':
+        return `${index}.`;
+      case 'lower-alpha':
+        return `${String.fromCharCode(96 + index)}.`;
+      case 'upper-alpha':
+        return `${String.fromCharCode(64 + index)}.`;
+      case 'lower-roman':
+        return `${toRoman(index).toLowerCase()}.`;
+      case 'upper-roman':
+        return `${toRoman(index)}.`;
+      default:
+        return `${index}.`;
+    }
+  };
+
+  // Función para convertir números a numerales romanos
+  const toRoman = (num: number): string => {
+    const romanNumerals = [
+      { value: 1000, numeral: 'M' },
+      { value: 900, numeral: 'CM' },
+      { value: 500, numeral: 'D' },
+      { value: 400, numeral: 'CD' },
+      { value: 100, numeral: 'C' },
+      { value: 90, numeral: 'XC' },
+      { value: 50, numeral: 'L' },
+      { value: 40, numeral: 'XL' },
+      { value: 10, numeral: 'X' },
+      { value: 9, numeral: 'IX' },
+      { value: 5, numeral: 'V' },
+      { value: 4, numeral: 'IV' },
+      { value: 1, numeral: 'I' },
+    ];
+
+    let result = '';
+    let remaining = num;
+
+    for (const { value, numeral } of romanNumerals) {
+      while (remaining >= value) {
+        result += numeral;
+        remaining -= value;
+      }
+    }
+
+    return result;
+  };
+
   return (
     <Box sx={backgroundStyle}>
       {components.map((component, index) => (
@@ -159,6 +227,7 @@ export default function EmailContent({
           moveComponent={moveComponent}
           removeComponent={removeComponent}
           totalComponents={components.length}
+          renderCustomContent={component.type === 'bulletList' ? renderBulletList : undefined}
         />
       ))}
       {editMode && (

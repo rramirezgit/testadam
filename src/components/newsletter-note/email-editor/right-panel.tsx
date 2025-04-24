@@ -14,11 +14,19 @@ import {
   Paper,
   AppBar,
   Button,
+  Select,
   Toolbar,
+  MenuItem,
   TextField,
   Typography,
   IconButton,
+  InputLabel,
+  FormControl,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
+
+import TextColorPicker from './color-picker/TextColorPicker';
 
 interface RightPanelProps {
   selectedComponentId: string | null;
@@ -52,6 +60,13 @@ interface RightPanelProps {
   gradientColors: string[];
   setGradientColors: (colors: string[]) => void;
   bannerOptions: BannerOption[];
+  setSelectedAlignment: (alignment: string) => void;
+  hasTextSelection: boolean;
+  listStyle?: string;
+  updateListStyle: (listId: string, listStyleType: string) => void;
+  listColor?: string;
+  updateListColor: (listId: string, color: string) => void;
+  convertTextToList: (componentId: string | null, listType: 'ordered' | 'unordered') => void;
 }
 
 export default function RightPanel({
@@ -86,6 +101,13 @@ export default function RightPanel({
   gradientColors,
   setGradientColors,
   bannerOptions,
+  setSelectedAlignment,
+  hasTextSelection,
+  listStyle,
+  updateListStyle,
+  listColor,
+  updateListColor,
+  convertTextToList,
 }: RightPanelProps) {
   // Si no hay componente seleccionado, mostrar un mensaje
   const renderEmptyState = () => (
@@ -293,8 +315,6 @@ export default function RightPanel({
             const image = images[index] || { src: '/placeholder.svg', alt: `Imagen ${index + 1}` };
             return (
               <Grid
-                item
-                xs={layout === 'single' ? 12 : 6}
                 key={index}
                 sx={{
                   mb: 1,
@@ -510,218 +530,243 @@ export default function RightPanel({
   );
 
   // Renderizar las opciones para texto (párrafos, títulos, listas)
-  const renderTextOptions = () => (
-    <>
-      <Typography variant="subtitle2" gutterBottom>
-        Formato de texto
-      </Typography>
-      <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
-        <IconButton
-          onClick={() => applyTextFormat('bold')}
-          color={textFormat.includes('bold') ? 'primary' : 'default'}
-          sx={{ border: textFormat.includes('bold') ? '1px solid' : 'none' }}
-        >
-          <Icon icon="mdi:format-bold" />
-        </IconButton>
-        <IconButton
-          onClick={() => applyTextFormat('italic')}
-          color={textFormat.includes('italic') ? 'primary' : 'default'}
-          sx={{ border: textFormat.includes('italic') ? '1px solid' : 'none' }}
-        >
-          <Icon icon="mdi:format-italic" />
-        </IconButton>
-        <IconButton
-          onClick={() => applyTextFormat('underlined')}
-          color={textFormat.includes('underlined') ? 'primary' : 'default'}
-          sx={{ border: textFormat.includes('underlined') ? '1px solid' : 'none' }}
-        >
-          <Icon icon="mdi:format-underline" />
-        </IconButton>
-        <IconButton
-          onClick={() => applyTextFormat('strikethrough')}
-          color={textFormat.includes('strikethrough') ? 'primary' : 'default'}
-          sx={{ border: textFormat.includes('strikethrough') ? '1px solid' : 'none' }}
-        >
-          <Icon icon="mdi:format-strikethrough" />
-        </IconButton>
-      </Box>
+  const renderTextOptions = () => {
+    // Verificar si el componente seleccionado es un párrafo
+    const isParagraphComponent = selectedComponent?.type === 'paragraph';
 
-      <Typography variant="subtitle2" gutterBottom>
-        Alineación
-      </Typography>
-      <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
-        <IconButton
-          onClick={() => applyTextAlignment('left')}
-          color={selectedAlignment === 'left' ? 'primary' : 'default'}
-          sx={{ border: selectedAlignment === 'left' ? '1px solid' : 'none' }}
-        >
-          <Icon icon="mdi:format-align-left" />
-        </IconButton>
-        <IconButton
-          onClick={() => applyTextAlignment('center')}
-          color={selectedAlignment === 'center' ? 'primary' : 'default'}
-          sx={{ border: selectedAlignment === 'center' ? '1px solid' : 'none' }}
-        >
-          <Icon icon="mdi:format-align-center" />
-        </IconButton>
-        <IconButton
-          onClick={() => applyTextAlignment('right')}
-          color={selectedAlignment === 'right' ? 'primary' : 'default'}
-          sx={{ border: selectedAlignment === 'right' ? '1px solid' : 'none' }}
-        >
-          <Icon icon="mdi:format-align-right" />
-        </IconButton>
-        <IconButton
-          onClick={() => applyTextAlignment('justify')}
-          color={selectedAlignment === 'justify' ? 'primary' : 'default'}
-          sx={{ border: selectedAlignment === 'justify' ? '1px solid' : 'none' }}
-        >
-          <Icon icon="mdi:format-align-justify" />
-        </IconButton>
-      </Box>
+    return (
+      <Box sx={{ p: 2 }}>
+        <Box sx={{ mb: 1, display: 'flex', gap: 1 }}>
+          <ToggleButtonGroup
+            value={textFormat}
+            onChange={(event, newFormats) => {
+              // Verificar si es un array y tiene al menos un elemento
+              const clickedFormat = (event.currentTarget as HTMLButtonElement).value;
 
-      {componentType === 'heading' && (
-        <>
-          <Typography variant="subtitle2" gutterBottom>
-            Nivel de título
-          </Typography>
-          <Box sx={{ mb: 3 }}>
-            <Button
-              variant={selectedComponent.props?.level === 1 ? 'contained' : 'outlined'}
-              size="small"
-              onClick={() => updateComponentProps(selectedComponentId!, { level: 1 })}
-              sx={{ mr: 1 }}
+              // Aplicar el formato
+              applyTextFormat(clickedFormat);
+            }}
+            aria-label="text formatting"
+            color="primary"
+            disabled={!hasTextSelection} // Desactivar si no hay texto seleccionado
+            sx={{
+              border: 'none',
+            }}
+          >
+            <ToggleButton value="bold" aria-label="bold" selected={textFormat.includes('bold')}>
+              <Icon icon="mdi:format-bold" />
+            </ToggleButton>
+            <ToggleButton
+              value="italic"
+              aria-label="italic"
+              selected={textFormat.includes('italic')}
             >
-              H1
-            </Button>
-            <Button
-              variant={selectedComponent.props?.level === 2 ? 'contained' : 'outlined'}
-              size="small"
-              onClick={() => updateComponentProps(selectedComponentId!, { level: 2 })}
-              sx={{ mr: 1 }}
+              <Icon icon="mdi:format-italic" />
+            </ToggleButton>
+            <ToggleButton
+              value="underlined"
+              aria-label="underlined"
+              selected={textFormat.includes('underlined')}
             >
-              H2
-            </Button>
-            <Button
-              variant={selectedComponent.props?.level === 3 ? 'contained' : 'outlined'}
-              size="small"
-              onClick={() => updateComponentProps(selectedComponentId!, { level: 3 })}
+              <Icon icon="mdi:format-underline" />
+            </ToggleButton>
+            <ToggleButton
+              value="strikethrough"
+              aria-label="strikethrough"
+              selected={textFormat.includes('strikethrough')}
             >
-              H3
-            </Button>
-          </Box>
-        </>
-      )}
-
-      <Typography variant="subtitle2" gutterBottom>
-        Fuente
-      </Typography>
-      <TextField
-        select
-        fullWidth
-        size="small"
-        value={selectedFont}
-        onChange={(e) => {
-          setSelectedFont(e.target.value);
-          applyFontFamily(e.target.value);
-        }}
-        sx={{ mb: 2 }}
-      >
-        <option value="Public Sans">Public Sans</option>
-        <option value="Arial">Arial</option>
-        <option value="Helvetica">Helvetica</option>
-        <option value="Times New Roman">Times New Roman</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Courier New">Courier New</option>
-      </TextField>
-
-      <Typography variant="subtitle2" gutterBottom>
-        Tamaño de fuente
-      </Typography>
-      <TextField
-        select
-        fullWidth
-        size="small"
-        value={selectedFontSize}
-        onChange={(e) => {
-          setSelectedFontSize(e.target.value);
-          applyFontSize(e.target.value);
-        }}
-        sx={{ mb: 2 }}
-      >
-        <option value="12">12px</option>
-        <option value="14">14px</option>
-        <option value="16">16px</option>
-        <option value="18">18px</option>
-        <option value="20">20px</option>
-        <option value="24">24px</option>
-        <option value="28">28px</option>
-        <option value="32">32px</option>
-      </TextField>
-
-      <Typography variant="subtitle2" gutterBottom>
-        Color de texto
-      </Typography>
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
-          {[
-            '#000000',
-            '#4285F4',
-            '#34A853',
-            '#FBBC05',
-            '#EA4335',
-            '#9C27B0',
-            '#2196F3',
-            '#FF9800',
-          ].map((color) => (
-            <IconButton
-              key={color}
-              onClick={() => {
-                setSelectedColor(color);
-                applyTextColor(color);
-              }}
-              sx={{
-                width: 36,
-                height: 36,
-                backgroundColor: color,
-                border: selectedColor === color ? '2px solid #000' : '1px solid #ddd',
-                '&:hover': { backgroundColor: color, opacity: 0.9 },
-              }}
-            />
-          ))}
+              <Icon icon="mdi:format-strikethrough" />
+            </ToggleButton>
+          </ToggleButtonGroup>
         </Box>
-        <TextField
-          type="color"
-          fullWidth
-          size="small"
-          value={selectedColor}
-          onChange={(e) => {
-            setSelectedColor(e.target.value);
-            applyTextColor(e.target.value);
-          }}
-        />
-      </Box>
 
-      <Typography variant="subtitle2" gutterBottom>
-        Peso de fuente
-      </Typography>
-      <TextField
-        select
-        fullWidth
-        size="small"
-        value={selectedFontWeight}
-        onChange={(e) => {
-          setSelectedFontWeight(e.target.value);
-          updateComponentStyle(selectedComponentId!, { fontWeight: e.target.value });
-        }}
-        sx={{ mb: 2 }}
-      >
-        <option value="normal">Normal</option>
-        <option value="bold">Negrita</option>
-        <option value="lighter">Ligero</option>
-      </TextField>
-    </>
-  );
+        <Box sx={{ mb: 3, display: 'flex', gap: 1 }}>
+          <ToggleButtonGroup
+            value={selectedAlignment}
+            exclusive
+            color="primary"
+            sx={{
+              border: 'none',
+            }}
+            onChange={(event, newAlignment) => {
+              if (newAlignment !== null) {
+                setSelectedAlignment(newAlignment);
+                applyTextAlignment(newAlignment);
+              }
+            }}
+            aria-label="text alignment"
+          >
+            <ToggleButton
+              value="left"
+              aria-label="left aligned"
+              selected={selectedAlignment === 'left'}
+            >
+              <Icon icon="mdi:format-align-left" />
+            </ToggleButton>
+            <ToggleButton
+              value="center"
+              aria-label="center aligned"
+              selected={selectedAlignment === 'center'}
+            >
+              <Icon icon="mdi:format-align-center" />
+            </ToggleButton>
+            <ToggleButton
+              value="right"
+              aria-label="right aligned"
+              selected={selectedAlignment === 'right'}
+            >
+              <Icon icon="mdi:format-align-right" />
+            </ToggleButton>
+            <ToggleButton
+              value="justify"
+              aria-label="justified"
+              selected={selectedAlignment === 'justify'}
+            >
+              <Icon icon="mdi:format-align-justify" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {componentType === 'heading' && (
+          <ToggleButtonGroup
+            value={selectedComponent.props?.level}
+            exclusive
+            color="primary"
+            onChange={(event, newLevel) =>
+              updateComponentProps(selectedComponentId!, { level: newLevel })
+            }
+            aria-label="Nivel de título"
+            sx={{ mb: 3, border: 'none' }}
+          >
+            <ToggleButton value={1} aria-label="H1">
+              H1
+            </ToggleButton>
+            <ToggleButton value={2} aria-label="H2">
+              H2
+            </ToggleButton>
+            <ToggleButton value={3} aria-label="H3">
+              H3
+            </ToggleButton>
+          </ToggleButtonGroup>
+        )}
+
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel id="font-family-select-label">Fuente</InputLabel>
+          <Select
+            labelId="font-family-select-label"
+            id="font-family-select"
+            value={selectedFont}
+            label="Fuente"
+            onChange={(e) => {
+              setSelectedFont(e.target.value);
+              applyFontFamily(e.target.value);
+            }}
+          >
+            <MenuItem value="Public Sans">Public Sans</MenuItem>
+            <MenuItem value="Arial">Arial</MenuItem>
+            <MenuItem value="Helvetica">Helvetica</MenuItem>
+            <MenuItem value="Times New Roman">Times New Roman</MenuItem>
+            <MenuItem value="Georgia">Georgia</MenuItem>
+            <MenuItem value="Courier New">Courier New</MenuItem>
+            <MenuItem value="Verdana">Verdana</MenuItem>
+            <MenuItem value="Tahoma">Tahoma</MenuItem>
+            <MenuItem value="Trebuchet MS">Trebuchet MS</MenuItem>
+            <MenuItem value="Palatino">Palatino</MenuItem>
+            <MenuItem value="Bookman">Bookman</MenuItem>
+            <MenuItem value="Comic Sans MS">Comic Sans MS</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel id="font-weight-select-label">Peso de fuente</InputLabel>
+          <Select
+            labelId="font-weight-select-label"
+            id="font-weight-select"
+            value={selectedFontWeight}
+            label="Peso de fuente"
+            onChange={(e) => {
+              setSelectedFontWeight(e.target.value);
+              updateComponentStyle(selectedComponentId!, { fontWeight: e.target.value });
+            }}
+          >
+            <MenuItem value="normal">Normal</MenuItem>
+            <MenuItem value="bold">Negrita</MenuItem>
+            <MenuItem value="lighter">Ligero</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel id="font-size-select-label">Tamaño de fuente</InputLabel>
+          <Select
+            labelId="font-size-select-label"
+            id="font-size-select"
+            value={selectedFontSize}
+            label="Tamaño de fuente"
+            onChange={(e) => {
+              setSelectedFontSize(e.target.value);
+              applyFontSize(e.target.value);
+            }}
+          >
+            <MenuItem value="12">12px</MenuItem>
+            <MenuItem value="14">14px</MenuItem>
+            <MenuItem value="16">16px</MenuItem>
+            <MenuItem value="18">18px</MenuItem>
+            <MenuItem value="20">20px</MenuItem>
+            <MenuItem value="24">24px</MenuItem>
+            <MenuItem value="28">28px</MenuItem>
+            <MenuItem value="32">32px</MenuItem>
+          </Select>
+        </FormControl>
+
+        <Typography variant="subtitle2" gutterBottom>
+          Color de texto
+        </Typography>
+        <Box sx={{ mb: 3 }}>
+          <TextColorPicker selectedColor={selectedColor} applyTextColor={applyTextColor} />
+        </Box>
+
+        {/* Añadir botones para convertir a lista si es un párrafo */}
+        {isParagraphComponent && (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Convertir a lista
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<Icon icon="mdi:format-list-bulleted" />}
+                onClick={() => convertTextToList(selectedComponentId, 'unordered')}
+                fullWidth
+                size="small"
+              >
+                Lista con viñetas
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<Icon icon="mdi:format-list-numbered" />}
+                onClick={() => convertTextToList(selectedComponentId, 'ordered')}
+                fullWidth
+                size="small"
+              >
+                Lista numerada
+              </Button>
+            </Box>
+          </Box>
+        )}
+
+        {/* Mostrar opciones de estilo de lista si es un componente de lista */}
+        {selectedComponent?.type === 'bulletList' && (
+          <ListStyleOptions
+            selectedComponentId={selectedComponentId}
+            listStyle={listStyle}
+            updateListStyle={updateListStyle}
+            listColor={listColor}
+            updateListColor={updateListColor}
+          />
+        )}
+      </Box>
+    );
+  };
 
   // Renderizar las opciones para el diseño
   const renderDesignOptions = () => (
@@ -949,10 +994,122 @@ export default function RightPanel({
     </>
   );
 
+  // Añadir un nuevo componente para las opciones de lista
+  const ListStyleOptions = ({
+    selectedComponentId,
+    listStyle,
+    updateListStyle,
+    listColor,
+    updateListColor,
+  }: {
+    selectedComponentId: string | null;
+    listStyle?: string;
+    updateListStyle: (listId: string, listStyleType: string) => void;
+    listColor?: string;
+    updateListColor: (listId: string, color: string) => void;
+  }) => {
+    if (!selectedComponentId) return null;
+
+    // Determinar si es una lista ordenada
+    const isOrderedList =
+      listStyle === 'decimal' ||
+      listStyle === 'lower-alpha' ||
+      listStyle === 'upper-alpha' ||
+      listStyle === 'lower-roman' ||
+      listStyle === 'upper-roman';
+
+    // Opciones para listas no ordenadas
+    const unorderedListOptions = [
+      { value: 'disc', label: 'Punto (•)' },
+      { value: 'circle', label: 'Círculo (○)' },
+      { value: 'square', label: 'Cuadrado (■)' },
+    ];
+
+    // Opciones para listas ordenadas
+    const orderedListOptions = [
+      { value: 'decimal', label: 'Números (1, 2, 3)' },
+      { value: 'lower-alpha', label: 'Letras minúsculas (a, b, c)' },
+      { value: 'upper-alpha', label: 'Letras mayúsculas (A, B, C)' },
+      { value: 'lower-roman', label: 'Números romanos minúsculos (i, ii, iii)' },
+      { value: 'upper-roman', label: 'Números romanos mayúsculos (I, II, III)' },
+    ];
+
+    // Opciones a mostrar según el tipo de lista
+    const listStyleOptions = isOrderedList ? orderedListOptions : unorderedListOptions;
+
+    // Botón para cambiar entre lista ordenada y no ordenada
+    const toggleListType = () => {
+      if (isOrderedList) {
+        // Cambiar a lista no ordenada
+        updateListStyle(selectedComponentId, 'disc');
+      } else {
+        // Cambiar a lista ordenada
+        updateListStyle(selectedComponentId, 'decimal');
+      }
+    };
+
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="subtitle2">Estilo de lista</Typography>
+          <Button
+            size="small"
+            onClick={toggleListType}
+            startIcon={
+              <Icon
+                icon={isOrderedList ? 'mdi:format-list-bulleted' : 'mdi:format-list-numbered'}
+              />
+            }
+          >
+            Cambiar a {isOrderedList ? 'viñetas' : 'números'}
+          </Button>
+        </Box>
+
+        <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+          <InputLabel>Tipo de {isOrderedList ? 'numeración' : 'viñeta'}</InputLabel>
+          <Select
+            value={listStyle || (isOrderedList ? 'decimal' : 'disc')}
+            onChange={(e) => updateListStyle(selectedComponentId, e.target.value)}
+            label={`Tipo de ${isOrderedList ? 'numeración' : 'viñeta'}`}
+          >
+            {listStyleOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Typography variant="subtitle2" gutterBottom>
+          Color de {isOrderedList ? 'números' : 'viñetas'}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Box
+            sx={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              backgroundColor: listColor || '#000000',
+              mr: 1,
+              border: '1px solid #ddd',
+            }}
+          />
+          <input
+            type="color"
+            value={listColor || '#000000'}
+            onChange={(e) => updateListColor(selectedComponentId, e.target.value)}
+            style={{ width: '100%' }}
+          />
+        </Box>
+      </Box>
+    );
+  };
+
   return (
     <Box
       sx={{
         width: 280,
+        maxWidth: 280,
         borderLeft: '1px solid #e0e0e0',
         display: 'flex',
         flexDirection: 'column',

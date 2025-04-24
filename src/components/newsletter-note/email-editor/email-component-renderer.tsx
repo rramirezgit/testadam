@@ -1,11 +1,14 @@
 'use client';
 
-import { Box, Typography, Button, IconButton, TextField, Divider, Chip } from '@mui/material';
-import { Icon } from '@iconify/react';
-import type { EmailComponent } from 'src/types/saved-note';
-import type { Editor } from '@tiptap/react';
-import SimpleTipTapEditor from 'src/components/newsletter-note/simple-tiptap-editor';
 import type React from 'react';
+import type { Editor } from '@tiptap/react';
+import type { EmailComponent } from 'src/types/saved-note';
+
+import { Icon } from '@iconify/react';
+
+import { Box, Chip, Button, Divider, TextField, Typography, IconButton } from '@mui/material';
+
+import SimpleTipTapEditor from 'src/components/newsletter-note/simple-tiptap-editor';
 
 interface EmailComponentRendererProps {
   component: EmailComponent;
@@ -18,6 +21,7 @@ interface EmailComponentRendererProps {
   moveComponent: (id: string, direction: 'up' | 'down') => void;
   removeComponent: (id: string) => void;
   totalComponents: number;
+  renderCustomContent?: (component: EmailComponent) => React.ReactNode;
 }
 
 export default function EmailComponentRenderer({
@@ -31,6 +35,7 @@ export default function EmailComponentRenderer({
   moveComponent,
   removeComponent,
   totalComponents,
+  renderCustomContent,
 }: EmailComponentRendererProps) {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -108,13 +113,73 @@ export default function EmailComponentRenderer({
     </Box>
   );
 
+  // Función auxiliar para generar el marcador de lista ordenada
+  const getOrderedListMarker = (index: number, listStyle: string): string => {
+    switch (listStyle) {
+      case 'decimal':
+        return `${index}`;
+      case 'lower-alpha':
+        return `${String.fromCharCode(96 + index)}`;
+      case 'upper-alpha':
+        return `${String.fromCharCode(64 + index)}`;
+      case 'lower-roman':
+        return `${toRoman(index).toLowerCase()}`;
+      case 'upper-roman':
+        return `${toRoman(index)}`;
+      default:
+        return `${index}`;
+    }
+  };
+
+  // Función para convertir números a numerales romanos
+  const toRoman = (num: number): string => {
+    const romanNumerals = [
+      { value: 1000, numeral: 'M' },
+      { value: 900, numeral: 'CM' },
+      { value: 500, numeral: 'D' },
+      { value: 400, numeral: 'CD' },
+      { value: 100, numeral: 'C' },
+      { value: 90, numeral: 'XC' },
+      { value: 50, numeral: 'L' },
+      { value: 40, numeral: 'XL' },
+      { value: 10, numeral: 'X' },
+      { value: 9, numeral: 'IX' },
+      { value: 5, numeral: 'V' },
+      { value: 4, numeral: 'IV' },
+      { value: 1, numeral: 'I' },
+    ];
+
+    let result = '';
+    let remaining = num;
+
+    for (const { value, numeral } of romanNumerals) {
+      while (remaining >= value) {
+        result += numeral;
+        remaining -= value;
+      }
+    }
+
+    return result;
+  };
+
   switch (component.type) {
     case 'category':
       const categoryColor = component.props?.color || '#4caf50';
       const categoryItems = component.props?.items || [component.content];
 
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
             {categoryItems.map((item, index) => (
@@ -168,7 +233,18 @@ export default function EmailComponentRenderer({
 
     case 'author':
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Typography
             variant="body2"
@@ -207,7 +283,18 @@ export default function EmailComponentRenderer({
 
     case 'summary':
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Box
             sx={{
@@ -259,7 +346,18 @@ export default function EmailComponentRenderer({
     case 'heading':
       const HeadingTag = `h${component.props?.level || 2}` as keyof JSX.IntrinsicElements;
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <HeadingTag style={component.style || {}}>
             <SimpleTipTapEditor
@@ -274,7 +372,18 @@ export default function EmailComponentRenderer({
 
     case 'paragraph':
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Typography
             variant="body1"
@@ -302,7 +411,18 @@ export default function EmailComponentRenderer({
 
     case 'button':
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Button
             variant="contained"
@@ -329,59 +449,166 @@ export default function EmailComponentRenderer({
 
     case 'divider':
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Divider sx={{ my: 2, ...(component.style || {}) }} />
         </Box>
       );
 
     case 'bulletList':
+      if (renderCustomContent) {
+        return (
+          <Box
+            sx={{
+              position: 'relative',
+              mb: 2,
+              border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+              borderRadius: '4px',
+              '&:hover': {
+                border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+              },
+            }}
+            onClick={onSelect}
+          >
+            {isSelected && <ComponentToolbar />}
+            {renderCustomContent(component)}
+          </Box>
+        );
+      }
+
       const items = component.props?.items || ['Item 1', 'Item 2', 'Item 3'];
+      const listStyle = component.props?.listStyle || 'disc';
+      const listColor = component.props?.listColor || '#000000';
+
+      // Determinar si es una lista ordenada
+      const isOrderedList =
+        listStyle === 'decimal' ||
+        listStyle === 'lower-alpha' ||
+        listStyle === 'upper-alpha' ||
+        listStyle === 'lower-roman' ||
+        listStyle === 'upper-roman';
+
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
-          <ul style={{ paddingLeft: '20px', marginBottom: '16px', ...(component.style || {}) }}>
+          <Box sx={{ pl: 2 }}>
             {items.map((item, i) => (
-              <li key={i} style={{ marginBottom: '8px' }}>
-                <Typography variant="body1" component="span">
-                  <SimpleTipTapEditor
-                    content={item}
-                    onChange={(newContent) => {
-                      const newItems = [...items];
-                      newItems[i] = newContent;
-                      updateComponentProps(component.id, { items: newItems });
+              <Box
+                key={i}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  mb: 1,
+                }}
+              >
+                {isOrderedList ? (
+                  // Marcador para listas ordenadas - Estilo unificado con círculo y número
+                  <Box
+                    sx={{
+                      minWidth: '24px',
+                      mr: 2,
+                      backgroundColor: listColor,
+                      borderRadius: '50%',
+                      color: 'white',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      height: '24px',
+                      width: '24px',
+                      lineHeight: '24px',
+                      textAlign: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
-                    onSelectionUpdate={handleSelectionUpdate}
-                    style={{ outline: 'none' }}
-                  />
-                </Typography>
-              </li>
+                  >
+                    {getOrderedListMarker(i + 1, listStyle)}
+                  </Box>
+                ) : (
+                  // Marcador para listas no ordenadas - Estilo unificado
+                  <Box
+                    sx={{
+                      minWidth: '24px',
+                      mr: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {listStyle === 'disc' && (
+                      <Box
+                        sx={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: listColor,
+                        }}
+                      />
+                    )}
+                    {listStyle === 'circle' && (
+                      <Box
+                        sx={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          border: `1px solid ${listColor}`,
+                          backgroundColor: 'transparent',
+                        }}
+                      />
+                    )}
+                    {listStyle === 'square' && (
+                      <Box
+                        sx={{
+                          width: '8px',
+                          height: '8px',
+                          backgroundColor: listColor,
+                        }}
+                      />
+                    )}
+                  </Box>
+                )}
+                <Box sx={{ flexGrow: 1 }}>{item}</Box>
+              </Box>
             ))}
-          </ul>
-          {isSelected && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Icon icon="mdi:plus" />}
-              onClick={() => {
-                const newItems = [...items, 'New item'];
-                updateComponentProps(component.id, { items: newItems });
-              }}
-              sx={{
-                mt: 1,
-                borderRadius: '8px',
-                textTransform: 'none',
-              }}
-            >
-              Añadir elemento
-            </Button>
-          )}
+          </Box>
         </Box>
       );
 
     case 'spacer':
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Box
             sx={{
@@ -406,7 +633,18 @@ export default function EmailComponentRenderer({
 
     case 'image':
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Box sx={{ textAlign: 'center', mb: 2, ...(component.style || {}) }}>
             <img
@@ -441,7 +679,18 @@ export default function EmailComponentRenderer({
 
     case 'gallery':
       return (
-        <Box sx={componentStyle} onClick={handleClick} key={component.id}>
+        <Box
+          sx={{
+            position: 'relative',
+            mb: 2,
+            border: isSelected ? '2px solid #3f51b5' : '2px solid transparent',
+            borderRadius: '4px',
+            '&:hover': {
+              border: isSelected ? '2px solid #3f51b5' : '2px dashed #ccc',
+            },
+          }}
+          onClick={onSelect}
+        >
           {isSelected && <ComponentToolbar />}
           <Box sx={{ textAlign: 'center', mb: 2, ...(component.style || {}) }}>
             <Typography variant="subtitle2" gutterBottom>

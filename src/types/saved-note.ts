@@ -16,7 +16,17 @@ export interface EmailComponent {
     | 'news'
     | 'gallery';
   content: string;
-  props?: Record<string, any>;
+  props: {
+    level?: number;
+    variant?: string;
+    color?: string;
+    src?: string;
+    alt?: string;
+    items?: string[]; // Para listas
+    listStyle?: string; // Estilo de lista
+    listColor?: string; // Color de los bullets
+    [key: string]: any;
+  };
   style?: React.CSSProperties;
 }
 
@@ -32,5 +42,8 @@ export interface SavedNote {
   selectedBanner?: string | null;
   showGradient?: boolean;
   gradientColors?: string[];
+  aiGenerated?: boolean;
+  imageUrl?: string;
+  createdAt?: string;
   activeVersion?: 'newsletter' | 'web'; // Para rastrear qué versión está activa
 }

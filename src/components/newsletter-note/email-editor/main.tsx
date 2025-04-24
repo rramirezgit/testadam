@@ -46,6 +46,9 @@ interface EmailEditorProps {
   onSave?: (note: SavedNote) => void;
 }
 
+// Crear una plantilla vacía
+const emptyTemplate: EmailComponent[] = [];
+
 export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   initialTemplate = 'blank',
   onSave,
@@ -56,7 +59,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   isNewsletterMode = false,
 }) => {
   const [activeTab, setActiveTab] = useState<string>('contenido');
-  const [activeTemplate, setActiveTemplate] = useState('notion');
+  const [activeTemplate, setActiveTemplate] = useState('blank'); // Cambiar a 'blank' por defecto
   const [editMode, setEditMode] = useState(true);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,6 +103,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   const { addNote, updateNote, addSelectedNote } = useStore();
 
   // Estado para los componentes de cada plantilla
+  const [blankComponentsState, setBlankComponents] = useState<EmailComponent[]>(emptyTemplate);
+  const [blankComponentsWebState, setBlankComponentsWeb] =
+    useState<EmailComponent[]>(emptyTemplate);
   const [notionComponentsState, setNotionComponents] = useState<EmailComponent[]>(notionComponents);
   const [notionComponentsWebState, setNotionComponentsWeb] =
     useState<EmailComponent[]>(notionComponentsWeb);
@@ -122,29 +128,28 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   const [showGradient, setShowGradient] = useState(false);
   const [gradientColors, setGradientColors] = useState(['#f6f9fc', '#e9f2ff']);
 
+  // Añade un nuevo estado para rastrear si hay texto seleccionado
+  const [hasTextSelection, setHasTextSelection] = useState(false);
+
+  // Añadir nuevos estados para el estilo de lista
+  const [listStyle, setListStyle] = useState<
+    | 'disc'
+    | 'circle'
+    | 'square'
+    | 'decimal'
+    | 'lower-alpha'
+    | 'upper-alpha'
+    | 'lower-roman'
+    | 'upper-roman'
+  >('disc');
+  const [listColor, setListColor] = useState('#000000');
+
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = () => {
-    if (activeVersion === 'web') {
-      // Retornar componentes de la versión web
+    if (activeVersion === 'newsletter') {
       switch (activeTemplate) {
-        case 'news':
-          return newsComponentsWebState;
-        case 'notion':
-          return notionComponentsWebState;
-        case 'plaid':
-          return plaidComponentsWebState;
-        case 'stripe':
-          return stripeComponentsWebState;
-        case 'vercel':
-          return vercelComponentsWebState;
-        default:
-          return [];
-      }
-    } else {
-      // Retornar componentes de la versión newsletter
-      switch (activeTemplate) {
-        case 'news':
-          return newsComponentsState;
+        case 'blank':
+          return blankComponentsState;
         case 'notion':
           return notionComponentsState;
         case 'plaid':
@@ -153,8 +158,27 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           return stripeComponentsState;
         case 'vercel':
           return vercelComponentsState;
+        case 'news':
+          return newsComponentsState;
         default:
-          return [];
+          return blankComponentsState; // Por defecto, usar la plantilla vacía
+      }
+    } else {
+      switch (activeTemplate) {
+        case 'blank':
+          return blankComponentsWebState;
+        case 'notion':
+          return notionComponentsWebState;
+        case 'plaid':
+          return plaidComponentsWebState;
+        case 'stripe':
+          return stripeComponentsWebState;
+        case 'vercel':
+          return vercelComponentsWebState;
+        case 'news':
+          return newsComponentsWebState;
+        default:
+          return blankComponentsWebState; // Por defecto, usar la plantilla vacía
       }
     }
   };
@@ -164,6 +188,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     if (activeVersion === 'web') {
       // Actualizar componentes de la versión web
       switch (activeTemplate) {
+        case 'blank':
+          setBlankComponentsWeb(components);
+          break;
         case 'news':
           setNewsComponentsWeb(components);
           break;
@@ -185,6 +212,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     } else {
       // Actualizar componentes de la versión newsletter
       switch (activeTemplate) {
+        case 'blank':
+          setBlankComponents(components);
+          break;
         case 'news':
           setNewsComponents(components);
           break;
@@ -233,7 +263,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     updateActiveComponents(updatedComponents);
   };
 
-  // Añadir un nuevo componente
+  // Actualizar la función addComponent para incluir propiedades de lista
   const addComponent = (type: ComponentType) => {
     const components = getActiveComponents();
     const suffix = activeVersion === 'web' ? '-web' : '';
@@ -259,34 +289,37 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       props:
         type === 'heading'
           ? { level: 2 }
-          : type === 'bulletList'
-            ? { items: ['Item 1', 'Item 2', 'Item 3'] }
+          : type === 'button'
+            ? { variant: 'contained', color: 'primary' }
             : type === 'image'
-              ? { src: '/placeholder.svg', alt: 'Image' }
-              : type === 'gallery'
-                ? {
-                    layout: 'single',
-                    images: [
-                      { src: '/colorful-abstract-flow.png', alt: 'Gallery image 1' },
-                      { src: '/abstract-geometric-shapes.png', alt: 'Gallery image 2' },
-                      { src: '/abstract-geometric-shapes.png', alt: 'Gallery image 3' },
-                      { src: '/abstract-geometric-shapes.png', alt: 'Gallery image 4' },
-                    ],
-                  }
-                : type === 'category'
-                  ? { color: ['#4caf50'], items: ['Categoría'] }
-                  : type === 'author'
-                    ? { author: 'Autor', date: new Date().toLocaleDateString() }
-                    : type === 'summary'
-                      ? { icon: 'mdi:text-box-outline', label: 'Resumen' }
-                      : {},
-      style: {},
+              ? { src: 'https://via.placeholder.com/600x400', alt: 'Placeholder image' }
+              : type === 'bulletList'
+                ? { items: ['List item 1'], listStyle: 'disc', listColor: '#000000' }
+                : {},
+      style:
+        type === 'button'
+          ? {
+              backgroundColor: '#3f51b5',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer',
+            }
+          : type === 'bulletList'
+            ? {
+                listStyleType: 'disc',
+                color: '#000000',
+                marginLeft: '20px',
+              }
+            : {},
     };
 
+    // Actualizar los componentes activos con el nuevo componente
     updateActiveComponents([...components, newComponent]);
     setSelectedComponentId(newComponent.id);
 
-    // Usar setTimeout para dar tiempo al DOM a actualizarse
+    // Scroll al nuevo componente
     setTimeout(() => {
       if (editorRef.current) {
         try {
@@ -386,6 +419,15 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             setVercelComponentsWeb(webComponents);
           }
           break;
+        case 'blank':
+          if (blankComponentsWebState.length === 0) {
+            const webComponents = blankComponentsState.map((comp) => ({
+              ...comp,
+              id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
+            }));
+            setBlankComponentsWeb(webComponents);
+          }
+          break;
         default:
           break;
       }
@@ -426,6 +468,10 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       case 'vercel':
         objdata = vercelComponentsState;
         objdataWeb = vercelComponentsWebState;
+        break;
+      case 'blank':
+        objdata = blankComponentsState;
+        objdataWeb = blankComponentsWebState;
         break;
       default:
         break;
@@ -494,6 +540,10 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 
     // Load the components for newsletter version
     switch (note.templateType) {
+      case 'blank':
+        setBlankComponents(note.objdata);
+        if (note.objdataWeb) setBlankComponentsWeb(note.objdataWeb);
+        break;
       case 'news':
         setNewsComponents(note.objdata);
         if (note.objdataWeb) setNewsComponentsWeb(note.objdataWeb);
@@ -535,8 +585,13 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     }
   }, [initialNote]);
 
+  // Modificar handleSelectionUpdate para detectar selección de texto
   const handleSelectionUpdate = (editor: Editor) => {
     setActiveEditor(editor);
+
+    // Verificar si hay texto seleccionado
+    const { from, to } = editor.state.selection;
+    setHasTextSelection(from !== to);
 
     // Actualizar los controles de formato basados en el estado del editor
     if (editor) {
@@ -546,6 +601,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       if (editor.isActive('underline')) newFormats.push('underlined');
       if (editor.isActive('strike')) newFormats.push('strikethrough');
 
+      // Importante: actualizar el estado con los nuevos formatos
       setTextFormat(newFormats);
 
       // Actualizar alineación
@@ -554,12 +610,36 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       else if (editor.isActive({ textAlign: 'right' })) newAlignment = 'right';
       else if (editor.isActive({ textAlign: 'justify' })) newAlignment = 'justify';
 
+      // Actualizar el estado de alineación
       setSelectedAlignment(newAlignment);
 
       // Actualizar color si está disponible
       const marks = editor.getAttributes('textStyle');
       if (marks.color) {
         setSelectedColor(marks.color);
+      }
+
+      // Actualizar fuente y tamaño si están disponibles
+      if (marks.fontFamily) {
+        setSelectedFont(marks.fontFamily);
+      }
+
+      // Actualizar peso de fuente
+      const textStyle = editor.getAttributes('textStyle');
+      if (textStyle.fontWeight) {
+        setSelectedFontWeight(textStyle.fontWeight);
+      }
+
+      // Verificar si el componente seleccionado es una lista
+      if (selectedComponentId) {
+        const components = getActiveComponents();
+        const component = components.find((comp) => comp.id === selectedComponentId);
+
+        if (component && component.type === 'bulletList') {
+          // Actualizar los estados de estilo de lista
+          setListStyle((component.props.listStyle || 'disc') as any);
+          setListColor(component.props.listColor || '#000000');
+        }
       }
     }
   };
@@ -568,28 +648,60 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   const applyTextFormat = (format: string) => {
     if (!activeEditor) return;
 
+    // Crear una copia del array actual de formatos
+    const newFormats = [...textFormat];
+
     switch (format) {
       case 'bold':
         activeEditor.chain().focus().toggleBold().run();
+        // Actualizar el estado inmediatamente
+        if (activeEditor.isActive('bold')) {
+          if (!newFormats.includes('bold')) newFormats.push('bold');
+        } else {
+          const index = newFormats.indexOf('bold');
+          if (index > -1) newFormats.splice(index, 1);
+        }
         break;
       case 'italic':
         activeEditor.chain().focus().toggleItalic().run();
+        if (activeEditor.isActive('italic')) {
+          if (!newFormats.includes('italic')) newFormats.push('italic');
+        } else {
+          const index = newFormats.indexOf('italic');
+          if (index > -1) newFormats.splice(index, 1);
+        }
         break;
       case 'underlined':
         activeEditor.chain().focus().toggleUnderline().run();
+        if (activeEditor.isActive('underline')) {
+          if (!newFormats.includes('underlined')) newFormats.push('underlined');
+        } else {
+          const index = newFormats.indexOf('underlined');
+          if (index > -1) newFormats.splice(index, 1);
+        }
         break;
       case 'strikethrough':
         activeEditor.chain().focus().toggleStrike().run();
+        if (activeEditor.isActive('strike')) {
+          if (!newFormats.includes('strikethrough')) newFormats.push('strikethrough');
+        } else {
+          const index = newFormats.indexOf('strikethrough');
+          if (index > -1) newFormats.splice(index, 1);
+        }
         break;
       default:
         break;
     }
+
+    // Actualizar el estado con los nuevos formatos
+    setTextFormat(newFormats);
   };
 
   // Aplicar alineación al texto seleccionado
   const applyTextAlignment = (alignment: string) => {
     if (!activeEditor) return;
     activeEditor.chain().focus().setTextAlign(alignment).run();
+    setSelectedAlignment(alignment);
   };
 
   // Aplicar color al texto seleccionado
@@ -641,6 +753,171 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     }
   };
 
+  // Añadir función para agregar un elemento a la lista
+  const addListItem = (listId: string) => {
+    const components = getActiveComponents();
+    const component = components.find((comp) => comp.id === listId);
+
+    if (component && component.type === 'bulletList') {
+      const items = component.props.items || [];
+      const updatedProps = {
+        ...component.props,
+        items: [...items, 'New list item'],
+      };
+
+      updateComponentProps(listId, updatedProps);
+    }
+  };
+
+  // Añadir función para eliminar un elemento de la lista
+  const removeListItem = (listId: string, itemIndex: number) => {
+    const components = getActiveComponents();
+    const component = components.find((comp) => comp.id === listId);
+
+    if (component && component.type === 'bulletList') {
+      const items = [...(component.props.items || [])];
+      if (items.length > 1) {
+        // Mantener al menos un elemento
+        items.splice(itemIndex, 1);
+        const updatedProps = {
+          ...component.props,
+          items,
+        };
+
+        updateComponentProps(listId, updatedProps);
+      } else {
+        // Mostrar mensaje si se intenta eliminar el último elemento
+        setSnackbarMessage('La lista debe tener al menos un elemento');
+        setSnackbarSeverity('info');
+        setOpenSnackbar(true);
+      }
+    }
+  };
+
+  // Añadir función para actualizar un elemento de la lista
+  const updateListItem = (listId: string, itemIndex: number, content: string) => {
+    const components = getActiveComponents();
+    const component = components.find((comp) => comp.id === listId);
+
+    if (component && component.type === 'bulletList') {
+      const items = [...(component.props.items || [])];
+      items[itemIndex] = content;
+
+      const updatedProps = {
+        ...component.props,
+        items,
+      };
+
+      updateComponentProps(listId, updatedProps);
+    }
+  };
+
+  // Añadir función para cambiar el estilo de la lista
+  const updateListStyle = (listId: string, listStyleType: string) => {
+    // Actualizar el estilo visual del componente
+    updateComponentStyle(listId, { listStyleType });
+
+    // Actualizar las propiedades del componente
+    const components = getActiveComponents();
+    const component = components.find((comp) => comp.id === listId);
+
+    if (component && component.type === 'bulletList') {
+      const updatedProps = {
+        ...component.props,
+        listStyle: listStyleType,
+      };
+
+      updateComponentProps(listId, updatedProps);
+
+      // Actualizar el estado global
+      setListStyle(listStyleType as any);
+    }
+  };
+
+  // Añadir función para cambiar el color de los bullets
+  const updateListColor = (listId: string, color: string) => {
+    // Actualizar el estilo visual del componente
+    updateComponentStyle(listId, { color });
+
+    // Actualizar las propiedades del componente
+    const components = getActiveComponents();
+    const component = components.find((comp) => comp.id === listId);
+
+    if (component && component.type === 'bulletList') {
+      const updatedProps = {
+        ...component.props,
+        listColor: color,
+      };
+
+      updateComponentProps(listId, updatedProps);
+
+      // Actualizar el estado global
+      setListColor(color);
+    }
+  };
+
+  // Modificar la función convertTextToList para limpiar el HTML
+  const convertTextToList = (componentId: string | null, listType: 'ordered' | 'unordered') => {
+    if (!componentId) return;
+
+    const components = getActiveComponents();
+    const component = components.find((comp) => comp.id === componentId);
+
+    if (component && component.type === 'paragraph') {
+      // Limpiar el contenido HTML para extraer solo el texto
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = component.content;
+      const textContent = tempDiv.textContent || tempDiv.innerText || component.content;
+
+      // Dividir el contenido por líneas para crear múltiples elementos de lista
+      const listItems = textContent
+        .split(/\r?\n/)
+        .filter((item) => item.trim() !== '')
+        .map((item) => item.trim());
+
+      // Si no hay elementos después de dividir, usar el texto completo
+      const items = listItems.length > 0 ? listItems : [textContent];
+
+      // Crear un nuevo componente de lista con el contenido limpio
+      const newListComponent: EmailComponent = {
+        id: `bulletList-${Date.now()}${activeVersion === 'web' ? '-web' : ''}`,
+        type: 'bulletList',
+        content: '',
+        props: {
+          items,
+          listStyle: listType === 'ordered' ? 'decimal' : 'disc',
+          listColor: '#000000',
+        },
+        style: {
+          listStyleType: listType === 'ordered' ? 'decimal' : 'disc',
+          color: '#000000',
+          marginLeft: '20px',
+        },
+      };
+
+      // Encontrar la posición del componente actual
+      const currentIndex = components.findIndex((comp) => comp.id === componentId);
+
+      // Reemplazar el párrafo con la lista
+      const updatedComponents = [...components];
+      updatedComponents.splice(currentIndex, 1, newListComponent);
+
+      // Actualizar los componentes
+      updateActiveComponents(updatedComponents);
+
+      // Seleccionar el nuevo componente
+      setSelectedComponentId(newListComponent.id);
+
+      // Actualizar los estados de estilo de lista
+      setListStyle(listType === 'ordered' ? 'decimal' : 'disc');
+
+      // Mostrar mensaje de éxito
+      setSnackbarMessage('Párrafo convertido a lista');
+      setSnackbarSeverity('success');
+      setOpenSnackbar(true);
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
       {/* Barra de navegación superior */}
@@ -668,6 +945,8 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           generatingEmail={generatingEmail}
           handleGenerateEmailHtml={handleGenerateEmailHtml}
           setOpenSaveDialog={setOpenSaveDialog}
+          activeVersion={activeVersion}
+          setActiveVersion={handleVersionChange}
         />
 
         {/* Área central - Editor de email */}
@@ -687,6 +966,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             moveComponent={moveComponent}
             removeComponent={removeComponent}
             addComponent={addComponent}
+            addListItem={addListItem}
+            removeListItem={removeListItem}
+            updateListItem={updateListItem}
             editMode={editMode}
             selectedBanner={selectedBanner}
             bannerOptions={bannerOptions}
@@ -714,6 +996,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           selectedFontWeight={selectedFontWeight}
           setSelectedFontWeight={setSelectedFontWeight}
           selectedAlignment={selectedAlignment}
+          setSelectedAlignment={setSelectedAlignment}
           textFormat={textFormat}
           applyTextFormat={applyTextFormat}
           applyTextAlignment={applyTextAlignment}
@@ -729,6 +1012,12 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           gradientColors={gradientColors}
           setGradientColors={setGradientColors}
           bannerOptions={bannerOptions}
+          hasTextSelection={hasTextSelection}
+          listStyle={listStyle}
+          updateListStyle={updateListStyle}
+          listColor={listColor}
+          updateListColor={updateListColor}
+          convertTextToList={convertTextToList}
         />
       </Box>
 

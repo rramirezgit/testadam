@@ -1,6 +1,7 @@
 import type { Theme, SxProps } from '@mui/material/styles';
 import type { BreadcrumbsProps } from '@mui/material/Breadcrumbs';
 
+import { Box, Typography } from '@mui/material';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
 
 import { BackLink } from './back-link';
@@ -34,6 +35,7 @@ export type CustomBreadcrumbsSlots = {
 export type CustomBreadcrumbsProps = React.ComponentProps<'div'> & {
   sx?: SxProps<Theme>;
   heading?: string;
+  subheading?: string;
   activeLast?: boolean;
   backHref?: string;
   action?: React.ReactNode;
@@ -48,6 +50,7 @@ export function CustomBreadcrumbs({
   action,
   backHref,
   heading,
+  subheading,
   slots = {},
   links = [],
   moreLinks = [],
@@ -59,8 +62,19 @@ export function CustomBreadcrumbs({
 
   const renderHeading = () => (
     <BreadcrumbsHeading {...slotProps?.heading}>
-      {backHref ? <BackLink href={backHref} label={heading} /> : heading}
+      <Box sx={{ display: 'flex', alignItems: 'start', gap: 0, flexDirection: 'column' }}>
+        {backHref ? <BackLink href={backHref} label={heading} /> : heading}
+        {subheading && renderSubheading()}
+      </Box>
     </BreadcrumbsHeading>
+  );
+
+  const renderSubheading = () => (
+    <Box sx={{ mb: 0 }}>
+      <Typography sx={{ fontSize: '14px' }} color="text.secondary">
+        {subheading}
+      </Typography>
+    </Box>
   );
 
   const renderLinks = () =>

@@ -1,5 +1,6 @@
 import type { EmailComponent } from 'src/types/saved-note';
 import type { BannerOption } from 'src/components/newsletter-note/banner-selector';
+import type { NewsletterHeader, NewsletterFooter } from 'src/types/newsletter-note';
 
 export async function generateEmailHtml(
   components: EmailComponent[],
@@ -7,10 +8,12 @@ export async function generateEmailHtml(
   selectedBanner: string | null,
   bannerOptions: BannerOption[],
   emailBackground: string,
-  showGradient: boolean,
-  gradientColors: string[]
+  header: NewsletterHeader,
+  footer: NewsletterFooter
 ): Promise<string> {
   try {
+    console.log('Generando HTML con header:', header, 'y footer:', footer); // Para depuración
+
     console.log(
       'Generando HTML para template:',
       activeTemplate,
@@ -21,7 +24,7 @@ export async function generateEmailHtml(
 
     // Crear HTML básico manualmente para asegurar que tenemos algo válido
     let emailHtml =
-      '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>Email Template</title>\n</head>\n<body>\n';
+      '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Email Template</title>\n</head>\n<body>\n';
 
     // Determinar el estilo de fondo basado en la selección
     let backgroundStyle = '';
@@ -43,10 +46,20 @@ export async function generateEmailHtml(
       } else {
         backgroundStyle = `background-color: ${emailBackground};`;
       }
-    } else if (showGradient) {
-      backgroundStyle = `background: linear-gradient(to bottom, ${gradientColors[0]}, ${gradientColors[1]});`;
     } else {
       backgroundStyle = `background-color: ${emailBackground};`;
+    }
+
+    // Generar el HTML del header
+    let headerHtml = '';
+    if (header) {
+      headerHtml = generateHeaderHtml(header);
+    }
+
+    // Generar el HTML del footer
+    let footerHtml = '';
+    if (footer) {
+      footerHtml = generateFooterHtml(footer);
     }
 
     // Añadir contenido según el template con el fondo personalizado
@@ -100,11 +113,75 @@ export async function generateEmailHtml(
               break;
             case 'bulletList':
               const items = component.props?.items || [];
-              emailHtml += `<ul style="padding-left: 20px; margin: 16px 0;">\n`;
-              items.forEach((item) => {
-                emailHtml += `  <li style="margin-bottom: 8px; color: #333; font-size: 16px; line-height: 1.6;">${item}</li>\n`;
+              const listStyle = component.props?.listStyle || 'disc';
+              const listColor = component.props?.listColor || '#000000';
+
+              // Determinar si es una lista ordenada
+              const isOrderedList =
+                listStyle === 'decimal' ||
+                listStyle === 'lower-alpha' ||
+                listStyle === 'upper-alpha' ||
+                listStyle === 'lower-roman' ||
+                listStyle === 'upper-roman';
+
+              // Para listas compatibles con email, usamos tablas
+              let listHtml = '';
+
+              items.forEach((item, index) => {
+                if (isOrderedList) {
+                  // Estilo para listas ordenadas con números/letras
+                  const marker = getOrderedListMarker(index + 1, listStyle);
+
+                  // Usar un formato altamente compatible con clientes de email
+                  listHtml += `
+                    <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:12px;">
+                      <tbody>
+                        <tr>
+                          <td width="30" valign="top" style="padding-right:10px;">
+                            <div style="background-color:${listColor};border-radius:50%;color:white;font-size:12px;font-weight:bold;height:24px;width:24px;line-height:24px;text-align:center;">${marker}</div>
+                          </td>
+                          <td valign="top">
+                            <div style="font-size:14px;line-height:24px;margin:0;">${item}</div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  `;
+                } else {
+                  // Estilo para listas no ordenadas con diferentes tipos de viñetas
+                  let bulletHtml = '';
+
+                  // Usar formatos simples y altamente compatibles
+                  if (listStyle === 'disc' || listStyle === 'circle') {
+                    // Círculo sólido o hueco
+                    bulletHtml = `<div style="background-color:${listStyle === 'disc' ? listColor : 'transparent'};border:${listStyle === 'circle' ? `1px solid ${listColor}` : '0'};border-radius:50%;height:8px;width:8px;margin-top:8px;"></div>`;
+                  } else if (listStyle === 'square') {
+                    // Cuadrado
+                    bulletHtml = `<div style="background-color:${listColor};height:8px;width:8px;margin-top:8px;"></div>`;
+                  } else {
+                    // Bullet estándar como fallback
+                    bulletHtml = `<div style="font-size:18px;line-height:18px;color:${listColor};">&bull;</div>`;
+                  }
+
+                  // Usar un formato altamente compatible con clientes de email
+                  listHtml += `
+                    <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:12px;">
+                      <tbody>
+                        <tr>
+                          <td width="30" valign="top" style="padding-right:10px;">
+                            <div style="text-align:center;">${bulletHtml}</div>
+                          </td>
+                          <td valign="top">
+                            <div style="font-size:14px;line-height:24px;margin:0;">${item}</div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  `;
+                }
               });
-              emailHtml += `</ul>\n`;
+
+              emailHtml += listHtml;
               break;
             case 'spacer':
               emailHtml += `<div style="height: 32px;"></div>\n`;
@@ -363,3 +440,132 @@ You received this email because you're a Stripe user.
     throw error;
   }
 }
+
+// Función auxiliar para generar el marcador de lista ordenada
+const getOrderedListMarker = (index: number, listStyle: string): string => {
+  switch (listStyle) {
+    case 'decimal':
+      return `${index}`;
+    case 'lower-alpha':
+      // Letras minúsculas (a, b, c...)
+      return `${String.fromCharCode(96 + index)}`;
+    case 'upper-alpha':
+      // Letras mayúsculas (A, B, C...)
+      return `${String.fromCharCode(64 + index)}`;
+    case 'lower-roman':
+      // Números romanos minúsculos (i, ii, iii...)
+      return `${toRoman(index).toLowerCase()}`;
+    case 'upper-roman':
+      // Números romanos mayúsculos (I, II, III...)
+      return `${toRoman(index)}`;
+    default:
+      return `${index}`;
+  }
+};
+
+// Función para convertir números a numerales romanos
+const toRoman = (num: number): string => {
+  const romanNumerals = [
+    { value: 1000, numeral: 'M' },
+    { value: 900, numeral: 'CM' },
+    { value: 500, numeral: 'D' },
+    { value: 400, numeral: 'CD' },
+    { value: 100, numeral: 'C' },
+    { value: 90, numeral: 'XC' },
+    { value: 50, numeral: 'L' },
+    { value: 40, numeral: 'XL' },
+    { value: 10, numeral: 'X' },
+    { value: 9, numeral: 'IX' },
+    { value: 5, numeral: 'V' },
+    { value: 4, numeral: 'IV' },
+    { value: 1, numeral: 'I' },
+  ];
+
+  let result = '';
+  let remaining = num;
+
+  for (const { value, numeral } of romanNumerals) {
+    while (remaining >= value) {
+      result += numeral;
+      remaining -= value;
+    }
+  }
+
+  return result;
+};
+
+// Función para generar el HTML del header
+const generateHeaderHtml = (header: NewsletterHeader): string => {
+  let headerStyle = '';
+
+  // Aplicar estilo de fondo (color sólido o gradiente)
+  if (header.showGradient && header.gradientColors && header.gradientColors.length >= 2) {
+    // Usar gradiente lineal para el fondo
+    headerStyle = `background: linear-gradient(to right, ${header.gradientColors[0]}, ${header.gradientColors[1]});`;
+  } else {
+    // Usar color sólido para el fondo
+    headerStyle = `background-color: ${header.backgroundColor};`;
+  }
+
+  let headerHtml = `<tr><td style="${headerStyle} padding: 20px; text-align: ${header.alignment}; color: ${header.textColor};">`;
+
+  // Añadir logo superior si existe
+  if (header.logo) {
+    headerHtml += `<div style="margin-bottom: 15px;"><img src="${header.logo}" alt="Logo" style="max-width: 150px; height: auto;"></div>`;
+  }
+
+  // Añadir título y subtítulo
+  headerHtml += `<h1 style="margin: 0; font-size: 28px; color: ${header.textColor};">${header.title}</h1>`;
+  if (header.subtitle) {
+    headerHtml += `<p style="margin: 5px 0 0; font-size: 16px; color: ${header.textColor};">${header.subtitle}</p>`;
+  }
+
+  // Añadir imagen de banner si existe
+  if (header.bannerImage) {
+    headerHtml += `<div style="margin-top: 20px;"><img src="${header.bannerImage}" alt="Banner" style="max-width: 100%; height: auto;"></div>`;
+  }
+
+  headerHtml += `</td></tr>`;
+
+  return headerHtml;
+};
+
+// Función para generar el HTML del footer
+const generateFooterHtml = (footer: NewsletterFooter): string => {
+  let footerStyle = '';
+
+  // Aplicar estilo de fondo (color sólido o gradiente)
+  if (footer.showGradient && footer.gradientColors && footer.gradientColors.length >= 2) {
+    // Usar gradiente lineal para el fondo
+    footerStyle = `background: linear-gradient(to right, ${footer.gradientColors[0]}, ${footer.gradientColors[1]});`;
+  } else {
+    // Usar color sólido para el fondo
+    footerStyle = `background-color: ${footer.backgroundColor};`;
+  }
+
+  let footerHtml = `<tr><td style="${footerStyle} padding: 20px; text-align: center; color: ${footer.textColor};">`;
+
+  footerHtml += `<p style="margin: 0 0 10px; font-size: 14px;">${footer.companyName}</p>`;
+
+  if (footer.address) {
+    footerHtml += `<p style="margin: 0 0 10px; font-size: 12px;">${footer.address}</p>`;
+  }
+
+  footerHtml += `<p style="margin: 0 0 10px; font-size: 12px;">${footer.contactEmail}</p>`;
+
+  // Añadir enlaces a redes sociales
+  if (footer.socialLinks && footer.socialLinks.length > 0) {
+    footerHtml += `<div style="margin: 15px 0;">`;
+    footer.socialLinks.forEach((link) => {
+      footerHtml += `<a href="${link.url}" style="color: ${footer.textColor}; text-decoration: none; margin: 0 5px; font-size: 12px;">${link.platform}</a>`;
+    });
+    footerHtml += `</div>`;
+  }
+
+  // Añadir enlace para darse de baja
+  footerHtml += `<p style="margin: 15px 0 0; font-size: 11px;"><a href="${footer.unsubscribeLink}" style="color: ${footer.textColor}; text-decoration: underline;">Unsubscribe</a></p>`;
+
+  footerHtml += `</td></tr>`;
+
+  return footerHtml;
+};

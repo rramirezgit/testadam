@@ -25,8 +25,16 @@ export interface ContentTabProps {
 export interface DesignTabProps {
   header: NewsletterHeader;
   footer: NewsletterFooter;
+  setHeader: (header: NewsletterHeader) => void;
+  setFooter: (footer: NewsletterFooter) => void;
   setOpenHeaderDialog: (open: boolean) => void;
   setOpenFooterDialog: (open: boolean) => void;
+  availableHeaders: HeaderTemplate[];
+  availableFooters: FooterTemplate[];
+  currentHeaderTemplate: HeaderTemplate | undefined;
+  setCurrentHeaderTemplate: (template: HeaderTemplate | undefined) => void;
+  currentFooterTemplate: FooterTemplate | undefined;
+  setCurrentFooterTemplate: (template: FooterTemplate | undefined) => void;
 }
 
 export interface HeaderDialogProps {
@@ -53,4 +61,56 @@ export interface HtmlPreviewDialogProps {
 export interface NewsletterEditorProps {
   onClose: () => void;
   initialNewsletter?: any;
+}
+
+export interface HeaderTemplate {
+  id: string;
+  name: string;
+  preview: string;
+  description: string;
+  template: {
+    title: string;
+    subtitle: string;
+    logo: string;
+    bannerImage: string;
+    backgroundColor: string;
+    textColor: string;
+    alignment: string;
+    showGradient: boolean;
+    gradientColors?: string[];
+  };
+}
+
+export interface FooterTemplate {
+  id: string;
+  name: string;
+  preview: string;
+  description: string;
+  template: {
+    companyName: string;
+    address: string;
+    contactEmail: string;
+    socialLinks: { platform: string; url: string }[];
+    unsubscribeLink: string;
+    backgroundColor: string;
+    textColor: string;
+    showGradient?: boolean;
+    gradientColors?: string[];
+  };
+}
+
+export interface SidebarProps {
+  sidebarTab: string;
+  setSidebarTab: (tab: string) => void;
+  selectedNotes: NewsletterNote[];
+  notes: SavedNote[];
+  handleAddNote: (note: NewsletterNote) => void;
+  handleRemoveNote: (noteId: string) => void;
+  handleEditNote: (note: SavedNote) => void;
+  handleCreateNewNote: () => void;
+  activeTab?: string;
+  onSelectHeader?: (header: HeaderTemplate) => void;
+  onSelectFooter?: (footer: FooterTemplate) => void;
+  currentHeader?: HeaderTemplate;
+  currentFooter?: FooterTemplate;
 }

@@ -1,9 +1,12 @@
 'use client';
 
-import { Grid, Typography, Box, Button } from '@mui/material';
-import { Icon } from '@iconify/react';
-import SavedNoteCard from './saved-note-card';
 import type { SavedNote } from 'src/types/saved-note';
+
+import { Icon } from '@iconify/react';
+
+import { Box, Grid, Button, Typography } from '@mui/material';
+
+import NoteCard from './notes-card';
 
 interface NotesGridProps {
   notes: SavedNote[];
@@ -18,6 +21,7 @@ export default function NotesGrid({
   onDeleteNote,
   onCreateNew,
 }: NotesGridProps) {
+  // Caso sin notas guardadas
   if (notes.length === 0) {
     return (
       <Box
@@ -30,7 +34,12 @@ export default function NotesGrid({
           textAlign: 'center',
         }}
       >
-        <Icon icon="mdi:note-outline" style={{ fontSize: 64, marginBottom: 16, opacity: 0.5 }} />
+        <Icon
+          icon="mdi:note-outline"
+          width={64}
+          height={64}
+          style={{ opacity: 0.5, marginBottom: 16 }}
+        />
         <Typography variant="h5" gutterBottom>
           No saved notes yet
         </Typography>
@@ -52,8 +61,8 @@ export default function NotesGrid({
   return (
     <Grid container spacing={3}>
       {notes.map((note) => (
-        <Grid item xs={12} sm={6} md={4} key={note.id}>
-          <SavedNoteCard note={note} onOpen={onOpenNote} onDelete={onDeleteNote} />
+        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={note.id}>
+          <NoteCard note={note} onOpen={onOpenNote} onDelete={onDeleteNote} />
         </Grid>
       ))}
     </Grid>

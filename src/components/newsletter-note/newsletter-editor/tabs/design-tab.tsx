@@ -1,14 +1,16 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useState } from "react"
-import { Box, Typography, Tabs, Tab, Button, Grid } from "@mui/material"
-import { useNewsletterEditor } from "../hooks/use-newsletter-editor"
-import BannerSelector from "../../banner-selector"
-import { bannerOptions } from "../../../components/email-editor/data/banner-options"
-import ColorPicker from "../../color-picker"
-import { galleryLayouts } from "../../gallery-selector"
+import { useState } from 'react';
+
+import { Box, Tab, Tabs, Grid, Button, Typography } from '@mui/material';
+
+import ColorPicker from '../../color-picker';
+import BannerSelector from '../../banner-selector';
+import { galleryLayouts } from '../../gallery-selector';
+import useNewsletterEditor from '../hooks/use-newsletter-editor';
+import { bannerOptions } from '../../email-editor/data/banner-options';
 
 export default function DesignTab() {
   const {
@@ -19,25 +21,25 @@ export default function DesignTab() {
     openHeaderDialog,
     openFooterDialog,
     openBannerDialog,
-  } = useNewsletterEditor()
+  } = useNewsletterEditor();
 
-  const [activeTab, setActiveTab] = useState(0)
+  const [activeTab, setActiveTab] = useState(0);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue)
-  }
+    setActiveTab(newValue);
+  };
 
   const handleGalleryLayoutChange = (layout: string) => {
-    if (selectedComponent && selectedComponent.type === "gallery") {
+    if (selectedComponent && selectedComponent.type === 'gallery') {
       updateComponent({
         ...selectedComponent,
         layout,
-      })
+      });
     }
-  }
+  };
 
   const renderGalleryOptions = () => {
-    if (!selectedComponent || selectedComponent.type !== "gallery") return null
+    if (!selectedComponent || selectedComponent.type !== 'gallery') return null;
 
     return (
       <Box>
@@ -53,13 +55,13 @@ export default function DesignTab() {
           {galleryLayouts.map((layout) => (
             <Grid item xs={12} sm={6} key={layout.id}>
               <Button
-                variant={selectedComponent.layout === layout.id ? "contained" : "outlined"}
+                variant={selectedComponent.layout === layout.id ? 'contained' : 'outlined'}
                 fullWidth
                 onClick={() => handleGalleryLayoutChange(layout.id)}
                 sx={{
-                  justifyContent: "center",
-                  height: "48px",
-                  textTransform: "none",
+                  justifyContent: 'center',
+                  height: '48px',
+                  textTransform: 'none',
                 }}
               >
                 {layout.name}
@@ -83,59 +85,76 @@ export default function DesignTab() {
           Editar imágenes
         </Button>
       </Box>
-    )
-  }
+    );
+  };
 
-  const renderBackgroundOptions = () => {
-    return (
-      <Box>
-        <Typography variant="h6" gutterBottom>
-          Fondo
-        </Typography>
-        <Typography variant="subtitle2" gutterBottom>
-          Color de fondo
-        </Typography>
-        <ColorPicker
-          color={newsletter.backgroundColor || "#ffffff"}
-          onChange={(color) => updateNewsletter({ backgroundColor: color })}
-          sx={{ mb: 3 }}
-        />
+  const renderBackgroundOptions = () => (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        Fondo
+      </Typography>
+      <Typography variant="subtitle2" gutterBottom>
+        Color de fondo
+      </Typography>
+      <ColorPicker
+        color={newsletter.backgroundColor || '#ffffff'}
+        onChange={(color) => updateNewsletter({ backgroundColor: color })}
+        sx={{ mb: 3 }}
+      />
 
-        <Typography variant="subtitle2" gutterBottom>
-          Banner
-        </Typography>
-        <BannerSelector
-          options={bannerOptions}
-          selectedBanner={newsletter.banner || null}
-          onSelect={(bannerId) => updateNewsletter({ banner: bannerId })}
-        />
-        <Button variant="outlined" color="primary" fullWidth onClick={openBannerDialog} sx={{ mt: 2 }}>
-          Personalizar banner
-        </Button>
-      </Box>
-    )
-  }
+      <Typography variant="subtitle2" gutterBottom>
+        Banner
+      </Typography>
+      <BannerSelector
+        options={bannerOptions}
+        selectedBanner={newsletter.banner || null}
+        onSelect={(bannerId) => updateNewsletter({ banner: bannerId })}
+      />
+      <Button
+        variant="outlined"
+        color="primary"
+        fullWidth
+        onClick={openBannerDialog}
+        sx={{ mt: 2 }}
+      >
+        Personalizar banner
+      </Button>
+    </Box>
+  );
 
-  const renderGeneralOptions = () => {
-    return (
-      <Box>
-        <Typography variant="h6" gutterBottom>
-          Diseño
-        </Typography>
-        <Button variant="outlined" color="primary" fullWidth onClick={openHeaderDialog} sx={{ mb: 2 }}>
-          Editar encabezado
-        </Button>
-        <Button variant="outlined" color="primary" fullWidth onClick={openFooterDialog} sx={{ mb: 2 }}>
-          Editar pie de página
-        </Button>
-      </Box>
-    )
-  }
+  const renderGeneralOptions = () => (
+    <Box>
+      <Typography variant="h6" gutterBottom>
+        Diseño
+      </Typography>
+      <Button
+        variant="outlined"
+        color="primary"
+        fullWidth
+        onClick={openHeaderDialog}
+        sx={{ mb: 2 }}
+      >
+        Editar encabezado
+      </Button>
+      <Button
+        variant="outlined"
+        color="primary"
+        fullWidth
+        onClick={openFooterDialog}
+        sx={{ mb: 2 }}
+      >
+        Editar pie de página
+      </Button>
+    </Box>
+  );
 
   return (
     <Box sx={{ p: 2 }}>
       <Tabs value={activeTab} onChange={handleTabChange} aria-label="design tabs" sx={{ mb: 2 }}>
-        <Tab label="GALERÍA" disabled={!selectedComponent || selectedComponent.type !== "gallery"} />
+        <Tab
+          label="GALERÍA"
+          disabled={!selectedComponent || selectedComponent.type !== 'gallery'}
+        />
         <Tab label="DISEÑO" />
         <Tab label="FONDO" />
       </Tabs>
@@ -144,5 +163,5 @@ export default function DesignTab() {
       {activeTab === 1 && renderGeneralOptions()}
       {activeTab === 2 && renderBackgroundOptions()}
     </Box>
-  )
+  );
 }

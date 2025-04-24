@@ -1,6 +1,6 @@
 'use client';
 
-import type { SavedNote } from 'src/types/saved-note';
+import type { SavedNote, EmailComponent } from 'src/types/saved-note';
 import type { Newsletter, NewsletterNote } from 'src/types/newsletter';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -11,16 +11,20 @@ import {
   Box,
   Chip,
   Grid,
+  Card,
   Paper,
+  Switch,
   AppBar,
   Button,
   Dialog,
   Toolbar,
   Divider,
   TextField,
+  CardMedia,
   Typography,
   IconButton,
   DialogTitle,
+  CardContent,
   DialogContent,
   DialogActions,
   CircularProgress,
@@ -29,6 +33,12 @@ import {
 import { useStore } from 'src/lib/store';
 
 import EmailEditor from 'src/components/newsletter-note/email-editor';
+import { generateEmailHtml } from 'src/components/newsletter-note/email-editor/utils/generate-html';
+
+import Sidebar from './newsletter-editor/sidebar';
+import DesignTab from './newsletter-editor/tabs/design-tab';
+
+import type { HeaderTemplate, FooterTemplate } from './newsletter-editor/types';
 
 // Custom Snackbar component
 const CustomSnackbar = ({
@@ -122,6 +132,8 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     backgroundColor: '#3f51b5',
     textColor: '#ffffff',
     alignment: 'center',
+    showGradient: false,
+    gradientColors: ['#4158D0', '#C850C0'],
   });
 
   const [footer, setFooter] = useState({
@@ -136,6 +148,8 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     unsubscribeLink: '#unsubscribe',
     backgroundColor: '#f5f5f5',
     textColor: '#666666',
+    showGradient: false,
+    gradientColors: ['#4158D0', '#C850C0'],
   });
 
   const [openHeaderDialog, setOpenHeaderDialog] = useState(false);
@@ -144,6 +158,13 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
   const [bannerImageUrl, setBannerImageUrl] = useState('');
   const [openLogoDialog, setOpenLogoDialog] = useState(false);
   const [openBannerDialog, setOpenBannerDialog] = useState(false);
+
+  const [currentHeaderTemplate, setCurrentHeaderTemplate] = useState<HeaderTemplate | undefined>(
+    undefined
+  );
+  const [currentFooterTemplate, setCurrentFooterTemplate] = useState<FooterTemplate | undefined>(
+    undefined
+  );
 
   // Use Zustand store
   const {
@@ -185,6 +206,15 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
       setNewsletterId(uuidv4());
     }
   }, [initialNewsletter, storeSelectedNotes]);
+
+  // Añadir un efecto para depurar cambios en header y footer
+  useEffect(() => {
+    console.log('Header actualizado:', header);
+  }, [header]);
+
+  useEffect(() => {
+    console.log('Footer actualizado:', footer);
+  }, [footer]);
 
   const handleAddNote = (note: NewsletterNote) => {
     setSelectedNotes((prev) => [...prev, note]);
@@ -396,11 +426,75 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
           break;
         case 'bulletList':
           const items = component.props?.items || [];
-          noteHtml += `<ul style="padding-left: 20px; margin: 15px 0;">\n`;
-          items.forEach((item) => {
-            noteHtml += `<li style="margin-bottom: 8px;">${item}</li>\n`;
+          const listStyle = component.props?.listStyle || 'disc';
+          const listColor = component.props?.listColor || '#000000';
+
+          // Determinar si es una lista ordenada
+          const isOrderedList =
+            listStyle === 'decimal' ||
+            listStyle === 'lower-alpha' ||
+            listStyle === 'upper-alpha' ||
+            listStyle === 'lower-roman' ||
+            listStyle === 'upper-roman';
+
+          // Para listas compatibles con email, usamos tablas
+          let listHtml = '';
+
+          items.forEach((item, index) => {
+            if (isOrderedList) {
+              // Estilo para listas ordenadas con números/letras
+              const marker = getOrderedListMarker(index + 1, listStyle);
+
+              // Usar un formato altamente compatible con clientes de email
+              listHtml += `
+                <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:12px;">
+                  <tbody>
+                    <tr>
+                      <td width="30" valign="top" style="padding-right:10px;">
+                        <div style="background-color:${listColor};border-radius:50%;color:white;font-size:12px;font-weight:bold;height:24px;width:24px;line-height:24px;text-align:center;">${marker}</div>
+                      </td>
+                      <td valign="top">
+                        <div style="font-size:14px;line-height:24px;margin:0;">${item}</div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              `;
+            } else {
+              // Estilo para listas no ordenadas con diferentes tipos de viñetas
+              let bulletHtml = '';
+
+              // Usar formatos simples y altamente compatibles
+              if (listStyle === 'disc' || listStyle === 'circle') {
+                // Círculo sólido o hueco
+                bulletHtml = `<div style="background-color:${listStyle === 'disc' ? listColor : 'transparent'};border:${listStyle === 'circle' ? `1px solid ${listColor}` : '0'};border-radius:50%;height:8px;width:8px;margin-top:8px;"></div>`;
+              } else if (listStyle === 'square') {
+                // Cuadrado
+                bulletHtml = `<div style="background-color:${listColor};height:8px;width:8px;margin-top:8px;"></div>`;
+              } else {
+                // Bullet estándar como fallback
+                bulletHtml = `<div style="font-size:18px;line-height:18px;color:${listColor};">&bull;</div>`;
+              }
+
+              // Usar un formato altamente compatible con clientes de email
+              listHtml += `
+                <table align="center" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:12px;">
+                  <tbody>
+                    <tr>
+                      <td width="30" valign="top" style="padding-right:10px;">
+                        <div style="text-align:center;">${bulletHtml}</div>
+                      </td>
+                      <td valign="top">
+                        <div style="font-size:14px;line-height:24px;margin:0;">${item}</div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              `;
+            }
           });
-          noteHtml += `</ul>\n`;
+
+          noteHtml += listHtml;
           break;
         case 'image':
           noteHtml += `<div style="text-align: center; margin: 15px 0;"><img src="${component.props?.src || '/placeholder.svg'}" alt="${component.props?.alt || 'Image'}" style="max-width: 100%; height: auto;"></div>\n`;
@@ -470,125 +564,52 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     return false;
   };
 
-  const handleGenerateHtml = () => {
+  // Actualizar la función handleGenerateHtml para pasar correctamente el header y footer
+  const handleGenerateHtml = async () => {
     setGenerating(true);
-
     try {
-      // Start with basic HTML structure
-      let html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${title || 'Newsletter'}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f9f9f9;
-    }
-    .content-wrapper {
-      background-color: #ffffff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-    .newsletter-header {
-      text-align: ${header.alignment};
-      margin-bottom: 0;
-      background-color: ${header.backgroundColor};
-      color: ${header.textColor};
-      padding: 20px;
-      border-radius: 8px 8px 0 0;
-    }
-    .newsletter-title {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    .newsletter-subtitle {
-      font-size: 16px;
-      margin-bottom: 20px;
-    }
-    .newsletter-description {
-      font-size: 16px;
-      color: #666;
-      margin: 20px;
-    }
-    .notes-container {
-      padding: 20px;
-    }
-    .footer {
-      text-align: center;
-      font-size: 12px;
-      color: ${footer.textColor};
-      padding: 20px;
-      background-color: ${footer.backgroundColor};
-      border-radius: 0 0 8px 8px;
-    }
-    .social-links {
-      margin: 10px 0;
-    }
-    .social-link {
-      display: inline-block;
-      margin: 0 5px;
-      color: ${footer.textColor};
-      text-decoration: underline;
-    }
-  </style>
-</head>
-<body>
-  <div class="content-wrapper">
-    <div class="newsletter-header">
-      ${header.logo ? `<img src="${header.logo}" alt="Logo" style="max-height: 50px; margin-bottom: 10px;"><br>` : ''}
-      <div class="newsletter-title">${header.title || title || 'Newsletter'}</div>
-      ${header.subtitle ? `<div class="newsletter-subtitle">${header.subtitle}</div>` : ''}
-      ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 10px;">` : ''}
-    </div>
-    
-    ${description ? `<div class="newsletter-description">${description}</div>` : ''}
-    
-    <div class="notes-container">`;
+      // Crear componentes de email a partir de las notas seleccionadas
+      const emailComponents: EmailComponent[] = [];
 
-      // Add each note's content using the dedicated function
-      selectedNotes.forEach((newsletterNote) => {
-        html += generateNoteHtml(newsletterNote.noteData);
+      // Procesar cada nota seleccionada
+      selectedNotes.forEach((note) => {
+        // Convertir los componentes de la nota a componentes de email
+        note.noteData.objdata.forEach((component) => {
+          emailComponents.push({
+            id: uuidv4(),
+            type: component.type,
+            content: component.content,
+            props: component.props || {},
+            style: component.style || {},
+          });
+        });
+
+        // Añadir un divisor entre notas
+        emailComponents.push({
+          id: uuidv4(),
+          type: 'divider',
+          content: '',
+          props: {},
+          style: {},
+        });
       });
 
-      // Close notes container and add footer
-      html += `</div>
-    
-    <div class="footer">
-      <p style="margin: 5px 0;"><strong>${footer.companyName}</strong></p>
-      ${footer.address ? `<p style="margin: 5px 0;">${footer.address}</p>` : ''}
-      ${footer.contactEmail ? `<p style="margin: 5px 0;">Contact: <a href="mailto:${footer.contactEmail}" style="color: ${footer.textColor}">${footer.contactEmail}</a></p>` : ''}
-      <div class="social-links">
-        ${
-          footer.socialLinks
-            ?.map(
-              (link) =>
-                `<a href="${link.url}" class="social-link" target="_blank" style="color: ${footer.textColor};">${link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}</a>`
-            )
-            .join(' | ') || ''
-        }
-      </div>
-      <p style="margin-top: 10px;">
-        <a href="${footer.unsubscribeLink || '#'}" style="color: ${footer.textColor}">Unsubscribe</a> |
-        <a href="#" style="color: ${footer.textColor}">View in browser</a>
-      </p>
-      <p style="margin: 5px 0;">© ${new Date().getFullYear()} ${footer.companyName}. All rights reserved.</p>
-    </div>
-  </div>
-</body>
-</html>`;
+      console.log('Header antes de generar HTML:', header);
+      console.log('Footer antes de generar HTML:', footer);
+
+      // Generar el HTML del email
+      const html = await generateEmailHtml(
+        emailComponents,
+        'news', // Template activo
+        null, // Banner seleccionado
+        [], // Opciones de banner
+        '#ffffff', // Fondo del email
+        header, // Pasar el header completo
+        footer // Pasar el footer completo
+      );
 
       setGeneratedHtml(html);
       setOpenHtmlPreview(true);
-      showSnackbar('HTML generated successfully', 'success');
     } catch (error) {
       console.error('Error generating HTML:', error);
       showSnackbar('Error generating HTML', 'error');
@@ -611,6 +632,471 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
   const toggleSidebar = () => {
     setOpenSidebar(!openSidebar);
   };
+
+  // Función auxiliar para generar el marcador de lista ordenada
+  const getOrderedListMarker = (index: number, listStyle: string): string => {
+    switch (listStyle) {
+      case 'decimal':
+        return `${index}`;
+      case 'lower-alpha':
+        // Letras minúsculas (a, b, c...)
+        return `${String.fromCharCode(96 + index)}`;
+      case 'upper-alpha':
+        // Letras mayúsculas (A, B, C...)
+        return `${String.fromCharCode(64 + index)}`;
+      case 'lower-roman':
+        // Números romanos minúsculos (i, ii, iii...)
+        return `${toRoman(index).toLowerCase()}`;
+      case 'upper-roman':
+        // Números romanos mayúsculos (I, II, III...)
+        return `${toRoman(index)}`;
+      default:
+        return `${index}`;
+    }
+  };
+
+  // Función para convertir números a numerales romanos
+  const toRoman = (num: number): string => {
+    const romanNumerals = [
+      { value: 1000, numeral: 'M' },
+      { value: 900, numeral: 'CM' },
+      { value: 500, numeral: 'D' },
+      { value: 400, numeral: 'CD' },
+      { value: 100, numeral: 'C' },
+      { value: 90, numeral: 'XC' },
+      { value: 50, numeral: 'L' },
+      { value: 40, numeral: 'XL' },
+      { value: 10, numeral: 'X' },
+      { value: 9, numeral: 'IX' },
+      { value: 5, numeral: 'V' },
+      { value: 4, numeral: 'IV' },
+      { value: 1, numeral: 'I' },
+    ];
+
+    let result = '';
+    let remaining = num;
+
+    for (const { value, numeral } of romanNumerals) {
+      while (remaining >= value) {
+        result += numeral;
+        remaining -= value;
+      }
+    }
+
+    return result;
+  };
+
+  // Función para manejar la selección de un header template
+  const handleSelectHeader = (headerTemplate: HeaderTemplate) => {
+    setCurrentHeaderTemplate(headerTemplate);
+    // Aplicar el template al header actual
+    const newHeader = {
+      ...headerTemplate.template,
+      // Asegurarse de que las propiedades opcionales estén definidas
+      showGradient: headerTemplate.template.showGradient || false,
+      gradientColors: headerTemplate.template.gradientColors || ['#4158D0', '#C850C0'],
+    };
+    console.log('Nuevo header seleccionado:', newHeader);
+    setHeader(newHeader);
+  };
+
+  // Función para manejar la selección de un footer template
+  const handleSelectFooter = (footerTemplate: FooterTemplate) => {
+    setCurrentFooterTemplate(footerTemplate);
+    // Aplicar el template al footer actual
+    const newFooter = {
+      ...footerTemplate.template,
+      // Asegurarse de que las propiedades opcionales estén definidas
+      showGradient: footerTemplate.template.showGradient || false,
+      gradientColors: footerTemplate.template.gradientColors || ['#4158D0', '#C850C0'],
+    };
+    setFooter(newFooter);
+    console.log('Footer actualizado:', newFooter); // Para depuración
+  };
+
+  // Actualizar el componente HeaderDialog para incluir opciones de templates y gradiente
+  const HeaderDialog = ({
+    open,
+    onClose,
+    header,
+    setHeader,
+    availableHeaders,
+    currentHeaderTemplate,
+    setCurrentHeaderTemplate,
+  }: {
+    open: boolean;
+    onClose: () => void;
+    header: any;
+    setHeader: (header: any) => void;
+    availableHeaders: HeaderTemplate[];
+    currentHeaderTemplate: HeaderTemplate | undefined;
+    setCurrentHeaderTemplate: (template: HeaderTemplate | undefined) => void;
+  }) => {
+    const [localHeader, setLocalHeader] = useState({ ...header });
+    const [gradientColor1, setGradientColor1] = useState(header.gradientColors?.[0] || '#4158D0');
+    const [gradientColor2, setGradientColor2] = useState(header.gradientColors?.[1] || '#C850C0');
+
+    useEffect(() => {
+      setLocalHeader({ ...header });
+      setGradientColor1(header.gradientColors?.[0] || '#4158D0');
+      setGradientColor2(header.gradientColors?.[1] || '#C850C0');
+    }, [header]);
+
+    const handleApply = () => {
+      // Actualizar los colores del gradiente si está habilitado
+      const updatedHeader = {
+        ...localHeader,
+        gradientColors: localHeader.showGradient
+          ? [gradientColor1, gradientColor2]
+          : ['#4158D0', '#C850C0'],
+      };
+      console.log('Header actualizado en diálogo:', updatedHeader);
+      setHeader(updatedHeader);
+      onClose();
+    };
+
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <DialogTitle>Header Design</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Header Templates
+            </Typography>
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              {availableHeaders.map((headerTemplate) => (
+                <Grid item xs={6} sm={4} key={headerTemplate.id}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      border:
+                        currentHeaderTemplate?.id === headerTemplate.id
+                          ? '2px solid #3f51b5'
+                          : '1px solid rgba(0, 0, 0, 0.12)',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => {
+                      setCurrentHeaderTemplate(headerTemplate);
+                      setLocalHeader(headerTemplate.template);
+                      if (headerTemplate.template.gradientColors) {
+                        setGradientColor1(headerTemplate.template.gradientColors[0]);
+                        setGradientColor2(headerTemplate.template.gradientColors[1]);
+                      }
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      height="80"
+                      image={headerTemplate.preview}
+                      alt={headerTemplate.name}
+                    />
+                    <CardContent sx={{ p: 1 }}>
+                      <Typography variant="subtitle2">{headerTemplate.name}</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+
+            <Divider sx={{ my: 3 }} />
+
+            <Typography variant="subtitle1" gutterBottom>
+              Header Settings
+            </Typography>
+
+            <Box sx={{ px: 3, pb: 3 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Header Title"
+                    value={localHeader.title}
+                    onChange={(e) => setLocalHeader({ ...localHeader, title: e.target.value })}
+                    margin="normal"
+                  />
+                  <TextField
+                    fullWidth
+                    label="Subtitle"
+                    value={localHeader.subtitle}
+                    onChange={(e) => setLocalHeader({ ...localHeader, subtitle: e.target.value })}
+                    margin="normal"
+                  />
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Text Alignment
+                    </Typography>
+                    <Grid container spacing={1}>
+                      <Grid item xs={4}>
+                        <Button
+                          variant={localHeader.alignment === 'left' ? 'contained' : 'outlined'}
+                          fullWidth
+                          onClick={() => setLocalHeader({ ...localHeader, alignment: 'left' })}
+                          startIcon={<Icon icon="mdi:format-align-left" />}
+                        >
+                          Left
+                        </Button>
+                      </Grid>
+                      <Grid item xs={4}>
+                        <Button
+                          variant={localHeader.alignment === 'center' ? 'contained' : 'outlined'}
+                          fullWidth
+                          onClick={() => setLocalHeader({ ...localHeader, alignment: 'center' })}
+                          startIcon={<Icon icon="mdi:format-align-center" />}
+                        >
+                          Center
+                        </Button>
+                      </Grid>
+                      <Grid item xs={4}>
+                        <Button
+                          variant={localHeader.alignment === 'right' ? 'contained' : 'outlined'}
+                          fullWidth
+                          onClick={() => setLocalHeader({ ...localHeader, alignment: 'right' })}
+                          startIcon={<Icon icon="mdi:format-align-right" />}
+                        >
+                          Right
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Background
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="body2" sx={{ mr: 2 }}>
+                        Use Gradient:
+                      </Typography>
+                      <Switch
+                        checked={localHeader.showGradient || false}
+                        onChange={(e) => {
+                          setLocalHeader({
+                            ...localHeader,
+                            showGradient: e.target.checked,
+                          });
+                        }}
+                      />
+                    </Box>
+
+                    {localHeader.showGradient ? (
+                      <Box sx={{ mt: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="body2" sx={{ width: 100 }}>
+                            Color 1:
+                          </Typography>
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 1,
+                              bgcolor: gradientColor1,
+                              mr: 1,
+                              border: '1px solid #ddd',
+                            }}
+                          />
+                          <TextField
+                            size="small"
+                            value={gradientColor1}
+                            onChange={(e) => setGradientColor1(e.target.value)}
+                            sx={{ width: 120 }}
+                          />
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="body2" sx={{ width: 100 }}>
+                            Color 2:
+                          </Typography>
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 1,
+                              bgcolor: gradientColor2,
+                              mr: 1,
+                              border: '1px solid #ddd',
+                            }}
+                          />
+                          <TextField
+                            size="small"
+                            value={gradientColor2}
+                            onChange={(e) => setGradientColor2(e.target.value)}
+                            sx={{ width: 120 }}
+                          />
+                        </Box>
+                        <Box
+                          sx={{
+                            mt: 2,
+                            height: 40,
+                            borderRadius: 1,
+                            background: `linear-gradient(to right, ${gradientColor1}, ${gradientColor2})`,
+                          }}
+                        />
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="body2" sx={{ width: 100 }}>
+                          Background:
+                        </Typography>
+                        <Box
+                          sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 1,
+                            bgcolor: localHeader.backgroundColor,
+                            mr: 1,
+                            border: '1px solid #ddd',
+                          }}
+                        />
+                        <TextField
+                          size="small"
+                          value={localHeader.backgroundColor}
+                          onChange={(e) =>
+                            setLocalHeader({ ...localHeader, backgroundColor: e.target.value })
+                          }
+                          sx={{ width: 120 }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Text Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 1,
+                          bgcolor: localHeader.textColor,
+                          mr: 1,
+                          border: '1px solid #ddd',
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={localHeader.textColor}
+                        onChange={(e) =>
+                          setLocalHeader({ ...localHeader, textColor: e.target.value })
+                        }
+                        sx={{ width: 120 }}
+                      />
+                    </Box>
+                  </Box>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Logo
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {localHeader.logo ? (
+                        <Box sx={{ mr: 1 }}>
+                          <img
+                            src={localHeader.logo}
+                            alt="Logo"
+                            style={{ maxWidth: 100, maxHeight: 40 }}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                          No logo
+                        </Typography>
+                      )}
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setOpenLogoDialog(true)}
+                      >
+                        Change
+                      </Button>
+                    </Box>
+                  </Box>
+                  <Box>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Banner Image
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {localHeader.bannerImage ? (
+                        <Box sx={{ mr: 1 }}>
+                          <img
+                            src={localHeader.bannerImage}
+                            alt="Banner"
+                            style={{ maxWidth: 100, maxHeight: 40 }}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                          No banner
+                        </Typography>
+                      )}
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setOpenBannerDialog(true)}
+                      >
+                        Change
+                      </Button>
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="contained" onClick={handleApply}>
+            Apply
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
+  // Definir los headers disponibles
+  const availableHeaders = [
+    {
+      id: 'gradient-logo',
+      name: 'Gradient con Logo',
+      preview: '/assets/headers/gradient-logo-preview.jpg',
+      description: 'Header con gradiente, logo superior y logo inferior',
+      template: {
+        title: 'Newsletter Title',
+        subtitle: 'Your weekly newsletter',
+        logo: '/assets/logo.png',
+        bannerImage: '/assets/banner.jpg',
+        backgroundColor: '#ffffff',
+        gradientColors: ['#4158D0', '#C850C0'],
+        showGradient: true,
+        textColor: '#ffffff',
+        alignment: 'center',
+      },
+    },
+    // ... otros headers
+  ];
+
+  // Definir los footers disponibles
+  const availableFooters = [
+    {
+      id: 'standard',
+      name: 'Estándar',
+      preview: '/assets/footers/standard-preview.jpg',
+      description: 'Footer estándar con información de contacto y redes sociales',
+      template: {
+        companyName: 'Your Company',
+        address: '123 Main St, City, Country',
+        contactEmail: 'contact@example.com',
+        socialLinks: [
+          { platform: 'twitter', url: 'https://twitter.com' },
+          { platform: 'facebook', url: 'https://facebook.com' },
+          { platform: 'instagram', url: 'https://instagram.com' },
+        ],
+        unsubscribeLink: '#unsubscribe',
+        backgroundColor: '#f5f5f5',
+        textColor: '#666666',
+      },
+    },
+    // ... otros footers
+  ];
 
   return (
     <>
@@ -669,159 +1155,21 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
 
       <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
         {/* Left Sidebar */}
-        {openSidebar && (
-          <Box sx={{ width: 280, borderRight: '1px solid rgba(0, 0, 0, 0.12)' }}>
-            <Box sx={{ display: 'flex', borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}>
-              <Button
-                variant={sidebarTab === 'notes' ? 'contained' : 'text'}
-                onClick={() => setSidebarTab('notes')}
-                sx={{ flex: 1, borderRadius: 0, py: 1 }}
-              >
-                NOTES
-              </Button>
-              <Button
-                variant={sidebarTab === 'create' ? 'contained' : 'text'}
-                onClick={() => setSidebarTab('create')}
-                sx={{ flex: 1, borderRadius: 0, py: 1 }}
-              >
-                CREATE
-              </Button>
-            </Box>
-
-            {sidebarTab === 'notes' && (
-              <Box sx={{ p: 2, height: 'calc(100% - 48px)', overflow: 'auto' }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Selected Notes ({selectedNotes.length})
-                </Typography>
-                {selectedNotes.length > 0 ? (
-                  <Box sx={{ mb: 3 }}>
-                    {selectedNotes.map((note, index) => (
-                      <Paper
-                        key={note.noteId}
-                        variant="outlined"
-                        sx={{ mb: 1, p: 1.5, position: 'relative' }}
-                      >
-                        <Box sx={{ pr: 6 }}>
-                          <Typography variant="body2" fontWeight="medium" noWrap>
-                            {note.noteData.title}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            {new Date(
-                              note.noteData.dateModified || note.noteData.dateCreated
-                            ).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-                          <IconButton size="small" onClick={() => handleEditNote(note.noteData)}>
-                            <Icon icon="mdi:pencil" width={16} />
-                          </IconButton>
-                          <IconButton size="small" onClick={() => handleRemoveNote(note.noteId)}>
-                            <Icon icon="mdi:close" width={16} />
-                          </IconButton>
-                        </Box>
-                      </Paper>
-                    ))}
-                  </Box>
-                ) : (
-                  <Paper sx={{ p: 2, textAlign: 'center', mb: 3 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No notes selected yet
-                    </Typography>
-                  </Paper>
-                )}
-
-                <Divider sx={{ my: 2 }} />
-
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 2,
-                  }}
-                >
-                  <Typography variant="subtitle1">Available Notes</Typography>
-                  <Button
-                    size="small"
-                    startIcon={<Icon icon="mdi:plus" />}
-                    onClick={handleCreateNewNote}
-                  >
-                    New
-                  </Button>
-                </Box>
-
-                {notes.length > 0 ? (
-                  <Box>
-                    {notes
-                      .filter(
-                        (note) => !selectedNotes.some((selected) => selected.noteId === note.id)
-                      )
-                      .map((note) => (
-                        <Paper
-                          key={note.id}
-                          variant="outlined"
-                          sx={{ mb: 1, p: 1.5, position: 'relative', cursor: 'pointer' }}
-                          onClick={() => {
-                            const newNote: NewsletterNote = {
-                              noteId: note.id,
-                              order: selectedNotes.length,
-                              noteData: note,
-                            };
-                            handleAddNote(newNote);
-                          }}
-                        >
-                          <Box>
-                            <Typography variant="body2" fontWeight="medium" noWrap>
-                              {note.title}
-                            </Typography>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <Typography variant="caption" color="text.secondary">
-                                {new Date(
-                                  note.dateModified || note.dateCreated
-                                ).toLocaleDateString()}
-                              </Typography>
-                              <Chip
-                                size="small"
-                                label={note.templateType}
-                                sx={{ height: 18, fontSize: '0.625rem' }}
-                              />
-                            </Box>
-                          </Box>
-                        </Paper>
-                      ))}
-                  </Box>
-                ) : (
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No notes available
-                    </Typography>
-                  </Paper>
-                )}
-              </Box>
-            )}
-
-            {sidebarTab === 'create' && (
-              <Box sx={{ p: 2, height: 'calc(100% - 48px)', overflow: 'auto' }}>
-                <Typography variant="h6" gutterBottom>
-                  Create New Note
-                </Typography>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:plus" />}
-                  onClick={handleCreateNewNote}
-                  sx={{ mb: 2 }}
-                >
-                  Create Note
-                </Button>
-                <Typography variant="body2" color="text.secondary">
-                  Create a new note to add to your newsletter. You can use any of the available
-                  templates or start from scratch.
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        )}
+        <Sidebar
+          sidebarTab={sidebarTab}
+          setSidebarTab={setSidebarTab}
+          selectedNotes={selectedNotes}
+          notes={notes}
+          handleAddNote={handleAddNote}
+          handleRemoveNote={handleRemoveNote}
+          handleEditNote={handleEditNote}
+          handleCreateNewNote={handleCreateNewNote}
+          activeTab={activeTab}
+          onSelectHeader={handleSelectHeader}
+          onSelectFooter={handleSelectFooter}
+          currentHeader={currentHeaderTemplate}
+          currentFooter={currentFooterTemplate}
+        />
 
         {/* Main Content */}
         <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
@@ -1064,144 +1412,20 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
             )}
 
             {activeTab === 'design' && (
-              <Box>
-                <Paper sx={{ p: 3, mb: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Header Design
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      mb: 2,
-                    }}
-                  >
-                    <Typography variant="body1">Customize the newsletter header</Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<Icon icon="mdi:pencil" />}
-                      onClick={() => setOpenHeaderDialog(true)}
-                    >
-                      Edit Header
-                    </Button>
-                  </Box>
-
-                  {/* Header Preview */}
-                  <Box
-                    sx={{
-                      mt: 2,
-                      p: 2,
-                      backgroundColor: header.backgroundColor,
-                      color: header.textColor,
-                      textAlign: header.alignment as 'left' | 'center' | 'right',
-                      borderRadius: 1,
-                    }}
-                  >
-                    {header.logo && (
-                      <Box sx={{ mb: 1 }}>
-                        <img
-                          src={header.logo || '/placeholder.svg'}
-                          alt="Logo"
-                          style={{ maxHeight: '40px' }}
-                        />
-                      </Box>
-                    )}
-                    <Typography variant="h5" component="div" gutterBottom>
-                      {header.title || title || 'Newsletter Title'}
-                    </Typography>
-                    {header.subtitle && (
-                      <Typography variant="subtitle1" gutterBottom>
-                        {header.subtitle}
-                      </Typography>
-                    )}
-                    {header.bannerImage && (
-                      <Box sx={{ mt: 1 }}>
-                        <img
-                          src={header.bannerImage || '/placeholder.svg'}
-                          alt="Banner"
-                          style={{ maxWidth: '100%' }}
-                        />
-                      </Box>
-                    )}
-                  </Box>
-                </Paper>
-
-                <Paper sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Footer Design
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      mb: 2,
-                    }}
-                  >
-                    <Typography variant="body1">Customize the newsletter footer</Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<Icon icon="mdi:pencil" />}
-                      onClick={() => setOpenFooterDialog(true)}
-                    >
-                      Edit Footer
-                    </Button>
-                  </Box>
-
-                  {/* Footer Preview */}
-                  <Box
-                    sx={{
-                      mt: 2,
-                      p: 2,
-                      backgroundColor: footer.backgroundColor,
-                      color: footer.textColor,
-                      textAlign: 'center',
-                      borderRadius: 1,
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    <Typography variant="subtitle1" component="div" fontWeight="bold">
-                      {footer.companyName}
-                    </Typography>
-                    {footer.address && <Typography variant="body2">{footer.address}</Typography>}
-                    {footer.contactEmail && (
-                      <Typography variant="body2">
-                        Contact:{' '}
-                        <Box component="span" sx={{ textDecoration: 'underline' }}>
-                          {footer.contactEmail}
-                        </Box>
-                      </Typography>
-                    )}
-
-                    <Box sx={{ mt: 1, mb: 1 }}>
-                      {footer.socialLinks?.map((link, index) => (
-                        <React.Fragment key={link.platform}>
-                          <Box component="span" sx={{ textDecoration: 'underline' }}>
-                            {link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
-                          </Box>
-                          {index < (footer.socialLinks?.length || 0) - 1 && <span> | </span>}
-                        </React.Fragment>
-                      ))}
-                    </Box>
-
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      <Box component="span" sx={{ textDecoration: 'underline' }}>
-                        Unsubscribe
-                      </Box>{' '}
-                      |{' '}
-                      <Box component="span" sx={{ textDecoration: 'underline' }}>
-                        View in browser
-                      </Box>
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      © {new Date().getFullYear()} {footer.companyName}. All rights reserved.
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Box>
+              <DesignTab
+                header={header}
+                footer={footer}
+                setHeader={setHeader}
+                setFooter={setFooter}
+                setOpenHeaderDialog={setOpenHeaderDialog}
+                setOpenFooterDialog={setOpenFooterDialog}
+                availableHeaders={availableHeaders}
+                availableFooters={availableFooters}
+                currentHeaderTemplate={currentHeaderTemplate}
+                setCurrentHeaderTemplate={setCurrentHeaderTemplate}
+                currentFooterTemplate={currentFooterTemplate}
+                setCurrentFooterTemplate={setCurrentFooterTemplate}
+              />
             )}
 
             {activeTab === 'preview' && (
@@ -1376,18 +1600,91 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
                                 case 'divider':
                                   return <Divider key={compIndex} sx={{ my: 2 }} />;
                                 case 'bulletList':
-                                  const items = component.props?.items || [];
+                                  const listItems = component.props?.items || [];
+                                  const listStyle = component.props?.listStyle || 'disc';
+                                  const listColor = component.props?.listColor || '#000000';
+
+                                  // Determinar si es una lista ordenada
+                                  const isOrderedList =
+                                    listStyle === 'decimal' ||
+                                    listStyle === 'lower-alpha' ||
+                                    listStyle === 'upper-alpha' ||
+                                    listStyle === 'lower-roman' ||
+                                    listStyle === 'upper-roman';
+
                                   return (
-                                    <Box key={compIndex} component="ul" sx={{ pl: 2 }}>
-                                      {items.map((item, i) => (
-                                        <Typography
-                                          key={i}
-                                          component="li"
-                                          variant="body1"
-                                          sx={{ mb: 1 }}
+                                    <Box key={compIndex} sx={{ mb: 2 }}>
+                                      {listItems.map((item, itemIndex) => (
+                                        <Box
+                                          key={itemIndex}
+                                          sx={{
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            mb: 1,
+                                          }}
                                         >
-                                          {item}
-                                        </Typography>
+                                          {isOrderedList ? (
+                                            <Box
+                                              sx={{
+                                                minWidth: '24px',
+                                                mr: 2,
+                                                backgroundColor: listColor,
+                                                borderRadius: '50%',
+                                                color: 'white',
+                                                fontSize: '12px',
+                                                fontWeight: 'bold',
+                                                height: '24px',
+                                                width: '24px',
+                                                lineHeight: '24px',
+                                                textAlign: 'center',
+                                              }}
+                                            >
+                                              {getOrderedListMarker(itemIndex + 1, listStyle)}
+                                            </Box>
+                                          ) : (
+                                            <Box
+                                              sx={{
+                                                minWidth: '24px',
+                                                mr: 2,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                              }}
+                                            >
+                                              {listStyle === 'disc' && (
+                                                <Box
+                                                  sx={{
+                                                    width: '8px',
+                                                    height: '8px',
+                                                    borderRadius: '50%',
+                                                    backgroundColor: listColor,
+                                                  }}
+                                                />
+                                              )}
+                                              {listStyle === 'circle' && (
+                                                <Box
+                                                  sx={{
+                                                    width: '8px',
+                                                    height: '8px',
+                                                    borderRadius: '50%',
+                                                    border: `1px solid ${listColor}`,
+                                                    backgroundColor: 'transparent',
+                                                  }}
+                                                />
+                                              )}
+                                              {listStyle === 'square' && (
+                                                <Box
+                                                  sx={{
+                                                    width: '8px',
+                                                    height: '8px',
+                                                    backgroundColor: listColor,
+                                                  }}
+                                                />
+                                              )}
+                                            </Box>
+                                          )}
+                                          <Typography variant="body1">{item}</Typography>
+                                        </Box>
                                       ))}
                                     </Box>
                                   );
@@ -1549,10 +1846,12 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
       {/* Note Editor Dialog */}
       <Dialog fullScreen open={openNoteEditor} onClose={() => setOpenNoteEditor(false)}>
         <EmailEditor
-          onClose={() => setOpenNoteEditor(false)}
-          initialNote={editingNote}
-          isNewsletterMode
-          onSave={handleSaveNote}
+          initialComponents={[]}
+          onSave={(components) => {
+            // Manejar guardado de componentes
+          }}
+          header={header}
+          footer={footer}
         />
       </Dialog>
 
@@ -1614,155 +1913,15 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Edit Newsletter Header</DialogTitle>
-        <Box sx={{ px: 3, pb: 3 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Header Title"
-                value={header.title}
-                onChange={(e) => setHeader({ ...header, title: e.target.value })}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
-                label="Subtitle"
-                value={header.subtitle}
-                onChange={(e) => setHeader({ ...header, subtitle: e.target.value })}
-                margin="normal"
-              />
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Text Alignment
-                </Typography>
-                <Grid container spacing={1}>
-                  <Grid item xs={4}>
-                    <Button
-                      variant={header.alignment === 'left' ? 'contained' : 'outlined'}
-                      fullWidth
-                      onClick={() => setHeader({ ...header, alignment: 'left' })}
-                    >
-                      <Icon icon="mdi:format-align-left" />
-                    </Button>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Button
-                      variant={header.alignment === 'center' ? 'contained' : 'outlined'}
-                      fullWidth
-                      onClick={() => setHeader({ ...header, alignment: 'center' })}
-                    >
-                      <Icon icon="mdi:format-align-center" />
-                    </Button>
-                  </Grid>
-                  <Grid item xs={4}>
-                    <Button
-                      variant={header.alignment === 'right' ? 'contained' : 'outlined'}
-                      fullWidth
-                      onClick={() => setHeader({ ...header, alignment: 'right' })}
-                    >
-                      <Icon icon="mdi:format-align-right" />
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="caption" display="block" gutterBottom>
-                    Background
-                  </Typography>
-                  <input
-                    type="color"
-                    value={header.backgroundColor}
-                    onChange={(e) => setHeader({ ...header, backgroundColor: e.target.value })}
-                    style={{ width: 40, height: 40, padding: 0, border: 'none' }}
-                  />
-                </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="caption" display="block" gutterBottom>
-                    Text Color
-                  </Typography>
-                  <input
-                    type="color"
-                    value={header.textColor}
-                    onChange={(e) => setHeader({ ...header, textColor: e.target.value })}
-                    style={{ width: 40, height: 40, padding: 0, border: 'none' }}
-                  />
-                </Box>
-              </Box>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Logo
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Logo URL"
-                    value={header.logo || ''}
-                    onChange={(e) => setHeader({ ...header, logo: e.target.value })}
-                  />
-                  <Button
-                    variant="outlined"
-                    sx={{ ml: 1, minWidth: 'auto' }}
-                    onClick={() => setOpenLogoDialog(true)}
-                  >
-                    <Icon icon="mdi:upload" />
-                  </Button>
-                </Box>
-                {header.logo && (
-                  <Box sx={{ mt: 1, textAlign: 'center' }}>
-                    <img
-                      src={header.logo || '/placeholder.svg'}
-                      alt="Logo"
-                      style={{ maxHeight: '50px' }}
-                    />
-                  </Box>
-                )}
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Banner Image
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Banner Image URL"
-                    value={header.bannerImage || ''}
-                    onChange={(e) => setHeader({ ...header, bannerImage: e.target.value })}
-                  />
-                  <Button
-                    variant="outlined"
-                    sx={{ ml: 1, minWidth: 'auto' }}
-                    onClick={() => setOpenBannerDialog(true)}
-                  >
-                    <Icon icon="mdi:upload" />
-                  </Button>
-                </Box>
-                {header.bannerImage && (
-                  <Box sx={{ mt: 1, textAlign: 'center' }}>
-                    <img
-                      src={header.bannerImage || '/placeholder.svg'}
-                      alt="Banner"
-                      style={{ maxWidth: '100%' }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Grid>
-          </Grid>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            <Button onClick={() => setOpenHeaderDialog(false)} sx={{ mr: 1 }}>
-              Cancel
-            </Button>
-            <Button variant="contained" onClick={() => setOpenHeaderDialog(false)}>
-              Apply
-            </Button>
-          </Box>
-        </Box>
+        <HeaderDialog
+          open={openHeaderDialog}
+          onClose={() => setOpenHeaderDialog(false)}
+          header={header}
+          setHeader={setHeader}
+          availableHeaders={availableHeaders}
+          currentHeaderTemplate={currentHeaderTemplate}
+          setCurrentHeaderTemplate={setCurrentHeaderTemplate}
+        />
       </Dialog>
 
       {/* Footer Edit Dialog */}
@@ -1806,94 +1965,148 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="caption" display="block" gutterBottom>
-                    Background
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Background
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" sx={{ mr: 2 }}>
+                    Use Gradient:
                   </Typography>
-                  <input
-                    type="color"
-                    value={footer.backgroundColor}
-                    onChange={(e) => setFooter({ ...footer, backgroundColor: e.target.value })}
-                    style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                  <Switch
+                    checked={footer.showGradient || false}
+                    onChange={(e) => setFooter({ ...footer, showGradient: e.target.checked })}
                   />
                 </Box>
-                <Box sx={{ textAlign: 'center' }}>
-                  <Typography variant="caption" display="block" gutterBottom>
-                    Text Color
-                  </Typography>
-                  <input
-                    type="color"
+
+                {footer.showGradient ? (
+                  <Box sx={{ mt: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="body2" sx={{ width: 100 }}>
+                        Color 1:
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 1,
+                          bgcolor: footer.gradientColors?.[0] || '#4158D0',
+                          mr: 1,
+                          border: '1px solid #ddd',
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={footer.gradientColors?.[0] || '#4158D0'}
+                        onChange={(e) =>
+                          setFooter({
+                            ...footer,
+                            gradientColors: [
+                              e.target.value,
+                              footer.gradientColors?.[1] || '#C850C0',
+                            ],
+                          })
+                        }
+                        sx={{ width: 120 }}
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="body2" sx={{ width: 100 }}>
+                        Color 2:
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 1,
+                          bgcolor: footer.gradientColors?.[1] || '#C850C0',
+                          mr: 1,
+                          border: '1px solid #ddd',
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={footer.gradientColors?.[1] || '#C850C0'}
+                        onChange={(e) =>
+                          setFooter({
+                            ...footer,
+                            gradientColors: [
+                              footer.gradientColors?.[0] || '#4158D0',
+                              e.target.value,
+                            ],
+                          })
+                        }
+                        sx={{ width: 120 }}
+                      />
+                    </Box>
+                    <Box
+                      sx={{
+                        mt: 2,
+                        height: 40,
+                        borderRadius: 1,
+                        background: `linear-gradient(to right, ${
+                          footer.gradientColors?.[0] || '#4158D0'
+                        }, ${footer.gradientColors?.[1] || '#C850C0'})`,
+                      }}
+                    />
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ width: 100 }}>
+                      Background:
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 1,
+                        bgcolor: footer.backgroundColor,
+                        mr: 1,
+                        border: '1px solid #ddd',
+                      }}
+                    />
+                    <TextField
+                      size="small"
+                      value={footer.backgroundColor}
+                      onChange={(e) => setFooter({ ...footer, backgroundColor: e.target.value })}
+                      sx={{ width: 120 }}
+                    />
+                  </Box>
+                )}
+              </Box>
+
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Text Color
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 1,
+                      bgcolor: footer.textColor,
+                      mr: 1,
+                      border: '1px solid #ddd',
+                    }}
+                  />
+                  <TextField
+                    size="small"
                     value={footer.textColor}
                     onChange={(e) => setFooter({ ...footer, textColor: e.target.value })}
-                    style={{ width: 40, height: 40, padding: 0, border: 'none' }}
+                    sx={{ width: 120 }}
                   />
                 </Box>
               </Box>
-              <Typography variant="subtitle2" gutterBottom>
-                Social Links
-              </Typography>
-              {footer.socialLinks?.map((link, index) => (
-                <Box key={index} sx={{ display: 'flex', mb: 1 }}>
-                  <TextField
-                    size="small"
-                    label="Platform"
-                    value={link.platform}
-                    onChange={(e) => {
-                      const newLinks = [...(footer.socialLinks || [])];
-                      newLinks[index] = { ...newLinks[index], platform: e.target.value };
-                      setFooter({ ...footer, socialLinks: newLinks });
-                    }}
-                    sx={{ width: '40%' }}
-                  />
-                  <TextField
-                    size="small"
-                    label="URL"
-                    value={link.url}
-                    onChange={(e) => {
-                      const newLinks = [...(footer.socialLinks || [])];
-                      newLinks[index] = { ...newLinks[index], url: e.target.value };
-                      setFooter({ ...footer, socialLinks: newLinks });
-                    }}
-                    sx={{ width: '60%', ml: 1 }}
-                  />
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => {
-                      const newLinks = [...(footer.socialLinks || [])];
-                      newLinks.splice(index, 1);
-                      setFooter({ ...footer, socialLinks: newLinks });
-                    }}
-                  >
-                    <Icon icon="mdi:delete" />
-                  </IconButton>
-                </Box>
-              ))}
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Icon icon="mdi:plus" />}
-                onClick={() => {
-                  const newLinks = [...(footer.socialLinks || [])];
-                  newLinks.push({ platform: 'new', url: '#' });
-                  setFooter({ ...footer, socialLinks: newLinks });
-                }}
-                sx={{ mt: 1 }}
-              >
-                Add Social Link
-              </Button>
             </Grid>
           </Grid>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            <Button onClick={() => setOpenFooterDialog(false)} sx={{ mr: 1 }}>
-              Cancel
-            </Button>
-            <Button variant="contained" onClick={() => setOpenFooterDialog(false)}>
-              Apply
-            </Button>
-          </Box>
         </Box>
+        <DialogActions>
+          <Button onClick={() => setOpenFooterDialog(false)}>Cancel</Button>
+          <Button variant="contained" onClick={() => setOpenFooterDialog(false)}>
+            Apply
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Logo Upload Dialog */}

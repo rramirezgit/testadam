@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import type { SavedNote } from 'src/types/saved-note';
 import type {
   Newsletter,
   NewsletterNote,
   NewsletterHeader,
   NewsletterFooter,
 } from 'src/types/newsletter';
-import type { SavedNote } from 'src/types/saved-note';
+
+import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect } from 'react';
+
 import { useStore } from 'src/lib/store';
-import { generateNewsletterHtml, isColorDark } from '../utils';
+
+import { isColorDark, generateNewsletterHtml } from '../utils';
 
 export default function useNewsletterEditor(onClose: () => void, initialNewsletter?: Newsletter) {
   const [title, setTitle] = useState('');
