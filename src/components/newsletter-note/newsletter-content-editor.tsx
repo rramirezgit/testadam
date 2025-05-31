@@ -613,6 +613,31 @@ export default function NewsletterContentEditor({
           case 'spacer':
             html += '<div style="height: 32px;"></div>';
             break;
+          case 'summary': {
+            const summaryBgStyle = component.props?.useGradient
+              ? `background: ${
+                  component.props?.gradientType === 'linear'
+                    ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                    : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                }`
+              : `background-color: ${component.props?.backgroundColor || '#f5f7fa'}`;
+
+            const iconColor = component.props?.iconColor || '#000000';
+            const iconSize = component.props?.iconSize || '24px';
+            const titleColor = component.props?.titleColor || '#000000';
+            const titleFontWeight = component.props?.titleFontWeight || 'normal';
+            const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+            const borderColor = component.props?.borderColor || '#4caf50';
+
+            html += `<div style="${summaryBgStyle}; padding: 16px; border-left: 4px solid ${borderColor}; margin-bottom: 24px; border-radius: 4px;">
+              <div style="font-weight: ${titleFontWeight}; margin-bottom: 8px; display: flex; align-items: center; color: ${titleColor}; font-family: ${titleFontFamily};">
+                <img src="https://api.iconify.design/${(component.props?.icon || 'mdi:text-box-outline').replace(':', '/')}.svg?color=${encodeURIComponent(iconColor)}&height=${iconSize}" style="margin-right: 8px;" width="${iconSize}" height="${iconSize}" />
+                ${component.props?.label || 'Resumen'}
+              </div>
+              <div style="color: #444; font-size: 15px;">${component.content}</div>
+            </div>`;
+            break;
+          }
           default:
             break;
         }

@@ -66,6 +66,7 @@ export const navData: NavSectionProps['data'] = [
     items: [
       { title: 'Newsletter', path: paths.dashboard.newsletter.list, icon: ICONS.analytics },
       { title: 'Notas', path: paths.dashboard.notes.list, icon: ICONS.analytics },
+      { title: 'Educación', path: paths.dashboard.educacion.list, icon: ICONS.course },
     ],
   },
 ];

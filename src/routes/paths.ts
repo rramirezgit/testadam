@@ -97,7 +97,9 @@ export const paths = {
     notes: {
       list: `${ROOTS.DASHBOARD}/notes`,
     },
-
+    educacion: {
+      list: `${ROOTS.DASHBOARD}/educacion`,
+    },
     mail: `${ROOTS.DASHBOARD}/mail`,
     chat: `${ROOTS.DASHBOARD}/chat`,
     blank: `${ROOTS.DASHBOARD}/blank`,

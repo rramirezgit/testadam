@@ -148,6 +148,82 @@ export default function DesignTab() {
     </Box>
   );
 
+  const ImageDesignOptions = ({ component, onUpdate }) => {
+    const [imageData, setImageData] = useState({
+      alt: component.data.alt || '',
+      width: component.data.width || '100%',
+    });
+
+    const handleSaveImage = () => {
+      alert('Imagen guardada en formato base64');
+    };
+
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setImageData((prev) => ({ ...prev, [name]: value }));
+      onUpdate({ ...component.data, [name]: value });
+    };
+
+    return (
+      <div className="image-design-options">
+        <div className="form-group">
+          <label htmlFor="alt">Texto alternativo</label>
+          <input
+            type="text"
+            id="alt"
+            name="alt"
+            value={imageData.alt}
+            onChange={handleChange}
+            placeholder="Describe la imagen"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="width">Ancho</label>
+          <input
+            type="text"
+            id="width"
+            name="width"
+            value={imageData.width}
+            onChange={handleChange}
+            placeholder="100%, 300px, etc."
+          />
+        </div>
+
+        <div className="form-group">
+          <button
+            className="save-image-button"
+            onClick={handleSaveImage}
+            style={{
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              padding: '10px 15px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginTop: '10px',
+            }}
+          >
+            Guardar Imagen
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderComponentOptions = (selectedComponent, handleComponentUpdate) => {
+    if (!selectedComponent) return null;
+
+    switch (selectedComponent.type) {
+      case 'image':
+        return (
+          <ImageDesignOptions component={selectedComponent} onUpdate={handleComponentUpdate} />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Box sx={{ p: 2 }}>
       <Tabs value={activeTab} onChange={handleTabChange} aria-label="design tabs" sx={{ mb: 2 }}>

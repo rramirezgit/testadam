@@ -338,6 +338,22 @@ export default function LeftPanel({
                     Añadir Resumen
                   </Button>
                 </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('tituloConIcono')}
+                  >
+                    <Icon icon="mdi:format-title" />
+                    Título con Icono
+                  </Button>
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('respaldadoPor')}
+                  >
+                    <Icon icon="mdi:shield-check" />
+                    Respaldado Por
+                  </Button>
+                </Box>
               </AccordionDetails>
             </Accordion>
           </List>

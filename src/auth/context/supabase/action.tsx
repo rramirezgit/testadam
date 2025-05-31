@@ -4,7 +4,6 @@ import type {
   AuthError,
   AuthResponse,
   UserResponse,
-  AuthTokenResponsePassword,
   SignInWithPasswordCredentials,
   SignUpWithPasswordCredentials,
 } from '@supabase/supabase-js';
@@ -50,7 +49,7 @@ export type UpdatePasswordParams = {
 export const signInWithPassword = async ({
   email,
   password,
-}: SignInParams): Promise<AuthTokenResponsePassword> => {
+}: SignInParams): Promise<AuthResponse> => {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {

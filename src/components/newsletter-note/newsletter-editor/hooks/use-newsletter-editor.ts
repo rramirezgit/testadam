@@ -304,6 +304,19 @@ export default function useNewsletterEditor(onClose: () => void, initialNewslett
     setOpenSidebar(!openSidebar);
   };
 
+  const updateComponent = (componentId, newData) => {
+    setNewsletterData((prev) => {
+      const updatedComponents = prev.components.map((comp) =>
+        comp.id === componentId ? { ...comp, data: { ...comp.data, ...newData } } : comp
+      );
+
+      return {
+        ...prev,
+        components: updatedComponents,
+      };
+    });
+  };
+
   return {
     // State
     title,
@@ -350,5 +363,6 @@ export default function useNewsletterEditor(onClose: () => void, initialNewslett
     setOpenHtmlPreview,
     setOpenHeaderDialog,
     setOpenFooterDialog,
+    updateComponent,
   };
 }

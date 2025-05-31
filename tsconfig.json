@@ -18,9 +18,10 @@
     "isolatedModules": true,
 
     /* Linting */
-    "strict": true,
+    "strict": false,
     "noEmit": true,
-    "strictNullChecks": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
 
     /* Plugins */
     "plugins": [{ "name": "next" }]

@@ -14,6 +14,7 @@ import {
   Grid,
   Tabs,
   Paper,
+  Avatar,
   Switch,
   AppBar,
   Button,
@@ -376,19 +377,47 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     // Procesar cada componente en la nota
     note.objdata.forEach((component) => {
       switch (component.type) {
-        case 'category':
-          const categoryColors = Array.isArray(component.props?.color)
-            ? component.props.color
-            : [component.props?.color || '#4caf50'];
-          const categoryItems = component.props?.items || [component.content];
+        case 'category': {
+          const categorias = component.props?.categorias || [];
 
-          noteHtml += `<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">\n`;
-          categoryItems.forEach((item, index) => {
-            const itemColor = categoryColors[index % categoryColors.length] || '#4caf50';
-            noteHtml += `<div style="display: inline-block; background-color: ${itemColor}; color: white; padding: 4px 12px; border-radius: 16px; font-size: 14px;">${item}</div>\n`;
-          });
-          noteHtml += `</div>\n`;
+          if (categorias.length > 0) {
+            noteHtml += `<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">\n`;
+
+            categorias.forEach((categoria) => {
+              noteHtml += `<span style="display: inline-block; background-color: ${categoria.colorFondo}; color: ${categoria.colorTexto}; padding: 4px 12px; border-radius: 16px; font-size: 14px; font-weight: bold;">${categoria.texto}</span>\n`;
+            });
+
+            noteHtml += `</div>\n`;
+          } else {
+            // Formato antiguo como fallback
+            const categoryColor = component.props?.color || '#4caf50';
+            const categoryItems = component.props?.items || [component.content];
+            // Obtener las propiedades de estilo
+            const borderRadius = component.props?.borderRadius || 16;
+            const padding = component.props?.padding || 4;
+            const textColor = component.props?.textColor || 'white';
+            const fontWeight = component.props?.fontWeight || 'bold';
+            const fontSize = component.props?.fontSize || 14;
+
+            noteHtml += `<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">\n`;
+
+            if (Array.isArray(categoryItems)) {
+              categoryItems.forEach((item, index) => {
+                const itemColor = Array.isArray(categoryColor)
+                  ? categoryColor[index % categoryColor.length]
+                  : categoryColor;
+
+                noteHtml += `<span style="display: inline-block; background-color: ${itemColor}; color: ${textColor}; padding: ${padding}px ${padding * 3}px; border-radius: ${borderRadius}px; font-size: ${fontSize}px; font-weight: ${fontWeight};">${item}</span>\n`;
+              });
+            } else {
+              noteHtml += `<span style="display: inline-block; background-color: ${categoryColor}; color: ${textColor}; padding: ${padding}px ${padding * 3}px; border-radius: ${borderRadius}px; font-size: ${fontSize}px; font-weight: ${fontWeight};">${component.content}</span>\n`;
+            }
+
+            noteHtml += `</div>\n`;
+          }
+
           break;
+        }
         case 'heading':
           const level = component.props?.level || 2;
           noteHtml += `<h${level} style="margin: 15px 0; font-size: ${24 - level * 2}px;">${component.content}</h${level}>\n`;
@@ -484,7 +513,31 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
         case 'spacer':
           noteHtml += `<div style="height: 32px;"></div>\n`;
           break;
+        case 'summary': {
+          const summaryBgStyle = component.props?.useGradient
+            ? `background: ${
+                component.props?.gradientType === 'linear'
+                  ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                  : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+              }`
+            : `background-color: ${component.props?.backgroundColor || '#f5f7fa'}`;
 
+          const iconColor = component.props?.iconColor || '#000000';
+          const iconSize = component.props?.iconSize || '24px';
+          const titleColor = component.props?.titleColor || '#000000';
+          const titleFontWeight = component.props?.titleFontWeight || 'normal';
+          const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+          const borderColor = component.props?.borderColor || '#4caf50';
+
+          noteHtml += `<div style="${summaryBgStyle}; padding: 16px; border-left: 4px solid ${borderColor}; margin-bottom: 24px; border-radius: 4px;">
+            <div style="font-weight: ${titleFontWeight}; margin-bottom: 8px; display: flex; align-items: center; color: ${titleColor}; font-family: ${titleFontFamily};">
+              <img src="https://api.iconify.design/${(component.props?.icon || 'mdi:text-box-outline').replace(':', '/')}.svg?color=${encodeURIComponent(iconColor)}&height=${iconSize}" style="margin-right: 8px;" width="${iconSize}" height="${iconSize}" />
+              ${component.props?.label || 'Resumen'}
+            </div>
+            <div style="color: #444; font-size: 15px;">${component.content}</div>
+          </div>\n`;
+          break;
+        }
         case 'gallery':
           const galleryLayout = component.props?.layout || 'single';
           const galleryImages = component.props?.images || [];
@@ -514,6 +567,37 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
             noteHtml += `</table>\n`;
           }
           break;
+        case 'tituloConIcono': {
+          const icon = component.props?.icon || 'mdi:newspaper-variant-outline';
+          const gradientType = component.props?.gradientType || 'linear';
+          const gradientColor1 = component.props?.gradientColor1 || '#4facfe';
+          const gradientColor2 = component.props?.gradientColor2 || '#00f2fe';
+          const textColor = component.props?.textColor || '#ffffff';
+
+          const gradientStyle =
+            gradientType === 'linear'
+              ? `linear-gradient(to right, ${gradientColor1}, ${gradientColor2})`
+              : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`;
+
+          noteHtml += `<div style="background: ${gradientStyle}; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0; display: flex; align-items: center;">
+            <img src="https://api.iconify.design/${icon.replace(':', '/')}.svg?color=${encodeURIComponent(textColor)}" style="margin-right: 12px; width: 24px; height: 24px;" />
+            <h2 style="margin: 0; color: ${textColor}; font-weight: bold; font-size: 20px;">${component.content}</h2>
+          </div>\n`;
+          break;
+        }
+        case 'respaldadoPor': {
+          const texto = component.props?.texto || 'Respaldado por';
+          const nombre = component.props?.nombre || 'Redacción';
+          const avatarUrl = component.props?.avatarUrl || '/default-avatar.png';
+          const avatarTamano = component.props?.avatarTamano || 36;
+
+          noteHtml += `<div style="display: flex; align-items: center; gap: 8px; margin: 16px 0;">
+            <span style="color: #666; font-size: 14px;">${texto}</span>
+            <img src="${avatarUrl}" alt="${nombre}" style="width: ${avatarTamano}px; height: ${avatarTamano}px; border-radius: 50%;" />
+            <span style="font-weight: 500;">${nombre}</span>
+          </div>\n`;
+          break;
+        }
       }
     });
 
@@ -1149,37 +1233,459 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
                               {note.noteData.objdata.slice(0, 3).map((component, compIndex) => {
                                 switch (component.type) {
                                   case 'category':
-                                    return null;
+                                    const categorias = component.props?.categorias || [];
+
+                                    if (categorias.length > 0) {
+                                      return (
+                                        <Box
+                                          key={compIndex}
+                                          sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}
+                                        >
+                                          {categorias.map((categoria) => (
+                                            <Chip
+                                              key={categoria.id}
+                                              label={categoria.texto}
+                                              sx={{
+                                                backgroundColor: categoria.colorFondo,
+                                                color: categoria.colorTexto,
+                                                fontWeight: 'bold',
+                                              }}
+                                            />
+                                          ))}
+                                        </Box>
+                                      );
+                                    } else {
+                                      // Formato antiguo como fallback
+                                      const categoryColor = component.props?.color || '#4caf50';
+                                      const categoryItems = component.props?.items || [
+                                        component.content,
+                                      ];
+                                      // Obtener las propiedades de estilo
+                                      const borderRadius = component.props?.borderRadius || 16;
+                                      const padding = component.props?.padding || 4;
+                                      const textColor = component.props?.textColor || 'white';
+                                      const fontWeight = component.props?.fontWeight || 'bold';
+                                      const fontSize = component.props?.fontSize || 14;
+
+                                      return (
+                                        <Box
+                                          key={compIndex}
+                                          sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}
+                                        >
+                                          {Array.isArray(categoryItems) ? (
+                                            categoryItems.map((item, index) => (
+                                              <Chip
+                                                key={index}
+                                                label={item}
+                                                sx={{
+                                                  backgroundColor: Array.isArray(categoryColor)
+                                                    ? categoryColor[index % categoryColor.length]
+                                                    : categoryColor,
+                                                  color: textColor,
+                                                  fontWeight,
+                                                  padding: `${padding}px ${padding * 3}px`,
+                                                  borderRadius,
+                                                  fontSize,
+                                                }}
+                                              />
+                                            ))
+                                          ) : (
+                                            <Chip
+                                              label={categoryItems[0]}
+                                              sx={{
+                                                backgroundColor: categoryColor,
+                                                color: textColor,
+                                                fontWeight,
+                                                padding: `${padding}px ${padding * 3}px`,
+                                                borderRadius,
+                                                fontSize,
+                                              }}
+                                            />
+                                          )}
+                                        </Box>
+                                      );
+                                    }
+                                    break;
                                   case 'heading':
+                                    const HeadingTag =
+                                      `h${component.props?.level || 2}` as keyof JSX.IntrinsicElements;
                                     return (
-                                      <Typography
-                                        key={compIndex}
-                                        variant={component.props?.level === 1 ? 'h5' : 'h6'}
-                                        gutterBottom
-                                      >
+                                      <HeadingTag key={compIndex} style={{ margin: '16px 0' }}>
                                         {component.content}
-                                      </Typography>
+                                      </HeadingTag>
                                     );
+                                    break;
                                   case 'paragraph':
+                                    if (component.props?.isCode) {
+                                      return (
+                                        <Box
+                                          key={compIndex}
+                                          sx={{
+                                            backgroundColor: '#f5f5f5',
+                                            p: 2,
+                                            borderRadius: 1,
+                                            fontFamily: 'monospace',
+                                            my: 2,
+                                          }}
+                                        >
+                                          {component.content}
+                                        </Box>
+                                      );
+                                    }
                                     return (
-                                      <Typography key={compIndex} variant="body2" gutterBottom>
+                                      <Typography key={compIndex} variant="body1" paragraph>
                                         {component.content}
                                       </Typography>
                                     );
+                                    break;
                                   case 'button':
                                     return (
-                                      <Button
-                                        key={compIndex}
-                                        variant="contained"
-                                        size="small"
-                                        sx={{ mt: 1, mb: 1 }}
-                                        disabled
-                                      >
+                                      <Button key={compIndex} variant="contained" sx={{ my: 1 }}>
                                         {component.content}
                                       </Button>
                                     );
+                                    break;
                                   case 'divider':
-                                    return <Divider key={compIndex} sx={{ my: 1 }} />;
+                                    return <Divider key={compIndex} sx={{ my: 2 }} />;
+                                    break;
+                                  case 'bulletList':
+                                    {
+                                      const listItems = component.props?.items || [];
+                                      const listStyle = component.props?.listStyle || 'disc';
+                                      const listColor = component.props?.listColor || '#000000';
+
+                                      // Determinar si es una lista ordenada
+                                      const isOrderedList =
+                                        listStyle === 'decimal' ||
+                                        listStyle === 'lower-alpha' ||
+                                        listStyle === 'upper-alpha' ||
+                                        listStyle === 'lower-roman' ||
+                                        listStyle === 'upper-roman';
+
+                                      return (
+                                        <Box key={compIndex} sx={{ mb: 2 }}>
+                                          {listItems.map((item, itemIndex) => (
+                                            <Box
+                                              key={itemIndex}
+                                              sx={{
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                mb: 1,
+                                              }}
+                                            >
+                                              {isOrderedList ? (
+                                                <Box
+                                                  sx={{
+                                                    minWidth: '24px',
+                                                    mr: 2,
+                                                    backgroundColor: listColor,
+                                                    borderRadius: '50%',
+                                                    color: 'white',
+                                                    fontSize: '12px',
+                                                    fontWeight: 'bold',
+                                                    height: '24px',
+                                                    width: '24px',
+                                                    lineHeight: '24px',
+                                                    textAlign: 'center',
+                                                  }}
+                                                >
+                                                  {getOrderedListMarker(itemIndex + 1, listStyle)}
+                                                </Box>
+                                              ) : (
+                                                <Box
+                                                  sx={{
+                                                    minWidth: '24px',
+                                                    mr: 2,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                  }}
+                                                >
+                                                  {listStyle === 'disc' && (
+                                                    <Box
+                                                      sx={{
+                                                        width: '8px',
+                                                        height: '8px',
+                                                        borderRadius: '50%',
+                                                        backgroundColor: listColor,
+                                                      }}
+                                                    />
+                                                  )}
+                                                  {listStyle === 'circle' && (
+                                                    <Box
+                                                      sx={{
+                                                        width: '8px',
+                                                        height: '8px',
+                                                        borderRadius: '50%',
+                                                        border: `1px solid ${listColor}`,
+                                                        backgroundColor: 'transparent',
+                                                      }}
+                                                    />
+                                                  )}
+                                                  {listStyle === 'square' && (
+                                                    <Box
+                                                      sx={{
+                                                        width: '8px',
+                                                        height: '8px',
+                                                        backgroundColor: listColor,
+                                                      }}
+                                                    />
+                                                  )}
+                                                </Box>
+                                              )}
+                                              <Typography variant="body1">{item}</Typography>
+                                            </Box>
+                                          ))}
+                                        </Box>
+                                      );
+                                    }
+                                    break;
+                                  case 'image':
+                                    return (
+                                      <Box key={compIndex} sx={{ textAlign: 'center', my: 2 }}>
+                                        <img
+                                          src={component.props?.src || '/placeholder.svg'}
+                                          alt={component.props?.alt || 'Image'}
+                                          style={{ maxWidth: '100%' }}
+                                        />
+                                      </Box>
+                                    );
+                                  case 'gallery':
+                                    const galleryLayout = component.props?.layout || 'single';
+                                    const galleryImages = component.props?.images || [];
+
+                                    if (galleryLayout === 'single' && galleryImages.length > 0) {
+                                      return (
+                                        <Box key={compIndex} sx={{ textAlign: 'center', my: 2 }}>
+                                          <img
+                                            src={galleryImages[0]?.src || '/placeholder.svg'}
+                                            alt={galleryImages[0]?.alt || 'Gallery image'}
+                                            style={{ maxWidth: '100%', borderRadius: '8px' }}
+                                          />
+                                        </Box>
+                                      );
+                                    } else if (
+                                      galleryLayout === 'double' &&
+                                      galleryImages.length > 0
+                                    ) {
+                                      return (
+                                        <Grid key={compIndex} container spacing={1} sx={{ my: 2 }}>
+                                          <Grid item xs={6}>
+                                            <img
+                                              src={galleryImages[0]?.src || '/placeholder.svg'}
+                                              alt={galleryImages[0]?.alt || 'Gallery image'}
+                                              style={{ width: '100%', borderRadius: '8px' }}
+                                            />
+                                          </Grid>
+                                          <Grid item xs={6}>
+                                            <img
+                                              src={galleryImages[1]?.src || '/placeholder.svg'}
+                                              alt={galleryImages[1]?.alt || 'Gallery image'}
+                                              style={{ width: '100%', borderRadius: '8px' }}
+                                            />
+                                          </Grid>
+                                        </Grid>
+                                      );
+                                    } else if (
+                                      galleryLayout === 'grid' &&
+                                      galleryImages.length > 0
+                                    ) {
+                                      return (
+                                        <Grid key={compIndex} container spacing={1} sx={{ my: 2 }}>
+                                          <Grid item xs={6}>
+                                            <img
+                                              src={galleryImages[0]?.src || '/placeholder.svg'}
+                                              alt={galleryImages[0]?.alt || 'Gallery image'}
+                                              style={{
+                                                width: '100%',
+                                                borderRadius: '8px',
+                                                marginBottom: '8px',
+                                              }}
+                                            />
+                                          </Grid>
+                                          <Grid item xs={6}>
+                                            <img
+                                              src={galleryImages[1]?.src || '/placeholder.svg'}
+                                              alt={galleryImages[1]?.alt || 'Gallery image'}
+                                              style={{
+                                                width: '100%',
+                                                borderRadius: '8px',
+                                                marginBottom: '8px',
+                                              }}
+                                            />
+                                          </Grid>
+                                          <Grid item xs={6}>
+                                            <img
+                                              src={galleryImages[2]?.src || '/placeholder.svg'}
+                                              alt={galleryImages[2]?.alt || 'Gallery image'}
+                                              style={{ width: '100%', borderRadius: '8px' }}
+                                            />
+                                          </Grid>
+                                          <Grid item xs={6}>
+                                            <img
+                                              src={galleryImages[3]?.src || '/placeholder.svg'}
+                                              alt={galleryImages[3]?.alt || 'Gallery image'}
+                                              style={{ width: '100%', borderRadius: '8px' }}
+                                            />
+                                          </Grid>
+                                        </Grid>
+                                      );
+                                    }
+                                    return null;
+                                  case 'spacer':
+                                    return <Box key={compIndex} sx={{ height: 32 }} />;
+                                  case 'summary': {
+                                    const summaryBgStyle = component.props?.useGradient
+                                      ? {
+                                          background:
+                                            component.props?.gradientType === 'linear'
+                                              ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                                              : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`,
+                                        }
+                                      : {
+                                          backgroundColor:
+                                            component.props?.backgroundColor || '#f5f7fa',
+                                        };
+
+                                    const iconColor = component.props?.iconColor || '#000000';
+                                    const iconSize = component.props?.iconSize || 24;
+                                    const titleColor = component.props?.titleColor || '#000000';
+                                    const titleFontWeight =
+                                      component.props?.titleFontWeight || 'normal';
+                                    const titleFontFamily =
+                                      component.props?.titleFontFamily || 'inherit';
+                                    const borderColor = component.props?.borderColor || '#4caf50';
+
+                                    return (
+                                      <Box
+                                        key={compIndex}
+                                        sx={{
+                                          ...summaryBgStyle,
+                                          p: 2,
+                                          borderLeft: `4px solid ${borderColor}`,
+                                          mb: 3,
+                                          borderRadius: 1,
+                                        }}
+                                      >
+                                        <Box
+                                          sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            mb: 1,
+                                            fontWeight: titleFontWeight,
+                                            color: titleColor,
+                                            fontFamily: titleFontFamily,
+                                          }}
+                                        >
+                                          <Icon
+                                            icon={component.props?.icon || 'mdi:text-box-outline'}
+                                            style={{
+                                              color: iconColor,
+                                              fontSize: iconSize,
+                                              marginRight: 8,
+                                            }}
+                                          />
+                                          {component.props?.label || 'Resumen'}
+                                        </Box>
+                                        <Typography variant="body2" sx={{ color: '#444' }}>
+                                          {component.content}
+                                        </Typography>
+                                      </Box>
+                                    );
+                                  }
+                                  case 'tituloConIcono': {
+                                    const icon =
+                                      component.props?.icon || 'mdi:newspaper-variant-outline';
+                                    const gradientType = component.props?.gradientType || 'linear';
+                                    const gradientColor1 =
+                                      component.props?.gradientColor1 || '#4facfe';
+                                    const gradientColor2 =
+                                      component.props?.gradientColor2 || '#00f2fe';
+                                    const textColor = component.props?.textColor || '#ffffff';
+
+                                    const gradientStyle =
+                                      gradientType === 'linear'
+                                        ? `linear-gradient(to right, ${gradientColor1}, ${gradientColor2})`
+                                        : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`;
+
+                                    return (
+                                      <Box
+                                        key={compIndex}
+                                        sx={{
+                                          background: gradientStyle,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          padding: '12px 16px',
+                                          borderRadius: '8px 8px 0 0',
+                                          mb: 0,
+                                        }}
+                                      >
+                                        <Icon
+                                          icon={icon}
+                                          style={{
+                                            color: textColor,
+                                            fontSize: 24,
+                                            marginRight: 12,
+                                          }}
+                                        />
+                                        <Typography
+                                          variant="h6"
+                                          sx={{
+                                            margin: 0,
+                                            color: textColor,
+                                            fontWeight: 'bold',
+                                          }}
+                                        >
+                                          {component.content}
+                                        </Typography>
+                                      </Box>
+                                    );
+                                  }
+                                  case 'respaldadoPor': {
+                                    const texto = component.props?.texto || 'Respaldado por';
+                                    const nombre = component.props?.nombre || 'Redacción';
+                                    const avatarUrl =
+                                      component.props?.avatarUrl || '/default-avatar.png';
+                                    const avatarTamano = component.props?.avatarTamano || 36;
+
+                                    return (
+                                      <Box
+                                        key={compIndex}
+                                        sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '8px',
+                                          my: 2,
+                                        }}
+                                      >
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            color: '#666',
+                                            fontSize: '14px',
+                                          }}
+                                        >
+                                          {texto}
+                                        </Typography>
+                                        <Avatar
+                                          src={avatarUrl}
+                                          alt={nombre}
+                                          sx={{
+                                            width: avatarTamano,
+                                            height: avatarTamano,
+                                          }}
+                                        />
+                                        <Typography
+                                          variant="body2"
+                                          sx={{
+                                            fontWeight: 500,
+                                          }}
+                                        >
+                                          {nombre}
+                                        </Typography>
+                                      </Box>
+                                    );
+                                  }
                                   default:
                                     return null;
                                 }
@@ -1481,34 +1987,78 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
                             {note.objdata.map((component, compIndex) => {
                               switch (component.type) {
                                 case 'category':
-                                  const categoryColors = Array.isArray(component.props?.color)
-                                    ? component.props.color
-                                    : [component.props?.color || '#4caf50'];
-                                  const categoryItems = component.props?.items || [
-                                    component.content,
-                                  ];
+                                  const categorias = component.props?.categorias || [];
 
-                                  return (
-                                    <Box
-                                      key={compIndex}
-                                      sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}
-                                    >
-                                      {categoryItems.map((item, idx) => (
-                                        <Chip
-                                          key={idx}
-                                          label={item}
-                                          sx={{
-                                            backgroundColor:
-                                              typeof categoryColors === 'string'
-                                                ? categoryColors
-                                                : categoryColors[idx % categoryColors.length],
-                                            color: 'white',
-                                            fontWeight: 'bold',
-                                          }}
-                                        />
-                                      ))}
-                                    </Box>
-                                  );
+                                  if (categorias.length > 0) {
+                                    return (
+                                      <Box
+                                        key={compIndex}
+                                        sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}
+                                      >
+                                        {categorias.map((categoria) => (
+                                          <Chip
+                                            key={categoria.id}
+                                            label={categoria.texto}
+                                            sx={{
+                                              backgroundColor: categoria.colorFondo,
+                                              color: categoria.colorTexto,
+                                              fontWeight: 'bold',
+                                            }}
+                                          />
+                                        ))}
+                                      </Box>
+                                    );
+                                  } else {
+                                    // Formato antiguo como fallback
+                                    const categoryColor = component.props?.color || '#4caf50';
+                                    const categoryItems = component.props?.items || [
+                                      component.content,
+                                    ];
+                                    // Obtener las propiedades de estilo
+                                    const borderRadius = component.props?.borderRadius || 16;
+                                    const padding = component.props?.padding || 4;
+                                    const textColor = component.props?.textColor || 'white';
+                                    const fontWeight = component.props?.fontWeight || 'bold';
+                                    const fontSize = component.props?.fontSize || 14;
+
+                                    return (
+                                      <Box
+                                        key={compIndex}
+                                        sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}
+                                      >
+                                        {Array.isArray(categoryItems) ? (
+                                          categoryItems.map((item, index) => (
+                                            <Chip
+                                              key={index}
+                                              label={item}
+                                              sx={{
+                                                backgroundColor: Array.isArray(categoryColor)
+                                                  ? categoryColor[index % categoryColor.length]
+                                                  : categoryColor,
+                                                color: textColor,
+                                                fontWeight,
+                                                padding: `${padding}px ${padding * 3}px`,
+                                                borderRadius,
+                                                fontSize,
+                                              }}
+                                            />
+                                          ))
+                                        ) : (
+                                          <Chip
+                                            label={categoryItems[0]}
+                                            sx={{
+                                              backgroundColor: categoryColor,
+                                              color: textColor,
+                                              fontWeight,
+                                              padding: `${padding}px ${padding * 3}px`,
+                                              borderRadius,
+                                              fontSize,
+                                            }}
+                                          />
+                                        )}
+                                      </Box>
+                                    );
+                                  }
                                 case 'heading':
                                   const HeadingTag =
                                     `h${component.props?.level || 2}` as keyof JSX.IntrinsicElements;
@@ -1727,6 +2277,65 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
                                   return null;
                                 case 'spacer':
                                   return <Box key={compIndex} sx={{ height: 32 }} />;
+                                case 'summary': {
+                                  const summaryBgStyle = component.props?.useGradient
+                                    ? {
+                                        background:
+                                          component.props?.gradientType === 'linear'
+                                            ? `linear-gradient(${component.props?.gradientDirection || 'to right'}, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`
+                                            : `radial-gradient(circle, ${component.props?.gradientColor1 || '#f5f7fa'}, ${component.props?.gradientColor2 || '#c3cfe2'})`,
+                                      }
+                                    : {
+                                        backgroundColor:
+                                          component.props?.backgroundColor || '#f5f7fa',
+                                      };
+
+                                  const iconColor = component.props?.iconColor || '#000000';
+                                  const iconSize = component.props?.iconSize || 24;
+                                  const titleColor = component.props?.titleColor || '#000000';
+                                  const titleFontWeight =
+                                    component.props?.titleFontWeight || 'normal';
+                                  const titleFontFamily =
+                                    component.props?.titleFontFamily || 'inherit';
+                                  const borderColor = component.props?.borderColor || '#4caf50';
+
+                                  return (
+                                    <Box
+                                      key={compIndex}
+                                      sx={{
+                                        ...summaryBgStyle,
+                                        p: 2,
+                                        borderLeft: `4px solid ${borderColor}`,
+                                        mb: 3,
+                                        borderRadius: 1,
+                                      }}
+                                    >
+                                      <Box
+                                        sx={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          mb: 1,
+                                          fontWeight: titleFontWeight,
+                                          color: titleColor,
+                                          fontFamily: titleFontFamily,
+                                        }}
+                                      >
+                                        <Icon
+                                          icon={component.props?.icon || 'mdi:text-box-outline'}
+                                          style={{
+                                            color: iconColor,
+                                            fontSize: iconSize,
+                                            marginRight: 8,
+                                          }}
+                                        />
+                                        {component.props?.label || 'Resumen'}
+                                      </Box>
+                                      <Typography variant="body2" sx={{ color: '#444' }}>
+                                        {component.content}
+                                      </Typography>
+                                    </Box>
+                                  );
+                                }
                                 default:
                                   return null;
                               }

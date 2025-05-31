@@ -14,7 +14,9 @@ export interface EmailComponent {
     | 'author'
     | 'summary'
     | 'news'
-    | 'gallery';
+    | 'gallery'
+    | 'tituloConIcono'
+    | 'respaldadoPor';
   content: string;
   props: {
     level?: number;

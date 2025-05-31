@@ -1,0 +1,126 @@
+/* Editor Styles */
+.tiptap-editor {
+  padding: 8px;
+  min-height: 80px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.tiptap-editor:focus {
+  outline: none;
+}
+
+.tiptap-editor p {
+  margin: 0.5em 0;
+}
+
+.tiptap-editor h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+.tiptap-editor h2 {
+  font-size: 1.5em;
+  margin: 0.75em 0;
+}
+
+.tiptap-editor h3 {
+  font-size: 1.17em;
+  margin: 0.83em 0;
+}
+
+.tiptap-editor h4 {
+  margin: 1.12em 0;
+}
+
+.tiptap-editor h5 {
+  font-size: 0.83em;
+  margin: 1.5em 0;
+}
+
+.tiptap-editor h6 {
+  font-size: 0.75em;
+  margin: 1.67em 0;
+}
+
+.tiptap-editor ul,
+.tiptap-editor ol {
+  padding-left: 1.5em;
+}
+
+.tiptap-editor ul li,
+.tiptap-editor ol li {
+  margin-bottom: 0.5em;
+}
+
+.tiptap-editor a {
+  color: #3f51b5;
+  text-decoration: underline;
+}
+
+.tiptap-editor blockquote {
+  border-left: 3px solid #ddd;
+  padding-left: 1em;
+  margin-left: 0;
+  font-style: italic;
+}
+
+.tiptap-editor code {
+  background-color: #f0f0f0;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.tiptap-editor pre {
+  background-color: #f0f0f0;
+  padding: 0.7em 1em;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+
+.tiptap-editor pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.tiptap-editor .is-active {
+  background-color: #e3f2fd;
+}
+
+.tiptap-editor p.has-text-align-left,
+.tiptap-editor h1.has-text-align-left,
+.tiptap-editor h2.has-text-align-left,
+.tiptap-editor h3.has-text-align-left {
+  text-align: left;
+}
+
+.tiptap-editor p.has-text-align-center,
+.tiptap-editor h1.has-text-align-center,
+.tiptap-editor h2.has-text-align-center,
+.tiptap-editor h3.has-text-align-center {
+  text-align: center;
+}
+
+.tiptap-editor p.has-text-align-right,
+.tiptap-editor h1.has-text-align-right,
+.tiptap-editor h2.has-text-align-right,
+.tiptap-editor h3.has-text-align-right {
+  text-align: right;
+}
+
+.tiptap-editor p.has-text-align-justify,
+.tiptap-editor h1.has-text-align-justify,
+.tiptap-editor h2.has-text-align-justify,
+.tiptap-editor h3.has-text-align-justify {
+  text-align: justify;
+}
+
+/* Placeholder styles */
+.tiptap-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}

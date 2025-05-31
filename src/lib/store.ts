@@ -1,4 +1,5 @@
 import type { SavedNote } from 'src/types/saved-note';
+import type { SavedEducacion } from 'src/types/saved-educacion';
 import type { Newsletter, NewsletterNote } from 'src/types/newsletter';
 
 import { create } from 'zustand';
@@ -10,6 +11,11 @@ import {
   getAllNotesFromStorage,
 } from 'src/utils/storage-utils';
 import {
+  saveEducacionToStorage,
+  deleteEducacionFromStorage,
+  getAllEducacionesFromStorage,
+} from 'src/utils/educacion-utils';
+import {
   saveNewsletterToStorage,
   deleteNewsletterFromStorage,
   getAllNewslettersFromStorage,
@@ -19,6 +25,7 @@ interface StoreState {
   notes: SavedNote[];
   newsletters: Newsletter[];
   selectedNotes: NewsletterNote[];
+  educaciones: SavedEducacion[];
   loadNotes: () => void;
   addNote: (note: SavedNote) => void;
   updateNote: (note: SavedNote) => void;
@@ -30,6 +37,10 @@ interface StoreState {
   setSelectedNotes: (notes: NewsletterNote[]) => void;
   addSelectedNote: (note: NewsletterNote) => void;
   removeSelectedNote: (noteId: string) => void;
+  loadEducaciones: () => void;
+  addEducacion: (educacion: SavedEducacion) => void;
+  updateEducacion: (educacion: SavedEducacion) => void;
+  deleteEducacion: (educacionId: string) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -38,6 +49,7 @@ export const useStore = create<StoreState>()(
       notes: [],
       newsletters: [],
       selectedNotes: [],
+      educaciones: [],
 
       loadNotes: () => {
         const notes = getAllNotesFromStorage();
@@ -106,6 +118,31 @@ export const useStore = create<StoreState>()(
       removeSelectedNote: (noteId: string) => {
         set((state) => ({
           selectedNotes: state.selectedNotes.filter((n) => n.noteId !== noteId),
+        }));
+      },
+
+      // Funciones para manejar contenidos educativos
+      loadEducaciones: () => {
+        const educaciones = getAllEducacionesFromStorage();
+        set({ educaciones });
+      },
+
+      addEducacion: (educacion: SavedEducacion) => {
+        saveEducacionToStorage(educacion);
+        set((state) => ({ educaciones: [...state.educaciones, educacion] }));
+      },
+
+      updateEducacion: (educacion: SavedEducacion) => {
+        saveEducacionToStorage(educacion);
+        set((state) => ({
+          educaciones: state.educaciones.map((e) => (e.id === educacion.id ? educacion : e)),
+        }));
+      },
+
+      deleteEducacion: (educacionId: string) => {
+        deleteEducacionFromStorage(educacionId);
+        set((state) => ({
+          educaciones: state.educaciones.filter((e) => e.id !== educacionId),
         }));
       },
     }),

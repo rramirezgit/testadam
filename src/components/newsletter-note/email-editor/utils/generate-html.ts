@@ -182,6 +182,39 @@ export async function generateEmailHtml(
               break;
             }
 
+            case 'tituloConIcono': {
+              const icon = component.props?.icon || 'mdi:newspaper-variant-outline';
+              const gradientType = component.props?.gradientType || 'linear';
+              const gradientColor1 = component.props?.gradientColor1 || '#4facfe';
+              const gradientColor2 = component.props?.gradientColor2 || '#00f2fe';
+              const textColor = component.props?.textColor || '#ffffff';
+
+              const gradientStyle =
+                gradientType === 'linear'
+                  ? `linear-gradient(to right, ${gradientColor1}, ${gradientColor2})`
+                  : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`;
+
+              emailHtml += `<div style="background: ${gradientStyle}; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0; display: flex; align-items: center;">
+                <img src="https://api.iconify.design/${icon.replace(':', '/')}.svg?color=${encodeURIComponent(textColor)}" style="margin-right: 12px; width: 24px; height: 24px;" />
+                <h2 style="margin: 0; color: ${textColor}; font-weight: bold; font-size: 20px;">${component.content}</h2>
+              </div>\n`;
+              break;
+            }
+
+            case 'respaldadoPor': {
+              const texto = component.props?.texto || 'Respaldado por';
+              const nombre = component.props?.nombre || 'Redacción';
+              const avatarUrl = component.props?.avatarUrl || '/default-avatar.png';
+              const avatarTamano = component.props?.avatarTamano || 36;
+
+              emailHtml += `<div style="display: flex; align-items: center; gap: 8px; margin: 16px 0;">
+                <span style="color: #666; font-size: 14px;">${texto}</span>
+                <img src="${avatarUrl}" alt="${nombre}" style="width: ${avatarTamano}px; height: ${avatarTamano}px; border-radius: 50%;" />
+                <span style="font-weight: 500;">${nombre}</span>
+              </div>\n`;
+              break;
+            }
+
             default: {
               break;
             }
@@ -330,6 +363,37 @@ export async function generateEmailHtml(
             case 'spacer':
               emailHtml += `<div style="height: 32px;"></div>\n`;
               break;
+            case 'tituloConIcono': {
+              const icon = component.props?.icon || 'mdi:newspaper-variant-outline';
+              const gradientType = component.props?.gradientType || 'linear';
+              const gradientColor1 = component.props?.gradientColor1 || '#4facfe';
+              const gradientColor2 = component.props?.gradientColor2 || '#00f2fe';
+              const textColor = component.props?.textColor || '#ffffff';
+
+              const gradientStyle =
+                gradientType === 'linear'
+                  ? `linear-gradient(to right, ${gradientColor1}, ${gradientColor2})`
+                  : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`;
+
+              emailHtml += `<div style="background: ${gradientStyle}; padding: 12px 16px; border-radius: 8px 8px 0 0; margin: 20px auto; max-width: 280px; display: flex; align-items: center;">
+                <img src="https://api.iconify.design/${icon.replace(':', '/')}.svg?color=${encodeURIComponent(textColor)}" style="margin-right: 12px; width: 24px; height: 24px;" />
+                <h2 style="margin: 0; color: ${textColor}; font-weight: bold; font-size: 20px; text-align: left;">${component.content}</h2>
+              </div>\n`;
+              break;
+            }
+            case 'respaldadoPor': {
+              const texto = component.props?.texto || 'Respaldado por';
+              const nombre = component.props?.nombre || 'Redacción';
+              const avatarUrl = component.props?.avatarUrl || '/default-avatar.png';
+              const avatarTamano = component.props?.avatarTamano || 36;
+
+              emailHtml += `<div style="display: flex; align-items: center; gap: 8px; margin: 16px auto; max-width: 280px;">
+                <span style="color: #666; font-size: 14px;">${texto}</span>
+                <img src="${avatarUrl}" alt="${nombre}" style="width: ${avatarTamano}px; height: ${avatarTamano}px; border-radius: 50%;" />
+                <span style="font-weight: 500;">${nombre}</span>
+              </div>\n`;
+              break;
+            }
           }
         });
 
@@ -399,6 +463,37 @@ export async function generateEmailHtml(
             case 'spacer':
               emailHtml += `<div style="height: 32px;"></div>\n`;
               break;
+            case 'tituloConIcono': {
+              const icon = component.props?.icon || 'mdi:newspaper-variant-outline';
+              const gradientType = component.props?.gradientType || 'linear';
+              const gradientColor1 = component.props?.gradientColor1 || '#4facfe';
+              const gradientColor2 = component.props?.gradientColor2 || '#00f2fe';
+              const textColor = component.props?.textColor || '#ffffff';
+
+              const gradientStyle =
+                gradientType === 'linear'
+                  ? `linear-gradient(to right, ${gradientColor1}, ${gradientColor2})`
+                  : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`;
+
+              emailHtml += `<div style="background: ${gradientStyle}; padding: 12px 16px; border-radius: 8px 8px 0 0; margin-bottom: 0; display: flex; align-items: center;">
+                <img src="https://api.iconify.design/${icon.replace(':', '/')}.svg?color=${encodeURIComponent(textColor)}" style="margin-right: 12px; width: 24px; height: 24px;" />
+                <h2 style="margin: 0; color: ${textColor}; font-weight: bold; font-size: 20px;">${component.content}</h2>
+              </div>\n`;
+              break;
+            }
+            case 'respaldadoPor': {
+              const texto = component.props?.texto || 'Respaldado por';
+              const nombre = component.props?.nombre || 'Redacción';
+              const avatarUrl = component.props?.avatarUrl || '/default-avatar.png';
+              const avatarTamano = component.props?.avatarTamano || 36;
+
+              emailHtml += `<div style="display: flex; align-items: center; gap: 8px; margin: 16px 0;">
+                <span style="color: #525f7f; font-size: 14px;">${texto}</span>
+                <img src="${avatarUrl}" alt="${nombre}" style="width: ${avatarTamano}px; height: ${avatarTamano}px; border-radius: 50%;" />
+                <span style="font-weight: 500; color: #525f7f;">${nombre}</span>
+              </div>\n`;
+              break;
+            }
           }
         });
 
@@ -483,6 +578,41 @@ You received this email because you're a Stripe user.
             case 'spacer':
               emailHtml += `<tr><td style="height: 32px;"></td></tr>\n`;
               break;
+            case 'tituloConIcono': {
+              const icon = component.props?.icon || 'mdi:newspaper-variant-outline';
+              const gradientType = component.props?.gradientType || 'linear';
+              const gradientColor1 = component.props?.gradientColor1 || '#4facfe';
+              const gradientColor2 = component.props?.gradientColor2 || '#00f2fe';
+              const textColor = component.props?.textColor || '#ffffff';
+
+              const gradientStyle =
+                gradientType === 'linear'
+                  ? `linear-gradient(to right, ${gradientColor1}, ${gradientColor2})`
+                  : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`;
+
+              emailHtml += `<tr><td style="padding: 0 20px;">
+                <div style="background: ${gradientStyle}; padding: 12px 16px; border-radius: 8px 8px 0 0; margin: 20px 0; display: flex; align-items: center;">
+                  <img src="https://api.iconify.design/${icon.replace(':', '/')}.svg?color=${encodeURIComponent(textColor)}" style="margin-right: 12px; width: 24px; height: 24px;" />
+                  <h2 style="margin: 0; color: ${textColor}; font-weight: bold; font-size: 20px;">${component.content}</h2>
+                </div>
+              </td></tr>\n`;
+              break;
+            }
+            case 'respaldadoPor': {
+              const texto = component.props?.texto || 'Respaldado por';
+              const nombre = component.props?.nombre || 'Redacción';
+              const avatarUrl = component.props?.avatarUrl || '/default-avatar.png';
+              const avatarTamano = component.props?.avatarTamano || 36;
+
+              emailHtml += `<tr><td style="padding: 0 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin: 16px 0;">
+                  <span style="color: #525f7f; font-size: 14px;">${texto}</span>
+                  <img src="${avatarUrl}" alt="${nombre}" style="width: ${avatarTamano}px; height: ${avatarTamano}px; border-radius: 50%;" />
+                  <span style="font-weight: 500; color: #525f7f;">${nombre}</span>
+                </div>
+              </td></tr>\n`;
+              break;
+            }
           }
         });
 

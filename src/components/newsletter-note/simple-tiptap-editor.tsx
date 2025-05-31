@@ -11,6 +11,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import FontFamily from '@tiptap/extension-font-family';
 import { useEditor, EditorContent } from '@tiptap/react';
 
+import { Box } from '@mui/material';
+
 interface SimpleTipTapEditorProps {
   content: string;
   onChange: (content: string) => void;
@@ -64,8 +66,8 @@ export default function SimpleTipTapEditor({
   }, [content, editor]);
 
   return (
-    <div className={className} style={style}>
+    <Box className={className} style={style}>
       <EditorContent editor={editor} />
-    </div>
+    </Box>
   );
 }

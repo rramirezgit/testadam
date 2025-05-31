@@ -5,6 +5,7 @@ import type { Editor } from '@tiptap/react';
 import type { SavedNote, EmailComponent } from 'src/types/saved-note';
 
 import { v4 as uuidv4 } from 'uuid';
+import { Icon } from '@iconify/react';
 import { useRef, useState, useEffect } from 'react';
 
 import { Box, Button, TextField } from '@mui/material';
@@ -148,6 +149,10 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   // Estado para el selector de iconos
   const [showIconPicker, setShowIconPicker] = useState(false);
 
+  // Estado para la sincronización automática
+  const [syncEnabled, setSyncEnabled] = useState<boolean>(false);
+  const [lastSyncedVersion, setLastSyncedVersion] = useState<'newsletter' | 'web' | null>(null);
+
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = () => {
     if (activeVersion === 'newsletter') {
@@ -240,31 +245,119 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     }
   };
 
-  // Actualizar el contenido de un componente
+  // Actualizar el contenido de un componente con sincronización
   const updateComponentContent = (id: string, content: string) => {
     const components = getActiveComponents();
     const updatedComponents = components.map((component) =>
       component.id === id ? { ...component, content } : component
     );
     updateActiveComponents(updatedComponents);
+
+    // Si la sincronización automática está activa, actualizar también en la otra versión
+    if (syncEnabled) {
+      const otherVersion = activeVersion === 'newsletter' ? 'web' : 'newsletter';
+      const suffix = id.endsWith('-web') ? '-web' : '';
+      const baseId = suffix ? id.slice(0, -suffix.length) : id;
+      const otherVersionId = otherVersion === 'web' ? `${baseId}-web` : baseId;
+
+      // Obtener componentes de la otra versión
+      const otherVersionComponents = getOtherVersionComponents(otherVersion);
+
+      // Verificar si el componente existe en la otra versión
+      const componentExists = otherVersionComponents.some((comp) => comp.id === otherVersionId);
+
+      if (componentExists) {
+        // Actualizar el componente correspondiente en la otra versión
+        const updatedOtherVersionComponents = otherVersionComponents.map((component) =>
+          component.id === otherVersionId ? { ...component, content } : component
+        );
+
+        // Guardar los componentes actualizados
+        updateOtherVersionComponents(otherVersion, updatedOtherVersionComponents);
+
+        // Mostrar notificación sutil
+        showSyncNotification(activeVersion, otherVersion);
+      }
+      // Importante: No creamos nuevos componentes en la otra versión si no existen
+    }
   };
 
-  // Actualizar las propiedades de un componente
+  // Actualizar las propiedades de un componente con sincronización
   const updateComponentProps = (id: string, props: Record<string, any>) => {
     const components = getActiveComponents();
     const updatedComponents = components.map((component) =>
       component.id === id ? { ...component, props: { ...component.props, ...props } } : component
     );
     updateActiveComponents(updatedComponents);
+
+    // Si la sincronización automática está activa, actualizar también en la otra versión
+    if (syncEnabled) {
+      const otherVersion = activeVersion === 'newsletter' ? 'web' : 'newsletter';
+      const suffix = id.endsWith('-web') ? '-web' : '';
+      const baseId = suffix ? id.slice(0, -suffix.length) : id;
+      const otherVersionId = otherVersion === 'web' ? `${baseId}-web` : baseId;
+
+      // Obtener componentes de la otra versión
+      const otherVersionComponents = getOtherVersionComponents(otherVersion);
+
+      // Verificar si el componente existe en la otra versión
+      const componentExists = otherVersionComponents.some((comp) => comp.id === otherVersionId);
+
+      if (componentExists) {
+        // Preservar las propiedades existentes y actualizar solo las nuevas
+        const updatedOtherVersionComponents = otherVersionComponents.map((component) =>
+          component.id === otherVersionId
+            ? { ...component, props: { ...component.props, ...props } }
+            : component
+        );
+
+        // Guardar los componentes actualizados
+        updateOtherVersionComponents(otherVersion, updatedOtherVersionComponents);
+
+        // Mostrar notificación sutil
+        showSyncNotification(activeVersion, otherVersion);
+      }
+      // Importante: No creamos nuevos componentes en la otra versión si no existen
+    }
   };
 
-  // Actualizar el estilo de un componente
+  // Actualizar el estilo de un componente con sincronización
   const updateComponentStyle = (id: string, style: React.CSSProperties) => {
     const components = getActiveComponents();
     const updatedComponents = components.map((component) =>
       component.id === id ? { ...component, style: { ...component.style, ...style } } : component
     );
     updateActiveComponents(updatedComponents);
+
+    // Si la sincronización automática está activa, actualizar también en la otra versión
+    if (syncEnabled) {
+      const otherVersion = activeVersion === 'newsletter' ? 'web' : 'newsletter';
+      const suffix = id.endsWith('-web') ? '-web' : '';
+      const baseId = suffix ? id.slice(0, -suffix.length) : id;
+      const otherVersionId = otherVersion === 'web' ? `${baseId}-web` : baseId;
+
+      // Obtener componentes de la otra versión
+      const otherVersionComponents = getOtherVersionComponents(otherVersion);
+
+      // Verificar si el componente existe en la otra versión
+      const componentExists = otherVersionComponents.some((comp) => comp.id === otherVersionId);
+
+      if (componentExists) {
+        // Preservar los estilos existentes y actualizar solo los nuevos
+        const updatedOtherVersionComponents = otherVersionComponents.map((component) =>
+          component.id === otherVersionId
+            ? { ...component, style: { ...component.style, ...style } }
+            : component
+        );
+
+        // Guardar los componentes actualizados
+        updateOtherVersionComponents(otherVersion, updatedOtherVersionComponents);
+
+        // Mostrar notificación sutil
+        showSyncNotification(activeVersion, otherVersion);
+      }
+      // Importante: No creamos nuevos componentes en la otra versión si no existen
+    }
   };
 
   // Actualizar la función addComponent para incluir propiedades de lista
@@ -289,7 +382,11 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
                     ? 'Autor'
                     : type === 'summary'
                       ? 'Resumen de la noticia'
-                      : '',
+                      : type === 'tituloConIcono'
+                        ? 'Título con Icono'
+                        : type === 'respaldadoPor'
+                          ? 'Respaldado por texto'
+                          : '',
       props:
         type === 'heading'
           ? { level: 2 }
@@ -299,7 +396,22 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               ? { src: 'https://via.placeholder.com/600x400', alt: 'Placeholder image' }
               : type === 'bulletList'
                 ? { items: ['List item 1'], listStyle: 'disc', listColor: '#000000' }
-                : {},
+                : type === 'tituloConIcono'
+                  ? {
+                      icon: 'mdi:newspaper-variant-outline',
+                      gradientColor1: '#4facfe',
+                      gradientColor2: '#00f2fe',
+                      gradientType: 'linear',
+                      textColor: '#ffffff',
+                    }
+                  : type === 'respaldadoPor'
+                    ? {
+                        texto: 'Respaldado por',
+                        nombre: 'Redacción',
+                        avatarUrl: '/default-avatar.png',
+                        avatarTamano: 36,
+                      }
+                    : {},
       style:
         type === 'button'
           ? {
@@ -368,69 +480,369 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 
   // Función para cambiar entre versiones (newsletter y web)
   const handleVersionChange = (newVersion: 'newsletter' | 'web') => {
+    // Si la sincronización está activada, sincronizar contenido antes de cambiar
+    if (syncEnabled && activeVersion !== newVersion) {
+      syncContent(activeVersion, newVersion);
+      setLastSyncedVersion(activeVersion);
+    }
+
     setActiveVersion(newVersion);
     setSelectedComponentId(null); // Deseleccionar componente al cambiar de versión
   };
 
-  // Función para inicializar la versión web si no existe
-  const initializeWebVersion = () => {
-    // Si no hay componentes web para la plantilla actual, copiar los de newsletter
-    if (activeVersion === 'web') {
+  // Función para activar/desactivar la sincronización
+  const toggleSync = () => {
+    // Si se está activando la sincronización, sincronizar contenido actual
+    if (!syncEnabled) {
+      setSnackbarMessage('Sincronización automática activada');
+      setSnackbarSeverity('success');
+      setOpenSnackbar(true);
+    } else {
+      setSnackbarMessage('Sincronización automática desactivada');
+      setSnackbarSeverity('info');
+      setOpenSnackbar(true);
+    }
+
+    setSyncEnabled(!syncEnabled);
+  };
+
+  // Función para sincronizar contenido entre versiones
+  const syncContent = (
+    sourceVersion: 'newsletter' | 'web',
+    targetVersion: 'newsletter' | 'web'
+  ) => {
+    let sourceComponents: EmailComponent[] = [];
+    let targetComponents: EmailComponent[] = [];
+
+    // Obtener componentes de origen según la versión
+    if (sourceVersion === 'newsletter') {
       switch (activeTemplate) {
+        case 'blank':
+          sourceComponents = [...blankComponentsState];
+          break;
         case 'news':
-          if (newsComponentsWebState.length === 0) {
-            const webComponents = newsComponentsState.map((comp) => ({
-              ...comp,
-              id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
-            }));
-            setNewsComponentsWeb(webComponents);
-          }
+          sourceComponents = [...newsComponentsState];
           break;
         case 'notion':
-          if (notionComponentsWebState.length === 0) {
-            // Clonar componentes de newsletter y añadir sufijo -web a los IDs
-            const webComponents = notionComponentsState.map((comp) => ({
-              ...comp,
-              id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
-            }));
-            setNotionComponentsWeb(webComponents);
-          }
+          sourceComponents = [...notionComponentsState];
           break;
         case 'plaid':
-          if (plaidComponentsWebState.length === 0) {
-            const webComponents = plaidComponentsState.map((comp) => ({
-              ...comp,
-              id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
-            }));
-            setPlaidComponentsWeb(webComponents);
-          }
+          sourceComponents = [...plaidComponentsState];
           break;
         case 'stripe':
-          if (stripeComponentsWebState.length === 0) {
-            const webComponents = stripeComponentsState.map((comp) => ({
-              ...comp,
-              id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
-            }));
-            setStripeComponentsWeb(webComponents);
-          }
+          sourceComponents = [...stripeComponentsState];
           break;
         case 'vercel':
-          if (vercelComponentsWebState.length === 0) {
-            const webComponents = vercelComponentsState.map((comp) => ({
-              ...comp,
-              id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
-            }));
-            setVercelComponentsWeb(webComponents);
-          }
+          sourceComponents = [...vercelComponentsState];
           break;
+        default:
+          sourceComponents = [...blankComponentsState];
+      }
+    } else {
+      switch (activeTemplate) {
         case 'blank':
-          if (blankComponentsWebState.length === 0) {
-            const webComponents = blankComponentsState.map((comp) => ({
-              ...comp,
-              id: comp.id.includes('-web') ? comp.id : `${comp.id}-web`,
-            }));
-            setBlankComponentsWeb(webComponents);
-          }
+          sourceComponents = [...blankComponentsWebState];
+          break;
+        case 'news':
+          sourceComponents = [...newsComponentsWebState];
+          break;
+        case 'notion':
+          sourceComponents = [...notionComponentsWebState];
+          break;
+        case 'plaid':
+          sourceComponents = [...plaidComponentsWebState];
+          break;
+        case 'stripe':
+          sourceComponents = [...stripeComponentsWebState];
+          break;
+        case 'vercel':
+          sourceComponents = [...vercelComponentsWebState];
+          break;
+        default:
+          sourceComponents = [...blankComponentsWebState];
+      }
+    }
+
+    // Obtener componentes de destino según la versión
+    if (targetVersion === 'newsletter') {
+      switch (activeTemplate) {
+        case 'blank':
+          targetComponents = [...blankComponentsState];
+          break;
+        case 'news':
+          targetComponents = [...newsComponentsState];
+          break;
+        case 'notion':
+          targetComponents = [...notionComponentsState];
+          break;
+        case 'plaid':
+          targetComponents = [...plaidComponentsState];
+          break;
+        case 'stripe':
+          targetComponents = [...stripeComponentsState];
+          break;
+        case 'vercel':
+          targetComponents = [...vercelComponentsState];
+          break;
+        default:
+          targetComponents = [...blankComponentsState];
+      }
+    } else {
+      switch (activeTemplate) {
+        case 'blank':
+          targetComponents = [...blankComponentsWebState];
+          break;
+        case 'news':
+          targetComponents = [...newsComponentsWebState];
+          break;
+        case 'notion':
+          targetComponents = [...notionComponentsWebState];
+          break;
+        case 'plaid':
+          targetComponents = [...plaidComponentsWebState];
+          break;
+        case 'stripe':
+          targetComponents = [...stripeComponentsWebState];
+          break;
+        case 'vercel':
+          targetComponents = [...vercelComponentsWebState];
+          break;
+        default:
+          targetComponents = [...blankComponentsWebState];
+      }
+    }
+
+    // Si no hay componentes en el origen, mostrar mensaje y salir
+    if (sourceComponents.length === 0) {
+      setSnackbarMessage(
+        `No hay contenido en ${sourceVersion === 'newsletter' ? 'Newsletter' : 'Web'} para transferir`
+      );
+      setSnackbarSeverity('warning');
+      setOpenSnackbar(true);
+      return;
+    }
+
+    // Iterar sobre los componentes de destino existentes y actualizar sus valores
+    // con los componentes correspondientes del origen, manteniendo la estructura y posición
+    const updatedTargetComponents = targetComponents.map((targetComponent) => {
+      // Obtener sufijo correcto para buscar el componente equivalente
+      const targetSuffix = targetVersion === 'web' ? '-web' : '';
+      const sourceSuffix = sourceVersion === 'web' ? '-web' : '';
+
+      // Extraer el ID base (sin sufijo)
+      let baseId = targetComponent.id;
+      if (baseId.endsWith(targetSuffix)) {
+        baseId = baseId.substring(0, baseId.length - targetSuffix.length);
+      }
+
+      // Crear el ID equivalente en el origen
+      const sourceId = baseId + sourceSuffix;
+
+      // Buscar el componente correspondiente en el origen
+      const sourceComponent = sourceComponents.find(
+        (comp) =>
+          comp.id === sourceId || // Buscar por ID exacto
+          // O buscar por ID base si los sufijos no coinciden
+          (comp.id.endsWith(sourceSuffix) &&
+            comp.id.substring(0, comp.id.length - sourceSuffix.length) === baseId)
+      );
+
+      // Si existe el componente en el origen, actualizar valores pero mantener ID y posición
+      if (sourceComponent) {
+        return {
+          ...targetComponent,
+          content: sourceComponent.content,
+          props: { ...targetComponent.props, ...sourceComponent.props },
+          style: { ...targetComponent.style, ...sourceComponent.style },
+        };
+      }
+
+      // Si no existe, mantener el componente de destino sin cambios
+      return targetComponent;
+    });
+
+    // Actualizar los componentes de destino (manteniendo la estructura)
+    if (targetVersion === 'web') {
+      switch (activeTemplate) {
+        case 'blank':
+          setBlankComponentsWeb(updatedTargetComponents);
+          break;
+        case 'news':
+          setNewsComponentsWeb(updatedTargetComponents);
+          break;
+        case 'notion':
+          setNotionComponentsWeb(updatedTargetComponents);
+          break;
+        case 'plaid':
+          setPlaidComponentsWeb(updatedTargetComponents);
+          break;
+        case 'stripe':
+          setStripeComponentsWeb(updatedTargetComponents);
+          break;
+        case 'vercel':
+          setVercelComponentsWeb(updatedTargetComponents);
+          break;
+        default:
+          break;
+      }
+    } else {
+      switch (activeTemplate) {
+        case 'blank':
+          setBlankComponents(updatedTargetComponents);
+          break;
+        case 'news':
+          setNewsComponents(updatedTargetComponents);
+          break;
+        case 'notion':
+          setNotionComponents(updatedTargetComponents);
+          break;
+        case 'plaid':
+          setPlaidComponents(updatedTargetComponents);
+          break;
+        case 'stripe':
+          setStripeComponents(updatedTargetComponents);
+          break;
+        case 'vercel':
+          setVercelComponents(updatedTargetComponents);
+          break;
+        default:
+          break;
+      }
+    }
+
+    setSnackbarMessage(
+      `Valores sincronizados de ${sourceVersion === 'newsletter' ? 'Newsletter' : 'Web'} a ${targetVersion === 'newsletter' ? 'Newsletter' : 'Web'}`
+    );
+    setSnackbarSeverity('success');
+    setOpenSnackbar(true);
+  };
+
+  // Función para transferir contenido de Newsletter a Web
+  const transferToWeb = () => {
+    syncContent('newsletter', 'web');
+    setSnackbarMessage(
+      'Valores transferidos de Newsletter a Web (solo actualiza componentes existentes)'
+    );
+    setSnackbarSeverity('info');
+    setOpenSnackbar(true);
+  };
+
+  // Función para transferir contenido de Web a Newsletter
+  const transferToNewsletter = () => {
+    syncContent('web', 'newsletter');
+    setSnackbarMessage(
+      'Valores transferidos de Web a Newsletter (solo actualiza componentes existentes)'
+    );
+    setSnackbarSeverity('info');
+    setOpenSnackbar(true);
+  };
+
+  // Función de utilidad para mostrar una notificación de sincronización
+  const showSyncNotification = (
+    fromVersion: 'newsletter' | 'web',
+    toVersion: 'newsletter' | 'web'
+  ) => {
+    // Si ya hay una notificación abierta, no mostrar otra para evitar spam
+    if (openSnackbar) return;
+
+    setSnackbarMessage(
+      `Valores sincronizados de ${fromVersion === 'newsletter' ? 'Newsletter' : 'Web'} a ${toVersion === 'newsletter' ? 'Newsletter' : 'Web'}`
+    );
+    setSnackbarSeverity('info');
+    setOpenSnackbar(true);
+
+    // Ocultar automáticamente después de 1.5 segundos
+    setTimeout(() => {
+      setOpenSnackbar(false);
+    }, 1500);
+  };
+
+  // Función de utilidad para obtener los componentes de la otra versión
+  const getOtherVersionComponents = (otherVersion: 'newsletter' | 'web'): EmailComponent[] => {
+    if (otherVersion === 'web') {
+      switch (activeTemplate) {
+        case 'blank':
+          return [...blankComponentsWebState];
+        case 'news':
+          return [...newsComponentsWebState];
+        case 'notion':
+          return [...notionComponentsWebState];
+        case 'plaid':
+          return [...plaidComponentsWebState];
+        case 'stripe':
+          return [...stripeComponentsWebState];
+        case 'vercel':
+          return [...vercelComponentsWebState];
+        default:
+          return [...blankComponentsWebState];
+      }
+    } else {
+      switch (activeTemplate) {
+        case 'blank':
+          return [...blankComponentsState];
+        case 'news':
+          return [...newsComponentsState];
+        case 'notion':
+          return [...notionComponentsState];
+        case 'plaid':
+          return [...plaidComponentsState];
+        case 'stripe':
+          return [...stripeComponentsState];
+        case 'vercel':
+          return [...vercelComponentsState];
+        default:
+          return [...blankComponentsState];
+      }
+    }
+  };
+
+  // Función de utilidad para actualizar los componentes de la otra versión
+  const updateOtherVersionComponents = (
+    otherVersion: 'newsletter' | 'web',
+    components: EmailComponent[]
+  ) => {
+    if (otherVersion === 'web') {
+      switch (activeTemplate) {
+        case 'blank':
+          setBlankComponentsWeb(components);
+          break;
+        case 'news':
+          setNewsComponentsWeb(components);
+          break;
+        case 'notion':
+          setNotionComponentsWeb(components);
+          break;
+        case 'plaid':
+          setPlaidComponentsWeb(components);
+          break;
+        case 'stripe':
+          setStripeComponentsWeb(components);
+          break;
+        case 'vercel':
+          setVercelComponentsWeb(components);
+          break;
+        default:
+          break;
+      }
+    } else {
+      switch (activeTemplate) {
+        case 'blank':
+          setBlankComponents(components);
+          break;
+        case 'news':
+          setNewsComponents(components);
+          break;
+        case 'notion':
+          setNotionComponents(components);
+          break;
+        case 'plaid':
+          setPlaidComponents(components);
+          break;
+        case 'stripe':
+          setStripeComponents(components);
+          break;
+        case 'vercel':
+          setVercelComponents(components);
           break;
         default:
           break;
@@ -438,10 +850,31 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     }
   };
 
-  // Efecto para inicializar la versión web cuando se cambia a ella
+  // Efecto para sincronizar contenido cuando se activa la sincronización
   useEffect(() => {
-    initializeWebVersion();
-  }, [activeVersion, activeTemplate]);
+    if (syncEnabled && lastSyncedVersion !== activeVersion) {
+      // Cuando el usuario cambia un componente en la versión activa, actualizar la otra versión
+      const otherVersion = activeVersion === 'newsletter' ? 'web' : 'newsletter';
+      syncContent(activeVersion, otherVersion);
+      setLastSyncedVersion(activeVersion);
+    }
+  }, [
+    syncEnabled,
+    activeVersion,
+    lastSyncedVersion,
+    blankComponentsState,
+    blankComponentsWebState,
+    newsComponentsState,
+    newsComponentsWebState,
+    notionComponentsState,
+    notionComponentsWebState,
+    plaidComponentsState,
+    plaidComponentsWebState,
+    stripeComponentsState,
+    stripeComponentsWebState,
+    vercelComponentsState,
+    vercelComponentsWebState,
+  ]);
 
   // Add this function to handle saving notes
   const handleSaveNote = (title: string) => {
@@ -932,7 +1365,32 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         activeVersion={activeVersion}
         handleVersionChange={handleVersionChange}
         openSaveDialog={() => setOpenSaveDialog(true)}
+        syncEnabled={syncEnabled}
+        toggleSync={toggleSync}
+        transferToWeb={transferToWeb}
+        transferToNewsletter={transferToNewsletter}
       />
+
+      {/* Aviso de sincronización automática */}
+      {syncEnabled && (
+        <Box
+          sx={{
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            py: 0.5,
+            px: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.875rem',
+            color: 'primary.main',
+            borderBottom: '1px solid rgba(25, 118, 210, 0.15)',
+          }}
+        >
+          <Icon icon="mdi:sync" style={{ marginRight: '0.5rem', fontSize: '1rem' }} />
+          Sincronización automática activada. Solo se actualizarán los valores de componentes
+          existentes manteniendo su estructura y posición.
+        </Box>
+      )}
 
       {/* Contenedor principal */}
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
