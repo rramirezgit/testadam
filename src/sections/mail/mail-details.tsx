@@ -20,10 +20,10 @@ import { fDateTime } from 'src/utils/format-time';
 import { CONFIG } from 'src/global-config';
 
 import { Label } from 'src/components/label';
-import { Editor } from 'src/components/editor';
 import { Iconify } from 'src/components/iconify';
 import { Markdown } from 'src/components/markdown';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EditorWithFlags } from 'src/components/editor';
 import { EmptyContent } from 'src/components/empty-content';
 import { FileThumbnail } from 'src/components/file-thumbnail';
 import { LoadingScreen } from 'src/components/loading-screen';
@@ -258,7 +258,7 @@ export function MailDetails({ mail, renderLabel, error, loading }: Props) {
 
   const renderEditor = () => (
     <>
-      <Editor sx={{ maxHeight: 320 }} />
+      <EditorWithFlags sx={{ maxHeight: 320 }} />
 
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <IconButton>

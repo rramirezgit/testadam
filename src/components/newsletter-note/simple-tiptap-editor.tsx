@@ -20,6 +20,7 @@ interface SimpleTipTapEditorProps {
   className?: string;
   placeholder?: string;
   onSelectionUpdate?: (editor: any) => void;
+  showToolbar?: boolean;
 }
 
 export default function SimpleTipTapEditor({
@@ -29,6 +30,7 @@ export default function SimpleTipTapEditor({
   className,
   placeholder = 'Escribe aquí...',
   onSelectionUpdate,
+  showToolbar = true,
 }: SimpleTipTapEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -66,7 +68,22 @@ export default function SimpleTipTapEditor({
   }, [content, editor]);
 
   return (
-    <Box className={className} style={style}>
+    <Box
+      className={className}
+      style={style}
+      sx={{
+        '& .tiptap-editor': {
+          padding: showToolbar ? '8px' : '0 !important',
+          minHeight: showToolbar ? '80px' : 'auto',
+          border: showToolbar ? undefined : 'none !important',
+          borderRadius: showToolbar ? undefined : '0 !important',
+        },
+        '& .ProseMirror': {
+          padding: showToolbar ? undefined : '0 !important',
+          minHeight: showToolbar ? 'inherit' : 'auto !important',
+        },
+      }}
+    >
       <EditorContent editor={editor} />
     </Box>
   );

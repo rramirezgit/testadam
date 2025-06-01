@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+import { setStorage } from 'src/hooks/use-local-storage';
+
 import { endpoints, createAxiosInstance } from 'src/utils/axiosInstance';
 
 interface AuthUser {

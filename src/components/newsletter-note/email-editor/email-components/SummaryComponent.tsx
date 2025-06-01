@@ -1,11 +1,11 @@
-import { Icon } from '@iconify/react';
-import { useRef, useState } from 'react';
+import type React from 'react';
+
+import { useState } from 'react';
 
 import { Box, Typography } from '@mui/material';
 
-import IconPicker from '../icon-picker';
 import ComponentWithToolbar from './ComponentWithToolbar';
-import SimpleTipTapEditor from '../../simple-tiptap-editor';
+import SimpleTipTapEditorWithFlags from '../../simple-tiptap-editor-with-flags';
 
 import type { EmailComponentProps } from './types';
 
@@ -22,7 +22,6 @@ const SummaryComponent = ({
   totalComponents,
 }: EmailComponentProps) => {
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
-  const iconRef = useRef<HTMLDivElement>(null);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -89,42 +88,18 @@ const SummaryComponent = ({
             fontFamily: titleFontFamily,
           }}
         >
-          <Box
-            ref={iconRef}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mr: 1,
-            }}
-          >
-            <Icon
-              icon={component.props?.icon || 'mdi:text-box-outline'}
-              style={{
-                color: iconColor,
-                width: iconSize,
-                height: iconSize,
-              }}
-            />
-          </Box>
           {component.props?.label || 'Resumen'}
         </Typography>
         <Typography variant="body2">
-          <SimpleTipTapEditor
+          <SimpleTipTapEditorWithFlags
             content={component.content}
             onChange={handleContentChange}
             onSelectionUpdate={handleSelectionUpdate}
             style={{ outline: 'none' }}
+            showToolbar={false}
           />
         </Typography>
       </Box>
-
-      <IconPicker
-        open={isIconPickerOpen}
-        onClose={() => setIsIconPickerOpen(false)}
-        onSelectIcon={handleSelectIcon}
-        currentIcon={component.props?.icon || 'mdi:text-box-outline'}
-      />
     </ComponentWithToolbar>
   );
 };

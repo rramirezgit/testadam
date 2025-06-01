@@ -33,9 +33,9 @@ import {
 } from '@mui/material';
 
 import ColorPicker from 'src/components/newsletter-note/color-picker';
-import SimpleTipTapEditor from 'src/components/newsletter-note/simple-tiptap-editor';
 import GalleryEditorDialog from 'src/components/newsletter-note/gallery-editor-dialog';
 import BannerSelector, { type BannerOption } from 'src/components/newsletter-note/banner-selector';
+import SimpleTipTapEditorWithFlags from 'src/components/newsletter-note/simple-tiptap-editor-with-flags';
 
 // Define types for newsletter components
 interface NewsletterHeader {
@@ -185,6 +185,11 @@ export default function NewsletterContentEditor({
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [activeEditor, setActiveEditor] = useState<Editor | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // Estados para el formato de texto
+  const [selectedAlignment, setSelectedAlignment] = useState<string>('left');
+  const [selectedColor, setSelectedColor] = useState<string>('#000000');
+  const [textFormat, setTextFormat] = useState<string[]>([]);
 
   // Content components
   const [components, setComponents] = useState<NewsletterComponent[]>([]);
@@ -411,6 +416,86 @@ export default function NewsletterContentEditor({
   const handleSelectionUpdate = (editor: Editor) => {
     if (!editor) return;
     setActiveEditor(editor);
+  };
+
+  // Crear una función específica para manejar la selección de cada componente
+  const createSelectionHandler = (componentId: string) => (editor: Editor) => {
+    if (!editor) return;
+    setActiveEditor(editor);
+    setSelectedComponentId(componentId);
+
+    // Actualizar los controles de formato basados en el estado del editor
+    if (editor) {
+      const newFormats = [];
+      if (editor.isActive('bold')) newFormats.push('bold');
+      if (editor.isActive('italic')) newFormats.push('italic');
+      if (editor.isActive('underline')) newFormats.push('underlined');
+      if (editor.isActive('strike')) newFormats.push('strikethrough');
+
+      setTextFormat(newFormats);
+
+      // Actualizar alineación
+      let newAlignment = 'left';
+      if (editor.isActive({ textAlign: 'center' })) newAlignment = 'center';
+      else if (editor.isActive({ textAlign: 'right' })) newAlignment = 'right';
+      else if (editor.isActive({ textAlign: 'justify' })) newAlignment = 'justify';
+
+      setSelectedAlignment(newAlignment);
+
+      // Actualizar color si está disponible
+      const marks = editor.getAttributes('textStyle');
+      if (marks.color) {
+        setSelectedColor(marks.color);
+      }
+    }
+  };
+
+  // Aplicar formato al texto seleccionado
+  const applyTextFormat = (format: string) => {
+    if (!activeEditor) return;
+
+    switch (format) {
+      case 'bold':
+        activeEditor.chain().focus().toggleBold().run();
+        break;
+      case 'italic':
+        activeEditor.chain().focus().toggleItalic().run();
+        break;
+      case 'underlined':
+        activeEditor.chain().focus().toggleUnderline().run();
+        break;
+      case 'strikethrough':
+        activeEditor.chain().focus().toggleStrike().run();
+        break;
+      default:
+        break;
+    }
+
+    // Actualizar el estado después de aplicar el formato
+    setTimeout(() => {
+      if (activeEditor) {
+        const newFormats = [];
+        if (activeEditor.isActive('bold')) newFormats.push('bold');
+        if (activeEditor.isActive('italic')) newFormats.push('italic');
+        if (activeEditor.isActive('underline')) newFormats.push('underlined');
+        if (activeEditor.isActive('strike')) newFormats.push('strikethrough');
+        setTextFormat(newFormats);
+      }
+    }, 10);
+  };
+
+  // Aplicar alineación al texto seleccionado
+  const applyTextAlignment = (alignment: string) => {
+    if (!activeEditor) return;
+    activeEditor.chain().focus().setTextAlign(alignment).run();
+    setSelectedAlignment(alignment);
+  };
+
+  // Aplicar color al texto seleccionado
+  const applyTextColor = (color: string) => {
+    if (!activeEditor) return;
+    activeEditor.chain().focus().setColor(color).run();
+    setSelectedColor(color);
   };
 
   // Save the newsletter
@@ -935,14 +1020,47 @@ export default function NewsletterContentEditor({
         const HeadingTag = `h${component.props?.level || 2}` as React.ElementType;
         return (
           <Box sx={componentStyle} onClick={handleClick} key={component.id}>
-            <HeadingTag style={component.style || {}}>
-              <SimpleTipTapEditor
-                content={component.content}
-                onChange={handleContentChange}
-                onSelectionUpdate={handleSelectionUpdate}
-                style={{ outline: 'none' }}
-              />
-            </HeadingTag>
+            <Box
+              sx={{
+                // Permitir que los estilos del editor se apliquen correctamente
+                '& h1, & h2, & h3, & h4, & h5, & h6': {
+                  margin: 0,
+                  padding: 0,
+                  fontWeight: 'inherit',
+                  fontSize: 'inherit',
+                  lineHeight: 'inherit',
+                  color: 'inherit',
+                  textAlign: 'inherit',
+                },
+                // ✅ Estilos base para que se vea como título por defecto
+                fontSize:
+                  component.props?.level === 1
+                    ? '2.125rem'
+                    : component.props?.level === 2
+                      ? '1.875rem'
+                      : component.props?.level === 3
+                        ? '1.5rem'
+                        : '1.25rem',
+                fontWeight: 'bold',
+                lineHeight: 1.2,
+                marginBottom: '0.5rem',
+                ...(component.style || {}),
+              }}
+            >
+              <HeadingTag>
+                <SimpleTipTapEditorWithFlags
+                  content={component.content}
+                  onChange={handleContentChange}
+                  onSelectionUpdate={createSelectionHandler(component.id)}
+                  style={{
+                    outline: 'none',
+                    width: '100%',
+                    minHeight: '1.5em',
+                  }}
+                  showToolbar={false}
+                />
+              </HeadingTag>
+            </Box>
             {isSelected && (
               <Box
                 sx={{
@@ -1000,11 +1118,12 @@ export default function NewsletterContentEditor({
                 ...(component.style || {}),
               }}
             >
-              <SimpleTipTapEditor
+              <SimpleTipTapEditorWithFlags
                 content={component.content}
                 onChange={handleContentChange}
-                onSelectionUpdate={handleSelectionUpdate}
+                onSelectionUpdate={createSelectionHandler(component.id)}
                 style={{ outline: 'none' }}
+                showToolbar={false}
               />
             </Typography>
             {isSelected && (
@@ -1057,11 +1176,12 @@ export default function NewsletterContentEditor({
               sx={{ mb: 2, textTransform: 'none', ...(component.style || {}) }}
               onClick={(e) => e.stopPropagation()}
             >
-              <SimpleTipTapEditor
+              <SimpleTipTapEditorWithFlags
                 content={component.content}
                 onChange={handleContentChange}
-                onSelectionUpdate={handleSelectionUpdate}
+                onSelectionUpdate={createSelectionHandler(component.id)}
                 style={{ color: 'white', width: '100%', outline: 'none' }}
+                showToolbar={false}
               />
             </Button>
             {isSelected && (
@@ -1156,15 +1276,16 @@ export default function NewsletterContentEditor({
               {items.map((item, i) => (
                 <li key={i} style={{ marginBottom: '4px' }}>
                   <Typography variant="body1" component="span">
-                    <SimpleTipTapEditor
+                    <SimpleTipTapEditorWithFlags
                       content={item}
                       onChange={(newContent) => {
                         const newItems = [...items];
                         newItems[i] = newContent;
                         updateComponentProps(component.id, { items: newItems });
                       }}
-                      onSelectionUpdate={handleSelectionUpdate}
+                      onSelectionUpdate={createSelectionHandler(component.id)}
                       style={{ outline: 'none' }}
+                      showToolbar={false}
                     />
                   </Typography>
                 </li>
@@ -1355,13 +1476,67 @@ export default function NewsletterContentEditor({
             <img src={header.logo || '/placeholder.svg'} alt="Logo" style={{ maxHeight: '50px' }} />
           </Box>
         )}
-        <Typography variant="h4" component="h1" gutterBottom>
-          {header.title}
-        </Typography>
+
+        {/* Título del header ahora editable */}
+        <Box
+          sx={{
+            cursor: 'text',
+            '& h1': {
+              margin: 0,
+              marginBottom: '16px',
+              fontSize: '2.125rem',
+              fontWeight: 400,
+              lineHeight: 1.235,
+              letterSpacing: '0.00735em',
+            },
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <SimpleTipTapEditorWithFlags
+            content={header.title}
+            onChange={(newTitle) => setHeader({ ...header, title: newTitle })}
+            onSelectionUpdate={createSelectionHandler('header-title')}
+            showToolbar={false}
+            placeholder="Newsletter Title"
+            style={{
+              color: header.textColor,
+              fontSize: '2.125rem',
+              fontWeight: 400,
+              lineHeight: 1.235,
+              outline: 'none',
+            }}
+          />
+        </Box>
+
         {header.subtitle && (
-          <Typography variant="subtitle1" gutterBottom>
-            {header.subtitle}
-          </Typography>
+          <Box
+            sx={{
+              cursor: 'text',
+              '& p': {
+                margin: 0,
+                fontSize: '1rem',
+                fontWeight: 400,
+                lineHeight: 1.5,
+                letterSpacing: '0.00938em',
+              },
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SimpleTipTapEditorWithFlags
+              content={header.subtitle}
+              onChange={(newSubtitle) => setHeader({ ...header, subtitle: newSubtitle })}
+              onSelectionUpdate={createSelectionHandler('header-subtitle')}
+              showToolbar={false}
+              placeholder="Newsletter Subtitle"
+              style={{
+                color: header.textColor,
+                fontSize: '1rem',
+                fontWeight: 400,
+                lineHeight: 1.5,
+                outline: 'none',
+              }}
+            />
+          </Box>
         )}
         {header.bannerImage && (
           <Box sx={{ marginTop: '10px' }}>
@@ -1701,6 +1876,107 @@ export default function NewsletterContentEditor({
                   </Grid>
 
                   <Divider sx={{ my: 2 }} />
+
+                  {/* Opciones de formato de texto */}
+                  {selectedComponentId && activeEditor && (
+                    <>
+                      <Typography variant="h6" gutterBottom>
+                        Text Format
+                      </Typography>
+
+                      {/* Botones de formato */}
+                      <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          variant={textFormat.includes('bold') ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => applyTextFormat('bold')}
+                          sx={{ minWidth: 'auto', px: 1 }}
+                        >
+                          <Icon icon="mdi:format-bold" />
+                        </Button>
+                        <Button
+                          variant={textFormat.includes('italic') ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => applyTextFormat('italic')}
+                          sx={{ minWidth: 'auto', px: 1 }}
+                        >
+                          <Icon icon="mdi:format-italic" />
+                        </Button>
+                        <Button
+                          variant={textFormat.includes('underlined') ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => applyTextFormat('underlined')}
+                          sx={{ minWidth: 'auto', px: 1 }}
+                        >
+                          <Icon icon="mdi:format-underline" />
+                        </Button>
+                      </Box>
+
+                      {/* Alineación de texto */}
+                      <Typography variant="subtitle2" gutterBottom>
+                        Text Alignment
+                      </Typography>
+                      <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
+                        <Button
+                          variant={selectedAlignment === 'left' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => applyTextAlignment('left')}
+                          sx={{ minWidth: 'auto', px: 1 }}
+                        >
+                          <Icon icon="mdi:format-align-left" />
+                        </Button>
+                        <Button
+                          variant={selectedAlignment === 'center' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => applyTextAlignment('center')}
+                          sx={{ minWidth: 'auto', px: 1 }}
+                        >
+                          <Icon icon="mdi:format-align-center" />
+                        </Button>
+                        <Button
+                          variant={selectedAlignment === 'right' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => applyTextAlignment('right')}
+                          sx={{ minWidth: 'auto', px: 1 }}
+                        >
+                          <Icon icon="mdi:format-align-right" />
+                        </Button>
+                        <Button
+                          variant={selectedAlignment === 'justify' ? 'contained' : 'outlined'}
+                          size="small"
+                          onClick={() => applyTextAlignment('justify')}
+                          sx={{ minWidth: 'auto', px: 1 }}
+                        >
+                          <Icon icon="mdi:format-align-justify" />
+                        </Button>
+                      </Box>
+
+                      {/* Selector de color */}
+                      <Typography variant="subtitle2" gutterBottom>
+                        Text Color
+                      </Typography>
+                      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <input
+                          type="color"
+                          value={selectedColor}
+                          onChange={(e) => applyTextColor(e.target.value)}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            padding: 0,
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                          {selectedColor}
+                        </Typography>
+                      </Box>
+
+                      <Divider sx={{ my: 2 }} />
+                    </>
+                  )}
 
                   <Typography variant="h6" gutterBottom>
                     Header & Footer

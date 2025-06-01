@@ -28,7 +28,7 @@ import { useStore } from 'src/lib/store';
 import { type BannerOption } from 'src/components/newsletter-note/banner-selector';
 
 // Componentes necesarios para el editor
-import ExtendedTipTapEditor from './extended-tiptap-editor';
+import ExtendedTipTapEditorWithFlags from './extended-tiptap-editor-with-flags';
 
 // Definir interfaces para el editor de educación
 interface EducacionHeader {
@@ -637,7 +637,7 @@ export default function EducacionEditor({
         return (
           <Box sx={componentStyle} onClick={handleClick} key={component.id}>
             {selectedComponentId === component.id && <ControlButtons />}
-            <ExtendedTipTapEditor
+            <ExtendedTipTapEditorWithFlags
               content={component.content}
               onChange={handleContentChange}
               onSelectionUpdate={handleSelectionUpdate}
@@ -651,7 +651,7 @@ export default function EducacionEditor({
         return (
           <Box sx={componentStyle} onClick={handleClick} key={component.id}>
             {selectedComponentId === component.id && <ControlButtons />}
-            <ExtendedTipTapEditor
+            <ExtendedTipTapEditorWithFlags
               content={component.content}
               onChange={handleContentChange}
               onSelectionUpdate={handleSelectionUpdate}
@@ -1181,7 +1181,7 @@ export default function EducacionEditor({
             >
               <Icon icon={icon} style={{ fontSize: '24px' }} />
               <Box>
-                <ExtendedTipTapEditor
+                <ExtendedTipTapEditorWithFlags
                   content={component.content}
                   onChange={handleContentChange}
                   onSelectionUpdate={handleSelectionUpdate}
@@ -1211,7 +1211,7 @@ export default function EducacionEditor({
                 borderLeft: `4px ${borderStyle} ${borderColor}`,
               }}
             >
-              <ExtendedTipTapEditor
+              <ExtendedTipTapEditorWithFlags
                 content={component.content}
                 onChange={handleContentChange}
                 onSelectionUpdate={handleSelectionUpdate}
@@ -1369,7 +1369,7 @@ export default function EducacionEditor({
                   {boxTitle}
                 </Typography>
               </Box>
-              <ExtendedTipTapEditor
+              <ExtendedTipTapEditorWithFlags
                 content={component.content}
                 onChange={handleContentChange}
                 onSelectionUpdate={handleSelectionUpdate}

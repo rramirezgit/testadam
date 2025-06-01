@@ -1,7 +1,9 @@
+import type React from 'react';
+
 import { Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
-import SimpleTipTapEditor from '../../simple-tiptap-editor';
+import SimpleTipTapEditorWithFlags from '../../simple-tiptap-editor-with-flags';
 
 import type { EmailComponentProps } from './types';
 
@@ -49,11 +51,12 @@ const ParagraphComponent = ({
           ...(component.style || {}),
         }}
       >
-        <SimpleTipTapEditor
+        <SimpleTipTapEditorWithFlags
           content={component.content}
           onChange={handleContentChange}
           onSelectionUpdate={handleSelectionUpdate}
           style={{ outline: 'none' }}
+          showToolbar={false}
         />
       </Typography>
     </ComponentWithToolbar>

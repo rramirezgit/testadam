@@ -7,8 +7,8 @@ import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
-import { Editor } from 'src/components/editor';
 import { Markdown } from 'src/components/markdown';
+import { EditorWithFlags } from 'src/components/editor';
 
 import { ComponentLayout } from '../../layout';
 
@@ -64,11 +64,12 @@ export function EditorView() {
           gridTemplateColumns: { xs: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)' },
         }}
       >
-        <Editor
+        <EditorWithFlags
           fullItem={checked}
           value={content}
           onChange={(value) => setContent(value)}
           sx={{ maxHeight: 720 }}
+          showDebugInfo
         />
 
         <Box

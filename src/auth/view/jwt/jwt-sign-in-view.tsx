@@ -70,7 +70,7 @@ export function JwtSignInView() {
   useEffect(() => {
     if (isAuthenticated && !redirecting) {
       setRedirecting(true);
-      console.log('Redirigiendo al dashboard...');
+      console.log('Usuario autenticado, redirigiendo al dashboard...');
       // Pequeño retraso para asegurar que todo esté establecido
       setTimeout(() => {
         router.push(DASHBOARD_PATH);
@@ -169,7 +169,7 @@ export function JwtSignInView() {
                 size="large"
                 type="submit"
                 variant="contained"
-                disabled={loading || redirecting}
+                disabled={loading || redirecting || isSubmitting}
                 sx={{ mt: 1 }}
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
               >

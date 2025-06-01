@@ -12,8 +12,8 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
-import { Editor } from 'src/components/editor';
 import { Iconify } from 'src/components/iconify';
+import { EditorWithFlags } from 'src/components/editor';
 
 // ----------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ export function MailCompose({ onCloseCompose }: Props) {
             flexDirection: 'column',
           }}
         >
-          <Editor
+          <EditorWithFlags
             value={message}
             onChange={handleChangeMessage}
             placeholder="Type a message"

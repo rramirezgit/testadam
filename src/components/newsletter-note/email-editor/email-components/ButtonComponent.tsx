@@ -1,7 +1,9 @@
+import type React from 'react';
+
 import { Button } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
-import SimpleTipTapEditor from '../../simple-tiptap-editor';
+import SimpleTipTapEditorWithFlags from '../../simple-tiptap-editor-with-flags';
 
 import type { EmailComponentProps } from './types';
 
@@ -48,11 +50,12 @@ const ButtonComponent = ({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <SimpleTipTapEditor
+        <SimpleTipTapEditorWithFlags
           content={component.content}
           onChange={handleContentChange}
           onSelectionUpdate={handleSelectionUpdate}
           style={{ color: 'white', width: '100%', outline: 'none' }}
+          showToolbar={false}
         />
       </Button>
     </ComponentWithToolbar>
