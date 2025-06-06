@@ -1,25 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Checkbox,
-  TextField,
-  Divider,
-  Paper,
-  IconButton,
-  InputAdornment,
-  Chip,
-} from '@mui/material';
-import { Icon } from '@iconify/react';
-import { format } from 'date-fns';
 import type { SavedNote } from 'src/types/saved-note';
 import type { NewsletterNote } from 'src/types/newsletter';
+
+import { format } from 'date-fns';
+import { Icon } from '@iconify/react';
+import { useState, useEffect } from 'react';
+
+import {
+  Box,
+  List,
+  Chip,
+  Paper,
+  Divider,
+  ListItem,
+  Checkbox,
+  TextField,
+  Typography,
+  IconButton,
+  ListItemText,
+  ListItemIcon,
+  InputAdornment,
+} from '@mui/material';
+
 import { useStore } from 'src/lib/store';
 
 interface NoteSelectorProps {

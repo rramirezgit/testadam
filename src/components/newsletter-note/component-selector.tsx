@@ -1,7 +1,8 @@
 "use client"
 
-import { Button } from "@mui/material"
 import { Icon } from "@iconify/react"
+
+import { Button } from "@mui/material"
 
 interface ComponentSelectorProps {
   icon: string

@@ -1,13 +1,14 @@
 'use client';
 
 import { useToast } from 'src/hooks/use-toast';
+
 import {
   Toast,
   ToastClose,
-  ToastDescription,
-  ToastProvider,
   ToastTitle,
+  ToastProvider,
   ToastViewport,
+  ToastDescription,
 } from 'src/components/newsletter-note/ui/toast';
 
 export function Toaster() {

@@ -247,7 +247,6 @@ export default function EmailEditor({
       component.id === id ? { ...component, content } : component
     );
     updateActiveComponents(updatedComponents);
-    debugger;
     // Si la sincronización automática está activa, actualizar también en la otra versión
     if (syncEnabled) {
       const otherVersion = activeVersion === 'newsletter' ? 'web' : 'newsletter';
@@ -260,7 +259,6 @@ export default function EmailEditor({
 
       // Verificar si el componente existe en la otra versión
       const componentExists = otherVersionComponents.some((comp) => comp.id === otherVersionId);
-      debugger;
       if (componentExists) {
         // Actualizar el componente correspondiente en la otra versión
         const updatedOtherVersionComponents = otherVersionComponents.map((component) =>
@@ -283,7 +281,6 @@ export default function EmailEditor({
       component.id === id ? { ...component, props: { ...component.props, ...props } } : component
     );
     updateActiveComponents(updatedComponents);
-    debugger;
     // Si la sincronización automática está activa, actualizar también en la otra versión
     if (syncEnabled) {
       const otherVersion = activeVersion === 'newsletter' ? 'web' : 'newsletter';
@@ -398,7 +395,23 @@ export default function EmailEditor({
                     ? { author: 'Autor', date: new Date().toLocaleDateString() }
                     : type === 'summary'
                       ? { icon: 'mdi:text-box-outline', label: 'Resumen' }
-                      : {},
+                      : type === 'herramientas'
+                        ? {
+                            herramientas: [
+                              {
+                                id: '1',
+                                nombre: 'Herramienta',
+                                icono: 'mdi:hammer-wrench',
+                                colorFondo: '#f3f4f6',
+                                colorTexto: '#374151',
+                                colorIcono: '#6b7280',
+                              },
+                            ],
+                            backgroundColor: '#ffffff',
+                            borderRadius: 12,
+                            opacity: 100,
+                          }
+                        : {},
       style: {},
     };
 

@@ -1,10 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
-import { Box, Typography } from "@mui/material"
-import TiptapEditor from "./tiptap-editor"
 import type { Editor } from "@tiptap/react"
+
+import { useState, useEffect } from "react"
+
+import { Box, Typography } from "@mui/material"
+
+import TiptapEditor from "./tiptap-editor"
 
 interface EmailComponentEditorProps {
   content: string

@@ -16,6 +16,7 @@ export interface EmailComponent {
     | 'news'
     | 'gallery'
     | 'tituloConIcono'
+    | 'herramientas'
     | 'respaldadoPor';
   content: string;
   props: {

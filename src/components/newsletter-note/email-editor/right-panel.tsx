@@ -14,6 +14,8 @@ import DividerOptions from './right-panel/DividerOptions';
 import SummaryOptions from './right-panel/SummaryOptions';
 import CategoryOptions from './right-panel/CategoryOptions';
 import BackgroundOptions from './right-panel/BackgroundOptions';
+import SmartDesignOptions from './right-panel/SmartDesignOptions';
+import HerramientasOptions from './right-panel/HerramientasOptions';
 import RespaldadoPorOptions from './right-panel/RespaldadoPorOptions';
 import TituloConIconoOptions from './right-panel/TituloConIconoOptions';
 
@@ -145,14 +147,19 @@ export default function RightPanel({
                       ? 'Categorías'
                       : componentType === 'tituloConIcono'
                         ? 'Título'
-                        : componentType === 'respaldadoPor'
-                          ? 'Respaldo'
-                          : componentType === 'divider'
-                            ? 'Separador'
-                            : 'Tipografía'
+                        : componentType === 'herramientas'
+                          ? 'Herramientas'
+                          : componentType === 'respaldadoPor'
+                            ? 'Respaldo'
+                            : componentType === 'divider'
+                              ? 'Separador'
+                              : 'Tipografía'
           }
         />
-        {componentType === 'summary' && <Tab label="Summary" />}
+        {(componentType === 'summary' || componentType === 'herramientas') && (
+          <Tab label={componentType === 'summary' ? 'Summary' : 'Configuración'} />
+        )}
+        <Tab label="🎨 Smart" />
         <Tab label="Diseño" />
         <Tab label="Fondo" />
       </Tabs>
@@ -268,6 +275,15 @@ export default function RightPanel({
                 updateComponentProps={updateComponentProps}
               />
             )}
+
+            {componentType === 'herramientas' && (
+              <HerramientasOptions
+                selectedComponentId={selectedComponentId}
+                getActiveComponents={getActiveComponents}
+                updateComponentProps={updateComponentProps}
+                setShowIconPicker={setShowIconPicker}
+              />
+            )}
           </>
         )}
 
@@ -280,14 +296,35 @@ export default function RightPanel({
           />
         )}
 
-        {rightPanelTab === (componentType === 'summary' ? 2 : 1) && (
+        {rightPanelTab === 1 && componentType === 'herramientas' && (
+          <HerramientasOptions
+            selectedComponentId={selectedComponentId}
+            getActiveComponents={getActiveComponents}
+            updateComponentProps={updateComponentProps}
+            setShowIconPicker={setShowIconPicker}
+          />
+        )}
+
+        {rightPanelTab ===
+          (componentType === 'summary' || componentType === 'herramientas' ? 2 : 1) && (
+          <SmartDesignOptions
+            selectedComponentId={selectedComponentId}
+            selectedComponent={selectedComponent}
+            updateComponentStyle={updateComponentStyle}
+            updateComponentProps={updateComponentProps}
+          />
+        )}
+
+        {rightPanelTab ===
+          (componentType === 'summary' || componentType === 'herramientas' ? 3 : 2) && (
           <DesignOptions
             selectedComponentId={selectedComponentId}
             updateComponentStyle={updateComponentStyle}
           />
         )}
 
-        {rightPanelTab === (componentType === 'summary' ? 3 : 2) && (
+        {rightPanelTab ===
+          (componentType === 'summary' || componentType === 'herramientas' ? 4 : 3) && (
           <BackgroundOptions
             selectedComponentId={selectedComponentId}
             updateComponentStyle={updateComponentStyle}

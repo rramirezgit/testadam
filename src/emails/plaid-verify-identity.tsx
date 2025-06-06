@@ -1,4 +1,4 @@
-import { Body, Container, Head, Heading, Html, Img, Link, Section, Text, Preview } from "@react-email/components"
+import { Img, Body, Head, Html, Link, Text, Heading, Section, Preview, Container } from "@react-email/components"
 
 export interface PlaidVerifyIdentityEmailProps {
   validationCode?: string

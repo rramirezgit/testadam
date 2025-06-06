@@ -2,15 +2,17 @@
 
 import type React from "react"
 
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import TextStyle from "@tiptap/extension-text-style"
+import { useEffect } from "react"
 import Color from "@tiptap/extension-color"
+import StarterKit from "@tiptap/starter-kit"
+import Underline from "@tiptap/extension-underline"
+import TextStyle from "@tiptap/extension-text-style"
 import TextAlign from "@tiptap/extension-text-align"
 import FontFamily from "@tiptap/extension-font-family"
-import Underline from "@tiptap/extension-underline"
-import { useEffect } from "react"
+import { useEditor, EditorContent } from "@tiptap/react"
+
 import { Box } from "@mui/material"
+
 import TipTapToolbar from "./tiptap-toolbar"
 
 interface TipTapEditorComponentProps {

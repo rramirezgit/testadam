@@ -1,22 +1,23 @@
 'use client';
 
 import type React from 'react';
+import type { Newsletter } from 'src/types/newsletter';
 
 import { useState } from 'react';
+import { format } from 'date-fns';
+import { Icon } from '@iconify/react';
+
 import {
-  Card,
-  CardContent,
-  CardActionArea,
-  Typography,
   Box,
+  Card,
   Chip,
-  IconButton,
   Menu,
   MenuItem,
+  Typography,
+  IconButton,
+  CardContent,
+  CardActionArea,
 } from '@mui/material';
-import { Icon } from '@iconify/react';
-import { format } from 'date-fns';
-import type { Newsletter } from 'src/types/newsletter';
 
 interface NewsletterCardProps {
   newsletter: Newsletter;
@@ -113,7 +114,7 @@ export default function NewsletterCard({ newsletter, onOpen, onDelete }: Newslet
             />
             <Chip
               size="small"
-              label={`Newsletter`}
+              label="Newsletter"
               icon={<Icon icon="mdi:email-newsletter" width={16} />}
               color="primary"
             />

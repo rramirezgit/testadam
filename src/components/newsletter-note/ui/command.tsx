@@ -1,11 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { type DialogProps } from '@radix-ui/react-dialog';
-import { Command as CommandPrimitive } from 'cmdk';
 import { Search } from 'lucide-react';
+import { Command as CommandPrimitive } from 'cmdk';
+import { type DialogProps } from '@radix-ui/react-dialog';
 
 import { cn } from 'src/lib/utils';
+
 import { Dialog, DialogContent } from 'src/components/newsletter-note/ui/dialog';
 
 const Command = React.forwardRef<
@@ -23,8 +24,7 @@ const Command = React.forwardRef<
 ));
 Command.displayName = CommandPrimitive.displayName;
 
-const CommandDialog = ({ children, ...props }: DialogProps) => {
-  return (
+const CommandDialog = ({ children, ...props }: DialogProps) => (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
@@ -33,7 +33,6 @@ const CommandDialog = ({ children, ...props }: DialogProps) => {
       </DialogContent>
     </Dialog>
   );
-};
 
 const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
@@ -120,24 +119,22 @@ const CommandItem = React.forwardRef<
 
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
-const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
-  return (
+const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
     <span
       className={cn('ml-auto text-xs tracking-widest text-muted-foreground', className)}
       {...props}
     />
   );
-};
 CommandShortcut.displayName = 'CommandShortcut';
 
 export {
   Command,
-  CommandDialog,
-  CommandInput,
   CommandList,
+  CommandItem,
+  CommandInput,
   CommandEmpty,
   CommandGroup,
-  CommandItem,
+  CommandDialog,
   CommandShortcut,
   CommandSeparator,
 };

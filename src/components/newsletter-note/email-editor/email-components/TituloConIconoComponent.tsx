@@ -34,26 +34,11 @@ const TituloConIconoComponent = ({
     updateComponentProps(component.id, { icon: newIcon });
   };
 
-  // Esta función ya no se usa directamente en TituloConIcono, pero se mantiene para el panel lateral
   const handleGradientChange = (type: 'linear' | 'radial', color1: string, color2: string) => {
     updateComponentProps(component.id, {
       gradientType: type,
       gradientColor1: color1,
       gradientColor2: color2,
-    });
-  };
-
-  // Nueva función para manejar cambios en el ángulo del gradiente
-  const handleGradientAngleChange = (angle: number) => {
-    updateComponentProps(component.id, {
-      gradientAngle: angle,
-    });
-  };
-
-  // Nueva función para manejar cambios en la distribución de colores
-  const handleColorDistributionChange = (distribution: number) => {
-    updateComponentProps(component.id, {
-      colorDistribution: distribution,
     });
   };
 
@@ -77,12 +62,12 @@ const TituloConIconoComponent = ({
           <TituloConIcono
             titulo={component.content}
             icon={component.props?.icon || 'mdi:newspaper-variant-outline'}
-            gradientColor1={component.props?.gradientColor1 || '#4facfe'}
-            gradientColor2={component.props?.gradientColor2 || '#00f2fe'}
+            gradientColor1={component.props?.gradientColor1 || 'rgba(78, 205, 196, 0.06)'}
+            gradientColor2={component.props?.gradientColor2 || 'rgba(38, 166, 154, 0.00)'}
             gradientType={component.props?.gradientType || 'linear'}
-            gradientAngle={component.props?.gradientAngle || 90}
-            colorDistribution={component.props?.colorDistribution || 50}
-            textColor={component.props?.textColor || '#ffffff'}
+            gradientAngle={component.props?.gradientAngle || 180}
+            colorDistribution={component.props?.colorDistribution || 0}
+            textColor={component.props?.textColor || '#00C3C3'}
             onTituloChange={handleTituloChange}
             onIconChange={handleIconChangeTitulo}
             onGradientChange={handleGradientChange}

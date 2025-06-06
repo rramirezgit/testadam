@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { Paper, Typography, Box } from "@mui/material"
+
+import { Box, Paper, Typography } from "@mui/material"
 
 interface CustomDialogProps {
   open: boolean

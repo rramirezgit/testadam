@@ -1,19 +1,56 @@
 import { Icon } from '@iconify/react';
 
-import {
-  Box,
-  Button,
-  Switch,
-  Select,
-  MenuItem,
-  TextField,
-  Typography,
-  InputLabel,
-  FormControl,
-  FormControlLabel,
-} from '@mui/material';
+import { Box, Paper, Button, TextField, Typography } from '@mui/material';
+
+import GeneralColorPicker from 'src/components/newsletter-note/general-color-picker';
 
 import type { SummaryOptionsProps } from './types';
+
+// Tipos de summary disponibles (igual que en SummaryComponent)
+const SUMMARY_TYPES = {
+  resumen: {
+    label: 'Resumen',
+    icon: 'mdi:note-text-outline',
+    backgroundColor: '#f8f9fa',
+    iconColor: '#6c757d',
+    textColor: '#495057',
+    description: 'Para resúmenes generales',
+  },
+  concepto: {
+    label: 'Concepto',
+    icon: 'mdi:lightbulb-outline',
+    backgroundColor: '#e7f3ff',
+    iconColor: '#0066cc',
+    textColor: '#003d7a',
+    description: 'Para explicar conceptos',
+  },
+  dato: {
+    label: 'Dato',
+    icon: 'mdi:lightbulb-on',
+    backgroundColor: '#fff8e1',
+    iconColor: '#f57c00',
+    textColor: '#e65100',
+    description: 'Para datos importantes',
+  },
+  tip: {
+    label: 'TIP',
+    icon: 'mdi:rocket-launch',
+    backgroundColor: '#f3e5f5',
+    iconColor: '#8e24aa',
+    textColor: '#4a148c',
+    description: 'Para consejos útiles',
+  },
+  analogia: {
+    label: 'Analogía',
+    icon: 'mdi:brain',
+    backgroundColor: '#e8f5e8',
+    iconColor: '#388e3c',
+    textColor: '#1b5e20',
+    description: 'Para comparaciones',
+  },
+} as const;
+
+type SummaryType = keyof typeof SUMMARY_TYPES;
 
 export default function SummaryOptions({
   selectedComponentId,
@@ -27,283 +64,241 @@ export default function SummaryOptions({
   if (!component || component.type !== 'summary') return null;
 
   // Opciones con valores por defecto
-  const label = component.props?.label || 'Resumen';
-  const borderColor = component.props?.borderColor || '#4caf50';
-  const icon = component.props?.icon || 'mdi:text-box-outline';
-  const iconColor = component.props?.iconColor || '#000000';
-  const iconSize = component.props?.iconSize || 24;
-  const titleColor = component.props?.titleColor || '#000000';
-  const titleFontWeight = component.props?.titleFontWeight || 'normal';
-  const titleFontFamily = component.props?.titleFontFamily || 'inherit';
-  const useGradient = component.props?.useGradient || false;
-  const gradientType = component.props?.gradientType || 'linear';
-  const gradientDirection = component.props?.gradientDirection || 'to right';
-  const gradientColor1 = component.props?.gradientColor1 || '#f5f7fa';
-  const gradientColor2 = component.props?.gradientColor2 || '#c3cfe2';
-  const backgroundColor = component.props?.backgroundColor || '#f5f7fa';
+  const summaryType: SummaryType = (component.props?.summaryType as SummaryType) || 'resumen';
+  const typeConfig = SUMMARY_TYPES[summaryType];
+
+  const label = component.props?.label || typeConfig.label;
+  const icon = component.props?.icon || typeConfig.icon;
+  const iconColor = component.props?.iconColor || typeConfig.iconColor;
+  const textColor = component.props?.textColor || typeConfig.textColor;
+  const backgroundColor = component.props?.backgroundColor || typeConfig.backgroundColor;
+
+  // Función para cambiar el tipo completo
+  const handleTypeChange = (newType: SummaryType) => {
+    const newTypeConfig = SUMMARY_TYPES[newType];
+    updateComponentProps(selectedComponentId, {
+      summaryType: newType,
+      label: newTypeConfig.label,
+      icon: newTypeConfig.icon,
+      iconColor: newTypeConfig.iconColor,
+      textColor: newTypeConfig.textColor,
+      backgroundColor: newTypeConfig.backgroundColor,
+    });
+  };
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="subtitle2" gutterBottom>
-        Configuración del resumen
+      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+        📝 Configuración del Bloque
       </Typography>
 
-      <Typography variant="subtitle2" gutterBottom>
-        Etiqueta
-      </Typography>
-      <TextField
-        fullWidth
-        size="small"
-        value={label}
-        onChange={(e) => updateComponentProps(selectedComponentId, { label: e.target.value })}
-        sx={{ mb: 3 }}
-      />
+      {/* Selector de tipo */}
+      <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2 }}>
+          Tipo de Bloque
+        </Typography>
 
-      <Typography variant="subtitle2" gutterBottom>
-        Color del borde
-      </Typography>
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
-          {['#4caf50', '#2196f3', '#f44336', '#ff9800', '#9c27b0', '#607d8b', '#000000'].map(
-            (color) => (
-              <Button
-                key={color}
-                onClick={() => updateComponentProps(selectedComponentId, { borderColor: color })}
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
+          {(Object.keys(SUMMARY_TYPES) as SummaryType[]).map((type) => {
+            const config = SUMMARY_TYPES[type];
+            const isSelected = summaryType === type;
+
+            return (
+              <Paper
+                key={type}
+                elevation={isSelected ? 3 : 1}
                 sx={{
-                  width: 36,
-                  height: 36,
-                  minWidth: 36,
-                  backgroundColor: color,
-                  border: '1px solid #ddd',
-                  '&:hover': { backgroundColor: color, opacity: 0.9 },
+                  p: 1.5,
+                  cursor: 'pointer',
+                  border: isSelected ? '2px solid #1976d2' : '1px solid transparent',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: '#1976d2',
+                    transform: 'translateY(-1px)',
+                  },
                 }}
-              />
-            )
-          )}
-        </Box>
-        <TextField
-          type="color"
-          fullWidth
-          size="small"
-          value={borderColor}
-          onChange={(e) =>
-            updateComponentProps(selectedComponentId, { borderColor: e.target.value })
-          }
-        />
-      </Box>
-
-      <Typography variant="subtitle2" gutterBottom>
-        Icono
-      </Typography>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <Box
-          sx={{
-            mr: 2,
-            p: 1,
-            border: '1px solid #ddd',
-            borderRadius: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 40,
-            height: 40,
-          }}
-        >
-          <Icon icon={icon} />
-        </Box>
-        <Button variant="outlined" size="small" onClick={() => setShowIconPicker(true)}>
-          Cambiar icono
-        </Button>
-      </Box>
-
-      <Typography variant="subtitle2" gutterBottom>
-        Color del icono
-      </Typography>
-      <TextField
-        type="color"
-        fullWidth
-        size="small"
-        value={iconColor}
-        onChange={(e) => updateComponentProps(selectedComponentId, { iconColor: e.target.value })}
-        sx={{ mb: 3 }}
-      />
-
-      <Typography variant="subtitle2" gutterBottom>
-        Tamaño del icono
-      </Typography>
-      <TextField
-        type="number"
-        fullWidth
-        size="small"
-        InputProps={{
-          inputProps: { min: 16, max: 48 },
-          endAdornment: <Typography variant="caption">px</Typography>,
-        }}
-        value={iconSize}
-        onChange={(e) =>
-          updateComponentProps(selectedComponentId, { iconSize: Number(e.target.value) })
-        }
-        sx={{ mb: 3 }}
-      />
-
-      <Typography variant="subtitle2" gutterBottom>
-        Título
-      </Typography>
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          type="color"
-          fullWidth
-          size="small"
-          label="Color del título"
-          value={titleColor}
-          onChange={(e) =>
-            updateComponentProps(selectedComponentId, { titleColor: e.target.value })
-          }
-          sx={{ mb: 2 }}
-        />
-
-        <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-          <InputLabel id="font-weight-label">Grosor del título</InputLabel>
-          <Select
-            labelId="font-weight-label"
-            value={titleFontWeight}
-            label="Grosor del título"
-            onChange={(e) =>
-              updateComponentProps(selectedComponentId, { titleFontWeight: e.target.value })
-            }
-          >
-            <MenuItem value="normal">Normal</MenuItem>
-            <MenuItem value="bold">Negrita</MenuItem>
-            <MenuItem value="lighter">Fino</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth size="small">
-          <InputLabel id="font-family-label">Fuente del título</InputLabel>
-          <Select
-            labelId="font-family-label"
-            value={titleFontFamily}
-            label="Fuente del título"
-            onChange={(e) =>
-              updateComponentProps(selectedComponentId, { titleFontFamily: e.target.value })
-            }
-          >
-            <MenuItem value="inherit">Por defecto</MenuItem>
-            <MenuItem value="'Roboto', sans-serif">Roboto</MenuItem>
-            <MenuItem value="'Playfair Display', serif">Playfair Display</MenuItem>
-            <MenuItem value="'Montserrat', sans-serif">Montserrat</MenuItem>
-            <MenuItem value="'Open Sans', sans-serif">Open Sans</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
-
-      <Typography variant="subtitle2" gutterBottom>
-        Fondo
-      </Typography>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={useGradient}
-            onChange={(e) =>
-              updateComponentProps(selectedComponentId, { useGradient: e.target.checked })
-            }
-          />
-        }
-        label="Usar gradiente"
-        sx={{ mb: 2 }}
-      />
-
-      {useGradient ? (
-        <>
-          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-            <InputLabel id="gradient-type-label">Tipo de gradiente</InputLabel>
-            <Select
-              labelId="gradient-type-label"
-              value={gradientType}
-              label="Tipo de gradiente"
-              onChange={(e) =>
-                updateComponentProps(selectedComponentId, { gradientType: e.target.value })
-              }
-            >
-              <MenuItem value="linear">Lineal</MenuItem>
-              <MenuItem value="radial">Radial</MenuItem>
-            </Select>
-          </FormControl>
-
-          {gradientType === 'linear' && (
-            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <InputLabel id="gradient-direction-label">Dirección</InputLabel>
-              <Select
-                labelId="gradient-direction-label"
-                value={gradientDirection}
-                label="Dirección"
-                onChange={(e) =>
-                  updateComponentProps(selectedComponentId, {
-                    gradientDirection: e.target.value,
-                  })
-                }
+                onClick={() => handleTypeChange(type)}
               >
-                <MenuItem value="to right">Hacia la derecha</MenuItem>
-                <MenuItem value="to left">Hacia la izquierda</MenuItem>
-                <MenuItem value="to bottom">Hacia abajo</MenuItem>
-                <MenuItem value="to top">Hacia arriba</MenuItem>
-                <MenuItem value="to bottom right">Hacia abajo-derecha</MenuItem>
-                <MenuItem value="to bottom left">Hacia abajo-izquierda</MenuItem>
-                <MenuItem value="to top right">Hacia arriba-derecha</MenuItem>
-                <MenuItem value="to top left">Hacia arriba-izquierda</MenuItem>
-              </Select>
-            </FormControl>
-          )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Box
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '6px',
+                      backgroundColor: config.backgroundColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Icon icon={config.icon} style={{ fontSize: 14, color: config.iconColor }} />
+                  </Box>
+                  <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                    {config.label}
+                  </Typography>
+                </Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: '0.65rem', lineHeight: 1.2 }}
+                >
+                  {config.description}
+                </Typography>
+              </Paper>
+            );
+          })}
+        </Box>
+      </Paper>
 
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              type="color"
-              fullWidth
-              size="small"
-              label="Color 1"
-              value={gradientColor1}
-              onChange={(e) =>
-                updateComponentProps(selectedComponentId, { gradientColor1: e.target.value })
-              }
-            />
-            <TextField
-              type="color"
-              fullWidth
-              size="small"
-              label="Color 2"
-              value={gradientColor2}
-              onChange={(e) =>
-                updateComponentProps(selectedComponentId, { gradientColor2: e.target.value })
-              }
-            />
-          </Box>
+      {/* Personalización */}
+      <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2 }}>
+          🎨 Personalización
+        </Typography>
 
-          <Box
+        {/* Texto personalizado */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            Texto del encabezado
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            value={label}
+            onChange={(e) => updateComponentProps(selectedComponentId, { label: e.target.value })}
+            placeholder="Ej: Resumen, Concepto, etc."
             sx={{
-              height: 24,
-              width: '100%',
-              borderRadius: 1,
-              mb: 2,
-              background:
-                gradientType === 'linear'
-                  ? `linear-gradient(${gradientDirection}, ${gradientColor1}, ${gradientColor2})`
-                  : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: 'white',
+              },
             }}
           />
-        </>
-      ) : (
-        <TextField
-          type="color"
-          fullWidth
-          size="small"
-          label="Color de fondo"
-          value={backgroundColor}
-          onChange={(e) =>
-            updateComponentProps(selectedComponentId, { backgroundColor: e.target.value })
-          }
-          sx={{ mb: 2 }}
-        />
-      )}
+        </Box>
+
+        {/* Colores */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <GeneralColorPicker
+              selectedColor={backgroundColor}
+              onChange={(color) =>
+                updateComponentProps(selectedComponentId, { backgroundColor: color })
+              }
+              label="Fondo"
+              size="small"
+            />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <GeneralColorPicker
+              selectedColor={iconColor}
+              onChange={(color) => updateComponentProps(selectedComponentId, { iconColor: color })}
+              label="Icono"
+              size="small"
+            />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <GeneralColorPicker
+              selectedColor={textColor}
+              onChange={(color) => updateComponentProps(selectedComponentId, { textColor: color })}
+              label="Texto"
+              size="small"
+            />
+          </Box>
+        </Box>
+
+        {/* Icono personalizado */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            sx={{
+              p: 1.5,
+              border: '1px solid #ddd',
+              borderRadius: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 48,
+              height: 48,
+              bgcolor: 'white',
+            }}
+          >
+            <Icon icon={icon} style={{ fontSize: 20, color: iconColor }} />
+          </Box>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setShowIconPicker(true)}
+            startIcon={<Icon icon="mdi:swap-horizontal" />}
+          >
+            Cambiar Icono
+          </Button>
+        </Box>
+      </Paper>
+
+      {/* Vista previa */}
+      <Paper elevation={2} sx={{ p: 2, bgcolor: 'grey.100' }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2 }}>
+          👁️ Vista Previa
+        </Typography>
+
+        <Box
+          sx={{
+            backgroundColor,
+            borderRadius: '12px',
+            border: '1px solid rgba(0,0,0,0.08)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Header preview */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              padding: '12px 16px 8px 16px',
+              borderBottom: '1px solid rgba(0,0,0,0.05)',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 24,
+                height: 24,
+                borderRadius: '6px',
+                backgroundColor: 'rgba(255,255,255,0.7)',
+                border: '1px solid rgba(255,255,255,0.3)',
+              }}
+            >
+              <Icon icon={icon} style={{ fontSize: 14, color: iconColor }} />
+            </Box>
+
+            <Typography
+              variant="caption"
+              sx={{
+                color: textColor,
+                fontWeight: 600,
+                fontSize: '14px',
+              }}
+            >
+              {label}
+            </Typography>
+          </Box>
+
+          {/* Content preview */}
+          <Box sx={{ padding: '12px 16px 16px 16px' }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: '#6c757d',
+                fontSize: '13px',
+                fontStyle: 'italic',
+              }}
+            >
+              Escribe el contenido aquí...
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
     </Box>
   );
 }

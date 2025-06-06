@@ -1,6 +1,7 @@
 "use client"
 
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Typography, Button } from "@mui/material"
+import { Dialog, Button, TextField, Typography, DialogTitle, DialogContent, DialogActions } from "@mui/material"
+
 import type { LogoDialogProps } from "../types"
 
 export default function LogoDialog({ open, onClose, logoUrl, setLogoUrl, onSave }: LogoDialogProps) {

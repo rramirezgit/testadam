@@ -9,6 +9,7 @@ import GalleryComponent from './GalleryComponent';
 import CategoryComponent from './CategoryComponent';
 import ParagraphComponent from './ParagraphComponent';
 import BulletListComponent from './BulletListComponent';
+import HerramientasComponent from './HerramientasComponent';
 import RespaldadoPorComponent from './RespaldadoPorComponent';
 import TituloConIconoComponent from './TituloConIconoComponent';
 
@@ -40,6 +41,8 @@ const EmailComponentRenderer = (props: EmailComponentProps) => {
       return <GalleryComponent {...props} />;
     case 'tituloConIcono':
       return <TituloConIconoComponent {...props} />;
+    case 'herramientas':
+      return <HerramientasComponent {...props} />;
     case 'respaldadoPor':
       return <RespaldadoPorComponent {...props} />;
     case 'spacer':

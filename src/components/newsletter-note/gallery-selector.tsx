@@ -1,5 +1,6 @@
 "use client"
-import { Box, Typography, Grid, Card, CardContent, CardMedia } from "@mui/material"
+
+import { Box, Grid, Card, CardMedia, Typography, CardContent } from "@mui/material"
 
 export const galleryLayouts = [
   {

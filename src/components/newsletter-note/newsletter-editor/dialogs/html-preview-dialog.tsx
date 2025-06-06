@@ -3,22 +3,23 @@
 import type React from "react"
 
 import { useState } from "react"
+
+import CodeIcon from "@mui/icons-material/Code"
+import CloseIcon from "@mui/icons-material/Close"
+import VisibilityIcon from "@mui/icons-material/Visibility"
+import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 import {
+  Box,
+  Tab,
+  Tabs,
+  Paper,
   Dialog,
+  Button,
+  IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  Box,
-  IconButton,
-  Tabs,
-  Tab,
-  Paper,
 } from "@mui/material"
-import CloseIcon from "@mui/icons-material/Close"
-import ContentCopyIcon from "@mui/icons-material/ContentCopy"
-import CodeIcon from "@mui/icons-material/Code"
-import VisibilityIcon from "@mui/icons-material/Visibility"
 
 interface HtmlPreviewDialogProps {
   open: boolean

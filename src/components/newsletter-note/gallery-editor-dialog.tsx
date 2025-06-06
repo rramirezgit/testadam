@@ -1,20 +1,23 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
+
 import {
+  Box,
+  Tab,
+  Grid,
+  Tabs,
   Dialog,
+  Button,
+  TextField,
+  Typography,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  TextField,
-  Box,
-  Typography,
-  Grid,
-  Tabs,
-  Tab,
 } from "@mui/material"
+
 import GallerySelector, { galleryLayouts } from "./gallery-selector"
 
 interface GalleryImage {

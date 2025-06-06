@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { Check, Circle, ChevronRight } from 'lucide-react';
 import * as MenubarPrimitive from '@radix-ui/react-menubar';
-import { Check, ChevronRight, Circle } from 'lucide-react';
 
 import { cn } from 'src/lib/utils';
 
@@ -191,31 +191,29 @@ const MenubarSeparator = React.forwardRef<
 ));
 MenubarSeparator.displayName = MenubarPrimitive.Separator.displayName;
 
-const MenubarShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
-  return (
+const MenubarShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
     <span
       className={cn('ml-auto text-xs tracking-widest text-muted-foreground', className)}
       {...props}
     />
   );
-};
 MenubarShortcut.displayname = 'MenubarShortcut';
 
 export {
   Menubar,
+  MenubarSub,
   MenubarMenu,
+  MenubarItem,
+  MenubarLabel,
+  MenubarGroup,
+  MenubarPortal,
   MenubarTrigger,
   MenubarContent,
-  MenubarItem,
+  MenubarShortcut,
   MenubarSeparator,
-  MenubarLabel,
-  MenubarCheckboxItem,
-  MenubarRadioGroup,
   MenubarRadioItem,
-  MenubarPortal,
+  MenubarRadioGroup,
   MenubarSubContent,
   MenubarSubTrigger,
-  MenubarGroup,
-  MenubarSub,
-  MenubarShortcut,
+  MenubarCheckboxItem,
 };

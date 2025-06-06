@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+
 import { Box, Button } from "@mui/material"
 
 interface TabsProps {
@@ -40,13 +41,11 @@ interface TabsListProps {
   children?: React.ReactNode
 }
 
-export const TabsList = ({ className, children, ...props }: TabsListProps) => {
-  return (
+export const TabsList = ({ className, children, ...props }: TabsListProps) => (
     <Box className={className} sx={{ display: "flex" }} {...props}>
       {children}
     </Box>
   )
-}
 
 interface TabsTriggerProps {
   value: string
@@ -55,14 +54,14 @@ interface TabsTriggerProps {
   onClick?: () => void
 }
 
-export const TabsTrigger = ({ value, className, children, onClick, ...props }: TabsTriggerProps) => {
+export const TabsTrigger = ({ value, className, children, onClick, ...props }: TabsTriggerProps) => 
   // Convert to a button
-  return (
+   (
     <Button variant="text" className={className} onClick={onClick} {...props}>
       {children}
     </Button>
   )
-}
+
 
 interface TabsContentProps {
   value: string
@@ -70,10 +69,8 @@ interface TabsContentProps {
   children?: React.ReactNode
 }
 
-export const TabsContent = ({ value, className, children, ...props }: TabsContentProps) => {
-  return (
+export const TabsContent = ({ value, className, children, ...props }: TabsContentProps) => (
     <Box role="tabpanel" className={className} {...props}>
       {children}
     </Box>
   )
-}

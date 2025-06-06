@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+
 import { Divider } from "@mui/material"
 
 interface SeparatorProps {
@@ -9,8 +10,7 @@ interface SeparatorProps {
 }
 
 export const Separator = React.forwardRef<HTMLHRElement, SeparatorProps>(
-  ({ orientation = "horizontal", className, ...props }, ref) => {
-    return (
+  ({ orientation = "horizontal", className, ...props }, ref) => (
       <Divider
         ref={ref}
         orientation={orientation}
@@ -18,8 +18,7 @@ export const Separator = React.forwardRef<HTMLHRElement, SeparatorProps>(
         flexItem={orientation === "vertical"}
         {...props}
       />
-    )
-  },
+    ),
 )
 
 Separator.displayName = "Separator"

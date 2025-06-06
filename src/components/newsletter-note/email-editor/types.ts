@@ -11,6 +11,7 @@ export type ComponentType =
   | 'summary'
   | 'gallery'
   | 'tituloConIcono'
+  | 'herramientas'
   | 'respaldadoPor';
 
 export interface EmailEditorProps {

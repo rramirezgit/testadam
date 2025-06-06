@@ -1,7 +1,10 @@
 "use client"
-import { Box, ToggleButtonGroup, ToggleButton, IconButton, Tooltip } from "@mui/material"
-import { Icon } from "@iconify/react"
+
 import type { Editor } from "@tiptap/react"
+
+import { Icon } from "@iconify/react"
+
+import { Box, Tooltip, IconButton, ToggleButton, ToggleButtonGroup } from "@mui/material"
 
 interface FormattingToolbarProps {
   editor: Editor | null

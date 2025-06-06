@@ -1,22 +1,26 @@
 'use client';
 
+import type { VariantProps} from 'class-variance-authority';
+
 import * as React from 'react';
-import { Slot } from '@radix-ui/react-slot';
-import { VariantProps, cva } from 'class-variance-authority';
 import { PanelLeft } from 'lucide-react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva } from 'class-variance-authority';
 
 import { useIsMobile } from 'src/hooks/use-mobile';
+
 import { cn } from 'src/lib/utils';
-import { Button } from 'src/components/newsletter-note/ui/button';
+
 import { Input } from 'src/components/newsletter-note/ui/input';
+import { Button } from 'src/components/newsletter-note/ui/button';
+import { Skeleton } from 'src/components/newsletter-note/ui/skeleton';
 import { Separator } from 'src/components/newsletter-note/ui/separator';
 import { Sheet, SheetContent } from 'src/components/newsletter-note/ui/sheet';
-import { Skeleton } from 'src/components/newsletter-note/ui/skeleton';
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
+  TooltipProvider,
 } from 'src/components/newsletter-note/ui/tooltip';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar:state';
@@ -90,9 +94,7 @@ const SidebarProvider = React.forwardRef<
     );
 
     // Helper to toggle the sidebar.
-    const toggleSidebar = React.useCallback(() => {
-      return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
-    }, [isMobile, setOpen, setOpenMobile]);
+    const toggleSidebar = React.useCallback(() => isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open), [isMobile, setOpen, setOpenMobile]);
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -309,8 +311,7 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<'bu
 SidebarRail.displayName = 'SidebarRail';
 
 const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<'main'>>(
-  ({ className, ...props }, ref) => {
-    return (
+  ({ className, ...props }, ref) => (
       <main
         ref={ref}
         className={cn(
@@ -320,16 +321,14 @@ const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<'main
         )}
         {...props}
       />
-    );
-  }
+    )
 );
 SidebarInset.displayName = 'SidebarInset';
 
 const SidebarInput = React.forwardRef<
   React.ElementRef<typeof Input>,
   React.ComponentProps<typeof Input>
->(({ className, ...props }, ref) => {
-  return (
+>(({ className, ...props }, ref) => (
     <Input
       ref={ref}
       data-sidebar="input"
@@ -339,56 +338,48 @@ const SidebarInput = React.forwardRef<
       )}
       {...props}
     />
-  );
-});
+  ));
 SidebarInput.displayName = 'SidebarInput';
 
 const SidebarHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
-  ({ className, ...props }, ref) => {
-    return (
+  ({ className, ...props }, ref) => (
       <div
         ref={ref}
         data-sidebar="header"
         className={cn('flex flex-col gap-2 p-2', className)}
         {...props}
       />
-    );
-  }
+    )
 );
 SidebarHeader.displayName = 'SidebarHeader';
 
 const SidebarFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
-  ({ className, ...props }, ref) => {
-    return (
+  ({ className, ...props }, ref) => (
       <div
         ref={ref}
         data-sidebar="footer"
         className={cn('flex flex-col gap-2 p-2', className)}
         {...props}
       />
-    );
-  }
+    )
 );
 SidebarFooter.displayName = 'SidebarFooter';
 
 const SidebarSeparator = React.forwardRef<
   React.ElementRef<typeof Separator>,
   React.ComponentProps<typeof Separator>
->(({ className, ...props }, ref) => {
-  return (
+>(({ className, ...props }, ref) => (
     <Separator
       ref={ref}
       data-sidebar="separator"
       className={cn('mx-2 w-auto bg-sidebar-border', className)}
       {...props}
     />
-  );
-});
+  ));
 SidebarSeparator.displayName = 'SidebarSeparator';
 
 const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
-  ({ className, ...props }, ref) => {
-    return (
+  ({ className, ...props }, ref) => (
       <div
         ref={ref}
         data-sidebar="content"
@@ -398,22 +389,19 @@ const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<'di
         )}
         {...props}
       />
-    );
-  }
+    )
 );
 SidebarContent.displayName = 'SidebarContent';
 
 const SidebarGroup = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
-  ({ className, ...props }, ref) => {
-    return (
+  ({ className, ...props }, ref) => (
       <div
         ref={ref}
         data-sidebar="group"
         className={cn('relative flex w-full min-w-0 flex-col p-2', className)}
         {...props}
       />
-    );
-  }
+    )
 );
 SidebarGroup.displayName = 'SidebarGroup';
 
@@ -636,9 +624,7 @@ const SidebarMenuSkeleton = React.forwardRef<
   }
 >(({ className, showIcon = false, ...props }, ref) => {
   // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
-  }, []);
+  const width = React.useMemo(() => `${Math.floor(Math.random() * 40) + 50}%`, []);
 
   return (
     <div
@@ -715,27 +701,27 @@ SidebarMenuSubButton.displayName = 'SidebarMenuSubButton';
 
 export {
   Sidebar,
-  SidebarContent,
-  SidebarFooter,
+  useSidebar,
+  SidebarMenu,
+  SidebarRail,
   SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
   SidebarInput,
   SidebarInset,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSkeleton,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarContent,
   SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
   SidebarTrigger,
-  useSidebar,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarMenuBadge,
+  SidebarSeparator,
+  SidebarGroupLabel,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarGroupAction,
+  SidebarMenuSubItem,
+  SidebarGroupContent,
+  SidebarMenuSkeleton,
+  SidebarMenuSubButton,
 };

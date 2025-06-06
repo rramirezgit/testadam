@@ -1,6 +1,7 @@
 import type React from 'react';
 
 import { useState } from 'react';
+import { Icon } from '@iconify/react';
 
 import { Box, Typography } from '@mui/material';
 
@@ -8,6 +9,47 @@ import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditorWithFlags from '../../simple-tiptap-editor-with-flags';
 
 import type { EmailComponentProps } from './types';
+
+// Definición de tipos de summary con sus configuraciones
+const SUMMARY_TYPES = {
+  resumen: {
+    label: 'Resumen',
+    icon: 'mdi:note-text-outline',
+    backgroundColor: '#f8f9fa',
+    iconColor: '#6c757d',
+    textColor: '#495057',
+  },
+  concepto: {
+    label: 'Concepto',
+    icon: 'mdi:lightbulb-outline',
+    backgroundColor: '#e7f3ff',
+    iconColor: '#0066cc',
+    textColor: '#003d7a',
+  },
+  dato: {
+    label: 'Dato',
+    icon: 'mdi:lightbulb-on',
+    backgroundColor: '#fff8e1',
+    iconColor: '#f57c00',
+    textColor: '#e65100',
+  },
+  tip: {
+    label: 'TIP',
+    icon: 'mdi:rocket-launch',
+    backgroundColor: '#f3e5f5',
+    iconColor: '#8e24aa',
+    textColor: '#4a148c',
+  },
+  analogia: {
+    label: 'Analogía',
+    icon: 'mdi:brain',
+    backgroundColor: '#e8f5e8',
+    iconColor: '#388e3c',
+    textColor: '#1b5e20',
+  },
+} as const;
+
+type SummaryType = keyof typeof SUMMARY_TYPES;
 
 const SummaryComponent = ({
   component,
@@ -36,27 +78,16 @@ const SummaryComponent = ({
     updateComponentProps(component.id, { icon: iconName });
   };
 
-  const iconColor = component.props?.iconColor || '#000000';
-  const iconSize = component.props?.iconSize || 24;
-  const titleColor = component.props?.titleColor || '#000000';
-  const titleFontWeight = component.props?.titleFontWeight || 'normal';
-  const titleFontFamily = component.props?.titleFontFamily || 'inherit';
+  // Determinar el tipo de summary (por defecto 'resumen')
+  const summaryType: SummaryType = (component.props?.summaryType as SummaryType) || 'resumen';
+  const typeConfig = SUMMARY_TYPES[summaryType];
 
-  // Configuración del gradiente
-  const useGradient = component.props?.useGradient || false;
-  const gradientType = component.props?.gradientType || 'linear';
-  const gradientDirection = component.props?.gradientDirection || 'to right';
-  const gradientColor1 = component.props?.gradientColor1 || '#f5f7fa';
-  const gradientColor2 = component.props?.gradientColor2 || '#c3cfe2';
-
-  const backgroundStyle = useGradient
-    ? {
-        background:
-          gradientType === 'linear'
-            ? `linear-gradient(${gradientDirection}, ${gradientColor1}, ${gradientColor2})`
-            : `radial-gradient(circle, ${gradientColor1}, ${gradientColor2})`,
-      }
-    : { backgroundColor: component.props?.backgroundColor || '#f5f7fa' };
+  // Permitir personalización pero usar valores por defecto del tipo
+  const backgroundColor = component.props?.backgroundColor || typeConfig.backgroundColor;
+  const iconColor = component.props?.iconColor || typeConfig.iconColor;
+  const textColor = component.props?.textColor || typeConfig.textColor;
+  const icon = component.props?.icon || typeConfig.icon;
+  const label = component.props?.label || typeConfig.label;
 
   return (
     <ComponentWithToolbar
@@ -70,35 +101,95 @@ const SummaryComponent = ({
     >
       <Box
         sx={{
-          padding: '16px',
-          borderLeft: `4px solid ${component.props?.borderColor || '#4caf50'}`,
-          borderRadius: '4px',
-          ...backgroundStyle,
+          backgroundColor,
+          borderRadius: '12px',
+          border: '1px solid',
+          borderColor: 'rgba(0,0,0,0.08)',
+          overflow: 'hidden',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            transform: 'translateY(-1px)',
+          },
           ...(component.style || {}),
         }}
       >
-        <Typography
-          variant="subtitle2"
-          gutterBottom
+        {/* Header con icono y título */}
+        <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
-            color: titleColor,
-            fontWeight: titleFontWeight,
-            fontFamily: titleFontFamily,
+            gap: 1.5,
+            padding: '16px 20px 12px 20px',
+            borderBottom: '1px solid rgba(0,0,0,0.05)',
           }}
         >
-          {component.props?.label || 'Resumen'}
-        </Typography>
-        <Typography variant="body2">
-          <SimpleTipTapEditorWithFlags
-            content={component.content}
-            onChange={handleContentChange}
-            onSelectionUpdate={handleSelectionUpdate}
-            style={{ outline: 'none' }}
-            showToolbar={false}
-          />
-        </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              borderRadius: '8px',
+              backgroundColor: 'rgba(255,255,255,0.7)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.3)',
+            }}
+          >
+            <Icon
+              icon={icon}
+              style={{
+                fontSize: 18,
+                color: iconColor,
+              }}
+            />
+          </Box>
+
+          <Typography
+            variant="subtitle1"
+            sx={{
+              color: textColor,
+              fontWeight: 600,
+              fontSize: '16px',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {label}
+          </Typography>
+        </Box>
+
+        {/* Contenido */}
+        <Box
+          sx={{
+            padding: '16px 20px 20px 20px',
+          }}
+        >
+          <Box
+            sx={{
+              color: '#6c757d',
+              fontSize: '15px',
+              lineHeight: 1.6,
+              '& p': {
+                margin: 0,
+                color: '#6c757d',
+              },
+              '& p:empty::before': {
+                content: '"Escribe el contenido aquí..."',
+                color: '#adb5bd',
+                fontStyle: 'italic',
+              },
+            }}
+          >
+            <SimpleTipTapEditorWithFlags
+              content={component.content}
+              onChange={handleContentChange}
+              onSelectionUpdate={handleSelectionUpdate}
+              style={{ outline: 'none' }}
+              showToolbar={false}
+            />
+          </Box>
+        </Box>
       </Box>
     </ComponentWithToolbar>
   );

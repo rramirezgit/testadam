@@ -1,7 +1,8 @@
 "use client"
 
-import { Button, TextField, Box, CircularProgress, Toolbar as MuiToolbar } from "@mui/material"
 import { Icon } from "@iconify/react"
+
+import { Box, Button, TextField, CircularProgress, Toolbar as MuiToolbar } from "@mui/material"
 
 interface ToolbarProps {
   title: string

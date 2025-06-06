@@ -1,7 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useRef } from "react"
+
+import { useRef, useEffect } from "react"
+
 import { Box, Paper } from "@mui/material"
 
 interface EmailPreviewWrapperProps {

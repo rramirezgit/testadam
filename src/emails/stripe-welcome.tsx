@@ -1,4 +1,4 @@
-import { Body, Button, Container, Head, Hr, Html, Img, Link, Preview, Section, Text } from "@react-email/components"
+import { Hr, Img, Body, Head, Html, Link, Text, Button, Preview, Section, Container } from "@react-email/components"
 
 export interface StripeWelcomeEmailProps {
   mainText?: string

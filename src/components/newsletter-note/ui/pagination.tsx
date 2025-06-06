@@ -1,8 +1,11 @@
+import type { ButtonProps} from 'src/components/newsletter-note/ui/button';
+
 import * as React from 'react';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
 import { cn } from 'src/lib/utils';
-import { ButtonProps, buttonVariants } from 'src/components/newsletter-note/ui/button';
+
+import { buttonVariants } from 'src/components/newsletter-note/ui/button';
 
 const Pagination = ({ className, ...props }: React.ComponentProps<'nav'>) => (
   <nav
@@ -89,10 +92,10 @@ PaginationEllipsis.displayName = 'PaginationEllipsis';
 
 export {
   Pagination,
-  PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
+  PaginationContent,
+  PaginationEllipsis,
   PaginationPrevious,
 };

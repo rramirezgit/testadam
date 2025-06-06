@@ -4,6 +4,7 @@ import * as React from 'react';
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 
 import { cn } from 'src/lib/utils';
+
 import { buttonVariants } from 'src/components/newsletter-note/ui/button';
 
 const AlertDialog = AlertDialogPrimitive.Root;
@@ -104,14 +105,14 @@ AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName;
 
 export {
   AlertDialog,
+  AlertDialogTitle,
   AlertDialogPortal,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogOverlay,
   AlertDialogTrigger,
   AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogFooter,
-  AlertDialogTitle,
   AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
 };

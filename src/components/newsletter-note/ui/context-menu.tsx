@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { Check, Circle, ChevronRight } from 'lucide-react';
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu';
-import { Check, ChevronRight, Circle } from 'lucide-react';
 
 import { cn } from 'src/lib/utils';
 
@@ -160,30 +160,28 @@ const ContextMenuSeparator = React.forwardRef<
 ));
 ContextMenuSeparator.displayName = ContextMenuPrimitive.Separator.displayName;
 
-const ContextMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
-  return (
+const ContextMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => (
     <span
       className={cn('ml-auto text-xs tracking-widest text-muted-foreground', className)}
       {...props}
     />
   );
-};
 ContextMenuShortcut.displayName = 'ContextMenuShortcut';
 
 export {
   ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
+  ContextMenuSub,
   ContextMenuItem,
-  ContextMenuCheckboxItem,
-  ContextMenuRadioItem,
   ContextMenuLabel,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
   ContextMenuGroup,
   ContextMenuPortal,
-  ContextMenuSub,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuShortcut,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuRadioGroup,
+  ContextMenuCheckboxItem,
 };

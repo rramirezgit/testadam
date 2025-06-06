@@ -1,7 +1,9 @@
 "use client"
 
-import { Dialog, DialogTitle, Box, Grid, TextField, Typography, Button, IconButton } from "@mui/material"
 import { Icon } from "@iconify/react"
+
+import { Box, Grid, Dialog, Button, TextField, Typography, IconButton, DialogTitle } from "@mui/material"
+
 import type { FooterDialogProps } from "../types"
 
 export default function FooterDialog({ open, onClose, footer, setFooter }: FooterDialogProps) {

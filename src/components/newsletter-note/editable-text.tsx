@@ -1,8 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
-import { Typography, TextField, Box } from "@mui/material"
+
+import { useRef, useState, useEffect } from "react"
+
+import { Box, TextField, Typography } from "@mui/material"
 
 interface EditableTextProps {
   value: string

@@ -1,9 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
+
 import { Box, Paper, Typography, CircularProgress } from "@mui/material"
+
+import { isColorDark, generateNewsletterHtml } from "../utils"
+
 import type { PreviewTabProps } from "../types"
-import { generateNewsletterHtml, isColorDark } from "../utils"
 
 export default function PreviewTab({ header, footer, title, description, selectedNotes }: PreviewTabProps) {
   const [html, setHtml] = useState<string>("")

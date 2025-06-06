@@ -1,7 +1,9 @@
 "use client"
 
-import { Box, Paper, Typography, TextField, Button, IconButton, Divider } from "@mui/material"
 import { Icon } from "@iconify/react"
+
+import { Box, Paper, Button, Divider, TextField, Typography, IconButton } from "@mui/material"
+
 import type { ContentTabProps } from "../types"
 
 export default function ContentTab({

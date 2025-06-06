@@ -221,7 +221,7 @@ export default function LeftPanel({
 
                       // Cuando se seleccione un archivo
                       fileInput.onchange = (e) => {
-                        const file = e.target.files?.[0];
+                        const file = (e.target as HTMLInputElement).files?.[0];
                         if (!file) return;
 
                         // Verificar el tipo de archivo
@@ -245,7 +245,7 @@ export default function LeftPanel({
                           const base64String = reader.result as string;
 
                           // Añadir el componente de imagen con la imagen en base64
-                          addComponent('image', { src: base64String, alt: file.name });
+                          addComponent('image' as ComponentType);
                         };
                         reader.readAsDataURL(file);
                       };
@@ -345,6 +345,13 @@ export default function LeftPanel({
                   >
                     <Icon icon="mdi:format-title" />
                     Título con Icono
+                  </Button>
+                  <Button
+                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                    onClick={() => addComponent('herramientas')}
+                  >
+                    <Icon icon="mdi:hammer-wrench" />
+                    Herramientas
                   </Button>
                   <Button
                     sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}

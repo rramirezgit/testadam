@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect } from "react"
-import { IconButton } from "@mui/material"
 import { Icon } from "@iconify/react"
+
+import { IconButton } from "@mui/material"
 
 interface CustomSnackbarProps {
   open: boolean

@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect } from "react"
-import { IconButton } from "@mui/material"
 import { Icon } from "@iconify/react"
+
+import { IconButton } from "@mui/material"
+
 import type { CustomSnackbarProps } from "../types"
 
 export default function CustomSnackbar({ open, message, severity, onClose }: CustomSnackbarProps) {

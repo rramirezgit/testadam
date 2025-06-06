@@ -2004,7 +2004,179 @@ export default function NewsletterContentEditor({
               {activeTab === 'design' && (
                 <>
                   <Typography variant="h6" gutterBottom>
-                    Background
+                    🎨 Newsletter Design System
+                  </Typography>
+
+                  {/* Quick Templates */}
+                  <Typography variant="subtitle2" gutterBottom>
+                    📋 Templates Rápidos
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                      startIcon={<Icon icon="mdi:newspaper" />}
+                      onClick={() => {
+                        setHeader({
+                          ...header,
+                          backgroundColor: '#3f51b5',
+                          textColor: '#ffffff',
+                        });
+                        setEmailBackground('#ffffff');
+                        showSnackbar('Modern & Clean template applied', 'success');
+                      }}
+                    >
+                      Modern & Clean
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                      startIcon={<Icon icon="mdi:book-open" />}
+                      onClick={() => {
+                        setHeader({
+                          ...header,
+                          backgroundColor: '#8B4513',
+                          textColor: '#ffffff',
+                        });
+                        setEmailBackground('#f8f9fa');
+                        showSnackbar('Classic Editorial template applied', 'success');
+                      }}
+                    >
+                      Classic Editorial
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                      startIcon={<Icon icon="mdi:rocket" />}
+                      onClick={() => {
+                        setHeader({
+                          ...header,
+                          backgroundColor: '#6366f1',
+                          textColor: '#ffffff',
+                        });
+                        setEmailBackground('#111827');
+                        showSnackbar('Tech & Startup template applied', 'success');
+                      }}
+                    >
+                      Tech & Startup
+                    </Button>
+                  </Box>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Color Palettes */}
+                  <Typography variant="subtitle2" gutterBottom>
+                    🌈 Paletas de Color
+                  </Typography>
+                  <Box
+                    sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, mb: 3 }}
+                  >
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        bgcolor: '#3B82F6',
+                        color: 'white',
+                        '&:hover': { bgcolor: '#2563EB' },
+                        minHeight: 40,
+                      }}
+                      onClick={() => {
+                        setHeader({ ...header, backgroundColor: '#3B82F6' });
+                        showSnackbar('Blue Professional applied', 'success');
+                      }}
+                    >
+                      Azul
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        bgcolor: '#10B981',
+                        color: 'white',
+                        '&:hover': { bgcolor: '#059669' },
+                        minHeight: 40,
+                      }}
+                      onClick={() => {
+                        setHeader({ ...header, backgroundColor: '#10B981' });
+                        showSnackbar('Green Nature applied', 'success');
+                      }}
+                    >
+                      Verde
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        bgcolor: '#F59E0B',
+                        color: 'white',
+                        '&:hover': { bgcolor: '#D97706' },
+                        minHeight: 40,
+                      }}
+                      onClick={() => {
+                        setHeader({ ...header, backgroundColor: '#F59E0B' });
+                        showSnackbar('Orange Energetic applied', 'success');
+                      }}
+                    >
+                      Naranja
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        bgcolor: '#EF4444',
+                        color: 'white',
+                        '&:hover': { bgcolor: '#DC2626' },
+                        minHeight: 40,
+                      }}
+                      onClick={() => {
+                        setHeader({ ...header, backgroundColor: '#EF4444' });
+                        showSnackbar('Red Bold applied', 'success');
+                      }}
+                    >
+                      Rojo
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        bgcolor: '#8B5CF6',
+                        color: 'white',
+                        '&:hover': { bgcolor: '#7C3AED' },
+                        minHeight: 40,
+                      }}
+                      onClick={() => {
+                        setHeader({ ...header, backgroundColor: '#8B5CF6' });
+                        showSnackbar('Purple Creative applied', 'success');
+                      }}
+                    >
+                      Morado
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        bgcolor: '#64748B',
+                        color: 'white',
+                        '&:hover': { bgcolor: '#475569' },
+                        minHeight: 40,
+                      }}
+                      onClick={() => {
+                        setHeader({ ...header, backgroundColor: '#64748B' });
+                        showSnackbar('Gray Minimal applied', 'success');
+                      }}
+                    >
+                      Gris
+                    </Button>
+                  </Box>
+
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Original Background Options */}
+                  <Typography variant="h6" gutterBottom>
+                    Opciones de Fondo
                   </Typography>
                   <Accordion defaultExpanded>
                     <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
@@ -2024,7 +2196,7 @@ export default function NewsletterContentEditor({
 
                   <Accordion>
                     <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
-                      <Typography>Solid Color</Typography>
+                      <Typography>Color Sólido</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
@@ -2043,11 +2215,11 @@ export default function NewsletterContentEditor({
 
                   <Accordion>
                     <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
-                      <Typography>Gradient</Typography>
+                      <Typography>Gradiente</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                       <Grid container spacing={2} sx={{ mb: 2 }}>
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                           <ColorPicker
                             color={gradientColors[0]}
                             onChange={(color) => {
@@ -2057,7 +2229,7 @@ export default function NewsletterContentEditor({
                             label="Start Color"
                           />
                         </Grid>
-                        <Grid item xs={6}>
+                        <Grid size={6}>
                           <ColorPicker
                             color={gradientColors[1]}
                             onChange={(color) => {

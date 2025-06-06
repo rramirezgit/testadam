@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+
 import { Box } from "@mui/material"
 
 interface ScrollAreaProps {
@@ -8,8 +9,7 @@ interface ScrollAreaProps {
   children?: React.ReactNode
 }
 
-const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(({ className, children, ...props }, ref) => {
-  return (
+const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(({ className, children, ...props }, ref) => (
     <Box
       ref={ref}
       className={className}
@@ -36,17 +36,16 @@ const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(({ classNam
     >
       {children}
     </Box>
-  )
-})
+  ))
 
 ScrollArea.displayName = "ScrollArea"
 
 const ScrollBar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, orientation = "vertical", ...props }, ref) => {
-    return null // Material UI no necesita un ScrollBar separado
-  },
+  ({ className, orientation = "vertical", ...props }, ref) => 
+     null // Material UI no necesita un ScrollBar separado
+  ,
 )
 
 ScrollBar.displayName = "ScrollBar"
 
-export { ScrollArea, ScrollBar }
+export { ScrollBar, ScrollArea }

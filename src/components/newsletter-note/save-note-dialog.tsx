@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material"
+
+import { Dialog, Button, TextField, DialogTitle, DialogContent, DialogActions } from "@mui/material"
 
 interface SaveNoteDialogProps {
   open: boolean

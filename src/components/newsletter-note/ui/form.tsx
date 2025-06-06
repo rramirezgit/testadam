@@ -1,18 +1,21 @@
 'use client';
 
+import type * as LabelPrimitive from '@radix-ui/react-label';
+import type {
+  FieldPath,
+  FieldValues,
+  ControllerProps} from 'react-hook-form';
+
 import * as React from 'react';
-import * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import {
   Controller,
-  ControllerProps,
-  FieldPath,
-  FieldValues,
   FormProvider,
   useFormContext,
 } from 'react-hook-form';
 
 import { cn } from 'src/lib/utils';
+
 import { Label } from 'src/components/newsletter-note/ui/label';
 
 const Form = FormProvider;
@@ -31,13 +34,11 @@ const FormField = <
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
   ...props
-}: ControllerProps<TFieldValues, TName>) => {
-  return (
+}: ControllerProps<TFieldValues, TName>) => (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
     </FormFieldContext.Provider>
   );
-};
 
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext);
@@ -158,12 +159,12 @@ const FormMessage = React.forwardRef<
 FormMessage.displayName = 'FormMessage';
 
 export {
-  useFormField,
   Form,
   FormItem,
   FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
   FormField,
+  FormControl,
+  FormMessage,
+  useFormField,
+  FormDescription,
 };

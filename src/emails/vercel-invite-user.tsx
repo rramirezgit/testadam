@@ -1,19 +1,19 @@
 import {
+  Hr,
+  Img,
+  Row,
   Body,
+  Head,
+  Html,
+  Link,
+  Text,
   Button,
   Column,
-  Container,
-  Head,
   Heading,
-  Hr,
-  Html,
-  Img,
-  Link,
   Preview,
-  Row,
   Section,
   Tailwind,
-  Text,
+  Container,
 } from "@react-email/components"
 
 export interface VercelInviteUserEmailProps {

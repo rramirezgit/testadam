@@ -1,10 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 
 import { cn } from 'src/lib/utils';
+
 import { Button } from 'src/components/newsletter-note/ui/button';
 
 type CarouselApi = UseEmblaCarouselType[1];
@@ -110,7 +111,7 @@ const Carousel = React.forwardRef<
     <CarouselContext.Provider
       value={{
         carouselRef,
-        api: api,
+        api,
         opts,
         orientation: orientation || (opts?.axis === 'y' ? 'vertical' : 'horizontal'),
         scrollPrev,
@@ -233,10 +234,10 @@ const CarouselNext = React.forwardRef<HTMLButtonElement, React.ComponentProps<ty
 CarouselNext.displayName = 'CarouselNext';
 
 export {
-  type CarouselApi,
   Carousel,
-  CarouselContent,
   CarouselItem,
-  CarouselPrevious,
   CarouselNext,
+  CarouselContent,
+  type CarouselApi,
+  CarouselPrevious,
 };

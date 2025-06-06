@@ -1,8 +1,9 @@
 "use client"
 
 import { Box } from "@mui/material"
-import ContentTab from "../tabs/content-tab"
+
 import DesignTab from "../tabs/design-tab"
+import ContentTab from "../tabs/content-tab"
 import PreviewTab from "../tabs/preview-tab"
 import HeaderDialog from "../dialogs/header-dialog"
 import FooterDialog from "../dialogs/footer-dialog"
