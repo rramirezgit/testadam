@@ -28,7 +28,10 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
       borderRadius: '8px',
       backgroundColor: activeTemplate === template.id ? 'primary.light' : 'grey.200',
     }}
-    onClick={() => setActiveTemplate(template.id)}
+    onClick={() => {
+      console.log('🔄 TemplateCard clicked - Setting activeTemplate to:', template.id);
+      setActiveTemplate(template.id);
+    }}
   >
     <CardContent sx={{ padding: '10px' }}>
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>

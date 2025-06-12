@@ -10,11 +10,7 @@ import {
 
 import type { DividerOptionsProps } from './types';
 
-const DividerOptions = ({
-  selectedComponentId,
-  updateComponentContent,
-  updateComponentStyle,
-}: DividerOptionsProps) => (
+const DividerOptions = ({ selectedComponentId, updateComponentStyle }: DividerOptionsProps) => (
   <>
     <Typography variant="subtitle2" gutterBottom>
       Estilo de separador

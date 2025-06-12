@@ -1,10 +1,19 @@
-"use client"
+'use client';
 
-import { Icon } from "@iconify/react"
+import { Icon } from '@iconify/react';
 
-import { Box, Grid, Dialog, Button, TextField, Typography, IconButton, DialogTitle } from "@mui/material"
+import {
+  Box,
+  Grid,
+  Dialog,
+  Button,
+  TextField,
+  Typography,
+  IconButton,
+  DialogTitle,
+} from '@mui/material';
 
-import type { FooterDialogProps } from "../types"
+import type { FooterDialogProps } from '../types';
 
 export default function FooterDialog({ open, onClose, footer, setFooter }: FooterDialogProps) {
   return (
@@ -12,7 +21,7 @@ export default function FooterDialog({ open, onClose, footer, setFooter }: Foote
       <DialogTitle>Edit Newsletter Footer</DialogTitle>
       <Box sx={{ px: 3, pb: 3 }}>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Company Name"
@@ -23,28 +32,28 @@ export default function FooterDialog({ open, onClose, footer, setFooter }: Foote
             <TextField
               fullWidth
               label="Address"
-              value={footer.address || ""}
+              value={footer.address || ''}
               onChange={(e) => setFooter({ ...footer, address: e.target.value })}
               margin="normal"
             />
             <TextField
               fullWidth
               label="Contact Email"
-              value={footer.contactEmail || ""}
+              value={footer.contactEmail || ''}
               onChange={(e) => setFooter({ ...footer, contactEmail: e.target.value })}
               margin="normal"
             />
             <TextField
               fullWidth
               label="Unsubscribe Link"
-              value={footer.unsubscribeLink || "#"}
+              value={footer.unsubscribeLink || '#'}
               onChange={(e) => setFooter({ ...footer, unsubscribeLink: e.target.value })}
               margin="normal"
             />
           </Grid>
-          <Grid item xs={12} md={6}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-              <Box sx={{ textAlign: "center" }}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+              <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="caption" display="block" gutterBottom>
                   Background
                 </Typography>
@@ -52,10 +61,10 @@ export default function FooterDialog({ open, onClose, footer, setFooter }: Foote
                   type="color"
                   value={footer.backgroundColor}
                   onChange={(e) => setFooter({ ...footer, backgroundColor: e.target.value })}
-                  style={{ width: 40, height: 40, padding: 0, border: "none" }}
+                  style={{ width: 40, height: 40, padding: 0, border: 'none' }}
                 />
               </Box>
-              <Box sx={{ textAlign: "center" }}>
+              <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="caption" display="block" gutterBottom>
                   Text Color
                 </Typography>
@@ -63,7 +72,7 @@ export default function FooterDialog({ open, onClose, footer, setFooter }: Foote
                   type="color"
                   value={footer.textColor}
                   onChange={(e) => setFooter({ ...footer, textColor: e.target.value })}
-                  style={{ width: 40, height: 40, padding: 0, border: "none" }}
+                  style={{ width: 40, height: 40, padding: 0, border: 'none' }}
                 />
               </Box>
             </Box>
@@ -71,36 +80,36 @@ export default function FooterDialog({ open, onClose, footer, setFooter }: Foote
               Social Links
             </Typography>
             {footer.socialLinks?.map((link, index) => (
-              <Box key={index} sx={{ display: "flex", mb: 1 }}>
+              <Box key={index} sx={{ display: 'flex', mb: 1 }}>
                 <TextField
                   size="small"
                   label="Platform"
                   value={link.platform}
                   onChange={(e) => {
-                    const newLinks = [...(footer.socialLinks || [])]
-                    newLinks[index] = { ...newLinks[index], platform: e.target.value }
-                    setFooter({ ...footer, socialLinks: newLinks })
+                    const newLinks = [...(footer.socialLinks || [])];
+                    newLinks[index] = { ...newLinks[index], platform: e.target.value };
+                    setFooter({ ...footer, socialLinks: newLinks });
                   }}
-                  sx={{ width: "40%" }}
+                  sx={{ width: '40%' }}
                 />
                 <TextField
                   size="small"
                   label="URL"
                   value={link.url}
                   onChange={(e) => {
-                    const newLinks = [...(footer.socialLinks || [])]
-                    newLinks[index] = { ...newLinks[index], url: e.target.value }
-                    setFooter({ ...footer, socialLinks: newLinks })
+                    const newLinks = [...(footer.socialLinks || [])];
+                    newLinks[index] = { ...newLinks[index], url: e.target.value };
+                    setFooter({ ...footer, socialLinks: newLinks });
                   }}
-                  sx={{ width: "60%", ml: 1 }}
+                  sx={{ width: '60%', ml: 1 }}
                 />
                 <IconButton
                   size="small"
                   color="error"
                   onClick={() => {
-                    const newLinks = [...(footer.socialLinks || [])]
-                    newLinks.splice(index, 1)
-                    setFooter({ ...footer, socialLinks: newLinks })
+                    const newLinks = [...(footer.socialLinks || [])];
+                    newLinks.splice(index, 1);
+                    setFooter({ ...footer, socialLinks: newLinks });
                   }}
                 >
                   <Icon icon="mdi:delete" />
@@ -112,9 +121,9 @@ export default function FooterDialog({ open, onClose, footer, setFooter }: Foote
               size="small"
               startIcon={<Icon icon="mdi:plus" />}
               onClick={() => {
-                const newLinks = [...(footer.socialLinks || [])]
-                newLinks.push({ platform: "new", url: "#" })
-                setFooter({ ...footer, socialLinks: newLinks })
+                const newLinks = [...(footer.socialLinks || [])];
+                newLinks.push({ platform: 'new', url: '#' });
+                setFooter({ ...footer, socialLinks: newLinks });
               }}
               sx={{ mt: 1 }}
             >
@@ -122,7 +131,7 @@ export default function FooterDialog({ open, onClose, footer, setFooter }: Foote
             </Button>
           </Grid>
         </Grid>
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
           <Button onClick={onClose} sx={{ mr: 1 }}>
             Cancel
           </Button>
@@ -132,5 +141,5 @@ export default function FooterDialog({ open, onClose, footer, setFooter }: Foote
         </Box>
       </Box>
     </Dialog>
-  )
+  );
 }

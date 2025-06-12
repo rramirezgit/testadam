@@ -1,10 +1,22 @@
-"use client"
+'use client';
 
-import { Dialog, Button, TextField, Typography, DialogTitle, DialogContent, DialogActions } from "@mui/material"
+import {
+  Dialog,
+  Button,
+  TextField,
+  Typography,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 
-import type { BannerDialogProps } from "../types"
-
-export default function BannerDialog({ open, onClose, bannerImageUrl, setBannerImageUrl, onSave }: BannerDialogProps) {
+export default function BannerDialog({
+  open,
+  onClose,
+  bannerImageUrl,
+  setBannerImageUrl,
+  onSave,
+}: any) {
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Add Banner Image</DialogTitle>
@@ -27,5 +39,5 @@ export default function BannerDialog({ open, onClose, bannerImageUrl, setBannerI
         </Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }

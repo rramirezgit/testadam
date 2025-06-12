@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-shadow */
+/* eslint-disable default-case-last */
 // Función auxiliar para determinar si un color es oscuro
 export const isColorDark = (color: string): boolean => {
   // Si el color es en formato hex (#RRGGBB)
@@ -29,24 +31,31 @@ export const generateNoteHtml = (note: any, isColorDark: (color: string) => bool
   let backgroundStyle = '';
   let textColorStyle = '';
 
-  if (note.selectedBanner) {
+  // Parse configNote to get configuration
+  const configNote = JSON.parse(note.configNote);
+
+  if (configNote.selectedBanner) {
     // Para imágenes de fondo
-    backgroundStyle = `background-image: url('${note.selectedBanner}'); background-size: cover; background-position: center;`;
+    backgroundStyle = `background-image: url('${configNote.selectedBanner}'); background-size: cover; background-position: center;`;
     textColorStyle = 'color: #ffffff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);';
-  } else if (note.showGradient && note.gradientColors && note.gradientColors.length >= 2) {
+  } else if (
+    configNote.showGradient &&
+    configNote.gradientColors &&
+    configNote.gradientColors.length >= 2
+  ) {
     // Para gradientes
-    backgroundStyle = `background: linear-gradient(to bottom, ${note.gradientColors[0]}, ${note.gradientColors[1]});`;
+    backgroundStyle = `background: linear-gradient(to bottom, ${configNote.gradientColors[0]}, ${configNote.gradientColors[1]});`;
     // Determinar si el gradiente es oscuro para usar texto claro
-    const isFirstColorDark = isColorDark(note.gradientColors[0]);
-    const isSecondColorDark = isColorDark(note.gradientColors[1]);
+    const isFirstColorDark = isColorDark(configNote.gradientColors[0]);
+    const isSecondColorDark = isColorDark(configNote.gradientColors[1]);
     if (isFirstColorDark || isSecondColorDark) {
       textColorStyle = 'color: #ffffff;';
     }
-  } else if (note.emailBackground) {
+  } else if (configNote.emailBackground) {
     // Para colores sólidos
-    backgroundStyle = `background-color: ${note.emailBackground};`;
+    backgroundStyle = `background-color: ${configNote.emailBackground};`;
     // Determinar si el color es oscuro para usar texto claro
-    if (isColorDark(note.emailBackground)) {
+    if (isColorDark(configNote.emailBackground)) {
       textColorStyle = 'color: #ffffff;';
     }
   } else {
@@ -55,10 +64,20 @@ export const generateNoteHtml = (note: any, isColorDark: (color: string) => bool
 
   // Abrir el contenedor de la nota con su estilo de fondo
   noteHtml += `<div class="note-container" style="${backgroundStyle} ${textColorStyle} padding: 20px; margin-bottom: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">`;
-  noteHtml += `<div class="note-title" style="font-size: 20px; font-weight: bold; margin-bottom: 15px;">${note.title || 'Untitled Note'}</div>`;
+
+  // Añadir el contenedor interno con borde personalizable
+  const containerBorderWidth = configNote.containerBorderWidth ?? 1;
+  const containerBorderColor = configNote.containerBorderColor ?? '#e0e0e0';
+  const containerBorderRadius = configNote.containerBorderRadius ?? 12;
+  const containerPadding = configNote.containerPadding ?? 10;
+  const containerMaxWidth = configNote.containerMaxWidth ?? 560;
+
+  noteHtml += `<div style="max-width: ${containerMaxWidth}px; margin: 0 auto; padding: ${containerPadding}px; border-radius: ${containerBorderRadius}px; border: ${containerBorderWidth}px solid ${containerBorderColor};">`;
+  noteHtml += `<p class="note-title" style="font-size: 20px; font-weight: bold; margin-bottom: 15px; margin-top: 0;">${note.title || 'Untitled Note'}</p>`;
 
   // Procesar cada componente en la nota
-  note.objdata.forEach((component: any) => {
+  const objData = JSON.parse(note.objData);
+  objData.forEach((component: any) => {
     switch (component.type) {
       case 'category':
         const categoryColors = Array.isArray(component.props?.color)
@@ -74,8 +93,8 @@ export const generateNoteHtml = (note: any, isColorDark: (color: string) => bool
         noteHtml += `</div>\n`;
         break;
       case 'heading':
-        const level = component.props?.level || 2;
-        noteHtml += `<h${level} style="margin: 15px 0; font-size: ${24 - level * 2}px;">${component.content}</h${level}>\n`;
+        // ⚡ NUEVO: Tamaño fijo para todos los títulos
+        noteHtml += `<p style="margin: 15px 0 10px 0; font-size: 1.5rem; font-weight: bold; line-height: 1.3;">${component.content}</p>\n`;
         break;
       case 'paragraph':
         if (component.props?.isCode) {
@@ -103,6 +122,8 @@ export const generateNoteHtml = (note: any, isColorDark: (color: string) => bool
         break;
       case 'spacer':
         noteHtml += `<div style="height: 32px;"></div>\n`;
+        break;
+      default:
         break;
 
       case 'gallery':
@@ -217,6 +238,9 @@ export const generateNoteHtml = (note: any, isColorDark: (color: string) => bool
         break;
     }
   });
+
+  // Cerrar el contenedor interno del borde
+  noteHtml += `</div>\n`;
 
   // Cerrar el contenedor de la nota
   noteHtml += `</div>\n`;

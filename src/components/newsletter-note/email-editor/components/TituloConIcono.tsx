@@ -101,7 +101,6 @@ export default function TituloConIcono({
           borderRadius: '8px 8px 0 0',
           background: gradientStyle,
           cursor: 'pointer',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
         }}
       >
         <Box

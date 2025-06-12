@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client';
 
 // import type { SavedNote } from 'src/types/saved-note';
@@ -94,20 +96,6 @@ export default function NewsletterView() {
     }
   }, [openEditor, openNewsletterEditor, loadNotes, loadNewsletters]);
 
-  const handleOpenEditor = (note?: SavedNote) => {
-    if (note) {
-      setCurrentNote(note);
-    } else {
-      setCurrentNote(null);
-    }
-    setOpenEditor(true);
-  };
-
-  const handleCloseEditor = () => {
-    setOpenEditor(false);
-    setCurrentNote(null);
-  };
-
   const handleOpenNewsletterEditor = (newsletter?: Newsletter) => {
     if (newsletter) {
       setCurrentNewsletter(newsletter);
@@ -120,10 +108,6 @@ export default function NewsletterView() {
   const handleCloseNewsletterEditor = () => {
     setOpenNewsletterEditor(false);
     setCurrentNewsletter(null);
-  };
-
-  const handleDeleteNote = (noteId: string) => {
-    deleteNote(noteId);
   };
 
   const handleDeleteNewsletter = (newsletterId: string) => {

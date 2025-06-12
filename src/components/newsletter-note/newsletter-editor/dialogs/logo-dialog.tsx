@@ -1,10 +1,16 @@
-"use client"
+'use client';
 
-import { Dialog, Button, TextField, Typography, DialogTitle, DialogContent, DialogActions } from "@mui/material"
+import {
+  Dialog,
+  Button,
+  TextField,
+  Typography,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 
-import type { LogoDialogProps } from "../types"
-
-export default function LogoDialog({ open, onClose, logoUrl, setLogoUrl, onSave }: LogoDialogProps) {
+export default function LogoDialog({ open, onClose, logoUrl, setLogoUrl, onSave }: any) {
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Add Logo</DialogTitle>
@@ -27,5 +33,5 @@ export default function LogoDialog({ open, onClose, logoUrl, setLogoUrl, onSave 
         </Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }

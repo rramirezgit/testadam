@@ -256,7 +256,7 @@ export default function NewsletterContentEditor({
 
       // If the newsletter has header/footer settings, load them
       if (initialNewsletter.header) {
-        setHeader(initialNewsletter.header);
+        setHeader(initialNewsletter.header as any);
       }
 
       if (initialNewsletter.footer) {
@@ -344,7 +344,7 @@ export default function NewsletterContentEditor({
           : type === 'bulletList'
             ? { items: ['Item 1', 'Item 2', 'Item 3'] }
             : type === 'image'
-              ? { src: '/placeholder.svg', alt: 'Image' }
+              ? { src: '/assets/images/templates/news.svg', alt: 'Imagen por defecto' }
               : type === 'gallery'
                 ? {
                     layout: galleryLayout || 'single',
@@ -515,8 +515,8 @@ export default function NewsletterContentEditor({
         dateCreated: initialNewsletter?.dateCreated || new Date().toISOString(),
         dateModified: new Date().toISOString(),
         content: components,
-        header,
-        footer,
+        header: header as any,
+        footer: footer as any,
         design: {
           backgroundColor: emailBackground,
           selectedBanner,
@@ -830,13 +830,14 @@ export default function NewsletterContentEditor({
         return (
           <Box sx={componentStyle} onClick={handleClick} key={component.id}>
             <Box sx={{ mb: 2, ...(component.style || {}) }}>
-              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                {categoryItems.map((item: string, index: number) => (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {categoryItems.map((item: string, categoryIndex: number) => (
                   <div
-                    key={index}
+                    key={categoryIndex}
                     style={{
                       display: 'inline-block',
-                      backgroundColor: categoryColors[index % categoryColors.length] || '#4caf50',
+                      backgroundColor:
+                        categoryColors[categoryIndex % categoryColors.length] || '#4caf50',
                       color: 'white',
                       padding: '4px 12px',
                       borderRadius: '16px',
@@ -914,14 +915,14 @@ export default function NewsletterContentEditor({
 
               {layout === 'double' && (
                 <Grid container spacing={1}>
-                  <Grid component="div" item xs={6}>
+                  <Grid component="div" size={{ xs: 6 }}>
                     <img
                       src={images[0]?.src || '/placeholder.svg'}
                       alt={images[0]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px' }}
                     />
                   </Grid>
-                  <Grid component="div" item xs={6}>
+                  <Grid component="div" size={{ xs: 6 }}>
                     <img
                       src={images[1]?.src || '/placeholder.svg'}
                       alt={images[1]?.alt || 'Gallery image'}
@@ -933,28 +934,28 @@ export default function NewsletterContentEditor({
 
               {layout === 'grid' && (
                 <Grid container spacing={1}>
-                  <Grid component="div" item xs={6}>
+                  <Grid component="div" size={{ xs: 6 }}>
                     <img
                       src={images[0]?.src || '/placeholder.svg'}
                       alt={images[0]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px', marginBottom: '8px' }}
                     />
                   </Grid>
-                  <Grid component="div" item xs={6}>
+                  <Grid component="div" size={{ xs: 6 }}>
                     <img
                       src={images[1]?.src || '/placeholder.svg'}
                       alt={images[1]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px', marginBottom: '8px' }}
                     />
                   </Grid>
-                  <Grid component="div" item xs={6}>
+                  <Grid component="div" size={{ xs: 6 }}>
                     <img
                       src={images[2]?.src || '/placeholder.svg'}
                       alt={images[2]?.alt || 'Gallery image'}
                       style={{ width: '100%', borderRadius: '8px' }}
                     />
                   </Grid>
-                  <Grid component="div" item xs={6}>
+                  <Grid component="div" size={{ xs: 6 }}>
                     <img
                       src={images[3]?.src || '/placeholder.svg'}
                       alt={images[3]?.alt || 'Gallery image'}
@@ -1481,7 +1482,7 @@ export default function NewsletterContentEditor({
         <Box
           sx={{
             cursor: 'text',
-            '& h1': {
+            '& p': {
               margin: 0,
               marginBottom: '16px',
               fontSize: '2.125rem',
@@ -1580,7 +1581,7 @@ export default function NewsletterContentEditor({
       )}
 
       <Box sx={{ marginTop: '10px' }}>
-        {footer.socialLinks?.map((link, index) => (
+        {footer.socialLinks?.map((link, linkIndex) => (
           <React.Fragment key={link.platform}>
             <a
               href={link.url}
@@ -1590,7 +1591,7 @@ export default function NewsletterContentEditor({
             >
               {link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
             </a>
-            {index < (footer.socialLinks?.length || 0) - 1 && <span> | </span>}
+            {linkIndex < (footer.socialLinks?.length || 0) - 1 && <span> | </span>}
           </React.Fragment>
         ))}
       </Box>
@@ -1745,7 +1746,7 @@ export default function NewsletterContentEditor({
                     Add Content
                   </Typography>
                   <Grid container spacing={1} sx={{ mb: 2 }}>
-                    <Grid item xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Button
                         variant="outlined"
                         fullWidth
@@ -1756,7 +1757,7 @@ export default function NewsletterContentEditor({
                         Heading
                       </Button>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Button
                         variant="outlined"
                         fullWidth
@@ -1767,7 +1768,7 @@ export default function NewsletterContentEditor({
                         Paragraph
                       </Button>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Button
                         variant="outlined"
                         fullWidth
@@ -1778,7 +1779,7 @@ export default function NewsletterContentEditor({
                         List
                       </Button>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Button
                         variant="outlined"
                         fullWidth
@@ -1789,7 +1790,7 @@ export default function NewsletterContentEditor({
                         Button
                       </Button>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Button
                         variant="outlined"
                         fullWidth
@@ -1800,7 +1801,7 @@ export default function NewsletterContentEditor({
                         Image
                       </Button>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Button
                         variant="outlined"
                         fullWidth
@@ -1852,7 +1853,7 @@ export default function NewsletterContentEditor({
                         </MenuItem>
                       </Menu>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Button
                         variant="outlined"
                         fullWidth
@@ -1863,7 +1864,7 @@ export default function NewsletterContentEditor({
                         Divider
                       </Button>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid size={{ xs: 6 }}>
                       <Button
                         variant="outlined"
                         fullWidth
@@ -2316,7 +2317,7 @@ export default function NewsletterContentEditor({
         <DialogTitle>Edit Newsletter Header</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid component="div" item xs={12} md={6}>
+            <Grid component="div" size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Header Title"
@@ -2336,7 +2337,7 @@ export default function NewsletterContentEditor({
                   Text Alignment
                 </Typography>
                 <Grid container spacing={1}>
-                  <Grid item xs={4}>
+                  <Grid size={{ xs: 4 }}>
                     <Button
                       variant={header.alignment === 'left' ? 'contained' : 'outlined'}
                       fullWidth
@@ -2345,7 +2346,7 @@ export default function NewsletterContentEditor({
                       <Icon icon="mdi:format-align-left" />
                     </Button>
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid size={{ xs: 4 }}>
                     <Button
                       variant={header.alignment === 'center' ? 'contained' : 'outlined'}
                       fullWidth
@@ -2354,7 +2355,7 @@ export default function NewsletterContentEditor({
                       <Icon icon="mdi:format-align-center" />
                     </Button>
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid size={{ xs: 4 }}>
                     <Button
                       variant={header.alignment === 'right' ? 'contained' : 'outlined'}
                       fullWidth
@@ -2366,7 +2367,7 @@ export default function NewsletterContentEditor({
                 </Grid>
               </Box>
             </Grid>
-            <Grid component="div" item xs={12} md={6}>
+            <Grid component="div" size={{ xs: 12, md: 6 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <ColorPicker
                   color={header.backgroundColor || '#3f51b5'}
@@ -2396,7 +2397,7 @@ export default function NewsletterContentEditor({
                 {header.useGradient && (
                   <>
                     <Grid component="div" container spacing={2} sx={{ mt: 1 }}>
-                      <Grid component="div" item xs={6}>
+                      <Grid component="div" size={{ xs: 6 }}>
                         <ColorPicker
                           color={(header.gradientColors && header.gradientColors[0]) || '#3f51b5'}
                           onChange={(color) => {
@@ -2409,7 +2410,7 @@ export default function NewsletterContentEditor({
                           label="Start Color"
                         />
                       </Grid>
-                      <Grid component="div" item xs={6}>
+                      <Grid component="div" size={{ xs: 6 }}>
                         <ColorPicker
                           color={(header.gradientColors && header.gradientColors[1]) || '#757de8'}
                           onChange={(color) => {
@@ -2529,7 +2530,7 @@ export default function NewsletterContentEditor({
         <DialogTitle>Edit Newsletter Footer</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Company Name"
@@ -2559,7 +2560,7 @@ export default function NewsletterContentEditor({
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <ColorPicker
                   color={footer.backgroundColor || '#f5f5f5'}

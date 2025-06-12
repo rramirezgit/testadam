@@ -11,7 +11,7 @@ export type ConfigValue = {
   assetsDir: string;
   isStaticExport: boolean;
   auth: {
-    method: 'jwt' | 'amplify' | 'firebase' | 'supabase' | 'auth0';
+    method: 'jwt' | 'amplify' | 'firebase' | 'auth0';
     skip: boolean;
     redirectPath: string;
   };
@@ -27,7 +27,6 @@ export type ConfigValue = {
   };
   amplify: { userPoolId: string; userPoolWebClientId: string; region: string };
   auth0: { clientId: string; domain: string; callbackUrl: string };
-  supabase: { url: string; key: string };
 };
 
 // ----------------------------------------------------------------------
@@ -78,12 +77,5 @@ export const CONFIG: ConfigValue = {
     clientId: process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID ?? '',
     domain: process.env.NEXT_PUBLIC_AUTH0_DOMAIN ?? '',
     callbackUrl: process.env.NEXT_PUBLIC_AUTH0_CALLBACK_URL ?? '',
-  },
-  /**
-   * Supabase
-   */
-  supabase: {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-    key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
   },
 };

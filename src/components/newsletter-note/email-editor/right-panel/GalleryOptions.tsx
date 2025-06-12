@@ -88,7 +88,7 @@ const GalleryOptions = ({
         {Array.from({ length: getImageCount(layout) }).map((_, index) => {
           const image = images[index] || { src: '/placeholder.svg', alt: `Imagen ${index + 1}` };
           return (
-            <Grid item key={index} xs={12}>
+            <Grid size={{ xs: 12 }} key={index}>
               <Paper
                 elevation={2}
                 sx={{

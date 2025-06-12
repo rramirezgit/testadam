@@ -1,3 +1,5 @@
+/* eslint-disable consistent-return */
+
 'use client';
 
 import { useEditor, EditorContent } from '@tiptap/react';

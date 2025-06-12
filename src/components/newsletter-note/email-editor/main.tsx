@@ -4,13 +4,15 @@ import type React from 'react';
 import type { Editor } from '@tiptap/react';
 import type { SavedNote, EmailComponent } from 'src/types/saved-note';
 
-import { v4 as uuidv4 } from 'uuid';
 import { Icon } from '@iconify/react';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
-import { Box, Button, TextField } from '@mui/material';
+import { Box, Chip, Stack, Button, Avatar, Typography } from '@mui/material';
+
+import { usePost } from 'src/hooks/use-posts';
 
 import { useStore } from 'src/lib/store';
+import usePostStore from 'src/store/PostStore';
 
 import LeftPanel from './left-panel';
 import RightPanel from './right-panel';
@@ -22,6 +24,7 @@ import { CustomSnackbar } from './ui/custom-snackbar';
 import { bannerOptions } from './data/banner-options';
 import { emailTemplates } from './data/email-templates';
 import { generateEmailHtml } from './utils/generate-html';
+import { getImageStats, validateAllImagesUploaded } from './utils/imageValidation';
 import {
   newsComponents,
   plaidComponents,
@@ -36,6 +39,193 @@ import {
 } from './data/template-components';
 
 import type { ComponentType } from './types';
+
+// ⚡ OPTIMIZACIÓN: Componente SaveNoteDialog para evitar duplicación
+interface SaveNoteDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  noteTitle: string;
+  noteDescription?: string;
+  noteCoverImageUrl?: string;
+  imageStats?: {
+    total: number;
+    uploaded: number;
+    pending: number;
+    isAllUploaded: boolean;
+    pendingUrls: string[];
+  };
+}
+
+const SaveNoteDialog: React.FC<SaveNoteDialogProps> = ({
+  open,
+  onClose: handleClose,
+  onSave: handleSave,
+  noteTitle,
+  noteDescription = '',
+  noteCoverImageUrl = '',
+  imageStats,
+}) => {
+  const handleSaveClick = () => {
+    handleSave();
+  };
+
+  const canSave = noteTitle.trim() && (!imageStats || imageStats.isAllUploaded);
+
+  return (
+    <CustomDialog
+      open={open}
+      onClose={handleClose}
+      title="Guardar Nota"
+      actions={
+        <>
+          <Button onClick={handleClose} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleSaveClick} color="primary" variant="contained" disabled={!canSave}>
+            Guardar
+          </Button>
+        </>
+      }
+    >
+      <Box sx={{ minWidth: 400 }}>
+        {/* Panel de información de la nota */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontSize: '1rem', fontWeight: 600 }}>
+            Información de la Nota
+          </Typography>
+
+          <Stack spacing={2}>
+            {/* Título */}
+            <Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  icon={<Icon icon="mdi:text-box-outline" />}
+                  label={noteTitle ? `Título: ${noteTitle}` : 'Sin título'}
+                  color={noteTitle ? 'success' : 'warning'}
+                  variant={noteTitle ? 'filled' : 'outlined'}
+                  size="small"
+                />
+              </Stack>
+            </Box>
+
+            {/* Descripción */}
+            <Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  icon={<Icon icon="mdi:text-subject" />}
+                  label={noteDescription ? 'Descripción agregada' : 'Sin descripción'}
+                  color={noteDescription ? 'success' : 'warning'}
+                  variant={noteDescription ? 'filled' : 'outlined'}
+                  size="small"
+                />
+              </Stack>
+              {noteDescription && (
+                <Box sx={{ mt: 1, p: 2, backgroundColor: '#f8f9fa', borderRadius: 1 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                    <strong>Descripción:</strong> {noteDescription}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Imagen de portada */}
+            <Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Chip
+                  icon={<Icon icon="mdi:image-outline" />}
+                  label={noteCoverImageUrl ? 'Imagen de portada agregada' : 'Sin imagen de portada'}
+                  color={noteCoverImageUrl ? 'success' : 'warning'}
+                  variant={noteCoverImageUrl ? 'filled' : 'outlined'}
+                  size="small"
+                />
+                {/* Vista previa de la imagen si existe */}
+                {noteCoverImageUrl && (
+                  <Avatar
+                    src={noteCoverImageUrl}
+                    alt="Portada"
+                    sx={{ width: 32, height: 32 }}
+                    variant="rounded"
+                  />
+                )}
+              </Stack>
+            </Box>
+
+            {/* Estado de imágenes en el contenido */}
+            {imageStats && imageStats.total > 0 && (
+              <Box>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Chip
+                    icon={<Icon icon="mdi:image-multiple-outline" />}
+                    label={`Imágenes: ${imageStats.uploaded}/${imageStats.total} en S3`}
+                    color={imageStats.isAllUploaded ? 'success' : 'error'}
+                    variant={imageStats.isAllUploaded ? 'filled' : 'outlined'}
+                    size="small"
+                  />
+                </Stack>
+                {!imageStats.isAllUploaded && (
+                  <Box
+                    sx={{
+                      mt: 1,
+                      p: 2,
+                      backgroundColor: '#ffebee',
+                      borderRadius: 1,
+                      border: '1px solid #f44336',
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      color="error"
+                      sx={{ fontSize: '0.875rem', fontWeight: 600 }}
+                    >
+                      ⚠️ {imageStats.pending} imagen(es) sin subir a S3
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontSize: '0.8rem', mt: 0.5 }}
+                    >
+                      Sube todas las imágenes usando el botón &quot;Subir a S3&quot; en el panel de
+                      opciones antes de guardar.
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {/* Mensaje de ayuda si falta información */}
+            {(!noteTitle ||
+              !noteDescription ||
+              !noteCoverImageUrl ||
+              (imageStats && !imageStats.isAllUploaded)) && (
+              <Box
+                sx={{
+                  p: 2,
+                  backgroundColor: imageStats && !imageStats.isAllUploaded ? '#ffebee' : '#fff3cd',
+                  borderRadius: 1,
+                  border:
+                    imageStats && !imageStats.isAllUploaded
+                      ? '1px solid #f44336'
+                      : '1px solid #ffeaa7',
+                }}
+              >
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                  <Icon
+                    icon="mdi:information-outline"
+                    style={{ marginRight: '0.5rem', verticalAlign: 'middle' }}
+                  />
+                  {imageStats && !imageStats.isAllUploaded
+                    ? 'Sube todas las imágenes a S3 antes de guardar la nota.'
+                    : 'Completa la información en el panel derecho (pestaña de Información Básica) para optimizar tu nota.'}
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        </Box>
+      </Box>
+    </CustomDialog>
+  );
+};
 
 // Update the interface to include initialNote, isNewsletterMode, and onSave
 interface EmailEditorProps {
@@ -62,6 +252,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<string>('contenido');
   const [activeTemplate, setActiveTemplate] = useState('blank'); // Cambiar a 'blank' por defecto
+
+  // Debug: Log del activeTemplate cuando cambie
+  console.log('🔍 EmailEditorMain - activeTemplate state:', activeTemplate);
   const [editMode, setEditMode] = useState(true);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,6 +293,12 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 
   // Estado para la versión activa (newsletter o web)
   const [activeVersion, setActiveVersion] = useState<'newsletter' | 'web'>('newsletter');
+
+  // Estados para la información de la nota
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteDescription, setNoteDescription] = useState('');
+  const [noteCoverImageUrl, setNoteCoverImageUrl] = useState('');
+  const [noteStatus, setNoteStatus] = useState('DRAFT');
 
   // Use Zustand store
   const { addNote, updateNote, addSelectedNote } = useStore();
@@ -149,9 +348,33 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   // Estado para el selector de iconos
   const [showIconPicker, setShowIconPicker] = useState(false);
 
+  // Estados para paneles redimensionables
+  const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Ancho inicial
+  const [rightPanelWidth, setRightPanelWidth] = useState(320); // Ancho inicial
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
+
+  // Configuración de límites para los paneles
+  const MIN_PANEL_WIDTH = 280;
+  const MAX_PANEL_WIDTH = 500;
+
   // Estado para la sincronización automática
   const [syncEnabled, setSyncEnabled] = useState<boolean>(false);
   const [lastSyncedVersion, setLastSyncedVersion] = useState<'newsletter' | 'web' | null>(null);
+
+  // Estados para el diseño del borde del contenedor principal
+  const [isContainerSelected, setIsContainerSelected] = useState(false);
+  const [containerBorderWidth, setContainerBorderWidth] = useState(1);
+  const [containerBorderColor, setContainerBorderColor] = useState('#e0e0e0');
+  const [containerBorderRadius, setContainerBorderRadius] = useState(12);
+  const [containerPadding, setContainerPadding] = useState(10);
+  const [containerMaxWidth, setContainerMaxWidth] = useState(560);
+
+  // PostStore integration
+  const { create: createPost, update: updatePost } = usePostStore();
+
+  // Hook para cargar post específico si es edición
+  const { loading: loadingPost, post: currentPost } = usePost(currentNoteId);
 
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = () => {
@@ -245,42 +468,52 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     }
   };
 
-  // Actualizar el contenido de un componente con sincronización
-  const updateComponentContent = (id: string, content: string) => {
-    const components = getActiveComponents();
-    const updatedComponents = components.map((component) =>
-      component.id === id ? { ...component, content } : component
-    );
-    updateActiveComponents(updatedComponents);
+  // ⚡ Optimización: Actualizar el contenido de un componente con sincronización
+  const updateComponentContent = useCallback(
+    (id: string, content: string) => {
+      const components = getActiveComponents();
 
-    // Si la sincronización automática está activa, actualizar también en la otra versión
-    if (syncEnabled) {
-      const otherVersion = activeVersion === 'newsletter' ? 'web' : 'newsletter';
-      const suffix = id.endsWith('-web') ? '-web' : '';
-      const baseId = suffix ? id.slice(0, -suffix.length) : id;
-      const otherVersionId = otherVersion === 'web' ? `${baseId}-web` : baseId;
-
-      // Obtener componentes de la otra versión
-      const otherVersionComponents = getOtherVersionComponents(otherVersion);
-
-      // Verificar si el componente existe en la otra versión
-      const componentExists = otherVersionComponents.some((comp) => comp.id === otherVersionId);
-
-      if (componentExists) {
-        // Actualizar el componente correspondiente en la otra versión
-        const updatedOtherVersionComponents = otherVersionComponents.map((component) =>
-          component.id === otherVersionId ? { ...component, content } : component
-        );
-
-        // Guardar los componentes actualizados
-        updateOtherVersionComponents(otherVersion, updatedOtherVersionComponents);
-
-        // Mostrar notificación sutil
-        showSyncNotification(activeVersion, otherVersion);
+      // Solo actualizar si el contenido realmente cambió
+      const currentComponent = components.find((comp) => comp.id === id);
+      if (currentComponent && currentComponent.content === content) {
+        return; // No hay cambios, evitar re-render
       }
-      // Importante: No creamos nuevos componentes en la otra versión si no existen
-    }
-  };
+
+      const updatedComponents = components.map((component) =>
+        component.id === id ? { ...component, content } : component
+      );
+      updateActiveComponents(updatedComponents);
+
+      // Si la sincronización automática está activa, actualizar también en la otra versión
+      if (syncEnabled) {
+        const otherVersion = activeVersion === 'newsletter' ? 'web' : 'newsletter';
+        const suffix = id.endsWith('-web') ? '-web' : '';
+        const baseId = suffix ? id.slice(0, -suffix.length) : id;
+        const otherVersionId = otherVersion === 'web' ? `${baseId}-web` : baseId;
+
+        // Obtener componentes de la otra versión
+        const otherVersionComponents = getOtherVersionComponents(otherVersion);
+
+        // Verificar si el componente existe en la otra versión
+        const componentExists = otherVersionComponents.some((comp) => comp.id === otherVersionId);
+
+        if (componentExists) {
+          // Actualizar el componente correspondiente en la otra versión
+          const updatedOtherVersionComponents = otherVersionComponents.map((component) =>
+            component.id === otherVersionId ? { ...component, content } : component
+          );
+
+          // Guardar los componentes actualizados
+          updateOtherVersionComponents(otherVersion, updatedOtherVersionComponents);
+
+          // Mostrar notificación sutil
+          showSyncNotification(activeVersion, otherVersion);
+        }
+        // Importante: No creamos nuevos componentes en la otra versión si no existen
+      }
+    },
+    [getActiveComponents, updateActiveComponents, syncEnabled, activeVersion]
+  );
 
   // Actualizar las propiedades de un componente con sincronización
   const updateComponentProps = (id: string, props: Record<string, any>) => {
@@ -737,6 +970,55 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     setOpenSnackbar(true);
   };
 
+  // Funciones para el redimensionado de paneles
+  const handleMouseDownLeft = () => {
+    setIsResizingLeft(true);
+  };
+
+  const handleMouseDownRight = () => {
+    setIsResizingRight(true);
+  };
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isResizingLeft) {
+        const newWidth = Math.min(Math.max(e.clientX, MIN_PANEL_WIDTH), MAX_PANEL_WIDTH);
+        setLeftPanelWidth(newWidth);
+      }
+      if (isResizingRight) {
+        const newWidth = Math.min(
+          Math.max(window.innerWidth - e.clientX, MIN_PANEL_WIDTH),
+          MAX_PANEL_WIDTH
+        );
+        setRightPanelWidth(newWidth);
+      }
+    },
+    [isResizingLeft, isResizingRight, MIN_PANEL_WIDTH, MAX_PANEL_WIDTH]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizingLeft(false);
+    setIsResizingRight(false);
+  }, []);
+
+  // Effect para manejar eventos globales de mouse
+  useEffect(() => {
+    if (isResizingLeft || isResizingRight) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+    }
+    return undefined;
+  }, [isResizingLeft, isResizingRight, handleMouseMove, handleMouseUp]);
+
   // Función de utilidad para mostrar una notificación de sincronización
   const showSyncNotification = (
     fromVersion: 'newsletter' | 'web',
@@ -877,88 +1159,138 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   ]);
 
   // Add this function to handle saving notes
-  const handleSaveNote = (title: string) => {
-    // Create a note object with the current state
-    const noteId = currentNoteId || uuidv4();
+  const handleSaveNote = async () => {
+    try {
+      // Validaciones
+      if (!noteTitle.trim()) {
+        setSnackbarMessage('El título es obligatorio');
+        setSnackbarSeverity('error');
+        setOpenSnackbar(true);
+        return;
+      }
 
-    // Guardar los componentes según la versión activa
-    let objdata = notionComponentsState;
-    let objdataWeb = notionComponentsWebState;
+      // Obtener componentes según la plantilla activa
+      let objdata = notionComponentsState;
+      let objdataWeb = notionComponentsWebState;
 
-    switch (activeTemplate) {
-      case 'news':
-        objdata = newsComponentsState;
-        objdataWeb = newsComponentsWebState;
-        break;
-      case 'notion':
-        objdata = notionComponentsState;
-        objdataWeb = notionComponentsWebState;
-        break;
-      case 'plaid':
-        objdata = plaidComponentsState;
-        objdataWeb = plaidComponentsWebState;
-        break;
-      case 'stripe':
-        objdata = stripeComponentsState;
-        objdataWeb = stripeComponentsWebState;
-        break;
-      case 'vercel':
-        objdata = vercelComponentsState;
-        objdataWeb = vercelComponentsWebState;
-        break;
-      case 'blank':
-        objdata = blankComponentsState;
-        objdataWeb = blankComponentsWebState;
-        break;
-      default:
-        break;
+      switch (activeTemplate) {
+        case 'news':
+          objdata = newsComponentsState;
+          objdataWeb = newsComponentsWebState;
+          break;
+        case 'notion':
+          objdata = notionComponentsState;
+          objdataWeb = notionComponentsWebState;
+          break;
+        case 'plaid':
+          objdata = plaidComponentsState;
+          objdataWeb = plaidComponentsWebState;
+          break;
+        case 'stripe':
+          objdata = stripeComponentsState;
+          objdataWeb = stripeComponentsWebState;
+          break;
+        case 'vercel':
+          objdata = vercelComponentsState;
+          objdataWeb = vercelComponentsWebState;
+          break;
+        case 'blank':
+          objdata = blankComponentsState;
+          objdataWeb = blankComponentsWebState;
+          break;
+        default:
+          break;
+      }
+
+      // 🔍 NUEVA VALIDACIÓN: Verificar que todas las imágenes estén subidas a S3
+      const objDataString = JSON.stringify(objdata);
+      const objDataWebString = JSON.stringify(objdataWeb);
+
+      const imageValidation = validateAllImagesUploaded(objDataString, objDataWebString);
+
+      if (!imageValidation.isValid) {
+        const imageStats = getImageStats(objDataString, objDataWebString);
+        setSnackbarMessage(
+          `⚠️ Hay ${imageStats.pending} imagen(es) sin subir a S3. Sube todas las imágenes antes de guardar.`
+        );
+        setSnackbarSeverity('warning');
+        setOpenSnackbar(true);
+
+        // Log detallado para debugging
+        console.log('🚫 Guardado bloqueado por imágenes pendientes:');
+        console.log('📊 Estadísticas de imágenes:', imageStats);
+        console.log('🔗 URLs pendientes:', imageValidation.pendingImages);
+        return;
+      }
+
+      // Crear objeto de configuración
+      const configPostObject = {
+        templateType: activeTemplate,
+        dateCreated: currentNoteId ? '' : new Date().toISOString(),
+        dateModified: new Date().toISOString(),
+        emailBackground,
+        selectedBanner,
+        showGradient,
+        gradientColors,
+        activeVersion,
+        containerBorderWidth,
+        containerBorderColor,
+        containerBorderRadius,
+        containerPadding,
+        containerMaxWidth,
+      };
+
+      // Preparar datos para el POST/PATCH
+      const postData = {
+        title: noteTitle.trim(),
+        description: noteDescription || '',
+        coverImageUrl: noteCoverImageUrl || '',
+        objData: objDataString,
+        objDataWeb: objDataWebString,
+        configPost: JSON.stringify(configPostObject),
+        origin: 'ADAC',
+        highlight: false,
+      };
+
+      let result;
+
+      if (isEditingExistingNote && currentNoteId) {
+        // Actualizar post existente
+        result = await updatePost(currentNoteId, postData);
+      } else {
+        // Crear nuevo post
+        result = await createPost(postData);
+        if (result) {
+          setCurrentNoteId(result.id);
+          setIsEditingExistingNote(true);
+        }
+      }
+
+      if (result) {
+        // Log de éxito con estadísticas de imágenes
+        const finalImageStats = getImageStats(objDataString, objDataWebString);
+        console.log('✅ Nota guardada exitosamente');
+        console.log('📊 Imágenes en la nota:', finalImageStats);
+
+        // Show success message
+        const successMessage =
+          finalImageStats.total > 0
+            ? `Nota ${isEditingExistingNote ? 'actualizada' : 'guardada'} correctamente con ${finalImageStats.total} imagen(es) en S3`
+            : `Nota ${isEditingExistingNote ? 'actualizada' : 'guardada'} correctamente`;
+
+        setSnackbarMessage(successMessage);
+        setSnackbarSeverity('success');
+        setOpenSnackbar(true);
+        setOpenSaveDialog(false);
+      } else {
+        throw new Error('No se pudo guardar la nota');
+      }
+    } catch (error) {
+      console.error('Error saving note:', error);
+      setSnackbarMessage('Error al guardar la nota');
+      setSnackbarSeverity('error');
+      setOpenSnackbar(true);
     }
-
-    const note: SavedNote = {
-      id: noteId,
-      title,
-      templateType: activeTemplate,
-      dateCreated: currentNoteId ? '' : new Date().toISOString(),
-      dateModified: new Date().toISOString(),
-      objdata,
-      objdataWeb,
-      emailBackground,
-      selectedBanner,
-      showGradient,
-      gradientColors,
-      activeVersion,
-    };
-
-    // If in newsletter mode, call the onSave callback
-    if (isNewsletterMode && onSave) {
-      onSave(note);
-      onClose();
-      return;
-    }
-
-    // Use Zustand store to save the note
-    if (isEditingExistingNote) {
-      updateNote(note);
-    } else {
-      addNote(note);
-
-      // Also add to selected notes for newsletter
-      addSelectedNote({
-        noteId: note.id,
-        order: 0,
-        noteData: note,
-      });
-    }
-
-    // Update current note ID
-    setCurrentNoteId(noteId);
-    setIsEditingExistingNote(true);
-
-    // Show success message
-    setSnackbarMessage(`Note ${currentNoteId ? 'updated' : 'saved'} successfully`);
-    setSnackbarSeverity('success');
-    setOpenSnackbar(true);
-    setOpenSaveDialog(false);
   };
 
   // Add this function to load an existing note
@@ -967,119 +1299,158 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     setCurrentNoteId(note.id);
     setIsEditingExistingNote(true);
 
+    // Parse the configNote JSON string
+    const configNote = JSON.parse(note.configNote);
+
+    // Parse the objData JSON strings
+    const objDataParsed = JSON.parse(note.objData);
+    const objDataWebParsed = note.objDataWeb ? JSON.parse(note.objDataWeb) : null;
+
     // Set the template type
-    setActiveTemplate(note.templateType || 'notion');
+    setActiveTemplate(configNote.templateType || 'notion');
 
     // Set active version if available
-    if (note.activeVersion) {
-      setActiveVersion(note.activeVersion);
+    if (configNote.activeVersion) {
+      setActiveVersion(configNote.activeVersion);
     }
 
     // Load the components for newsletter version
-    switch (note.templateType) {
+    switch (configNote.templateType) {
       case 'blank':
-        setBlankComponents(note.objdata);
-        if (note.objdataWeb) setBlankComponentsWeb(note.objdataWeb);
+        setBlankComponents(objDataParsed);
+        if (objDataWebParsed) setBlankComponentsWeb(objDataWebParsed);
         break;
       case 'news':
-        setNewsComponents(note.objdata);
-        if (note.objdataWeb) setNewsComponentsWeb(note.objdataWeb);
+        setNewsComponents(objDataParsed);
+        if (objDataWebParsed) setNewsComponentsWeb(objDataWebParsed);
         break;
       case 'notion':
-        setNotionComponents(note.objdata);
-        if (note.objdataWeb) setNotionComponentsWeb(note.objdataWeb);
+        setNotionComponents(objDataParsed);
+        if (objDataWebParsed) setNotionComponentsWeb(objDataWebParsed);
         break;
       case 'plaid':
-        setPlaidComponents(note.objdata);
-        if (note.objdataWeb) setPlaidComponentsWeb(note.objdataWeb);
+        setPlaidComponents(objDataParsed);
+        if (objDataWebParsed) setPlaidComponentsWeb(objDataWebParsed);
         break;
       case 'stripe':
-        setStripeComponents(note.objdata);
-        if (note.objdataWeb) setStripeComponentsWeb(note.objdataWeb);
+        setStripeComponents(objDataParsed);
+        if (objDataWebParsed) setStripeComponentsWeb(objDataWebParsed);
         break;
       case 'vercel':
-        setVercelComponents(note.objdata);
-        if (note.objdataWeb) setVercelComponentsWeb(note.objdataWeb);
+        setVercelComponents(objDataParsed);
+        if (objDataWebParsed) setVercelComponentsWeb(objDataWebParsed);
         break;
       default:
         // Default to notion if template type is unknown
-        setNotionComponents(note.objdata);
-        if (note.objdataWeb) setNotionComponentsWeb(note.objdataWeb);
+        setNotionComponents(objDataParsed);
+        if (objDataWebParsed) setNotionComponentsWeb(objDataWebParsed);
         setActiveTemplate('notion');
     }
 
     // Set background settings
-    setEmailBackground(note.emailBackground || '#ffffff');
-    setSelectedBanner(note.selectedBanner || null);
-    setShowGradient(note.showGradient || false);
-    setGradientColors(note.gradientColors || ['#f6f9fc', '#e9f2ff']);
+    setEmailBackground(configNote.emailBackground || '#ffffff');
+    setSelectedBanner(configNote.selectedBanner || null);
+    setShowGradient(configNote.showGradient || false);
+    setGradientColors(configNote.gradientColors || ['#f6f9fc', '#e9f2ff']);
+
+    // Set container settings
+    setContainerBorderWidth(configNote.containerBorderWidth ?? 1);
+    setContainerBorderColor(configNote.containerBorderColor ?? '#e0e0e0');
+    setContainerBorderRadius(configNote.containerBorderRadius ?? 12);
+    setContainerPadding(configNote.containerPadding ?? 10);
+    setContainerMaxWidth(configNote.containerMaxWidth ?? 560);
   };
 
   // Cargar la nota inicial si existe
   useEffect(() => {
-    if (initialNote) {
-      loadNote(initialNote);
+    if (initialNote && initialNote.id) {
+      // Si tenemos una nota inicial, configurar para edición y cargar por ID
+      setCurrentNoteId(initialNote.id);
+      setIsEditingExistingNote(true);
+      setNoteTitle(initialNote.title || '');
+
+      // Si es una nota legacy (SavedNote), cargar de la forma anterior
+      if (initialNote.configNote) {
+        loadNote(initialNote);
+      }
+      // Si es desde el PostStore, el useEffect de currentPost se encargará de cargarla
     }
   }, [initialNote]);
 
-  // Modificar handleSelectionUpdate para detectar selección de texto
-  const handleSelectionUpdate = (editor: Editor) => {
-    setActiveEditor(editor);
+  // ⚡ Optimización: handleSelectionUpdate con debouncing y optimizaciones
+  const handleSelectionUpdate = useCallback(
+    (editor: Editor) => {
+      // Usar requestAnimationFrame para diferir actualizaciones pesadas
+      requestAnimationFrame(() => {
+        setActiveEditor(editor);
 
-    // Verificar si hay texto seleccionado
-    const { from, to } = editor.state.selection;
-    setHasTextSelection(from !== to);
+        // Verificar si hay texto seleccionado
+        const { from, to } = editor.state.selection;
+        const hasSelection = from !== to;
+        setHasTextSelection(hasSelection);
 
-    // Actualizar los controles de formato basados en el estado del editor
-    if (editor) {
-      const newFormats = [];
-      if (editor.isActive('bold')) newFormats.push('bold');
-      if (editor.isActive('italic')) newFormats.push('italic');
-      if (editor.isActive('underline')) newFormats.push('underlined');
-      if (editor.isActive('strike')) newFormats.push('strikethrough');
+        // Solo actualizar formatos si hay cambios significativos
+        if (editor) {
+          const newFormats = [];
+          if (editor.isActive('bold')) newFormats.push('bold');
+          if (editor.isActive('italic')) newFormats.push('italic');
+          if (editor.isActive('underline')) newFormats.push('underlined');
+          if (editor.isActive('strike')) newFormats.push('strikethrough');
 
-      // Importante: actualizar el estado con los nuevos formatos
-      setTextFormat(newFormats);
+          // Solo actualizar si hay cambios
+          setTextFormat((prevFormats) => {
+            if (JSON.stringify(prevFormats) !== JSON.stringify(newFormats)) {
+              return newFormats;
+            }
+            return prevFormats;
+          });
 
-      // Actualizar alineación
-      let newAlignment = 'left';
-      if (editor.isActive({ textAlign: 'center' })) newAlignment = 'center';
-      else if (editor.isActive({ textAlign: 'right' })) newAlignment = 'right';
-      else if (editor.isActive({ textAlign: 'justify' })) newAlignment = 'justify';
+          // Actualizar alineación solo si cambió
+          let newAlignment = 'left';
+          if (editor.isActive({ textAlign: 'center' })) newAlignment = 'center';
+          else if (editor.isActive({ textAlign: 'right' })) newAlignment = 'right';
+          else if (editor.isActive({ textAlign: 'justify' })) newAlignment = 'justify';
 
-      // Actualizar el estado de alineación
-      setSelectedAlignment(newAlignment);
+          setSelectedAlignment((prevAlignment) => {
+            if (prevAlignment !== newAlignment) {
+              return newAlignment;
+            }
+            return prevAlignment;
+          });
 
-      // Actualizar color si está disponible
-      const marks = editor.getAttributes('textStyle');
-      if (marks.color) {
-        setSelectedColor(marks.color);
-      }
+          // Actualizar atributos de texto de forma optimizada
+          const marks = editor.getAttributes('textStyle');
+          if (marks.color) {
+            setSelectedColor((prevColor) => {
+              if (prevColor !== marks.color) {
+                return marks.color;
+              }
+              return prevColor;
+            });
+          }
 
-      // Actualizar fuente y tamaño si están disponibles
-      if (marks.fontFamily) {
-        setSelectedFont(marks.fontFamily);
-      }
+          if (marks.fontFamily) {
+            setSelectedFont((prevFont) => {
+              if (prevFont !== marks.fontFamily) {
+                return marks.fontFamily;
+              }
+              return prevFont;
+            });
+          }
 
-      // Actualizar peso de fuente
-      const textStyle = editor.getAttributes('textStyle');
-      if (textStyle.fontWeight) {
-        setSelectedFontWeight(textStyle.fontWeight);
-      }
-
-      // Verificar si el componente seleccionado es una lista
-      if (selectedComponentId) {
-        const components = getActiveComponents();
-        const component = components.find((comp) => comp.id === selectedComponentId);
-
-        if (component && component.type === 'bulletList') {
-          // Actualizar los estados de estilo de lista
-          setListStyle((component.props.listStyle || 'disc') as any);
-          setListColor(component.props.listColor || '#000000');
+          if (marks.fontWeight) {
+            setSelectedFontWeight((prevWeight) => {
+              if (prevWeight !== marks.fontWeight) {
+                return marks.fontWeight;
+              }
+              return prevWeight;
+            });
+          }
         }
-      }
-    }
-  };
+      });
+    },
+    [selectedComponentId, getActiveComponents]
+  );
 
   // Aplicar formato al texto seleccionado
   const applyTextFormat = (format: string) => {
@@ -1175,7 +1546,12 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         bannerOptions,
         emailBackground,
         showGradient,
-        gradientColors
+        gradientColors,
+        containerBorderWidth,
+        containerBorderColor,
+        containerBorderRadius,
+        containerPadding,
+        containerMaxWidth
       );
 
       setEmailHtml(html);
@@ -1294,6 +1670,22 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   };
 
   // Modificar la función convertTextToList para limpiar el HTML
+  // Función para manejar la selección del contenedor principal
+  const handleContainerSelect = () => {
+    console.log('🎨 Contenedor principal seleccionado');
+    setIsContainerSelected(true);
+    setSelectedComponentId(null); // Deseleccionar cualquier componente
+    setRightPanelTab(0); // Ir a la primera pestaña que mostrará las opciones del contenedor
+  };
+
+  // Función para manejar la selección de componentes (deselecciona el contenedor)
+  const handleComponentSelect = (componentId: string | null) => {
+    setSelectedComponentId(componentId);
+    if (componentId) {
+      setIsContainerSelected(false); // Deseleccionar el contenedor cuando se selecciona un componente
+    }
+  };
+
   const convertTextToList = (componentId: string | null, listType: 'ordered' | 'unordered') => {
     if (!componentId) return;
 
@@ -1355,6 +1747,93 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     }
   };
 
+  // Cargar datos del post cuando se edite una nota existente
+  useEffect(() => {
+    if (currentPost && isEditingExistingNote) {
+      setNoteTitle(currentPost.title || '');
+      setNoteDescription(currentPost.description || '');
+      setNoteCoverImageUrl(currentPost.coverImageUrl || '');
+      setNoteStatus(currentPost.status || 'DRAFT');
+
+      // También cargar los datos del editor si existen
+      if (currentPost.objData) {
+        try {
+          const objDataParsed = JSON.parse(currentPost.objData);
+          const objDataWebParsed = currentPost.objDataWeb
+            ? JSON.parse(currentPost.objDataWeb)
+            : null;
+          const configPost = currentPost.configPost ? JSON.parse(currentPost.configPost) : {};
+
+          // Cargar los componentes según el template
+          loadPostComponents(
+            configPost.templateType || 'blank',
+            objDataParsed,
+            objDataWebParsed,
+            configPost
+          );
+        } catch (error) {
+          console.error('Error parsing post data:', error);
+        }
+      }
+    }
+  }, [currentPost, isEditingExistingNote]);
+
+  // Función auxiliar para cargar componentes del post
+  const loadPostComponents = (templateType: string, objData: any, objDataWeb: any, config: any) => {
+    // Set the template type
+    setActiveTemplate(templateType);
+
+    // Set active version if available
+    if (config.activeVersion) {
+      setActiveVersion(config.activeVersion);
+    }
+
+    // Load the components for newsletter version
+    switch (templateType) {
+      case 'blank':
+        setBlankComponents(objData);
+        if (objDataWeb) setBlankComponentsWeb(objDataWeb);
+        break;
+      case 'news':
+        setNewsComponents(objData);
+        if (objDataWeb) setNewsComponentsWeb(objDataWeb);
+        break;
+      case 'notion':
+        setNotionComponents(objData);
+        if (objDataWeb) setNotionComponentsWeb(objDataWeb);
+        break;
+      case 'plaid':
+        setPlaidComponents(objData);
+        if (objDataWeb) setPlaidComponentsWeb(objDataWeb);
+        break;
+      case 'stripe':
+        setStripeComponents(objData);
+        if (objDataWeb) setStripeComponentsWeb(objDataWeb);
+        break;
+      case 'vercel':
+        setVercelComponents(objData);
+        if (objDataWeb) setVercelComponentsWeb(objDataWeb);
+        break;
+      default:
+        setNotionComponents(objData);
+        if (objDataWeb) setNotionComponentsWeb(objDataWeb);
+        setActiveTemplate('notion');
+    }
+
+    // Set background settings
+    setEmailBackground(config.emailBackground || '#ffffff');
+    setSelectedBanner(config.selectedBanner || null);
+    setShowGradient(config.showGradient || false);
+    setGradientColors(config.gradientColors || ['#f6f9fc', '#e9f2ff']);
+
+    // Set container settings
+    setContainerBorderWidth(config.containerBorderWidth ?? 1);
+    setContainerBorderColor(config.containerBorderColor ?? '#e0e0e0');
+    setContainerBorderRadius(config.containerBorderRadius ?? 12);
+    setContainerPadding(config.containerPadding ?? 10);
+    setContainerMaxWidth(config.containerMaxWidth ?? 560);
+  };
+
   return (
     <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
       {/* Barra de navegación superior */}
@@ -1363,12 +1842,14 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         isEditingExistingNote={isEditingExistingNote}
         initialNote={initialNote}
         activeVersion={activeVersion}
+        activeTemplate={activeTemplate}
         handleVersionChange={handleVersionChange}
         openSaveDialog={() => setOpenSaveDialog(true)}
         syncEnabled={syncEnabled}
         toggleSync={toggleSync}
         transferToWeb={transferToWeb}
         transferToNewsletter={transferToNewsletter}
+        noteStatus={noteStatus}
       />
 
       {/* Aviso de sincronización automática */}
@@ -1395,21 +1876,50 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       {/* Contenedor principal */}
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         {/* Panel izquierdo - Componentes */}
-        <LeftPanel
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          expandedCategories={expandedCategories}
-          setExpandedCategories={setExpandedCategories}
-          addComponent={addComponent}
-          emailTemplates={emailTemplates}
-          activeTemplate={activeTemplate}
-          setActiveTemplate={setActiveTemplate}
-          generatingEmail={generatingEmail}
-          handleGenerateEmailHtml={handleGenerateEmailHtml}
-          setOpenSaveDialog={setOpenSaveDialog}
-          activeVersion={activeVersion}
-          setActiveVersion={handleVersionChange}
-        />
+        <Box
+          sx={{
+            width: `${leftPanelWidth}px`,
+            minWidth: `${MIN_PANEL_WIDTH}px`,
+            maxWidth: `${MAX_PANEL_WIDTH}px`,
+            flexShrink: 0,
+            borderRight: '1px solid #e0e0e0',
+            position: 'relative',
+          }}
+        >
+          <LeftPanel
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            expandedCategories={expandedCategories}
+            setExpandedCategories={setExpandedCategories}
+            addComponent={addComponent}
+            emailTemplates={emailTemplates}
+            activeTemplate={activeTemplate}
+            setActiveTemplate={setActiveTemplate}
+            generatingEmail={generatingEmail}
+            handleGenerateEmailHtml={handleGenerateEmailHtml}
+            setOpenSaveDialog={setOpenSaveDialog}
+            activeVersion={activeVersion}
+            setActiveVersion={handleVersionChange}
+          />
+
+          {/* Barra de redimensionado izquierda */}
+          <Box
+            onMouseDown={handleMouseDownLeft}
+            sx={{
+              position: 'absolute',
+              top: 0,
+              right: -2,
+              width: '4px',
+              height: '100%',
+              cursor: 'col-resize',
+              backgroundColor: 'transparent',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.1)',
+              },
+              zIndex: 1,
+            }}
+          />
+        </Box>
 
         {/* Área central - Editor de email */}
         <Box
@@ -1420,7 +1930,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           <EmailContent
             getActiveComponents={getActiveComponents}
             selectedComponentId={selectedComponentId}
-            setSelectedComponentId={setSelectedComponentId}
+            setSelectedComponentId={handleComponentSelect}
             updateComponentContent={updateComponentContent}
             updateComponentProps={updateComponentProps}
             updateComponentStyle={updateComponentStyle}
@@ -1437,51 +1947,111 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             emailBackground={emailBackground}
             showGradient={showGradient}
             gradientColors={gradientColors}
+            onContainerClick={handleContainerSelect}
+            isContainerSelected={isContainerSelected}
+            containerBorderWidth={containerBorderWidth}
+            containerBorderColor={containerBorderColor}
+            containerBorderRadius={containerBorderRadius}
+            containerPadding={containerPadding}
+            containerMaxWidth={containerMaxWidth}
+            activeTemplate={activeTemplate}
+            activeVersion={activeVersion}
           />
         </Box>
 
         {/* Panel derecho - Formato y estilo */}
-        <RightPanel
-          selectedComponentId={selectedComponentId}
-          rightPanelTab={rightPanelTab}
-          setRightPanelTab={setRightPanelTab}
-          getActiveComponents={getActiveComponents}
-          updateComponentProps={updateComponentProps}
-          updateComponentStyle={updateComponentStyle}
-          updateComponentContent={updateComponentContent}
-          selectedColor={selectedColor}
-          setSelectedColor={setSelectedColor}
-          selectedFont={selectedFont}
-          setSelectedFont={setSelectedFont}
-          selectedFontSize={selectedFontSize}
-          setSelectedFontSize={setSelectedFontSize}
-          selectedFontWeight={selectedFontWeight}
-          setSelectedFontWeight={setSelectedFontWeight}
-          selectedAlignment={selectedAlignment}
-          setSelectedAlignment={setSelectedAlignment}
-          textFormat={textFormat}
-          applyTextFormat={applyTextFormat}
-          applyTextAlignment={applyTextAlignment}
-          applyTextColor={applyTextColor}
-          applyFontSize={applyFontSize}
-          applyFontFamily={applyFontFamily}
-          emailBackground={emailBackground}
-          setEmailBackground={setEmailBackground}
-          selectedBanner={selectedBanner}
-          setSelectedBanner={setSelectedBanner}
-          showGradient={showGradient}
-          setShowGradient={setShowGradient}
-          gradientColors={gradientColors}
-          setGradientColors={setGradientColors}
-          bannerOptions={bannerOptions}
-          hasTextSelection={hasTextSelection}
-          listStyle={listStyle}
-          updateListStyle={updateListStyle}
-          listColor={listColor}
-          updateListColor={updateListColor}
-          convertTextToList={convertTextToList}
-          setShowIconPicker={setShowIconPicker}
-        />
+        <Box
+          sx={{
+            width: `${rightPanelWidth}px`,
+            minWidth: `${MIN_PANEL_WIDTH}px`,
+            maxWidth: `${MAX_PANEL_WIDTH}px`,
+            flexShrink: 0,
+            borderLeft: '1px solid #e0e0e0',
+            position: 'relative',
+          }}
+        >
+          {/* Barra de redimensionado derecha */}
+          <Box
+            onMouseDown={handleMouseDownRight}
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: -2,
+              width: '4px',
+              height: '100%',
+              cursor: 'col-resize',
+              backgroundColor: 'transparent',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.1)',
+              },
+              zIndex: 1,
+            }}
+          />
+
+          <RightPanel
+            selectedComponentId={selectedComponentId}
+            rightPanelTab={rightPanelTab}
+            setRightPanelTab={setRightPanelTab}
+            getActiveComponents={getActiveComponents}
+            updateComponentProps={updateComponentProps}
+            updateComponentStyle={updateComponentStyle}
+            updateComponentContent={updateComponentContent}
+            selectedColor={selectedColor}
+            setSelectedColor={setSelectedColor}
+            selectedFont={selectedFont}
+            setSelectedFont={setSelectedFont}
+            selectedFontSize={selectedFontSize}
+            setSelectedFontSize={setSelectedFontSize}
+            selectedFontWeight={selectedFontWeight}
+            setSelectedFontWeight={setSelectedFontWeight}
+            selectedAlignment={selectedAlignment}
+            textFormat={textFormat}
+            applyTextFormat={applyTextFormat}
+            applyTextAlignment={applyTextAlignment}
+            applyTextColor={applyTextColor}
+            applyFontSize={applyFontSize}
+            applyFontFamily={applyFontFamily}
+            emailBackground={emailBackground}
+            setEmailBackground={setEmailBackground}
+            selectedBanner={selectedBanner}
+            setSelectedBanner={setSelectedBanner}
+            showGradient={showGradient}
+            setShowGradient={setShowGradient}
+            gradientColors={gradientColors}
+            setGradientColors={setGradientColors}
+            bannerOptions={bannerOptions}
+            setSelectedAlignment={setSelectedAlignment}
+            hasTextSelection={hasTextSelection}
+            listStyle={listStyle}
+            updateListStyle={updateListStyle}
+            listColor={listColor}
+            updateListColor={updateListColor}
+            convertTextToList={convertTextToList}
+            setShowIconPicker={setShowIconPicker}
+            isContainerSelected={isContainerSelected}
+            setIsContainerSelected={setIsContainerSelected}
+            containerBorderWidth={containerBorderWidth}
+            setContainerBorderWidth={setContainerBorderWidth}
+            containerBorderColor={containerBorderColor}
+            setContainerBorderColor={setContainerBorderColor}
+            containerBorderRadius={containerBorderRadius}
+            setContainerBorderRadius={setContainerBorderRadius}
+            containerPadding={containerPadding}
+            setContainerPadding={setContainerPadding}
+            containerMaxWidth={containerMaxWidth}
+            setContainerMaxWidth={setContainerMaxWidth}
+            activeTemplate={activeTemplate}
+            activeVersion={activeVersion}
+            noteTitle={noteTitle}
+            setNoteTitle={setNoteTitle}
+            noteDescription={noteDescription}
+            setNoteDescription={setNoteDescription}
+            noteCoverImageUrl={noteCoverImageUrl}
+            setNoteCoverImageUrl={setNoteCoverImageUrl}
+            noteStatus={noteStatus}
+            setNoteStatus={setNoteStatus}
+          />
+        </Box>
       </Box>
 
       {/* Diálogo de vista previa */}
@@ -1526,39 +2096,23 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         onClose={() => setOpenSnackbar(false)}
       />
 
-      {/* Diálogo para guardar la nota */}
-      <CustomDialog
+      {/* Save note dialog */}
+      <SaveNoteDialog
         open={openSaveDialog}
         onClose={() => setOpenSaveDialog(false)}
-        title="Guardar Nota"
-        actions={
-          <>
-            <Button onClick={() => setOpenSaveDialog(false)} color="primary">
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => {
-                const title = prompt('Por favor, introduce un título para la nota:');
-                if (title) {
-                  handleSaveNote(title);
-                }
-              }}
-              color="primary"
-            >
-              Guardar
-            </Button>
-          </>
-        }
-      >
-        <TextField
-          autoFocus
-          margin="dense"
-          id="name"
-          label="Título de la nota"
-          type="text"
-          fullWidth
-        />
-      </CustomDialog>
+        onSave={handleSaveNote}
+        noteTitle={noteTitle}
+        noteDescription={noteDescription}
+        noteCoverImageUrl={noteCoverImageUrl}
+        imageStats={getImageStats(
+          JSON.stringify(getActiveComponents()),
+          JSON.stringify(
+            activeVersion === 'newsletter'
+              ? getActiveComponents()
+              : getOtherVersionComponents('web')
+          )
+        )}
+      />
 
       {/* IconPicker dialog */}
       {selectedComponentId && (

@@ -11,7 +11,7 @@ export const createAxiosInstance = () => {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, PATCH, OPTIONS',
     },
-    timeout: 10000, // 10 segundos
+    timeout: 80000, // 80 segundos
   });
 
   instance.interceptors.request.use(
@@ -55,12 +55,11 @@ export const endpoints = {
     profile: '/auth/userinfo',
     updateProfile: '/user/profile',
   },
-  subscription: {
-    findAll: '/subscription',
-    findStatus: '/polygon/status/:polygonId',
-    findById: (id: string) => `/subscription/${id}`,
-    create: '/subscription',
-    update: (id: string) => `/subscription/${id}`,
-    delete: (id: string) => `/subscription/${id}`,
+  post: {
+    findAll: '/posts',
+    findById: (id: string) => `/posts/${id}`,
+    create: '/posts',
+    update: (id: string) => `/posts/${id}`,
+    delete: (id: string) => `/posts/${id}`,
   },
 };

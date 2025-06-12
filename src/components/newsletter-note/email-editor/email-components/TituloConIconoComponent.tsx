@@ -61,13 +61,13 @@ const TituloConIconoComponent = ({
         <Box>
           <TituloConIcono
             titulo={component.content}
-            icon={component.props?.icon || 'mdi:newspaper-variant-outline'}
-            gradientColor1={component.props?.gradientColor1 || 'rgba(78, 205, 196, 0.06)'}
-            gradientColor2={component.props?.gradientColor2 || 'rgba(38, 166, 154, 0.00)'}
+            icon={component.props?.icon || 'mdi:chart-line'}
+            gradientColor1={component.props?.gradientColor1 || 'rgba(255, 184, 77, 0.08)'}
+            gradientColor2={component.props?.gradientColor2 || 'rgba(243, 156, 18, 0.00)'}
             gradientType={component.props?.gradientType || 'linear'}
             gradientAngle={component.props?.gradientAngle || 180}
             colorDistribution={component.props?.colorDistribution || 0}
-            textColor={component.props?.textColor || '#00C3C3'}
+            textColor={component.props?.textColor || '#E67E22'}
             onTituloChange={handleTituloChange}
             onIconChange={handleIconChangeTitulo}
             onGradientChange={handleGradientChange}
@@ -84,7 +84,7 @@ const TituloConIconoComponent = ({
             handleIconChangeTitulo(iconName);
             setShowIconPickerTitulo(false);
           }}
-          currentIcon={component.props?.icon || 'mdi:newspaper-variant-outline'}
+          currentIcon={component.props?.icon || 'mdi:chart-line'}
         />
       )}
     </Box>

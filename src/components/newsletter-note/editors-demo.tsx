@@ -96,7 +96,7 @@ export default function EditorsDemo() {
         {/* Demos de Editores */}
         <Grid container spacing={3}>
           {/* TiptapEditor */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card>
               <CardContent>
                 <Stack spacing={2}>
@@ -127,7 +127,7 @@ export default function EditorsDemo() {
           </Grid>
 
           {/* SimpleTipTapEditor */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card>
               <CardContent>
                 <Stack spacing={2}>
@@ -166,7 +166,7 @@ export default function EditorsDemo() {
           </Grid>
 
           {/* TipTapEditorComponent */}
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Card>
               <CardContent>
                 <Stack spacing={2}>
@@ -217,19 +217,19 @@ export default function EditorsDemo() {
                 📊 Metadata Automática (Nueva Funcionalidad)
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <Typography variant="caption">Palabras</Typography>
                   <Typography variant="h6">{metadata.wordCount}</Typography>
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <Typography variant="caption">Caracteres</Typography>
                   <Typography variant="h6">{metadata.characterCount}</Typography>
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <Typography variant="caption">Tiempo lectura</Typography>
                   <Typography variant="h6">{metadata.readingTime} min</Typography>
                 </Grid>
-                <Grid item xs={6} md={3}>
+                <Grid size={{ xs: 6, md: 3 }}>
                   <Typography variant="caption">Estado</Typography>
                   <Typography variant="h6">
                     {metadata.isEmpty ? '🆕 Vacío' : '✅ Con contenido'}
@@ -247,7 +247,7 @@ export default function EditorsDemo() {
               📋 Comparación de Funcionalidades
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="subtitle2" color="warning.main">
                   🔧 Editores Originales
                 </Typography>
@@ -259,7 +259,7 @@ export default function EditorsDemo() {
                   <Typography variant="body2">• Estilos inconsistentes</Typography>
                 </Stack>
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Typography variant="subtitle2" color="success.main">
                   ✨ Editores Unificados
                 </Typography>

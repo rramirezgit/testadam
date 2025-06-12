@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+
 'use client';
 
 import { useState, useEffect } from 'react';
 
-import { paths } from 'src/routes/paths';
 import { useRouter, usePathname } from 'src/routes/hooks';
 
 import useAuthStore from 'src/store/AuthStore';
@@ -13,14 +14,6 @@ import { SplashScreen } from 'src/components/loading-screen';
 
 type AuthGuardProps = {
   children: React.ReactNode;
-};
-
-const signInPaths = {
-  jwt: paths.auth.jwt.signIn,
-  auth0: paths.auth.auth0.signIn,
-  amplify: paths.auth.amplify.signIn,
-  firebase: paths.auth.firebase.signIn,
-  supabase: paths.auth.supabase.signIn,
 };
 
 export function AuthGuard({ children }: AuthGuardProps) {

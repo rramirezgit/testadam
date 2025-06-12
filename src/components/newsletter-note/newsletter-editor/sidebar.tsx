@@ -286,9 +286,16 @@ export default function Sidebar({
                       {note.noteData.title}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" display="block">
-                      {new Date(
-                        note.noteData.dateModified || note.noteData.dateCreated
-                      ).toLocaleDateString()}
+                      {(() => {
+                        try {
+                          const configNote = JSON.parse(note.noteData.configNote);
+                          return new Date(
+                            configNote.dateModified || configNote.dateCreated
+                          ).toLocaleDateString();
+                        } catch {
+                          return 'Unknown date';
+                        }
+                      })()}
                     </Typography>
                   </Box>
                   <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
@@ -345,11 +352,27 @@ export default function Sidebar({
                       </Typography>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Typography variant="caption" color="text.secondary">
-                          {new Date(note.dateModified || note.dateCreated).toLocaleDateString()}
+                          {(() => {
+                            try {
+                              const configNote = JSON.parse(note.configNote);
+                              return new Date(
+                                configNote.dateModified || configNote.dateCreated
+                              ).toLocaleDateString();
+                            } catch {
+                              return 'Unknown date';
+                            }
+                          })()}
                         </Typography>
                         <Chip
                           size="small"
-                          label={note.templateType}
+                          label={(() => {
+                            try {
+                              const configNote = JSON.parse(note.configNote);
+                              return configNote.templateType || 'Unknown';
+                            } catch {
+                              return 'Unknown';
+                            }
+                          })()}
                           sx={{ height: 18, fontSize: '0.625rem' }}
                         />
                       </Box>
@@ -399,7 +422,7 @@ export default function Sidebar({
 
           <Grid container spacing={2}>
             {availableHeaders.map((header) => (
-              <Grid item xs={12} key={header.id}>
+              <Grid size={{ xs: 12 }} key={header.id}>
                 <Card
                   variant="outlined"
                   sx={{
@@ -443,7 +466,7 @@ export default function Sidebar({
 
           <Grid container spacing={2}>
             {availableFooters.map((footer) => (
-              <Grid item xs={12} key={footer.id}>
+              <Grid size={{ xs: 12 }} key={footer.id}>
                 <Card
                   variant="outlined"
                   sx={{

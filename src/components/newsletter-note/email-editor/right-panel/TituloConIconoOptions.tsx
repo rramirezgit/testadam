@@ -107,11 +107,11 @@ export default function TituloConIconoOptions({
 
   // Valores por defecto si no existen
   const gradientType = component.props?.gradientType || 'linear';
-  const gradientColor1 = component.props?.gradientColor1 || 'rgba(78, 205, 196, 0.06)';
-  const gradientColor2 = component.props?.gradientColor2 || 'rgba(38, 166, 154, 0.00)';
+  const gradientColor1 = component.props?.gradientColor1 || 'rgba(255, 184, 77, 0.08)';
+  const gradientColor2 = component.props?.gradientColor2 || 'rgba(243, 156, 18, 0.00)';
   const gradientAngle = component.props?.gradientAngle || 180;
   const colorDistribution = component.props?.colorDistribution || 0;
-  const textColor = component.props?.textColor || '#00C3C3';
+  const textColor = component.props?.textColor || '#E67E22';
   const titulo = component.content || 'Título';
 
   // Función para aplicar un gradiente preestablecido
@@ -292,7 +292,7 @@ export default function TituloConIconoOptions({
               }}
             >
               <Icon
-                icon={component.props?.icon || 'mdi:newspaper-variant-outline'}
+                icon={component.props?.icon || 'mdi:chart-line'}
                 style={{ fontSize: 24, color: textColor }}
               />
             </Paper>

@@ -6,7 +6,6 @@ import { Icon } from '@iconify/react';
 import {
   Box,
   Grid,
-  List,
   Chip,
   Button,
   TextField,
@@ -71,14 +70,14 @@ export default function LeftPanel({
   return (
     <Box
       sx={{
-        minWidth: 280,
-        maxWidth: 280,
-        borderRight: '1px solid #e0e0e0',
+        width: '100%',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        overflow: 'hidden',
       }}
     >
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', p: 1, flexShrink: 0 }}>
         <ToggleButtonGroup
           value={activeTab}
           exclusive
@@ -86,30 +85,39 @@ export default function LeftPanel({
           aria-label="Opciones de panel"
           size="small"
           color="primary"
-          sx={{ mb: 2, width: '100%', border: 'none' }}
+          sx={{
+            mb: 1,
+            width: '100%',
+            border: 'none',
+            '& .MuiToggleButton-root': {
+              flex: 1,
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              padding: { xs: '4px 8px', sm: '6px 12px' },
+            },
+          }}
         >
-          <ToggleButton value="templates" aria-label="templates" sx={{ width: '50%' }}>
+          <ToggleButton value="templates" aria-label="templates">
             Plantillas
           </ToggleButton>
-          <ToggleButton value="content" aria-label="content" sx={{ width: '50%' }}>
+          <ToggleButton value="content" aria-label="content">
             Contenido
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
 
       {activeTab === 'templates' && (
-        <List sx={{ flexGrow: 1, overflow: 'auto' }}>
+        <Box sx={{ flexGrow: 1, overflow: 'auto', px: 1 }}>
           {/* Acordeón de Noticias */}
           <Accordion>
             <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
               <Chip label="Noticias" variant="filled" size="small" />
             </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
+            <AccordionDetails sx={{ p: 1 }}>
+              <Grid container spacing={1}>
                 {emailTemplates
                   .filter((template) => template.id === 'news')
                   .map((template) => (
-                    <Grid size={6} key={template.id}>
+                    <Grid size={12} key={template.id}>
                       <TemplateCard
                         template={template}
                         activeTemplate={activeTemplate}
@@ -126,12 +134,12 @@ export default function LeftPanel({
             <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
               <Chip label="Otras Plantillas" variant="filled" size="small" />
             </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
+            <AccordionDetails sx={{ p: 1 }}>
+              <Grid container spacing={1}>
                 {emailTemplates
                   .filter((template) => template.id !== 'news')
                   .map((template) => (
-                    <Grid size={6} key={template.id}>
+                    <Grid size={{ xs: 12, sm: 6 }} key={template.id}>
                       <TemplateCard
                         template={template}
                         activeTemplate={activeTemplate}
@@ -142,23 +150,25 @@ export default function LeftPanel({
               </Grid>
             </AccordionDetails>
           </Accordion>
-        </List>
+        </Box>
       )}
 
       {activeTab === 'content' && (
         <>
           {/* Búsqueda de componentes */}
-          <TextField
-            label="Buscar componentes"
-            variant="outlined"
-            size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ m: 2 }}
-          />
+          <Box sx={{ px: 1, pb: 1, flexShrink: 0 }}>
+            <TextField
+              label="Buscar componentes"
+              variant="outlined"
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              fullWidth
+            />
+          </Box>
 
           {/* Lista de componentes */}
-          <List sx={{ flexGrow: 1, overflow: 'auto' }}>
+          <Box sx={{ flexGrow: 1, overflow: 'auto', px: 1 }}>
             {/* Categoría de Texto */}
             <Accordion
               expanded={expandedCategories.texto}
@@ -169,30 +179,63 @@ export default function LeftPanel({
               <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
                 <Chip label="Texto" variant="filled" size="small" />
               </AccordionSummary>
-              <AccordionDetails>
-                <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
-                  <Button
-                    onClick={() => addComponent('heading')}
-                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                  >
-                    <Icon icon="mdi:format-header-1" fontSize="large" />
-                    <Typography variant="caption">Títulos</Typography>
-                  </Button>
-                  <Button
-                    onClick={() => addComponent('paragraph')}
-                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                  >
-                    <Icon icon="mdi:format-paragraph" fontSize="large" />
-                    <Typography variant="caption">Textos</Typography>
-                  </Button>
-                  <Button
-                    onClick={() => addComponent('bulletList')}
-                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                  >
-                    <Icon icon="mdi:format-list-bulleted" fontSize="large" />
-                    <Typography variant="caption">Listas</Typography>
-                  </Button>
-                </Box>
+              <AccordionDetails sx={{ p: 1 }}>
+                <Grid container spacing={1}>
+                  <Grid size={4}>
+                    <Button
+                      onClick={() => addComponent('heading')}
+                      fullWidth
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        p: 1,
+                        minHeight: '60px',
+                      }}
+                    >
+                      <Icon icon="mdi:format-header-1" style={{ fontSize: '1.5rem' }} />
+                      <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                        Títulos
+                      </Typography>
+                    </Button>
+                  </Grid>
+                  <Grid size={4}>
+                    <Button
+                      onClick={() => addComponent('paragraph')}
+                      fullWidth
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        p: 1,
+                        minHeight: '60px',
+                      }}
+                    >
+                      <Icon icon="mdi:format-paragraph" style={{ fontSize: '1.5rem' }} />
+                      <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                        Textos
+                      </Typography>
+                    </Button>
+                  </Grid>
+                  <Grid size={4}>
+                    <Button
+                      onClick={() => addComponent('bulletList')}
+                      fullWidth
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        p: 1,
+                        minHeight: '60px',
+                      }}
+                    >
+                      <Icon icon="mdi:format-list-bulleted" style={{ fontSize: '1.5rem' }} />
+                      <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                        Listas
+                      </Typography>
+                    </Button>
+                  </Grid>
+                </Grid>
               </AccordionDetails>
             </Accordion>
 
@@ -209,65 +252,45 @@ export default function LeftPanel({
               <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
                 <Chip label="Multimedia" variant="filled" size="small" />
               </AccordionSummary>
-              <AccordionDetails>
-                <Box sx={{ display: 'flex', justifyContent: 'space-around', mb: 2 }}>
-                  <Button
-                    onClick={() => {
-                      // Crear un input de tipo file oculto y activarlo
-                      const fileInput = document.createElement('input');
-                      fileInput.type = 'file';
-                      fileInput.accept = 'image/png,image/jpeg,image/jpg,image/webp,image/gif';
-                      fileInput.style.display = 'none';
-
-                      // Cuando se seleccione un archivo
-                      fileInput.onchange = (e) => {
-                        const file = (e.target as HTMLInputElement).files?.[0];
-                        if (!file) return;
-
-                        // Verificar el tipo de archivo
-                        const validTypes = [
-                          'image/png',
-                          'image/jpeg',
-                          'image/jpg',
-                          'image/webp',
-                          'image/gif',
-                        ];
-                        if (!validTypes.includes(file.type)) {
-                          alert(
-                            'Tipo de archivo no válido. Por favor selecciona una imagen PNG, JPG, JPEG, WEBP o GIF.'
-                          );
-                          return;
-                        }
-
-                        // Convertir a base64
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          const base64String = reader.result as string;
-
-                          // Añadir el componente de imagen con la imagen en base64
-                          addComponent('image' as ComponentType);
-                        };
-                        reader.readAsDataURL(file);
-                      };
-
-                      // Activar el input
-                      document.body.appendChild(fileInput);
-                      fileInput.click();
-                      document.body.removeChild(fileInput);
-                    }}
-                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                  >
-                    <Icon icon="mdi:image" fontSize="large" />
-                    <Typography variant="caption">Imagen</Typography>
-                  </Button>
-                  <Button
-                    onClick={() => addComponent('gallery')}
-                    sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                  >
-                    <Icon icon="mdi:image-multiple" fontSize="large" />
-                    <Typography variant="caption">Galería</Typography>
-                  </Button>
-                </Box>
+              <AccordionDetails sx={{ p: 1 }}>
+                <Grid container spacing={1}>
+                  <Grid size={6}>
+                    <Button
+                      onClick={() => addComponent('image' as ComponentType)}
+                      fullWidth
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        p: 1,
+                        minHeight: '60px',
+                      }}
+                    >
+                      <Icon icon="mdi:image" style={{ fontSize: '1.5rem' }} />
+                      <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                        Imagen
+                      </Typography>
+                    </Button>
+                  </Grid>
+                  <Grid size={6}>
+                    <Button
+                      onClick={() => addComponent('gallery')}
+                      fullWidth
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        p: 1,
+                        minHeight: '60px',
+                      }}
+                    >
+                      <Icon icon="mdi:image-multiple" style={{ fontSize: '1.5rem' }} />
+                      <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                        Galería
+                      </Typography>
+                    </Button>
+                  </Grid>
+                </Grid>
               </AccordionDetails>
             </Accordion>
 
@@ -363,12 +386,12 @@ export default function LeftPanel({
                 </Box>
               </AccordionDetails>
             </Accordion>
-          </List>
+          </Box>
         </>
       )}
 
       {/* Botones de acción */}
-      <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
+      <Box sx={{ p: 1, borderTop: '1px solid #e0e0e0', flexShrink: 0 }}>
         <Button
           variant="contained"
           color="primary"
@@ -376,15 +399,23 @@ export default function LeftPanel({
           onClick={handleGenerateEmailHtml}
           disabled={generatingEmail}
           startIcon={<Icon icon="mdi:email-outline" />}
-          sx={{ mb: 1 }}
+          sx={{
+            mb: 1,
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            py: { xs: 0.5, sm: 1 },
+          }}
         >
-          {generatingEmail ? <CircularProgress size={24} color="inherit" /> : 'Generar HTML'}
+          {generatingEmail ? <CircularProgress size={16} color="inherit" /> : 'Generar HTML'}
         </Button>
         <Button
           variant="outlined"
           fullWidth
           onClick={() => setOpenSaveDialog(true)}
           startIcon={<Icon icon="mdi:content-save" />}
+          sx={{
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            py: { xs: 0.5, sm: 1 },
+          }}
         >
           Guardar
         </Button>

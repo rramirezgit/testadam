@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Portal from '@mui/material/Portal';
@@ -45,10 +47,6 @@ export function EditorUnified({
   ...other
 }: EditorProps) {
   const [fullScreen, setFullScreen] = useState(false);
-
-  const handleToggleFullScreen = useCallback(() => {
-    setFullScreen((prev) => !prev);
-  }, []);
 
   const handleChange = (value: string, metadata?: EditorMetadata) => {
     onChange?.(value);

@@ -36,13 +36,13 @@ export default function TiptapEditor({
       }),
     ],
     content,
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor: _editor }) => {
       // Proporcionar tanto el HTML como el texto plano
-      onChange(editor.getHTML(), editor.getText());
+      onChange(_editor.getHTML(), _editor.getText());
     },
-    onSelectionUpdate: ({ editor }) => {
+    onSelectionUpdate: ({ editor: _editor }) => {
       if (onSelectionUpdate) {
-        onSelectionUpdate(editor);
+        onSelectionUpdate(_editor);
       }
     },
   });

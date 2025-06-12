@@ -77,7 +77,7 @@ export default function NewsletterCard({ newsletter, onOpen, onDelete }: Newslet
             justifyContent: 'space-between',
             alignItems: 'center',
             borderBottom: '1px solid rgba(0,0,0,0.08)',
-            backgroundColor: newsletter.accentColor || '#3f51b5',
+            backgroundColor: '#3f51b5',
             color: 'white',
           }}
         >

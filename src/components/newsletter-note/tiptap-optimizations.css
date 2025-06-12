@@ -1,0 +1,130 @@
+/* ⚡ ULTRA-OPTIMIZACIÓN: Estilos TipTap para prevenir problemas de hidratación */
+
+/* Asegurar que ProseMirror use elementos HTML válidos */
+.ProseMirror {
+  position: relative;
+  display: block;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0; /* the above doesn't seem to work in Edge */
+}
+
+/* Prevenir problemas de hidratación con párrafos */
+.ProseMirror p {
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+
+/* Prevenir problemas de hidratación con headings */
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  margin: 0;
+  padding: 0;
+  display: block;
+}
+
+/* Optimización del placeholder para evitar problemas de hidratación */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+  opacity: 0.6;
+}
+
+/* Asegurar que los elementos de lista sean válidos */
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1rem;
+  margin: 0;
+}
+
+.ProseMirror li {
+  position: relative;
+  display: list-item;
+}
+
+/* Optimizaciones de rendimiento */
+.tiptap-editor-optimized {
+  will-change: contents;
+  contain: layout style;
+  transform: translateZ(0);
+}
+
+/* Prevenir problemas con elementos anidados */
+.ProseMirror * {
+  box-sizing: border-box;
+}
+
+/* Asegurar que no se rendericen elementos div dentro de p */
+.ProseMirror p > div {
+  display: inline;
+}
+
+/* Optimización para elementos de bloque */
+.ProseMirror blockquote {
+  margin: 0;
+  padding-left: 1rem;
+  border-left: 2px solid #ddd;
+  display: block;
+}
+
+/* Optimización para código */
+.ProseMirror code {
+  background-color: rgba(97, 97, 97, 0.1);
+  border-radius: 0.25rem;
+  color: #476582;
+  font-size: 0.85rem;
+  font-weight: bold;
+  padding: 0.25rem;
+}
+
+/* Optimización para pre */
+.ProseMirror pre {
+  background: #0d0d0d;
+  border-radius: 0.5rem;
+  color: #fff;
+  font-family: 'JetBrainsMono', monospace;
+  margin: 1.5rem 0;
+  padding: 0.75rem 1rem;
+  display: block;
+}
+
+/* Asegurar que los elementos sean válidos en SSR */
+.ProseMirror-focused {
+  outline: none;
+}
+
+/* Prevenir problemas de hidratación con elementos flotantes */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Optimización para tablas si se usan */
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+  min-width: 1em;
+  border: 2px solid #ced4da;
+  padding: 3px 5px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}

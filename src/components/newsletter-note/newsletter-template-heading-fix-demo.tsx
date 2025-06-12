@@ -442,8 +442,8 @@ export default function NewsletterTemplateHeadingFixDemo() {
                   <Typography variant="body2">
                     <strong>📰 Selecciona el heading del template</strong>
                     <br />
-                    Haz clic en "Título de la noticia" para seleccionarlo y poder usar las opciones
-                    de formato.
+                    Haz clic en &quot;Título de la noticia&quot; para seleccionarlo y poder usar las
+                    opciones de formato.
                   </Typography>
                 </Alert>
               )}
@@ -498,7 +498,7 @@ export default function NewsletterTemplateHeadingFixDemo() {
           <Box component="ol" sx={{ pl: 2 }}>
             <li>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                Haz clic en el **heading del template** "Título de la noticia"
+                Haz clic en el **heading del template** &quot;Título de la noticia&quot;
               </Typography>
             </li>
             <li>

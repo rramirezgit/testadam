@@ -19,7 +19,7 @@ export function getSlideSize(slidesToShow: InputValue): InputValue {
     }, {});
   }
 
-  return getValue(slidesToShow);
+  return getValue(slidesToShow as string | number);
 }
 
 function getValue(value: string | number = 1): string {

@@ -158,22 +158,20 @@ export function generateNewsletterHtml(
     }
     
     /* Components - Minimal design */
+    /* ⚡ NUEVO: Títulos como párrafos - sin márgenes nativos */
     .component-heading {
       font-weight: 600;
-      margin: 30px 0 15px 0;
+      margin: 0 !important; /* Sin márgenes nativos porque son <p> */
       line-height: 1.3;
       color: #111827;
       letter-spacing: -0.25px;
+      display: block; /* Comportamiento de bloque como los headers */
     }
-    .component-heading.h1 { font-size: 28px; margin-top: 40px; }
-    .component-heading.h2 { font-size: 24px; margin-top: 35px; }
-    .component-heading.h3 { font-size: 20px; margin-top: 30px; }
-    .component-heading.h4 { font-size: 18px; margin-top: 25px; }
-    .component-heading.h5 { font-size: 16px; margin-top: 20px; }
-    .component-heading.h6 { font-size: 14px; margin-top: 18px; }
+    /* Los tamaños de fuente se aplican inline según el nivel */
     
+    /* ⚡ CRITICAL: Párrafos sin márgenes nativos para respetar configuración personalizada */
     .component-paragraph {
-      margin: 16px 0;
+      margin: 0 !important; /* Resetear márgenes nativos */
       line-height: 1.7;
       font-size: 16px;
       color: #374151;
@@ -346,7 +344,7 @@ export function generateNewsletterHtml(
             <tr>
               <td class="email-header">
                 ${header.logo ? `<img src="${header.logo}" alt="Logo" style="max-height: 60px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">` : ''}
-                <h1 class="header-title">${header.title || title || 'Newsletter'}</h1>
+                <p class="header-title">${header.title || title || 'Newsletter'}</p>
                 ${header.subtitle ? `<p class="header-subtitle">${header.subtitle}</p>` : ''}
                 ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 20px; border-radius: 8px;">` : ''}
               </td>
@@ -357,26 +355,30 @@ export function generateNewsletterHtml(
           <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
             <tr>
               <td class="email-content">
-                <!-- Description -->
-                ${
-                  description
-                    ? `<div class="newsletter-description">
-                  <p>${description}</p>
-                </div>`
-                    : ''
-                }`;
+               `;
 
   // Add each note's content using clean design
   selectedNotes.forEach((newsletterNote, noteIndex) => {
     const note = newsletterNote.noteData;
     html += `<div class="note-section">`;
-    html += `<h2 class="note-title">${note.title || 'Untitled Note'}</h2>`;
+
+    // Añadir el contenedor interno con borde personalizable
+    const containerBorderWidth = note.containerBorderWidth ?? 1;
+    const containerBorderColor = note.containerBorderColor ?? '#e0e0e0';
+    const containerBorderRadius = note.containerBorderRadius ?? 12;
+    const containerPadding = note.containerPadding ?? 10;
+    const containerMaxWidth = note.containerMaxWidth ?? 560;
+
+    html += `<div style="max-width: ${containerMaxWidth}px; margin: 0 auto; padding: ${containerPadding}px; border-radius: ${containerBorderRadius}px; border: ${containerBorderWidth}px solid ${containerBorderColor};">`;
+    html += `<p class="note-title">${note.title || 'Untitled Note'}</p>`;
 
     // Render each component using the unified system
-    note.objdata.forEach((component) => {
+    const objData = JSON.parse(note.objData);
+    objData.forEach((component: any) => {
       html += renderComponentToHtml(component);
     });
 
+    html += `</div>`; // Cerrar contenedor interno
     html += `</div>`;
   });
 
@@ -427,14 +429,46 @@ export function generateNewsletterHtml(
 function renderComponentToHtml(component: EmailComponent): string {
   switch (component.type) {
     case 'heading':
-      const level = component.props?.level || 2;
-      const headingClass = `component-heading h${level}`;
-      // No escapar HTML para heading ya que viene de TipTap con formato válido
-      return `<h${level} class="${headingClass}" style="margin: 20px 0 10px 0; font-weight: bold; line-height: 1.3; color: #333333;">${component.content}</h${level}>`;
+      const headingClass = `component-heading`;
+
+      // ⚡ NUEVO: Tamaño fijo para todos los títulos como <p>
+      let headingInlineStyles = `font-weight: bold; line-height: 1.3; color: #333333; font-size: 1.5rem;`;
+
+      if (component.style) {
+        const customStyles = Object.entries(component.style)
+          .map(([key, value]) => {
+            // Convertir camelCase a kebab-case para CSS
+            const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+            return `${cssKey}: ${value}`;
+          })
+          .join('; ');
+        headingInlineStyles += ' ' + customStyles;
+      } else {
+        // Valores por defecto si no hay estilos personalizados
+        headingInlineStyles += ' margin-top: 16px; margin-bottom: 16px;';
+      }
+
+      // ⚡ NUEVO: Usar <p> en lugar de <h1>, <h2>, etc.
+      return `<p class="${headingClass}" style="${headingInlineStyles}">${component.content}</p>`;
 
     case 'paragraph':
-      // No escapar HTML para paragraph ya que viene de TipTap con formato válido
-      return `<div class="component-paragraph" style="margin: 15px 0; line-height: 1.6; font-size: 16px;">${component.content}</div>`;
+      // ⚡ CRITICAL: Aplicar estilos personalizados de espaciado respetando configuración del usuario
+      let paragraphInlineStyles = 'line-height: 1.6; font-size: 16px;';
+      if (component.style) {
+        const customStyles = Object.entries(component.style)
+          .map(([key, value]) => {
+            // Convertir camelCase a kebab-case para CSS
+            const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+            return `${cssKey}: ${value}`;
+          })
+          .join('; ');
+        paragraphInlineStyles += ' ' + customStyles;
+      } else {
+        // Valores por defecto para párrafos: solo margen superior
+        paragraphInlineStyles += ' margin-top: 16px; margin-bottom: 0px;';
+      }
+
+      return `<div class="component-paragraph" style="${paragraphInlineStyles}">${component.content}</div>`;
 
     case 'bulletList':
       const items = component.props?.items || [];

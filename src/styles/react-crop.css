@@ -1,0 +1,75 @@
+/* Estilos adicionales para ReactCrop */
+.ReactCrop {
+  position: relative;
+  display: inline-block;
+  cursor: crosshair;
+  max-width: 100%;
+}
+
+.ReactCrop *,
+.ReactCrop *::before,
+.ReactCrop *::after {
+  box-sizing: border-box;
+}
+
+.ReactCrop__image {
+  display: block;
+  max-width: 100%;
+}
+
+.ReactCrop__crop-selection {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate3d(0, 0, 0);
+  box-sizing: border-box;
+  border: 2px solid #3f51b5;
+  background: rgba(63, 81, 181, 0.1);
+  cursor: move;
+}
+
+.ReactCrop__crop-selection:focus {
+  outline: none;
+}
+
+.ReactCrop__drag-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #3f51b5;
+  border: 2px solid #ffffff;
+  border-radius: 6px;
+  transform: translate(-50%, -50%);
+}
+
+.ReactCrop__drag-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: #ffffff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ReactCrop__crop-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.ReactCrop--disabled {
+  cursor: not-allowed;
+}
+
+.ReactCrop--disabled .ReactCrop__crop-selection {
+  cursor: not-allowed;
+}
+
+.ReactCrop--invisible-crop .ReactCrop__crop-selection {
+  opacity: 0;
+}

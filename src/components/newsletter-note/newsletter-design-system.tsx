@@ -455,7 +455,7 @@ export default function NewsletterDesignSystem({
       {/* Contenido de las secciones */}
       {activeSection === 'templates' && (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <Typography variant="h6" gutterBottom>
               Templates Predefinidos
             </Typography>
@@ -464,7 +464,7 @@ export default function NewsletterDesignSystem({
             </Typography>
           </Grid>
           {designTemplates.map((template) => (
-            <Grid item xs={12} md={6} lg={4} key={template.id}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={template.id}>
               <Card
                 elevation={1}
                 sx={{
@@ -514,7 +514,7 @@ export default function NewsletterDesignSystem({
 
       {activeSection === 'header' && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card elevation={2}>
               <CardHeader title="Configuración del Header" />
               <CardContent>
@@ -583,7 +583,7 @@ export default function NewsletterDesignSystem({
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card elevation={1}>
               <CardHeader title="Vista Previa del Header" />
               <CardContent sx={{ p: 0 }}>
@@ -617,7 +617,7 @@ export default function NewsletterDesignSystem({
 
       {activeSection === 'footer' && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card elevation={2}>
               <CardHeader title="Configuración del Footer" />
               <CardContent>
@@ -693,7 +693,7 @@ export default function NewsletterDesignSystem({
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card elevation={1}>
               <CardHeader title="Vista Previa del Footer" />
               <CardContent sx={{ p: 0 }}>
@@ -788,7 +788,7 @@ export default function NewsletterDesignSystem({
 
       {activeSection === 'advanced' && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card elevation={2}>
               <CardHeader title="Importar/Exportar Configuración" />
               <CardContent>
@@ -826,7 +826,7 @@ export default function NewsletterDesignSystem({
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <Card elevation={2}>
               <CardHeader title="Configuraciones Avanzadas" />
               <CardContent>

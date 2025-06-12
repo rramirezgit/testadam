@@ -14,7 +14,6 @@ import {
   Card,
   Chip,
   Button,
-  CardMedia,
   Typography,
   IconButton,
   CardContent,
@@ -22,7 +21,7 @@ import {
 } from '@mui/material';
 
 interface NoteCardProps {
-  note: SavedNote & { aiGenerated?: boolean };
+  note: SavedNote;
   onOpen: (note: SavedNote) => void;
   onDelete: (noteId: string) => void;
 }
@@ -32,11 +31,28 @@ export default function NoteCard({ note, onOpen, onDelete }: NoteCardProps) {
   const [hora, setHora] = useState<string>('');
 
   useEffect(() => {
-    if (note?.createdAt) {
-      setFecha(format(new Date(note.createdAt), "dd 'de' MMMM yyyy", { locale: es }));
-      setHora(format(new Date(note.createdAt), 'hh:mm a'));
+    if (note?.configNote) {
+      try {
+        const config = JSON.parse(note.configNote);
+        const dateCreated = config.dateCreated;
+        if (dateCreated) {
+          setFecha(format(new Date(dateCreated), "dd 'de' MMMM yyyy", { locale: es }));
+          setHora(format(new Date(dateCreated), 'hh:mm a'));
+        }
+      } catch (error) {
+        console.error('Error parsing note config:', error);
+      }
     }
-  }, [note?.createdAt]);
+  }, [note?.configNote]);
+
+  const getConfigValue = (key: string) => {
+    try {
+      const config = JSON.parse(note.configNote);
+      return config[key];
+    } catch (error) {
+      return null;
+    }
+  };
 
   return (
     <Card
@@ -54,19 +70,20 @@ export default function NoteCard({ note, onOpen, onDelete }: NoteCardProps) {
     >
       {/* Cabecera con imagen */}
       <Box sx={{ position: 'relative' }}>
-        {note?.imageUrl ? (
-          <CardMedia component="img" height={140} image={note.imageUrl} alt={note.title} />
-        ) : (
-          <Box
-            sx={{
-              height: 140,
-              bgcolor: 'grey.300',
-            }}
-          />
-        )}
+        <Box
+          sx={{
+            height: 140,
+            bgcolor: 'grey.300',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icon icon="mdi:email-outline" width={48} height={48} style={{ opacity: 0.5 }} />
+        </Box>
 
         {/* Chip IA */}
-        {note?.aiGenerated && (
+        {getConfigValue('origin') === 'IA' && (
           <Chip
             label="IA"
             size="small"

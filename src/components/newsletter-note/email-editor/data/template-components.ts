@@ -321,11 +321,13 @@ export const newsComponents: EmailComponent[] = [
     type: 'tituloConIcono',
     content: 'Título de la noticia',
     props: {
-      icon: 'mdi:newspaper-variant-outline',
-      gradientColor1: '#4facfe',
-      gradientColor2: '#00f2fe',
+      icon: 'mdi:chart-line',
+      gradientColor1: 'rgba(255, 184, 77, 0.08)',
+      gradientColor2: 'rgba(243, 156, 18, 0.00)',
       gradientType: 'linear',
-      textColor: '#ffffff',
+      gradientAngle: 180,
+      colorDistribution: 0,
+      textColor: '#E67E22',
     },
   },
   {

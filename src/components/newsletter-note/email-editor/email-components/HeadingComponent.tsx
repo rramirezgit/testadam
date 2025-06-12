@@ -1,88 +1,257 @@
+import React, { memo, useRef, useMemo, useCallback } from 'react';
+
 import { Box } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
-import SimpleTipTapEditorWithFlags from '../../simple-tiptap-editor-with-flags';
+import SimpleTipTapEditor from '../../simple-tiptap-editor';
 
 import type { EmailComponentProps } from './types';
 
-const HeadingComponent = ({
-  component,
-  index,
-  isSelected,
-  onSelect,
-  updateComponentContent,
-  handleSelectionUpdate,
-  moveComponent,
-  removeComponent,
-  totalComponents,
-}: EmailComponentProps) => {
-  const HeadingTag = `h${component.props?.level || 2}`;
+// ⚡ ULTRA-OPTIMIZACIÓN: Cache de estilos computados para headings
+const headingStyleCache = new Map<string, React.CSSProperties>();
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onSelect();
-  };
+// ⚡ ULTRA-OPTIMIZACIÓN: Función helper para crear cache key
+const createHeadingStyleKey = (component: any, isSelected: boolean): string => {
+  const { style = {}, props = {} } = component;
 
-  const handleContentChange = (newContent: string) => {
-    updateComponentContent(component.id, newContent);
-  };
-
-  return (
-    <ComponentWithToolbar
-      isSelected={isSelected}
-      index={index}
-      totalComponents={totalComponents}
-      componentId={component.id}
-      moveComponent={moveComponent}
-      removeComponent={removeComponent}
-      onClick={handleClick}
-    >
-      {/* ✅ Box contenedor con CSS reset para permitir que TipTap controle los estilos */}
-      <Box
-        sx={{
-          // CSS Reset que permite que TipTap controle completamente los estilos
-          '& h1, & h2, & h3, & h4, & h5, & h6': {
-            margin: 0,
-            padding: 0,
-            fontWeight: 'inherit',
-            fontSize: 'inherit',
-            lineHeight: 'inherit',
-            color: 'inherit',
-            textAlign: 'inherit',
-          },
-          // ✅ Estilos base para que se vea como título por defecto
-          fontSize:
-            component.props?.level === 1
-              ? '2.125rem'
-              : component.props?.level === 2
-                ? '1.875rem'
-                : component.props?.level === 3
-                  ? '1.5rem'
-                  : '1.25rem',
-          fontWeight: 'bold',
-          lineHeight: 1.2,
-          marginBottom: '0.5rem',
-          ...(component.style || {}),
-        }}
-      >
-        {/* @ts-expect-error - HeadingTag es una string pero usada como JSX element */}
-        <HeadingTag>
-          <SimpleTipTapEditorWithFlags
-            content={component.content}
-            onChange={handleContentChange}
-            onSelectionUpdate={handleSelectionUpdate}
-            style={{
-              outline: 'none',
-              width: '100%',
-              minHeight: '1.5em',
-            }}
-            showToolbar={false}
-            showDebugInfo={process.env.NODE_ENV === 'development'}
-          />
-        </HeadingTag>
-      </Box>
-    </ComponentWithToolbar>
-  );
+  return `${JSON.stringify(style)}-${JSON.stringify(props)}-${isSelected}`;
 };
+
+// ⚡ ULTRA-OPTIMIZACIÓN: Función para generar estilos optimizada para headings
+const generateOptimizedHeadingStyles = (component: any, isSelected: boolean) => {
+  const cacheKey = createHeadingStyleKey(component, isSelected);
+
+  if (headingStyleCache.has(cacheKey)) {
+    return headingStyleCache.get(cacheKey)!;
+  }
+
+  const level = component.props?.level || 2;
+
+  const style: React.CSSProperties = {
+    position: 'relative',
+    width: '100%',
+    minHeight: '24px',
+    cursor: 'text',
+    // ⚡ ULTRA-OPTIMIZACIÓN: GPU acceleration y optimizaciones de rendering
+    willChange: isSelected ? 'transform, box-shadow' : 'auto',
+    backfaceVisibility: 'hidden',
+    transform: 'translateZ(0)',
+    // ⚡ ULTRA-OPTIMIZACIÓN: Containment para mejor rendimiento
+    contain: 'layout style',
+    // ⚡ ULTRA-OPTIMIZACIÓN: Optimización específica para títulos
+    textRendering: 'optimizeSpeed' as any,
+    fontKerning: 'none',
+    // Aplicar estilos del componente
+    ...(component.style || {}),
+  };
+
+  // Cache el estilo para reutilización
+  headingStyleCache.set(cacheKey, style);
+
+  // Limpiar cache si crece demasiado
+  if (headingStyleCache.size > 100) {
+    const firstKey = headingStyleCache.keys().next().value;
+    headingStyleCache.delete(firstKey);
+  }
+
+  return style;
+};
+
+// ⚡ ULTRA-OPTIMIZACIÓN: Componente interno memoizado para headings
+const MemoizedHeadingEditor = memo(
+  ({
+    content,
+    onContentChange,
+    onSelectionUpdate,
+    editorStyle,
+  }: {
+    content: string;
+    onContentChange?: (content: string) => void;
+    onSelectionUpdate?: (editor: any) => void;
+    editorStyle: React.CSSProperties;
+  }) => (
+    <SimpleTipTapEditor
+      content={content}
+      onChange={onContentChange || (() => {})}
+      onSelectionUpdate={onSelectionUpdate}
+      showToolbar={false}
+      style={editorStyle}
+    />
+  ),
+  (prevProps, nextProps) =>
+    // ⚡ ULTRA-OPTIMIZACIÓN: Comparación profunda optimizada
+    prevProps.content === nextProps.content &&
+    prevProps.onContentChange === nextProps.onContentChange &&
+    prevProps.onSelectionUpdate === nextProps.onSelectionUpdate &&
+    JSON.stringify(prevProps.editorStyle) === JSON.stringify(nextProps.editorStyle)
+);
+
+MemoizedHeadingEditor.displayName = 'MemoizedHeadingEditor';
+
+// ⚡ ULTRA-OPTIMIZACIÓN: Componente principal con memo avanzado
+const HeadingComponent = memo(
+  ({
+    component,
+    index,
+    isSelected,
+    onSelect,
+    updateComponentContent,
+    handleSelectionUpdate,
+    moveComponent,
+    removeComponent,
+    totalComponents,
+  }: EmailComponentProps) => {
+    const lastRenderTime = useRef(performance.now());
+
+    // ⚡ NUEVO: Ya no necesitamos determinar tag HTML, usamos <p> siempre
+    // Mantenemos la referencia al nivel para los estilos de fuente
+
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos con cache
+    const containerStyles = useMemo(
+      () => generateOptimizedHeadingStyles(component, isSelected),
+      [component.style, component.props, isSelected]
+    );
+
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos del editor
+    const editorStyle = useMemo(
+      () => ({
+        outline: 'none',
+        // ⚡ ULTRA-OPTIMIZACIÓN: Optimizaciones específicas del texto para títulos
+        fontDisplay: 'swap' as const,
+        textSizeAdjust: 'none',
+        WebkitFontSmoothing: 'antialiased' as const,
+        MozOsxFontSmoothing: 'grayscale' as const,
+        // ⚡ ULTRA-OPTIMIZAÇÃO: Optimización para títulos grandes
+        textTransform: 'none' as const,
+      }),
+      []
+    );
+
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos del párrafo-título
+    const boxStyles = useMemo(
+      () => ({
+        // ⚡ NUEVO: Tamaño fijo para todos los títulos como <p>
+        fontSize: '1.5rem', // Tamaño fijo de título
+        fontWeight: component.style?.fontWeight || 'bold',
+        // ⚡ OPTIMIZACIÓN: Espaciado ultra-compacto por defecto (sin márgenes nativos!)
+        margin: '0', // Sin márgenes nativos porque es un <p>
+        marginTop: component.style?.marginTop || '0px',
+        marginBottom: component.style?.marginBottom || '0px',
+        paddingTop: component.style?.paddingTop || '0px',
+        paddingBottom: component.style?.paddingBottom || '0px',
+        paddingLeft: component.style?.paddingLeft || '0px',
+        paddingRight: component.style?.paddingRight || '0px',
+        lineHeight: component.style?.lineHeight || 1.2,
+        color: component.style?.color || 'text.primary',
+        textAlign: component.style?.textAlign || 'left',
+        display: 'block',
+        ...containerStyles,
+      }),
+      [containerStyles, component.style] // Ya no dependemos del nivel
+    );
+
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Callback memoizado con throttling integrado
+    const handleContentChange = useCallback(
+      (newContent: string) => {
+        if (updateComponentContent && newContent !== component.content) {
+          // Usar scheduler nativo del navegador para mejor rendimiento
+          if ('scheduler' in window && 'postTask' in (window as any).scheduler) {
+            (window as any).scheduler.postTask(
+              () => {
+                updateComponentContent(component.id, newContent);
+              },
+              { priority: 'user-blocking' }
+            );
+          } else {
+            // Fallback con MessageChannel para batching
+            const channel = new MessageChannel();
+            channel.port2.onmessage = () => updateComponentContent(component.id, newContent);
+            channel.port1.postMessage(null);
+          }
+        }
+      },
+      [updateComponentContent, component.id, component.content]
+    );
+
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Manejo de clics optimizado
+    const handleClick = useCallback(
+      (event: React.MouseEvent) => {
+        event.stopPropagation();
+        console.log('🔵 HeadingComponent clicked:', component.id, { onSelect: !!onSelect });
+        if (onSelect) {
+          // Llamar inmediatamente en lugar de defer para debugging
+          onSelect();
+          console.log('🟢 HeadingComponent onSelect called for:', component.id);
+        }
+      },
+      [onSelect, component.id]
+    );
+
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Manejo de selección optimizado
+    const handleSelectionUpdateMemo = useCallback(
+      (editor: any) => {
+        if (isSelected && handleSelectionUpdate) {
+          // Usar requestAnimationFrame para mejor rendimiento
+          requestAnimationFrame(() => {
+            handleSelectionUpdate(editor);
+          });
+        }
+      },
+      [isSelected, handleSelectionUpdate]
+    );
+
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Log de rendimiento (solo en desarrollo)
+    if (process.env.NODE_ENV === 'development') {
+      const currentTime = performance.now();
+      const renderTime = currentTime - lastRenderTime.current;
+      if (renderTime > 16) {
+        // Solo si toma más de 1 frame (16ms)
+        console.log(
+          `HeadingComponent ${component.id} (H${component.props?.level || 2}) render took ${renderTime.toFixed(2)}ms`
+        );
+      }
+      lastRenderTime.current = currentTime;
+    }
+
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Renderizado optimizado con el sistema original
+    return (
+      <ComponentWithToolbar
+        isSelected={isSelected}
+        index={index}
+        totalComponents={totalComponents}
+        componentId={component.id}
+        moveComponent={moveComponent}
+        removeComponent={removeComponent}
+        onClick={handleClick}
+      >
+        <Box component="p" sx={boxStyles}>
+          <MemoizedHeadingEditor
+            content={component.content}
+            onContentChange={handleContentChange}
+            onSelectionUpdate={handleSelectionUpdateMemo}
+            editorStyle={editorStyle}
+          />
+        </Box>
+      </ComponentWithToolbar>
+    );
+  },
+  (prevProps, nextProps) => {
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Comparación optimizada con early returns
+    if (prevProps.component.id !== nextProps.component.id) return false;
+    if (prevProps.component.content !== nextProps.component.content) return false;
+    if (prevProps.isSelected !== nextProps.isSelected) return false;
+    if (prevProps.index !== nextProps.index) return false;
+
+    // Comparación profunda de estilos y props solo si es necesario
+    if (JSON.stringify(prevProps.component.style) !== JSON.stringify(nextProps.component.style))
+      return false;
+    if (JSON.stringify(prevProps.component.props) !== JSON.stringify(nextProps.component.props))
+      return false;
+
+    return true;
+  }
+);
+
+HeadingComponent.displayName = 'HeadingComponent';
 
 export default HeadingComponent;

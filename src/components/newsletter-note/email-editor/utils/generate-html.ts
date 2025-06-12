@@ -8,7 +8,12 @@ export async function generateEmailHtml(
   bannerOptions: BannerOption[],
   emailBackground: string,
   showGradient: boolean,
-  gradientColors: string[]
+  gradientColors: string[],
+  containerBorderWidth?: number,
+  containerBorderColor?: string,
+  containerBorderRadius?: number,
+  containerPadding?: number,
+  containerMaxWidth?: number
 ): Promise<string> {
   try {
     console.log(
@@ -49,10 +54,20 @@ export async function generateEmailHtml(
       backgroundStyle = `background-color: ${emailBackground};`;
     }
 
+    // Configurar estilos del contenedor
+    const containerStyles = {
+      borderWidth: containerBorderWidth ?? 1,
+      borderColor: containerBorderColor ?? '#e0e0e0',
+      borderRadius: containerBorderRadius ?? 12,
+      padding: containerPadding ?? 10,
+      maxWidth: containerMaxWidth ?? 560,
+    };
+
     // Añadir contenido según el template con el fondo personalizado
     switch (activeTemplate) {
       case 'news':
         emailHtml += `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; ${backgroundStyle}">\n`;
+        emailHtml += `<div style="max-width: ${containerStyles.maxWidth}px; margin: 0 auto; padding: ${containerStyles.padding}px; border-radius: ${containerStyles.borderRadius}px; border: ${containerStyles.borderWidth}px solid ${containerStyles.borderColor};">\n`;
 
         // Procesar componentes de noticias
         components.forEach((component) => {
@@ -225,7 +240,8 @@ export async function generateEmailHtml(
           © ${new Date().getFullYear()} Nuestro Boletín de Noticias. Todos los derechos reservados.<br>
           Si no deseas recibir más emails como este, puedes <a href="#" style="color: #4caf50; text-decoration: underline;">darte de baja</a>.
         </div>\n`;
-        emailHtml += `</div>\n`;
+        emailHtml += `</div>\n`; // Cerrar contenedor interno
+        emailHtml += `</div>\n`; // Cerrar contenedor principal
         break;
 
       case 'notion':
@@ -287,6 +303,9 @@ export async function generateEmailHtml(
             }
             case 'spacer':
               emailHtml += `<div style="height: 32px;"></div>\n`;
+              break;
+            default:
+              // Handle unknown component types
               break;
           }
         });
@@ -394,6 +413,9 @@ export async function generateEmailHtml(
               </div>\n`;
               break;
             }
+            default:
+              // Handle unknown component types
+              break;
           }
         });
 
@@ -494,6 +516,9 @@ export async function generateEmailHtml(
               </div>\n`;
               break;
             }
+            default:
+              // Handle unknown component types
+              break;
           }
         });
 
@@ -613,6 +638,9 @@ You received this email because you're a Stripe user.
               </td></tr>\n`;
               break;
             }
+            default:
+              // Handle unknown component types
+              break;
           }
         });
 

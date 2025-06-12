@@ -377,9 +377,9 @@ export default function NewsletterHeaderFixDemo() {
                 <br />
                 • Header usa SimpleTipTapEditorWithFlags
                 <br />
-                • createSelectionHandler('header-title')
+                • createSelectionHandler(&apos;header-title&apos;)
                 <br />
-                • createSelectionHandler('header-subtitle')
+                • createSelectionHandler(&apos;header-subtitle&apos;)
                 <br />• Formato se aplica al elemento correcto
               </Typography>
             </CardContent>
@@ -406,7 +406,8 @@ export default function NewsletterHeaderFixDemo() {
             </li>
             <li>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                Verifica que aparece "TÍTULO SELECCIONADO" y se muestra en el panel lateral
+                Verifica que aparece &quot;TÍTULO SELECCIONADO&quot; y se muestra en el panel
+                lateral
               </Typography>
             </li>
             <li>

@@ -1,19 +1,33 @@
 'use client';
 
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 
-import { Box, Tab, Tabs, AppBar, Toolbar, Typography } from '@mui/material';
+import {
+  Box,
+  Tab,
+  Tabs,
+  AppBar,
+  Select,
+  Button,
+  Toolbar,
+  Divider,
+  MenuItem,
+  TextField,
+  Typography,
+  InputLabel,
+  FormControl,
+} from '@mui/material';
 
 // Importaciones de los componentes individuales
 import TextOptions from './right-panel/TextOptions';
 import ImageOptions from './right-panel/ImageOptions';
 import ButtonOptions from './right-panel/ButtonOptions';
-import DesignOptions from './right-panel/DesignOptions';
 import GalleryOptions from './right-panel/GalleryOptions';
 import DividerOptions from './right-panel/DividerOptions';
 import SummaryOptions from './right-panel/SummaryOptions';
 import CategoryOptions from './right-panel/CategoryOptions';
-import BackgroundOptions from './right-panel/BackgroundOptions';
+import ContainerOptions from './right-panel/ContainerOptions';
 import SmartDesignOptions from './right-panel/SmartDesignOptions';
 import HerramientasOptions from './right-panel/HerramientasOptions';
 import RespaldadoPorOptions from './right-panel/RespaldadoPorOptions';
@@ -63,7 +77,32 @@ export default function RightPanel({
   updateListColor,
   convertTextToList,
   setShowIconPicker,
+  isContainerSelected,
+  setIsContainerSelected,
+  containerBorderWidth,
+  setContainerBorderWidth,
+  containerBorderColor,
+  setContainerBorderColor,
+  containerBorderRadius,
+  setContainerBorderRadius,
+  containerPadding,
+  setContainerPadding,
+  containerMaxWidth,
+  setContainerMaxWidth,
+  activeTemplate,
+  activeVersion,
+  noteTitle,
+  setNoteTitle,
+  noteDescription,
+  setNoteDescription,
+  noteCoverImageUrl,
+  setNoteCoverImageUrl,
+  noteStatus,
+  setNoteStatus,
 }: RightPanelProps) {
+  // Estado para los tabs del contenedor
+  const [containerTab, setContainerTab] = useState(0);
+
   // Si no hay componente seleccionado, mostrar un mensaje
   const renderEmptyState = () => (
     <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
@@ -82,20 +121,192 @@ export default function RightPanel({
     ? getActiveComponents().find((comp) => comp.id === selectedComponentId)
     : null;
 
+  // ⚡ DEBUG: Log de selección
+  console.log('🎯 RightPanel selectedComponentId:', selectedComponentId);
+  console.log('🎯 RightPanel selectedComponent:', selectedComponent?.type, selectedComponent?.id);
+
+  // Si el contenedor está seleccionado, mostrar las opciones del contenedor
+  if (isContainerSelected && (activeTemplate !== 'news' || activeVersion === 'newsletter')) {
+    return (
+      <Box
+        sx={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: '#fff',
+          overflow: 'hidden',
+        }}
+      >
+        <AppBar position="static" color="default" elevation={0}>
+          <Toolbar sx={{ minHeight: { xs: 48, sm: 56 } }}>
+            <Typography
+              variant="subtitle1"
+              component="div"
+              sx={{
+                flexGrow: 1,
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              }}
+            >
+              Configuración de la Nota
+            </Typography>
+          </Toolbar>
+
+          {/* Tabs dentro del AppBar */}
+          <Tabs
+            value={containerTab}
+            onChange={(event, newValue) => setContainerTab(newValue)}
+            variant="fullWidth"
+            sx={{
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              backgroundColor: 'background.paper',
+            }}
+          >
+            <Tab label="Información Básica" />
+            <Tab label="Diseño del Contenedor" />
+          </Tabs>
+        </AppBar>
+
+        <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
+          {/* Tab 0: Información Básica */}
+          {containerTab === 0 && (
+            <Box sx={{ p: 2 }}>
+              {/* Título */}
+              <TextField
+                fullWidth
+                label="Título de la nota"
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+                sx={{ mb: 2 }}
+                required
+                helperText="Este título aparecerá en la lista de notas"
+              />
+
+              {/* Descripción */}
+              <TextField
+                fullWidth
+                label="Descripción"
+                value={noteDescription}
+                onChange={(e) => setNoteDescription(e.target.value)}
+                multiline
+                rows={3}
+                sx={{ mb: 2 }}
+                helperText="Descripción opcional para identificar el contenido"
+              />
+
+              {/* Estado */}
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Estado</InputLabel>
+                <Select
+                  value={noteStatus}
+                  label="Estado"
+                  onChange={(e) => setNoteStatus(e.target.value)}
+                >
+                  <MenuItem value="DRAFT">Borrador</MenuItem>
+                  <MenuItem value="REVIEW">En Revisión</MenuItem>
+                  <MenuItem value="APPROVED">Aprobado</MenuItem>
+                  <MenuItem value="PUBLISHED">Publicado</MenuItem>
+                </Select>
+              </FormControl>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Imagen de portada */}
+              <Typography variant="h6" gutterBottom>
+                Imagen de Portada
+              </Typography>
+
+              <TextField
+                fullWidth
+                label="URL de la imagen"
+                value={noteCoverImageUrl}
+                onChange={(e) => setNoteCoverImageUrl(e.target.value)}
+                sx={{ mb: 2 }}
+                helperText="URL de la imagen que aparecerá como portada"
+                placeholder="https://ejemplo.com/imagen.jpg"
+              />
+
+              {/* Vista previa de la imagen */}
+              {noteCoverImageUrl && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Vista previa:
+                  </Typography>
+                  <Box
+                    component="img"
+                    src={noteCoverImageUrl}
+                    alt="Vista previa"
+                    sx={{
+                      width: '100%',
+                      maxHeight: 120,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </Box>
+              )}
+
+              <Button
+                variant="outlined"
+                startIcon={<Icon icon="solar:upload-outline" />}
+                sx={{ mb: 2 }}
+                disabled
+              >
+                Subir Imagen (Próximamente)
+              </Button>
+            </Box>
+          )}
+
+          {/* Tab 1: Diseño del Contenedor */}
+          {containerTab === 1 && (
+            <Box sx={{ p: 2 }}>
+              <ContainerOptions
+                containerBorderWidth={containerBorderWidth}
+                setContainerBorderWidth={setContainerBorderWidth}
+                containerBorderColor={containerBorderColor}
+                setContainerBorderColor={setContainerBorderColor}
+                containerBorderRadius={containerBorderRadius}
+                setContainerBorderRadius={setContainerBorderRadius}
+                containerPadding={containerPadding}
+                setContainerPadding={setContainerPadding}
+                containerMaxWidth={containerMaxWidth}
+                setContainerMaxWidth={setContainerMaxWidth}
+              />
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  }
+
   if (!selectedComponent) {
     return (
       <Box
         sx={{
-          width: 280,
-          borderLeft: '1px solid #e0e0e0',
+          width: '100%',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: '#fff',
+          overflow: 'hidden',
         }}
       >
         <AppBar position="static" color="default" elevation={0}>
-          <Toolbar>
-            <Typography variant="subtitle1" component="div" sx={{ flexGrow: 1 }}>
+          <Toolbar sx={{ minHeight: { xs: 48, sm: 56 } }}>
+            <Typography
+              variant="subtitle1"
+              component="div"
+              sx={{
+                flexGrow: 1,
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+              }}
+            >
               Diseño
             </Typography>
           </Toolbar>
@@ -111,16 +322,24 @@ export default function RightPanel({
   return (
     <Box
       sx={{
-        width: 280,
-        borderLeft: '1px solid #e0e0e0',
+        width: '100%',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#fff',
+        overflow: 'hidden',
       }}
     >
       <AppBar position="static" color="default" elevation={0}>
-        <Toolbar>
-          <Typography variant="subtitle1" component="div" sx={{ flexGrow: 1 }}>
+        <Toolbar sx={{ minHeight: { xs: 48, sm: 56 } }}>
+          <Typography
+            variant="subtitle1"
+            component="div"
+            sx={{
+              flexGrow: 1,
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+            }}
+          >
             Diseño
           </Typography>
         </Toolbar>
@@ -131,7 +350,17 @@ export default function RightPanel({
         onChange={(e, newValue) => setRightPanelTab(newValue)}
         variant="scrollable"
         scrollButtons="auto"
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
+        allowScrollButtonsMobile
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          flexShrink: 0,
+          '& .MuiTab-root': {
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            minWidth: { xs: 'auto', sm: 72 },
+            padding: { xs: '6px 8px', sm: '12px 16px' },
+          },
+        }}
       >
         <Tab
           label={
@@ -160,11 +389,9 @@ export default function RightPanel({
           <Tab label={componentType === 'summary' ? 'Summary' : 'Configuración'} />
         )}
         <Tab label="🎨 Smart" />
-        <Tab label="Diseño" />
-        <Tab label="Fondo" />
       </Tabs>
 
-      <Box sx={{ overflow: 'auto' }}>
+      <Box sx={{ overflow: 'auto', flexGrow: 1, p: { xs: 1, sm: 2 } }}>
         {rightPanelTab === 0 && (
           <>
             {componentType === 'image' && (
@@ -248,6 +475,28 @@ export default function RightPanel({
                 updateListColor={updateListColor}
                 convertTextToList={convertTextToList}
                 setShowIconPicker={setShowIconPicker}
+                isContainerSelected={isContainerSelected}
+                setIsContainerSelected={setIsContainerSelected}
+                containerBorderWidth={containerBorderWidth}
+                setContainerBorderWidth={setContainerBorderWidth}
+                containerBorderColor={containerBorderColor}
+                setContainerBorderColor={setContainerBorderColor}
+                containerBorderRadius={containerBorderRadius}
+                setContainerBorderRadius={setContainerBorderRadius}
+                containerPadding={containerPadding}
+                setContainerPadding={setContainerPadding}
+                containerMaxWidth={containerMaxWidth}
+                setContainerMaxWidth={setContainerMaxWidth}
+                activeTemplate={activeTemplate}
+                activeVersion={activeVersion}
+                noteTitle={noteTitle}
+                setNoteTitle={setNoteTitle}
+                noteDescription={noteDescription}
+                setNoteDescription={setNoteDescription}
+                noteCoverImageUrl={noteCoverImageUrl}
+                setNoteCoverImageUrl={setNoteCoverImageUrl}
+                noteStatus={noteStatus}
+                setNoteStatus={setNoteStatus}
               />
             )}
 
@@ -312,31 +561,6 @@ export default function RightPanel({
             selectedComponent={selectedComponent}
             updateComponentStyle={updateComponentStyle}
             updateComponentProps={updateComponentProps}
-          />
-        )}
-
-        {rightPanelTab ===
-          (componentType === 'summary' || componentType === 'herramientas' ? 3 : 2) && (
-          <DesignOptions
-            selectedComponentId={selectedComponentId}
-            updateComponentStyle={updateComponentStyle}
-          />
-        )}
-
-        {rightPanelTab ===
-          (componentType === 'summary' || componentType === 'herramientas' ? 4 : 3) && (
-          <BackgroundOptions
-            selectedComponentId={selectedComponentId}
-            updateComponentStyle={updateComponentStyle}
-            emailBackground={emailBackground}
-            setEmailBackground={setEmailBackground}
-            selectedBanner={selectedBanner}
-            setSelectedBanner={setSelectedBanner}
-            showGradient={showGradient}
-            setShowGradient={setShowGradient}
-            gradientColors={gradientColors}
-            setGradientColors={setGradientColors}
-            bannerOptions={bannerOptions}
           />
         )}
       </Box>

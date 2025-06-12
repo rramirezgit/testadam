@@ -18,7 +18,7 @@ function decodeMockJWT(token: string) {
     }
 
     return payload;
-  } catch (error) {
+  } catch {
     throw new Error('Token inválido');
   }
 }

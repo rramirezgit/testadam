@@ -279,7 +279,8 @@ export default function SelectionFixDemo() {
             </li>
             <li>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Observa el indicador de selección</strong> - debe mostrar "editor-1"
+                <strong>Observa el indicador de selección</strong> - debe mostrar
+                &quot;editor-1&quot;
               </Typography>
             </li>
             <li>
@@ -289,7 +290,7 @@ export default function SelectionFixDemo() {
             </li>
             <li>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>Verifica que el indicador cambia</strong> a "editor-2"
+                <strong>Verifica que el indicador cambia</strong> a &quot;editor-2&quot;
               </Typography>
             </li>
             <li>

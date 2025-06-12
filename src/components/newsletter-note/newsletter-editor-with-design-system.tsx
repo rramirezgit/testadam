@@ -269,7 +269,7 @@ export const NewsletterEditorWithDesignSystem: React.FC = () => {
             👋 ¡Bienvenido al Editor con Design System!
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            1. Agrega contenido con el botón "Agregar Párrafo"
+            1. Agrega contenido con el botón &quot;Agregar Párrafo&quot;
             <br />
             2. El Design System se activará automáticamente
             <br />

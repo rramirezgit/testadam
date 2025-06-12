@@ -49,32 +49,42 @@ export default function SavedNoteCard({ note, onOpen, onDelete }: SavedNoteCardP
 
   // Get a preview of the note content
   const getContentPreview = () => {
-    if (!note.objdata || note.objdata.length === 0) return 'Empty note';
+    try {
+      const objData = JSON.parse(note.objData);
+      if (!objData || objData.length === 0) return 'Empty note';
 
-    // Find the first paragraph or heading
-    const firstTextItem = note.objdata.find(
-      (item) => item.type === 'paragraph' || item.type === 'heading'
-    );
+      // Find the first paragraph or heading
+      const firstTextItem = objData.find(
+        (item: any) => item.type === 'paragraph' || item.type === 'heading'
+      );
 
-    if (firstTextItem) {
-      const text = firstTextItem.content;
-      return text.length > 100 ? `${text.substring(0, 100)}...` : text;
+      if (firstTextItem) {
+        const text = String(firstTextItem.content || '');
+        return text.length > 100 ? `${text.substring(0, 100)}...` : text;
+      }
+
+      return 'No text content';
+    } catch (error) {
+      return 'Error parsing note content';
     }
-
-    return 'No text content';
   };
 
   // Count components by type
   const getComponentCounts = () => {
-    if (!note.objdata) return {};
+    try {
+      const objData = JSON.parse(note.objData);
+      if (!objData) return {};
 
-    return note.objdata.reduce(
-      (acc, item) => {
-        acc[item.type] = (acc[item.type] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+      return objData.reduce(
+        (acc: any, item: any) => {
+          acc[item.type] = (acc[item.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+    } catch (error) {
+      return {};
+    }
   };
 
   const componentCounts = getComponentCounts();
@@ -141,7 +151,7 @@ export default function SavedNoteCard({ note, onOpen, onDelete }: SavedNoteCardP
               <Chip
                 key={type}
                 size="small"
-                label={`${count} ${type}${count > 1 ? 's' : ''}`}
+                label={`${count} ${type}${Number(count) > 1 ? 's' : ''}`}
                 icon={
                   <Icon
                     icon={
@@ -166,10 +176,27 @@ export default function SavedNoteCard({ note, onOpen, onDelete }: SavedNoteCardP
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto', pt: 1 }}>
             <Typography variant="caption" color="text.secondary">
-              Template: {note.templateType || 'Custom'}
+              Template:{' '}
+              {(() => {
+                try {
+                  const configNote = JSON.parse(note.configNote);
+                  return configNote.templateType || 'Custom';
+                } catch {
+                  return 'Custom';
+                }
+              })()}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {note.dateCreated ? format(new Date(note.dateCreated), 'MMM d, yyyy') : ''}
+              {(() => {
+                try {
+                  const configNote = JSON.parse(note.configNote);
+                  return configNote.dateCreated
+                    ? format(new Date(configNote.dateCreated), 'MMM d, yyyy')
+                    : '';
+                } catch {
+                  return '';
+                }
+              })()}
             </Typography>
           </Box>
         </CardContent>

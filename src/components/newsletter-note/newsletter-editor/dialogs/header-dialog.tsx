@@ -45,7 +45,7 @@ export default function HeaderDialog({ open, onClose, header, setHeader }: Heade
         <DialogTitle>Edit Newsletter Header</DialogTitle>
         <Box sx={{ px: 3, pb: 3 }}>
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
                 label="Header Title"
@@ -65,7 +65,7 @@ export default function HeaderDialog({ open, onClose, header, setHeader }: Heade
                   Text Alignment
                 </Typography>
                 <Grid container spacing={1}>
-                  <Grid item xs={4}>
+                  <Grid size={{ xs: 4 }}>
                     <Button
                       variant={header.alignment === 'left' ? 'contained' : 'outlined'}
                       fullWidth
@@ -74,7 +74,7 @@ export default function HeaderDialog({ open, onClose, header, setHeader }: Heade
                       <Icon icon="mdi:format-align-left" />
                     </Button>
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid size={{ xs: 4 }}>
                     <Button
                       variant={header.alignment === 'center' ? 'contained' : 'outlined'}
                       fullWidth
@@ -83,7 +83,7 @@ export default function HeaderDialog({ open, onClose, header, setHeader }: Heade
                       <Icon icon="mdi:format-align-center" />
                     </Button>
                   </Grid>
-                  <Grid item xs={4}>
+                  <Grid size={{ xs: 4 }}>
                     <Button
                       variant={header.alignment === 'right' ? 'contained' : 'outlined'}
                       fullWidth
@@ -95,7 +95,7 @@ export default function HeaderDialog({ open, onClose, header, setHeader }: Heade
                 </Grid>
               </Box>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Background Style
@@ -116,7 +116,7 @@ export default function HeaderDialog({ open, onClose, header, setHeader }: Heade
                       Gradient Colors
                     </Typography>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
-                      <Grid item xs={6}>
+                      <Grid size={{ xs: 6 }}>
                         <Typography variant="caption" display="block" gutterBottom>
                           Start Color
                         </Typography>
@@ -126,7 +126,7 @@ export default function HeaderDialog({ open, onClose, header, setHeader }: Heade
                           label="Start"
                         />
                       </Grid>
-                      <Grid item xs={6}>
+                      <Grid size={{ xs: 6 }}>
                         <Typography variant="caption" display="block" gutterBottom>
                           End Color
                         </Typography>

@@ -216,7 +216,17 @@ export default function NoteSelector({ selectedNotes, onNotesChange }: NoteSelec
                       </ListItemIcon>
                       <ListItemText
                         primary={note.title || 'Untitled Note'}
-                        secondary={`${format(new Date(note.dateModified || note.dateCreated), 'MMM d, yyyy')}`}
+                        secondary={`${(() => {
+                          try {
+                            const configNote = JSON.parse(note.configNote);
+                            return format(
+                              new Date(configNote.dateModified || configNote.dateCreated),
+                              'MMM d, yyyy'
+                            );
+                          } catch {
+                            return 'Unknown date';
+                          }
+                        })()}`}
                       />
                     </ListItem>
                   );
@@ -267,14 +277,31 @@ export default function NoteSelector({ selectedNotes, onNotesChange }: NoteSelec
                         <Typography variant="body2">{note.title || 'Untitled Note'}</Typography>
                         <Chip
                           size="small"
-                          label={note.templateType}
+                          label={(() => {
+                            try {
+                              const configNote = JSON.parse(note.configNote);
+                              return configNote.templateType || 'Unknown';
+                            } catch {
+                              return 'Unknown';
+                            }
+                          })()}
                           sx={{ ml: 1, height: 20, fontSize: '0.625rem' }}
                         />
                       </Box>
                     }
                     secondary={
                       <Typography variant="caption" component="span" color="text.secondary">
-                        {format(new Date(note.dateModified || note.dateCreated), 'MMM d, yyyy')}
+                        {(() => {
+                          try {
+                            const configNote = JSON.parse(note.configNote);
+                            return format(
+                              new Date(configNote.dateModified || configNote.dateCreated),
+                              'MMM d, yyyy'
+                            );
+                          } catch {
+                            return 'Unknown date';
+                          }
+                        })()}
                       </Typography>
                     }
                   />

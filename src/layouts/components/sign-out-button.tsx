@@ -1,26 +1,25 @@
 import type { ButtonProps } from '@mui/material/Button';
 
 import { useCallback } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 
 import Button from '@mui/material/Button';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { CONFIG } from 'src/global-config';
+import useAuthStore from 'src/store/AuthStore';
+import usePostStore from 'src/store/PostStore';
 
 import { toast } from 'src/components/snackbar';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { signOut as jwtSignOut } from 'src/auth/context/jwt/action';
 import { signOut as amplifySignOut } from 'src/auth/context/amplify/action';
-import { signOut as supabaseSignOut } from 'src/auth/context/supabase/action';
 import { signOut as firebaseSignOut } from 'src/auth/context/firebase/action';
 
 // ----------------------------------------------------------------------
 
 const signOut =
-  (CONFIG.auth.method === 'supabase' && supabaseSignOut) ||
   (CONFIG.auth.method === 'firebase' && firebaseSignOut) ||
   (CONFIG.auth.method === 'amplify' && amplifySignOut) ||
   jwtSignOut;
@@ -34,32 +33,68 @@ export function SignOutButton({ onClose, sx, ...other }: Props) {
 
   const { checkUserSession } = useAuthContext();
 
-  const { logout: signOutAuth0 } = useAuth0();
+  const { logout } = useAuthStore();
+  const { clearPosts, clearCurrentPost } = usePostStore();
 
   const handleLogout = useCallback(async () => {
     try {
       await signOut();
       await checkUserSession?.();
 
+      // Limpiar datos del PostStore
+      clearPosts();
+      clearCurrentPost();
+
+      // Limpiar cualquier otro dato persistido en localStorage
+      localStorage.removeItem('auth-storage');
+      localStorage.removeItem('post-storage');
+      localStorage.removeItem('AUTH_TOKEN');
+
+      // Limpiar sessionStorage también por si acaso
+      sessionStorage.clear();
+
       onClose?.();
-      router.refresh();
+
+      // Redirigir al login después del logout
+      router.replace('/auth/login');
+
+      // Mostrar mensaje de éxito
+      toast.success('Sesión cerrada correctamente');
     } catch (error) {
       console.error(error);
-      toast.error('Unable to logout!');
+      toast.error('Error al cerrar sesión');
     }
-  }, [checkUserSession, onClose, router]);
+  }, [checkUserSession, onClose, router, clearPosts, clearCurrentPost]);
 
   const handleLogoutAuth0 = useCallback(async () => {
     try {
-      await signOutAuth0();
+      // Limpiar datos del AuthStore
+      await logout();
+
+      // Limpiar datos del PostStore
+      clearPosts();
+      clearCurrentPost();
+
+      // Limpiar cualquier otro dato persistido en localStorage
+      localStorage.removeItem('auth-storage');
+      localStorage.removeItem('post-storage');
+      localStorage.removeItem('AUTH_TOKEN');
+
+      // Limpiar sessionStorage también por si acaso
+      sessionStorage.clear();
 
       onClose?.();
-      router.refresh();
+
+      // Redirigir al login y forzar recarga completa
+      router.replace('/auth/login');
+
+      // Mostrar mensaje de éxito
+      toast.success('Sesión cerrada correctamente');
     } catch (error) {
       console.error(error);
-      toast.error('Unable to logout!');
+      toast.error('Error al cerrar sesión');
     }
-  }, [onClose, router, signOutAuth0]);
+  }, [onClose, router, logout, clearPosts, clearCurrentPost]);
 
   return (
     <Button
@@ -71,7 +106,7 @@ export function SignOutButton({ onClose, sx, ...other }: Props) {
       sx={sx}
       {...other}
     >
-      Logout
+      Cerrar Sesión
     </Button>
   );
 }

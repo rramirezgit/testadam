@@ -1,37 +1,36 @@
-"use client"
+'use client';
 
-import { Box } from "@mui/material"
+import { Box } from '@mui/material';
 
-import DesignTab from "../tabs/design-tab"
-import ContentTab from "../tabs/content-tab"
-import PreviewTab from "../tabs/preview-tab"
-import HeaderDialog from "../dialogs/header-dialog"
-import FooterDialog from "../dialogs/footer-dialog"
-import HtmlPreviewDialog from "../dialogs/html-preview-dialog"
+import ContentTab from '../tabs/content-tab';
+import PreviewTab from '../tabs/preview-tab';
+import HeaderDialog from '../dialogs/header-dialog';
+import FooterDialog from '../dialogs/footer-dialog';
+import HtmlPreviewDialog from '../dialogs/html-preview-dialog';
 
 interface MainContentProps {
-  activeTab: string
-  title: string
-  setTitle: (title: string) => void
-  description: string
-  setDescription: (description: string) => void
-  selectedNotes: any[]
-  handleRemoveNote: (noteId: string) => void
-  handleMoveNote: (noteId: string, direction: "up" | "down") => void
-  handleEditNote: (note: any) => void
-  handleCreateNewNote: () => void
-  header: any
-  setHeader: (header: any) => void
-  footer: any
-  setFooter: (footer: any) => void
-  openHeaderDialog: boolean
-  setOpenHeaderDialog: (open: boolean) => void
-  openFooterDialog: boolean
-  setOpenFooterDialog: (open: boolean) => void
-  openHtmlPreview: boolean
-  setOpenHtmlPreview: (open: boolean) => void
-  generatedHtml: string
-  handleCopyHtml: () => void
+  activeTab: string;
+  title: string;
+  setTitle: (title: string) => void;
+  description: string;
+  setDescription: (description: string) => void;
+  selectedNotes: any[];
+  handleRemoveNote: (noteId: string) => void;
+  handleMoveNote: (noteId: string, direction: 'up' | 'down') => void;
+  handleEditNote: (note: any) => void;
+  handleCreateNewNote: () => void;
+  header: any;
+  setHeader: (header: any) => void;
+  footer: any;
+  setFooter: (footer: any) => void;
+  openHeaderDialog: boolean;
+  setOpenHeaderDialog: (open: boolean) => void;
+  openFooterDialog: boolean;
+  setOpenFooterDialog: (open: boolean) => void;
+  openHtmlPreview: boolean;
+  setOpenHtmlPreview: (open: boolean) => void;
+  generatedHtml: string;
+  handleCopyHtml: () => void;
 }
 
 export default function MainContent({
@@ -59,8 +58,8 @@ export default function MainContent({
   handleCopyHtml,
 }: MainContentProps) {
   return (
-    <Box sx={{ flexGrow: 1, height: "100%", overflow: "auto" }}>
-      {activeTab === "content" && (
+    <Box sx={{ flexGrow: 1, height: '100%', overflow: 'auto' }}>
+      {activeTab === 'content' && (
         <ContentTab
           title={title}
           setTitle={setTitle}
@@ -74,16 +73,7 @@ export default function MainContent({
         />
       )}
 
-      {activeTab === "design" && (
-        <DesignTab
-          header={header}
-          footer={footer}
-          setOpenHeaderDialog={setOpenHeaderDialog}
-          setOpenFooterDialog={setOpenFooterDialog}
-        />
-      )}
-
-      {activeTab === "preview" && (
+      {activeTab === 'preview' && (
         <PreviewTab
           header={header}
           footer={footer}
@@ -111,9 +101,9 @@ export default function MainContent({
       <HtmlPreviewDialog
         open={openHtmlPreview}
         onClose={() => setOpenHtmlPreview(false)}
-        html={generatedHtml}
-        onCopy={handleCopyHtml}
+        htmlContent={generatedHtml}
+        title={title}
       />
     </Box>
-  )
+  );
 }

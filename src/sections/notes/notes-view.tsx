@@ -1,26 +1,38 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+
 'use client';
 
-// import type { SavedNote } from 'src/types/saved-note';
-// import type { Newsletter } from 'src/types/newsletter';
-
 import type { SavedNote } from 'src/types/saved-note';
+import type { PostFilters } from 'src/store/PostStore';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
   Tab,
   Tabs,
+  Modal,
+  Paper,
   Button,
   Dialog,
+  Select,
+  Divider,
+  Checkbox,
+  MenuItem,
   TextField,
   Typography,
+  InputLabel,
+  Pagination,
+  IconButton,
+  FormControl,
   InputAdornment,
   CircularProgress,
+  FormControlLabel,
 } from '@mui/material';
 
-import { useStore } from 'src/lib/store';
+import { usePosts } from 'src/hooks/use-posts';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -36,54 +48,108 @@ type Tab = {
 const TABS: Tab[] = [
   {
     label: 'Borradores',
-    value: 'DRAFT',
+    value: 'draft',
   },
   {
     label: 'Review',
-    value: 'REVIEW',
+    value: 'review',
   },
   {
     label: 'Aprobados',
-    value: 'APPROVED',
+    value: 'approved',
   },
   {
-    label: 'ADAC',
-    value: 'PUBLISHED',
+    label: 'Publicado',
+    value: 'published',
   },
 ];
 
 export default function NotesView() {
   const [openEditor, setOpenEditor] = useState(false);
   const [currentNote, setCurrentNote] = useState<SavedNote | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('DRAFT');
+  const [tab, setTab] = useState('draft');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [openFiltersModal, setOpenFiltersModal] = useState(false);
 
-  // Use global state from Zustand
-  const { notes, loadNotes, deleteNote } = useStore();
+  // Estados para filtros avanzados
+  const [filters, setFilters] = useState({
+    origin: '',
+    startDate: '',
+    endDate: '',
+    highlight: false,
+    perPage: 20,
+    page: 1,
+  });
 
-  // Load saved notes on component mount
-  useEffect(() => {
-    const loadData = () => {
-      loadNotes();
-      setLoading(false);
-    };
+  // Configurar filtros basados en el tab actual
+  const currentFilters: PostFilters = {
+    status: tab.toUpperCase(),
+    page: filters.page,
+    perPage: filters.perPage,
+    ...(searchTerm && { title: searchTerm }),
+    ...(filters.origin && { origin: filters.origin }),
+    ...(filters.startDate && { startDate: filters.startDate }),
+    ...(filters.endDate && { endDate: filters.endDate }),
+    ...(filters.highlight && { highlight: filters.highlight }),
+  };
 
-    loadData();
+  // Use PostStore
+  const { loading, posts, meta, error, removePost, refreshPosts } = usePosts(currentFilters);
 
-    // Add event listener to refresh data when storage changes
-    window.addEventListener('storage', loadData);
+  // Convertir posts de Article a SavedNote para compatibilidad
+  const notes = posts.map(
+    (post): SavedNote => ({
+      id: post.id,
+      title: post.title,
+      configNote: JSON.stringify({
+        templateType: 'default',
+        dateCreated: post.createdAt,
+        dateModified: post.createdAt,
+        style: 'modern',
+        theme: 'aurora',
+        headerConfig: {},
+        footerConfig: {},
+        socialMedia: {},
+      }),
+      objData: JSON.stringify([]),
+      objDataWeb: JSON.stringify(''),
+    })
+  );
 
-    return () => {
-      window.removeEventListener('storage', loadData);
-    };
-  }, [loadNotes]);
+  // Manejar búsqueda con debounce
+  const handleSearch = useCallback(
+    (value: string) => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
 
-  // Refresh data when editor is closed
+      const newTimeout = setTimeout(() => {
+        setSearchTerm(value);
+        setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on search
+      }, 500);
+
+      setSearchTimeout(newTimeout);
+    },
+    [searchTimeout]
+  );
+
+  // Limpiar timeout al desmontar
+  useEffect(
+    () => () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    },
+    [searchTimeout]
+  );
+
+  // Refrescar cuando se cierra el editor
   useEffect(() => {
     if (!openEditor) {
-      loadNotes();
+      refreshPosts();
     }
-  }, [openEditor, loadNotes]);
+  }, [openEditor, refreshPosts]);
 
   const handleOpenEditor = (note?: SavedNote) => {
     if (note) {
@@ -99,13 +165,40 @@ export default function NotesView() {
     setCurrentNote(null);
   };
 
-  const handleDeleteNote = (noteId: string) => {
-    deleteNote(noteId);
+  const handleDeleteNote = async (noteId: string) => {
+    await removePost(noteId);
   };
 
   const handleChangeTab = (event: React.SyntheticEvent, newValue: string) => {
+    console.log('🔄 Cambiando tab a:', newValue);
     setTab(newValue);
+    setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on tab change
   };
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
+    setFilters((prev) => ({ ...prev, page }));
+  };
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters((prev) => ({ ...prev, [key]: value, page: 1 })); // Reset page on filter change
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      origin: '',
+      startDate: '',
+      endDate: '',
+      highlight: false,
+      perPage: 20,
+      page: 1,
+    });
+    setSearchTerm('');
+  };
+
+  // Agregar useEffect para debug de filtros
+  useEffect(() => {
+    console.log('📊 Filtros actuales:', currentFilters);
+  }, [currentFilters]);
 
   return (
     <DashboardContent>
@@ -115,6 +208,7 @@ export default function NotesView() {
           subheading="Crea, personaliza y publica tus notas en ADAC"
           sx={{ mb: { xs: 3, md: 5 } }}
         />
+
         <Box
           sx={{
             gap: 3,
@@ -125,26 +219,41 @@ export default function NotesView() {
             alignItems: { xs: 'flex-end', sm: 'center' },
           }}
         >
-          <TextField
-            placeholder="Search..."
-            name="search-note"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="eva:search-fill" sx={{ ml: 1, color: 'text.disabled' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <>
-                    {loading ? (
-                      <CircularProgress size={18} color="inherit" sx={{ mr: -3 }} />
-                    ) : null}
-                  </>
-                ),
-              },
-            }}
-          />
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
+            <TextField
+              placeholder="Buscar notas..."
+              name="search-note"
+              onChange={(e) => handleSearch(e.target.value)}
+              sx={{ flex: 1 }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" sx={{ ml: 1, color: 'text.disabled' }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <>
+                      {loading ? (
+                        <CircularProgress size={18} color="inherit" sx={{ mr: -3 }} />
+                      ) : null}
+                    </>
+                  ),
+                },
+              }}
+            />
+
+            <IconButton
+              onClick={() => setOpenFiltersModal(true)}
+              sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+              }}
+            >
+              <Iconify icon="solar:settings-bold" />
+            </IconButton>
+          </Box>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
@@ -177,9 +286,16 @@ export default function NotesView() {
           ))}
         </Tabs>
 
+        {error && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <Typography color="error">Error al cargar las notas: {error}</Typography>
+          </Box>
+        )}
+
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <Typography>Loading your templates...</Typography>
+            <CircularProgress />
+            <Typography sx={{ ml: 2 }}>Cargando tus notas...</Typography>
           </Box>
         ) : (
           <NotesGrid
@@ -189,6 +305,129 @@ export default function NotesView() {
             onCreateNew={() => handleOpenEditor()}
           />
         )}
+
+        {/* Paginación */}
+        {meta && meta.total > 0 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <Pagination
+                count={meta.lastPage}
+                page={meta.currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                showFirstButton
+                showLastButton
+              />
+              <Typography variant="body2" color="text.secondary">
+                Mostrando {notes.length} de {meta.total} notas
+              </Typography>
+            </Box>
+          </Box>
+        )}
+
+        {/* Modal de Filtros */}
+        <Modal
+          open={openFiltersModal}
+          onClose={() => setOpenFiltersModal(false)}
+          aria-labelledby="filters-modal"
+        >
+          <Paper
+            sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: { xs: '90%', sm: 600 },
+              maxHeight: '80vh',
+              overflow: 'auto',
+              p: 3,
+            }}
+          >
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}
+            >
+              <Typography variant="h6">Filtros Avanzados</Typography>
+              <IconButton onClick={() => setOpenFiltersModal(false)}>
+                <Iconify icon="solar:close-circle-bold" />
+              </IconButton>
+            </Box>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Origen y Elementos por página */}
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <FormControl fullWidth>
+                  <InputLabel>Origen</InputLabel>
+                  <Select
+                    value={filters.origin}
+                    label="Origen"
+                    onChange={(e) => handleFilterChange('origin', e.target.value)}
+                  >
+                    <MenuItem value="">Todos</MenuItem>
+                    <MenuItem value="IA">IA</MenuItem>
+                    <MenuItem value="ADAC">ADAC</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Elementos por página</InputLabel>
+                  <Select
+                    value={filters.perPage}
+                    label="Elementos por página"
+                    onChange={(e) => handleFilterChange('perPage', e.target.value)}
+                  >
+                    <MenuItem value={10}>10</MenuItem>
+                    <MenuItem value={20}>20</MenuItem>
+                    <MenuItem value={50}>50</MenuItem>
+                    <MenuItem value={100}>100</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {/* Fechas */}
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  type="date"
+                  label="Fecha de inicio"
+                  value={filters.startDate}
+                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                  type="date"
+                  label="Fecha de fin"
+                  value={filters.endDate}
+                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
+
+              {/* Destacados */}
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={filters.highlight}
+                    onChange={(e) => handleFilterChange('highlight', e.target.checked)}
+                  />
+                }
+                label="Solo notas destacadas"
+              />
+            </Box>
+
+            <Divider sx={{ my: 3 }} />
+
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+              <Button variant="outlined" onClick={handleClearFilters}>
+                Limpiar Filtros
+              </Button>
+              <Button variant="contained" onClick={() => setOpenFiltersModal(false)}>
+                Aplicar Filtros
+              </Button>
+            </Box>
+          </Paper>
+        </Modal>
 
         {/* Email Editor Dialog */}
         <Dialog fullScreen open={openEditor} onClose={handleCloseEditor}>

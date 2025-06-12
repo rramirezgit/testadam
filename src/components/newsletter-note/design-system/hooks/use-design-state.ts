@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 import { useState, useEffect, useCallback } from 'react';
 
 import { defaultDesignState } from '../data/default-configs';

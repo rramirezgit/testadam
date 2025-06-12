@@ -1,29 +1,29 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useEffect } from "react"
-import Color from "@tiptap/extension-color"
-import StarterKit from "@tiptap/starter-kit"
-import Underline from "@tiptap/extension-underline"
-import TextStyle from "@tiptap/extension-text-style"
-import TextAlign from "@tiptap/extension-text-align"
-import FontFamily from "@tiptap/extension-font-family"
-import { useEditor, EditorContent } from "@tiptap/react"
+import { useEffect } from 'react';
+import Color from '@tiptap/extension-color';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import TextStyle from '@tiptap/extension-text-style';
+import TextAlign from '@tiptap/extension-text-align';
+import FontFamily from '@tiptap/extension-font-family';
+import { useEditor, EditorContent } from '@tiptap/react';
 
-import { Box } from "@mui/material"
+import { Box } from '@mui/material';
 
-import TipTapToolbar from "./tiptap-toolbar"
+import TipTapToolbar from './tiptap-toolbar';
 
 interface TipTapEditorComponentProps {
-  content: string
-  onChange: (content: string) => void
-  showToolbar?: boolean
-  style?: React.CSSProperties
-  className?: string
-  placeholder?: string
-  editorType?: "paragraph" | "heading" | "button"
-  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6
+  content: string;
+  onChange: (content: string) => void;
+  showToolbar?: boolean;
+  style?: React.CSSProperties;
+  className?: string;
+  placeholder?: string;
+  editorType?: 'paragraph' | 'heading' | 'button';
+  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
 }
 
 export default function TipTapEditorComponent({
@@ -32,15 +32,15 @@ export default function TipTapEditorComponent({
   showToolbar = true,
   style,
   className,
-  placeholder = "Escribe aquí...",
-  editorType = "paragraph",
+  placeholder = 'Escribe aquí...',
+  editorType = 'paragraph',
   headingLevel = 2,
 }: TipTapEditorComponentProps) {
   // Configurar extensiones según el tipo de editor
   const getExtensions = () => {
-    const baseExtensions = [TextStyle, Color, FontFamily, Underline]
+    const baseExtensions = [TextStyle, Color, FontFamily, Underline];
 
-    if (editorType === "button") {
+    if (editorType === 'button') {
       return [
         StarterKit.configure({
           heading: false,
@@ -50,71 +50,71 @@ export default function TipTapEditorComponent({
           codeBlock: false,
         }),
         ...baseExtensions,
-      ]
+      ];
     }
 
     return [
       StarterKit,
       ...baseExtensions,
       TextAlign.configure({
-        types: [editorType === "heading" ? "heading" : "paragraph"],
+        types: [editorType === 'heading' ? 'heading' : 'paragraph'],
       }),
-    ]
-  }
+    ];
+  };
 
   const editor = useEditor({
     extensions: getExtensions(),
     content,
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor: _editor }) => {
       // Para React Email, usamos el texto plano
-      onChange(editor.getText())
+      onChange(_editor.getText());
     },
     editorProps: {
       attributes: {
-        class: className || "tiptap-editor",
+        class: className || 'tiptap-editor',
         placeholder,
       },
     },
-  })
+  });
 
   useEffect(() => {
     if (editor && content !== editor.getText()) {
-      editor.commands.setContent(content)
+      editor.commands.setContent(content);
     }
-  }, [content, editor])
+  }, [content, editor]);
 
   // Aplicar estilos según el tipo de editor
   const getEditorStyle = () => {
     const baseStyle = {
       ...style,
-    }
+    };
 
-    if (editorType === "heading") {
+    if (editorType === 'heading') {
       return {
         ...baseStyle,
-        fontSize: headingLevel === 1 ? "24px" : headingLevel === 2 ? "20px" : "16px",
-        fontWeight: "bold",
-        marginBottom: "16px",
-      }
+        fontSize: headingLevel === 1 ? '24px' : headingLevel === 2 ? '20px' : '16px',
+        fontWeight: 'bold',
+        marginBottom: '16px',
+      };
     }
 
-    if (editorType === "button") {
+    if (editorType === 'button') {
       return {
         ...baseStyle,
-        color: "white",
-        width: "100%",
-      }
+        color: 'white',
+        width: '100%',
+      };
     }
 
-    return baseStyle
-  }
+    return baseStyle;
+  };
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box sx={{ width: '100%' }}>
       {showToolbar && editor && <TipTapToolbar editor={editor} />}
       <Box sx={getEditorStyle()}>
         <EditorContent editor={editor} />
       </Box>
     </Box>
-  )
+  );
 }

@@ -42,6 +42,30 @@ export interface RightPanelProps {
   updateListColor: (listId: string, color: string) => void;
   convertTextToList: (componentId: string | null, listType: 'ordered' | 'unordered') => void;
   setShowIconPicker: (show: boolean) => void;
+  isContainerSelected: boolean;
+  setIsContainerSelected: (selected: boolean) => void;
+  containerBorderWidth: number;
+  setContainerBorderWidth: (width: number) => void;
+  containerBorderColor: string;
+  setContainerBorderColor: (color: string) => void;
+  containerBorderRadius: number;
+  setContainerBorderRadius: (radius: number) => void;
+  containerPadding: number;
+  setContainerPadding: (padding: number) => void;
+  containerMaxWidth: number;
+  setContainerMaxWidth: (width: number) => void;
+  activeTemplate: string;
+  activeVersion: 'newsletter' | 'web';
+
+  // Nuevos campos para la nota
+  noteTitle: string;
+  setNoteTitle: (title: string) => void;
+  noteDescription: string;
+  setNoteDescription: (description: string) => void;
+  noteCoverImageUrl: string;
+  setNoteCoverImageUrl: (url: string) => void;
+  noteStatus: string;
+  setNoteStatus: (status: string) => void;
 }
 
 export interface ListStyleOptionsProps {
@@ -78,25 +102,6 @@ export interface ButtonOptionsProps {
   updateComponentProps: (id: string, props: Record<string, any>) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
   updateComponentContent: (id: string, content: string) => void;
-}
-
-export interface DesignOptionsProps {
-  selectedComponentId: string | null;
-  updateComponentStyle: (id: string, style: React.CSSProperties) => void;
-}
-
-export interface BackgroundOptionsProps {
-  selectedComponentId: string | null;
-  updateComponentStyle: (id: string, style: React.CSSProperties) => void;
-  emailBackground: string;
-  setEmailBackground: (color: string) => void;
-  selectedBanner: string | null;
-  setSelectedBanner: (banner: string | null) => void;
-  showGradient: boolean;
-  setShowGradient: (show: boolean) => void;
-  gradientColors: string[];
-  setGradientColors: (colors: string[]) => void;
-  bannerOptions: BannerOption[];
 }
 
 export interface SummaryOptionsProps {

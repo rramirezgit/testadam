@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist, devtools, createJSONStorage } from 'zustand/middleware';
 
 import { setStorage } from 'src/hooks/use-local-storage';
 
@@ -35,174 +35,180 @@ interface AuthState {
 
 // Crear una instancia de store con funciones memoizadas
 const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => {
-      // Memoizar las funciones que pueden ser pasadas como dependencias
-      const getUserInfoImpl = async () => {
-        try {
-          // No mostrar loading para actualizaciones silenciosas de perfil
-          const isAuthenticated = get().isAuthenticated;
-
-          if (!isAuthenticated) {
-            return null;
-          }
-
-          set({ loading: true });
-          const axiosInstance = createAxiosInstance();
-
-          const response = await axiosInstance.get(endpoints.user.profile);
-
-          if (response.data) {
-            const userInfo = response.data;
-
-            // Añadir aliases para compatibilidad con la interfaz existente
-            userInfo.displayName = userInfo.name;
-            userInfo.photoURL = userInfo.picture;
-
-            set({
-              user: userInfo,
-              loading: false,
-            });
-
-            return userInfo;
-          }
-
-          set({ loading: false });
-          return null;
-        } catch (error: any) {
-          console.error('Error al obtener información del usuario:', error);
-
-          // Si hay un error 401 o 403, probablemente el token expiró
-          if (error.response?.status === 401 || error.response?.status === 403) {
-            console.warn('Sesión inválida detectada. Cerrando sesión...');
-            get().logout();
-          }
-
-          set({ loading: false });
-          return null;
-        }
-      };
-
-      return {
-        loading: false,
-        isAuthenticated: false,
-        accessToken: null,
-        user: null,
-        error: null,
-
-        setLoading: (loading: boolean) => set({ loading }),
-
-        setError: (error: string | null) => set({ error }),
-
-        login: async (email: string, password: string) => {
+  devtools(
+    persist(
+      (set, get) => {
+        // Memoizar las funciones que pueden ser pasadas como dependencias
+        const getUserInfoImpl = async () => {
           try {
-            set({ loading: true, error: null });
-            const axiosInstance = createAxiosInstance();
+            // No mostrar loading para actualizaciones silenciosas de perfil
+            const isAuthenticated = get().isAuthenticated;
 
-            const response = await axiosInstance.post(endpoints.auth.login, {
-              email,
-              password,
-            });
-
-            // Extraer información de la respuesta
-            const { access_token, id_token } = response.data;
-
-            // Almacenar el token en localStorage
-            setStorage('AUTH_TOKEN', access_token);
-
-            // Intentar extraer información del usuario del token
-            let userInfo = {};
-            if (id_token) {
-              userInfo = parseJwt(id_token);
+            if (!isAuthenticated) {
+              return null;
             }
 
-            set({
-              isAuthenticated: true,
-              accessToken: access_token,
-              user: userInfo as AuthUser,
-              loading: false,
-              error: null,
-            });
+            set({ loading: true });
+            const axiosInstance = createAxiosInstance();
 
-            // Obtener información completa del usuario
-            await getUserInfoImpl();
+            const response = await axiosInstance.get(endpoints.user.profile);
 
-            console.log('Autenticación exitosa:', { userInfo });
+            if (response.data) {
+              const userInfo = response.data;
 
-            return response.data;
+              // Añadir aliases para compatibilidad con la interfaz existente
+              userInfo.displayName = userInfo.name;
+              userInfo.photoURL = userInfo.picture;
+
+              set({
+                user: userInfo,
+                loading: false,
+              });
+
+              return userInfo;
+            }
+
+            set({ loading: false });
+            return null;
           } catch (error: any) {
-            console.error('Error de autenticación:', error);
-            const errorMessage = error.response?.data?.message || 'Error al iniciar sesión';
+            console.error('Error al obtener información del usuario:', error);
+
+            // Si hay un error 401 o 403, probablemente el token expiró
+            if (error.response?.status === 401 || error.response?.status === 403) {
+              console.warn('Sesión inválida detectada. Cerrando sesión...');
+              get().logout();
+            }
+
+            set({ loading: false });
+            return null;
+          }
+        };
+
+        return {
+          loading: false,
+          isAuthenticated: false,
+          accessToken: null,
+          user: null,
+          error: null,
+
+          setLoading: (loading: boolean) => set({ loading }),
+
+          setError: (error: string | null) => set({ error }),
+
+          login: async (email: string, password: string) => {
+            try {
+              set({ loading: true, error: null });
+              const axiosInstance = createAxiosInstance();
+
+              const response = await axiosInstance.post(endpoints.auth.login, {
+                email,
+                password,
+              });
+
+              // Extraer información de la respuesta
+              const { access_token, id_token } = response.data;
+
+              // Almacenar el token en localStorage
+              setStorage('AUTH_TOKEN', access_token);
+
+              // Intentar extraer información del usuario del token
+              let userInfo = {};
+              if (id_token) {
+                userInfo = parseJwt(id_token);
+              }
+
+              set({
+                isAuthenticated: true,
+                accessToken: access_token,
+                user: userInfo as AuthUser,
+                loading: false,
+                error: null,
+              });
+
+              // Obtener información completa del usuario
+              await getUserInfoImpl();
+
+              console.log('Autenticación exitosa:', { userInfo });
+
+              return response.data;
+            } catch (error: any) {
+              console.error('Error de autenticación:', error);
+              const errorMessage = error.response?.data?.message || 'Error al iniciar sesión';
+              set({
+                loading: false,
+                error: errorMessage,
+                isAuthenticated: false,
+                accessToken: null,
+                user: null,
+              });
+              throw error;
+            }
+          },
+
+          // Obtener info del usuario del endpoint /auth/userinfo (Auth0)
+          // Usar la implementación memoizada
+          getUserInfo: getUserInfoImpl,
+
+          fetchUserProfile: async () => {
+            try {
+              const axiosInstance = createAxiosInstance();
+              const response = await axiosInstance.get(endpoints.auth.me);
+
+              if (response.data) {
+                set({ user: response.data });
+              }
+
+              return response.data;
+            } catch (error) {
+              console.error('Error al obtener perfil de usuario:', error);
+              // No cambiamos el estado de autenticación aquí
+              return null;
+            }
+          },
+
+          logout: () => {
+            // Eliminar tokens del localStorage
+            console.log('Cerrando sesión y limpiando todos los datos...');
+            localStorage.removeItem('auth-storage');
+            localStorage.removeItem('post-storage');
+            localStorage.removeItem('AUTH_TOKEN');
+
+            // Limpiar sessionStorage también por si acaso
+            sessionStorage.clear();
+
             set({
-              loading: false,
-              error: errorMessage,
               isAuthenticated: false,
               accessToken: null,
               user: null,
+              error: null,
             });
-            throw error;
-          }
-        },
+            console.log('Sesión cerrada con éxito - todos los datos eliminados');
+          },
 
-        // Obtener info del usuario del endpoint /auth/userinfo (Auth0)
-        // Usar la implementación memoizada
-        getUserInfo: getUserInfoImpl,
-
-        fetchUserProfile: async () => {
-          try {
-            const axiosInstance = createAxiosInstance();
-            const response = await axiosInstance.get(endpoints.auth.me);
-
-            if (response.data) {
-              set({ user: response.data });
+          checkAuth: () => {
+            const { isAuthenticated } = get();
+            return isAuthenticated;
+          },
+        };
+      },
+      {
+        name: 'auth-storage',
+        storage: createJSONStorage(() => localStorage),
+        // Cuando se rehidrata el store (se carga del localStorage)
+        onRehydrateStorage:
+          () =>
+          // Retornamos una función que se ejecutará cuando termine la rehidratación
+          (state) => {
+            if (state && state.isAuthenticated) {
+              console.log('Store rehidratado. Actualizando información de usuario...');
+              // Actualizar la información del usuario después de rehidratar
+              setTimeout(() => {
+                state.getUserInfo();
+              }, 1000); // Pequeño retraso para asegurar que todo está inicializado
             }
-
-            return response.data;
-          } catch (error) {
-            console.error('Error al obtener perfil de usuario:', error);
-            // No cambiamos el estado de autenticación aquí
-            return null;
-          }
-        },
-
-        logout: () => {
-          // Eliminar tokens del localStorage
-          console.log('Cerrando sesión y limpiando tokens...');
-          localStorage.removeItem('auth-storage');
-          localStorage.removeItem('AUTH_TOKEN');
-
-          set({
-            isAuthenticated: false,
-            accessToken: null,
-            user: null,
-            error: null,
-          });
-          console.log('Sesión cerrada con éxito');
-        },
-
-        checkAuth: () => {
-          const { isAuthenticated } = get();
-          return isAuthenticated;
-        },
-      };
-    },
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-      // Cuando se rehidrata el store (se carga del localStorage)
-      onRehydrateStorage:
-        () =>
-        // Retornamos una función que se ejecutará cuando termine la rehidratación
-        (state) => {
-          if (state && state.isAuthenticated) {
-            console.log('Store rehidratado. Actualizando información de usuario...');
-            // Actualizar la información del usuario después de rehidratar
-            setTimeout(() => {
-              state.getUserInfo();
-            }, 1000); // Pequeño retraso para asegurar que todo está inicializado
-          }
-        },
-    }
+          },
+      }
+    )
   )
 );
 

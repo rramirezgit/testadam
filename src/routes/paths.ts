@@ -64,13 +64,6 @@ export const paths = {
       resetPassword: `${ROOTS.AUTH}/firebase/reset-password`,
     },
     auth0: { signIn: `${ROOTS.AUTH}/auth0/sign-in` },
-    supabase: {
-      signIn: `${ROOTS.AUTH}/supabase/sign-in`,
-      verify: `${ROOTS.AUTH}/supabase/verify`,
-      signUp: `${ROOTS.AUTH}/supabase/sign-up`,
-      updatePassword: `${ROOTS.AUTH}/supabase/update-password`,
-      resetPassword: `${ROOTS.AUTH}/supabase/reset-password`,
-    },
   },
   authDemo: {
     split: {

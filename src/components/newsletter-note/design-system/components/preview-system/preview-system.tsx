@@ -162,7 +162,7 @@ export const PreviewSystem: React.FC<PreviewSystemProps> = ({ className }) => {
 
         <Box sx={{ mb: 3, p: 2, backgroundColor: 'primary.light', borderRadius: 1 }}>
           <Typography variant="h6" gutterBottom>
-            🚀 This Week's Highlights
+            🚀 This Week&apos;s Highlights
           </Typography>
           <Typography variant="body2">
             AI breakthrough in language models, new React features, and startup funding rounds.
@@ -187,7 +187,7 @@ export const PreviewSystem: React.FC<PreviewSystemProps> = ({ className }) => {
           sx={{ textAlign: 'center', mt: 4, p: 2, backgroundColor: 'grey.100', borderRadius: 1 }}
         >
           <Typography variant="caption" color="text.secondary">
-            Thanks for reading! Forward to a friend →
+            Thanks for reading! Forward to a friend &rarr;
           </Typography>
         </Box>
       </Box>

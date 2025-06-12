@@ -188,7 +188,7 @@ export default function FeatureFlagsDashboard() {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           {renderFlagCard(
             'TiptapEditor Unificado',
             'Editor básico de newsletter con funcionalidad esencial',
@@ -196,7 +196,7 @@ export default function FeatureFlagsDashboard() {
             'low'
           )}
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           {renderFlagCard(
             'SimpleTiptapEditor Unificado',
             'Editor simple con funcionalidad mínima',
@@ -204,7 +204,7 @@ export default function FeatureFlagsDashboard() {
             'low'
           )}
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           {renderFlagCard(
             'TiptapEditorComponent Unificado',
             'Editor especializado para componentes (heading, button)',
@@ -219,7 +219,7 @@ export default function FeatureFlagsDashboard() {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           {renderFlagCard(
             'ExtendedTiptapEditor Unificado',
             'Editor base para contenido educativo con auto-heading',
@@ -227,7 +227,7 @@ export default function FeatureFlagsDashboard() {
             'medium'
           )}
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           {renderFlagCard(
             'EducacionEditor Completo',
             'Sistema completo de educación con múltiples componentes',
@@ -242,7 +242,7 @@ export default function FeatureFlagsDashboard() {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           {renderFlagCard(
             'Editor Principal Unificado',
             'Editor principal con todas las funcionalidades avanzadas (fullscreen, syntax highlighting)',
@@ -257,7 +257,7 @@ export default function FeatureFlagsDashboard() {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           {renderFlagCard(
             'Metadata Automática',
             'Análisis automático de contenido (palabras, tiempo lectura)',
@@ -265,7 +265,7 @@ export default function FeatureFlagsDashboard() {
             'low'
           )}
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           {renderFlagCard(
             'Auto-save',
             'Guardado automático de contenido',
@@ -273,7 +273,7 @@ export default function FeatureFlagsDashboard() {
             'medium'
           )}
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           {renderFlagCard(
             'Toolbar Avanzada',
             'Toolbar con herramientas adicionales',

@@ -122,14 +122,14 @@ export default function NewsletterBorderlessEditorDemo() {
                 Ejemplo en contexto:
               </Typography>
               <Typography variant="body1" component="div">
-                En el newsletter puedes tener un párrafo como: "
+                En el newsletter puedes tener un párrafo como: &quot;
                 <SimpleTipTapEditorWithFlags
                   content={content1}
                   onChange={setContent1}
                   showToolbar={false}
                   style={{ display: 'inline' }}
                 />
-                " y se ve completamente natural.
+                &quot; y se ve completamente natural.
               </Typography>
             </Box>
 

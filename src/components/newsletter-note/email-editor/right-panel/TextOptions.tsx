@@ -2,8 +2,11 @@ import { Icon } from '@iconify/react';
 
 import {
   Box,
+  Paper,
   Button,
   Select,
+  Slider,
+  Divider,
   MenuItem,
   InputLabel,
   Typography,
@@ -137,29 +140,6 @@ const TextOptions = ({
         </ToggleButtonGroup>
       </Box>
 
-      {componentType === 'heading' && (
-        <ToggleButtonGroup
-          value={selectedComponent?.props?.level}
-          exclusive
-          color="primary"
-          onChange={(event, newLevel) =>
-            updateComponentProps(selectedComponentId!, { level: newLevel })
-          }
-          aria-label="Nivel de título"
-          sx={{ mb: 3, border: 'none' }}
-        >
-          <ToggleButton value={1} aria-label="H1">
-            H1
-          </ToggleButton>
-          <ToggleButton value={2} aria-label="H2">
-            H2
-          </ToggleButton>
-          <ToggleButton value={3} aria-label="H3">
-            H3
-          </ToggleButton>
-        </ToggleButtonGroup>
-      )}
-
       <FormControl fullWidth sx={{ mb: 2 }}>
         <InputLabel id="font-family-select-label">Fuente</InputLabel>
         <Select
@@ -234,6 +214,154 @@ const TextOptions = ({
       <Box sx={{ mb: 3 }}>
         <TextColorPicker selectedColor={selectedColor} applyTextColor={applyTextColor} />
       </Box>
+
+      {/* ⚡ NUEVO: Controles de Espaciado */}
+      <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
+        <Typography
+          variant="subtitle2"
+          gutterBottom
+          sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}
+        >
+          <Icon icon="mdi:format-line-spacing" />
+          Espaciado
+        </Typography>
+
+        {/* Márgenes */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            Margen Superior
+          </Typography>
+          <Slider
+            value={parseInt(String(selectedComponent?.style?.marginTop || '16').replace('px', ''))}
+            onChange={(_, value) => {
+              updateComponentStyle(selectedComponentId!, { marginTop: `${value}px` });
+            }}
+            min={0}
+            max={50}
+            step={2}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value) => `${value}px`}
+            size="small"
+          />
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            Margen Inferior
+          </Typography>
+          <Slider
+            value={parseInt(
+              String(
+                selectedComponent?.style?.marginBottom ||
+                  (componentType === 'paragraph' ? '0' : '16')
+              ).replace('px', '')
+            )}
+            onChange={(_, value) => {
+              updateComponentStyle(selectedComponentId!, { marginBottom: `${value}px` });
+            }}
+            min={0}
+            max={50}
+            step={2}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value) => `${value}px`}
+            size="small"
+          />
+        </Box>
+
+        <Divider sx={{ my: 2 }} />
+
+        {/* Padding */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            Padding Superior
+          </Typography>
+          <Slider
+            value={parseInt(String(selectedComponent?.style?.paddingTop || '0').replace('px', ''))}
+            onChange={(_, value) => {
+              updateComponentStyle(selectedComponentId!, { paddingTop: `${value}px` });
+            }}
+            min={0}
+            max={30}
+            step={1}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value) => `${value}px`}
+            size="small"
+          />
+        </Box>
+
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            Padding Inferior
+          </Typography>
+          <Slider
+            value={parseInt(
+              String(selectedComponent?.style?.paddingBottom || '0').replace('px', '')
+            )}
+            onChange={(_, value) => {
+              updateComponentStyle(selectedComponentId!, { paddingBottom: `${value}px` });
+            }}
+            min={0}
+            max={30}
+            step={1}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value) => `${value}px`}
+            size="small"
+          />
+        </Box>
+
+        {/* Presets de espaciado */}
+        <Divider sx={{ my: 2 }} />
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+          Presets de Espaciado
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              updateComponentStyle(selectedComponentId!, {
+                marginTop: '8px',
+                marginBottom: '8px',
+                paddingTop: '0px',
+                paddingBottom: '0px',
+              });
+            }}
+            sx={{ fontSize: '0.75rem' }}
+          >
+            Compacto
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              updateComponentStyle(selectedComponentId!, {
+                marginTop: '16px',
+                marginBottom: '16px',
+                paddingTop: '0px',
+                paddingBottom: '0px',
+              });
+            }}
+            sx={{ fontSize: '0.75rem' }}
+          >
+            Normal
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              updateComponentStyle(selectedComponentId!, {
+                marginTop: '24px',
+                marginBottom: '24px',
+                paddingTop: '4px',
+                paddingBottom: '4px',
+              });
+            }}
+            sx={{ fontSize: '0.75rem' }}
+          >
+            Amplio
+          </Button>
+        </Box>
+      </Paper>
 
       {/* Añadir botones para convertir a lista si es un párrafo */}
       {isParagraphComponent && (

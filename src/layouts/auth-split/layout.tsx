@@ -138,11 +138,6 @@ export function AuthSplitLayout({
             path: paths.auth.auth0.signIn,
             icon: `${CONFIG.assetsDir}/assets/icons/platforms/ic-auth0.svg`,
           },
-          {
-            label: 'Supabase',
-            path: paths.auth.supabase.signIn,
-            icon: `${CONFIG.assetsDir}/assets/icons/platforms/ic-supabase.svg`,
-          },
         ]}
       />
       <AuthSplitContent layoutQuery={layoutQuery} {...slotProps?.content}>

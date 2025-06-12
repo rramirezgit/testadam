@@ -33,20 +33,30 @@ export interface EmailComponent {
   style?: React.CSSProperties;
 }
 
-export interface SavedNote {
-  id: string;
-  title: string;
+export interface ConfigNote {
   templateType: string;
   dateCreated: string;
   dateModified: string;
-  objdata: EmailComponent[];
-  objdataWeb?: EmailComponent[]; // Nueva propiedad para la versión web
   emailBackground?: string;
   selectedBanner?: string | null;
   showGradient?: boolean;
   gradientColors?: string[];
+  activeVersion?: 'newsletter' | 'web';
+  containerBorderWidth?: number;
+  containerBorderColor?: string;
+  containerBorderRadius?: number;
+  containerPadding?: number;
+  containerMaxWidth?: number;
+}
+
+export interface SavedNote {
+  id: string;
+  title: string;
+  configNote: string; // JSON string escapado
+  objData: string; // JSON string escapado de EmailComponent[]
+  objDataWeb?: string; // JSON string escapado de EmailComponent[]
+  // Campos opcionales para compatibilidad con código existente
   aiGenerated?: boolean;
   imageUrl?: string;
   createdAt?: string;
-  activeVersion?: 'newsletter' | 'web'; // Para rastrear qué versión está activa
 }
