@@ -1,11 +1,14 @@
 'use client';
 
+import 'react-image-crop/dist/ReactCrop.css';
+
 import type { SavedNote } from 'src/types/saved-note';
 import type { Newsletter, NewsletterNote } from 'src/types/newsletter';
 
 import { v4 as uuidv4 } from 'uuid';
 import { Icon } from '@iconify/react';
-import React, { useState, useEffect } from 'react';
+import ReactCrop from 'react-image-crop';
+import React, { useRef, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -15,17 +18,23 @@ import {
   Card,
   List,
   Paper,
+  Stack,
   AppBar,
   Button,
   Dialog,
+  Switch,
   Toolbar,
   Divider,
   ListItem,
   TextField,
+  Accordion,
   Typography,
   IconButton,
   CardContent,
   CircularProgress,
+  AccordionSummary,
+  AccordionDetails,
+  FormControlLabel,
 } from '@mui/material';
 
 import { useStore } from 'src/lib/store';
@@ -150,6 +159,7 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     title: 'Newsletter Semanal',
     subtitle: 'Las mejores noticias y actualizaciones',
     logo: 'https://ejemplo.com/logo.png',
+    logoAlt: 'Logo',
     bannerImage: '',
     backgroundColor: '#FFF9CE',
     textColor: '#333333',
@@ -160,6 +170,13 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     showLogo: true,
     logoHeight: 60,
     padding: 32,
+    sponsor: {
+      enabled: false,
+      label: 'Juntos con',
+      image:
+        'https://http2.mlstatic.com/frontend-assets/ml-web-navigation/ui-navigation/6.5.1/mercadolibre/logo__large_plus.png',
+      imageAlt: 'Mercado Libre',
+    },
   });
 
   const [footer, setFooter] = useState({
@@ -809,6 +826,54 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     '-ms-overflow-style': 'none',
   };
 
+  // Estados para crop y edición de imagen del logo y sponsor
+  const [logoImage, setLogoImage] = useState(header.logo || '');
+  const [logoAlt, setLogoAlt] = useState('Logo');
+  const [logoCrop, setLogoCrop] = useState<any>();
+  const [logoCropped, setLogoCropped] = useState('');
+  const logoImgRef = useRef<any>(null);
+
+  const [sponsorImage, setSponsorImage] = useState(header.sponsor?.image || '');
+  const [sponsorAlt, setSponsorAlt] = useState(header.sponsor?.imageAlt || 'Sponsor');
+  const [sponsorCrop, setSponsorCrop] = useState<any>();
+  const [sponsorCropped, setSponsorCropped] = useState('');
+  const sponsorImgRef = useRef<any>(null);
+
+  // Función para manejar carga de imagen y crop (reutilizable)
+  function handleImageChange(e, setImage, setCropped, setCrop) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImage(reader.result as string);
+      setCropped(reader.result as string);
+      setCrop(undefined);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function getCroppedImg(imageRef, crop, setCropped) {
+    if (!crop?.width || !crop?.height || !imageRef.current) return;
+    const canvas = document.createElement('canvas');
+    const scaleX = imageRef.current.naturalWidth / imageRef.current.width;
+    const scaleY = imageRef.current.naturalHeight / imageRef.current.height;
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(
+      imageRef.current,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width,
+      crop.height
+    );
+    setCropped(canvas.toDataURL('image/jpeg'));
+  }
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* AppBar superior */}
@@ -1150,30 +1215,6 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
 
         {/* Panel Central - Preview */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2 }}>
-          <Box
-            sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-          >
-            <Typography variant="h6">Vista Previa del Newsletter</Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                startIcon={<Icon icon="mdi:code-tags" />}
-                onClick={() => handleGenerateNewsletterHtml(true)}
-                disabled={selectedNotes.length === 0 || generating}
-              >
-                {generating ? <CircularProgress size={20} /> : 'Generar HTML'}
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<Icon icon="mdi:content-save" />}
-                onClick={handleSaveNewsletter}
-                disabled={isSaving || selectedNotes.length === 0}
-              >
-                {isSaving ? <CircularProgress size={20} color="inherit" /> : 'Guardar Newsletter'}
-              </Button>
-            </Box>
-          </Box>
-
           {generating ? (
             <Paper
               sx={{
@@ -1460,105 +1501,305 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
 
             {rightPanelTab === 'header' && (
               <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Configuración del Header
-                </Typography>
-                <TextField
-                  fullWidth
-                  label="Título del Header"
-                  value={header.title}
-                  onChange={(e) => {
-                    console.log('Cambiando título del header:', e.target.value);
-                    setHeader((prev) => ({ ...prev, title: e.target.value }));
-                  }}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="Subtítulo"
-                  value={header.subtitle}
-                  onChange={(e) => setHeader((prev) => ({ ...prev, subtitle: e.target.value }))}
-                  sx={{ mb: 2 }}
-                />
-                <TextField
-                  fullWidth
-                  label="URL del Logo"
-                  value={header.logo}
-                  onChange={(e) => setHeader((prev) => ({ ...prev, logo: e.target.value }))}
-                  sx={{ mb: 2 }}
-                />
-
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="subtitle2" gutterBottom>
-                  Colores y Fondo
-                </Typography>
-
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="body2">Usar Gradiente</Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() =>
-                        setHeader((prev) => ({ ...prev, useGradient: !prev.useGradient }))
-                      }
-                      color={header.useGradient ? 'primary' : 'default'}
-                    >
-                      <Icon
-                        icon={header.useGradient ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off'}
+                {/* ============ PREVISUALIZACIÓN PEQUEÑA ============ */}
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2, mb: 2, textAlign: 'center', borderRadius: 2 }}
+                >
+                  <Box
+                    sx={{
+                      background: header.useGradient
+                        ? `linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]})`
+                        : header.backgroundColor,
+                      color: header.textColor,
+                      p: 2,
+                      borderRadius: 1,
+                    }}
+                  >
+                    {header.logo && (
+                      <img
+                        src={header.logo}
+                        alt={logoAlt || 'Logo'}
+                        style={{ maxHeight: 40, margin: '0 auto', display: 'block' }}
                       />
-                    </IconButton>
+                    )}
+                    {header.sponsor?.enabled && (
+                      <Stack spacing={0.5} alignItems="center" sx={{ mt: 1 }}>
+                        <Typography variant="caption" color="inherit">
+                          {header.sponsor.label}
+                        </Typography>
+                        {header.sponsor.image && (
+                          <img
+                            src={header.sponsor.image}
+                            alt={header.sponsor.imageAlt || 'Sponsor'}
+                            style={{ maxHeight: 32 }}
+                          />
+                        )}
+                      </Stack>
+                    )}
+                    <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                      {header.title}
+                    </Typography>
+                    {header.subtitle && <Typography variant="body2">{header.subtitle}</Typography>}
                   </Box>
-                </Box>
+                </Paper>
 
-                {header.useGradient ? (
-                  <>
-                    <TextField
-                      fullWidth
-                      label="Color de Gradiente 1"
-                      type="color"
-                      value={header.gradientColors[0]}
-                      onChange={(e) => {
-                        console.log('Cambiando color gradiente 1:', e.target.value);
-                        const newGradientColors = [...header.gradientColors];
-                        newGradientColors[0] = e.target.value;
-                        setHeader((prev) => ({ ...prev, gradientColors: newGradientColors }));
-                      }}
-                      sx={{ mb: 2 }}
-                    />
-                    <TextField
-                      fullWidth
-                      label="Color de Gradiente 2"
-                      type="color"
-                      value={header.gradientColors[1]}
-                      onChange={(e) => {
-                        const newGradientColors = [...header.gradientColors];
-                        newGradientColors[1] = e.target.value;
-                        setHeader((prev) => ({ ...prev, gradientColors: newGradientColors }));
-                      }}
-                      sx={{ mb: 2 }}
-                    />
-                  </>
-                ) : (
-                  <TextField
-                    fullWidth
-                    label="Color de Fondo"
-                    type="color"
-                    value={header.backgroundColor}
-                    onChange={(e) =>
-                      setHeader((prev) => ({ ...prev, backgroundColor: e.target.value }))
-                    }
-                    sx={{ mb: 2 }}
-                  />
-                )}
+                {/* ============ DATOS BÁSICOS ============ */}
+                <Accordion defaultExpanded disableGutters sx={{ mb: 1 }}>
+                  <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+                    Datos
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={2}>
+                      <TextField
+                        fullWidth
+                        label="Título del Header"
+                        value={header.title}
+                        onChange={(e) => setHeader((prev) => ({ ...prev, title: e.target.value }))}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Subtítulo"
+                        value={header.subtitle}
+                        onChange={(e) =>
+                          setHeader((prev) => ({ ...prev, subtitle: e.target.value }))
+                        }
+                      />
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
 
-                <TextField
-                  fullWidth
-                  label="Color del Texto"
-                  type="color"
-                  value={header.textColor}
-                  onChange={(e) => setHeader((prev) => ({ ...prev, textColor: e.target.value }))}
-                  sx={{ mb: 2 }}
-                />
+                {/* ============ LOGO ============ */}
+                <Accordion disableGutters sx={{ mb: 1 }}>
+                  <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+                    Logo
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={2}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          id="logo-upload"
+                          onChange={(e) =>
+                            handleImageChange(e, setLogoImage, setLogoCropped, setLogoCrop)
+                          }
+                        />
+                        <label htmlFor="logo-upload">
+                          <Button variant="outlined" component="span">
+                            Seleccionar Logo
+                          </Button>
+                        </label>
+                        {logoCropped && (
+                          <img
+                            ref={logoImgRef}
+                            src={logoCropped}
+                            alt={logoAlt}
+                            style={{ maxHeight: 50, borderRadius: 4, border: '1px solid #eee' }}
+                          />
+                        )}
+                      </Box>
+
+                      {logoImage && (
+                        <ReactCrop
+                          crop={logoCrop}
+                          onChange={(c) => setLogoCrop(c)}
+                          onComplete={(c) => getCroppedImg(logoImgRef, c, setLogoCropped)}
+                        >
+                          <img
+                            ref={logoImgRef}
+                            src={logoImage}
+                            alt={logoAlt}
+                            style={{ maxHeight: 120 }}
+                          />
+                        </ReactCrop>
+                      )}
+
+                      <TextField
+                        fullWidth
+                        label="Alt del Logo"
+                        value={logoAlt}
+                        onChange={(e) => setLogoAlt(e.target.value)}
+                      />
+
+                      <Button
+                        variant="contained"
+                        onClick={() =>
+                          setHeader((prev) => ({ ...prev, logo: logoCropped, logoAlt }))
+                        }
+                      >
+                        Guardar Logo
+                      </Button>
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
+
+                {/* ============ COLORES Y FONDO ============ */}
+                <Accordion disableGutters sx={{ mb: 1 }}>
+                  <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+                    Colores y Fondo
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={2}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={header.useGradient || false}
+                            onChange={(e) =>
+                              setHeader((prev) => ({ ...prev, useGradient: e.target.checked }))
+                            }
+                            color="primary"
+                          />
+                        }
+                        label="Usar Gradiente"
+                      />
+
+                      {header.useGradient ? (
+                        <Stack direction="row" spacing={1}>
+                          <TextField
+                            fullWidth
+                            type="color"
+                            label="Gradiente 1"
+                            value={header.gradientColors[0]}
+                            onChange={(e) => {
+                              const newColors = [...header.gradientColors];
+                              newColors[0] = e.target.value;
+                              setHeader((prev) => ({ ...prev, gradientColors: newColors }));
+                            }}
+                          />
+                          <TextField
+                            fullWidth
+                            type="color"
+                            label="Gradiente 2"
+                            value={header.gradientColors[1]}
+                            onChange={(e) => {
+                              const newColors = [...header.gradientColors];
+                              newColors[1] = e.target.value;
+                              setHeader((prev) => ({ ...prev, gradientColors: newColors }));
+                            }}
+                          />
+                        </Stack>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          type="color"
+                          label="Color de Fondo"
+                          value={header.backgroundColor}
+                          onChange={(e) =>
+                            setHeader((prev) => ({ ...prev, backgroundColor: e.target.value }))
+                          }
+                        />
+                      )}
+
+                      <TextField
+                        fullWidth
+                        type="color"
+                        label="Color del Texto"
+                        value={header.textColor}
+                        onChange={(e) =>
+                          setHeader((prev) => ({ ...prev, textColor: e.target.value }))
+                        }
+                      />
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
+
+                {/* ============ SPONSOR ============ */}
+                <Accordion disableGutters>
+                  <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+                    Sponsor
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={header.sponsor?.enabled || false}
+                          onChange={(e) =>
+                            setHeader((prev) => ({
+                              ...prev,
+                              sponsor: { ...prev.sponsor, enabled: e.target.checked },
+                            }))
+                          }
+                          color="primary"
+                        />
+                      }
+                      label="Mostrar Sponsor"
+                    />
+                    {header.sponsor?.enabled && (
+                      <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            id="sponsor-upload"
+                            onChange={(e) =>
+                              handleImageChange(
+                                e,
+                                setSponsorImage,
+                                setSponsorCropped,
+                                setSponsorCrop
+                              )
+                            }
+                          />
+                          <label htmlFor="sponsor-upload">
+                            <Button variant="outlined" component="span">
+                              Seleccionar Sponsor
+                            </Button>
+                          </label>
+                          {sponsorCropped && (
+                            <img
+                              ref={sponsorImgRef}
+                              src={sponsorCropped}
+                              alt={sponsorAlt}
+                              style={{ maxHeight: 48, borderRadius: 4, border: '1px solid #eee' }}
+                            />
+                          )}
+                        </Box>
+
+                        {sponsorImage && (
+                          <ReactCrop
+                            crop={sponsorCrop}
+                            onChange={(c) => setSponsorCrop(c)}
+                            onComplete={(c) => getCroppedImg(sponsorImgRef, c, setSponsorCropped)}
+                          >
+                            <img
+                              ref={sponsorImgRef}
+                              src={sponsorImage}
+                              alt={sponsorAlt}
+                              style={{ maxHeight: 120 }}
+                            />
+                          </ReactCrop>
+                        )}
+
+                        <TextField
+                          fullWidth
+                          label="Alt del Sponsor"
+                          value={sponsorAlt}
+                          onChange={(e) => setSponsorAlt(e.target.value)}
+                          sx={{ mt: 1, mb: 1 }}
+                        />
+
+                        <Button
+                          variant="contained"
+                          onClick={() =>
+                            setHeader((prev) => ({
+                              ...prev,
+                              sponsor: {
+                                ...prev.sponsor,
+                                image: sponsorCropped,
+                                imageAlt: sponsorAlt,
+                              },
+                            }))
+                          }
+                        >
+                          Guardar Sponsor
+                        </Button>
+                      </Box>
+                    )}
+                  </AccordionDetails>
+                </Accordion>
               </Box>
             )}
 

@@ -21,6 +21,12 @@ interface HeaderConfig {
   useGradient?: boolean;
   gradientColors?: string[];
   gradientDirection?: number;
+  sponsor?: {
+    enabled: boolean;
+    label?: string;
+    image?: string;
+    imageAlt?: string;
+  };
 }
 
 interface FooterConfig {
@@ -103,6 +109,8 @@ export function generateNewsletterHtml(
       color: ${header.textColor};
       text-align: ${header.alignment};
       padding: 40px 30px;
+      border-radius: 0px 0px 4px 4px;
+      margin-bottom: 24px;
     }
     
     .header-title {
@@ -141,7 +149,7 @@ export function generateNewsletterHtml(
     
     /* Notes - Clean design without borders */
     .note-section {
-      margin-bottom: 50px;
+      margin-bottom: 24px;
     }
     
     .note-section:last-child {
@@ -335,15 +343,23 @@ export function generateNewsletterHtml(
   </style>
 </head>
 <body>
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" >
     <tr>
       <td>
         <div class="email-container">
           <!-- Header -->
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 24px;">
             <tr>
               <td class="email-header">
                 ${header.logo ? `<img src="${header.logo}" alt="Logo" style="max-height: 60px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">` : ''}
+                ${
+                  header.sponsor && header.sponsor.enabled
+                    ? `<div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;">
+                  <span style="font-size: 16px; color: #333; margin-bottom: 4px;">${header.sponsor.label || 'Juntos con'}</span>
+                  <img src="${header.sponsor.image || ''}" alt="${header.sponsor.imageAlt || 'Sponsor'}" style="max-height: 48px; display: block;" />
+                </div>`
+                    : ''
+                }
                 <p class="header-title">${header.title || title || 'Newsletter'}</p>
                 ${header.subtitle ? `<p class="header-subtitle">${header.subtitle}</p>` : ''}
                 ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 20px; border-radius: 8px;">` : ''}
@@ -370,7 +386,7 @@ export function generateNewsletterHtml(
     const containerMaxWidth = note.containerMaxWidth ?? 560;
 
     html += `<div style="max-width: ${containerMaxWidth}px; margin: 0 auto; padding: ${containerPadding}px; border-radius: ${containerBorderRadius}px; border: ${containerBorderWidth}px solid ${containerBorderColor};">`;
-    html += `<p class="note-title">${note.title || 'Untitled Note'}</p>`;
+    // html += `<p class="note-title">${note.title || 'Untitled Note'}</p>`;
 
     // Render each component using the unified system
     const objData = JSON.parse(note.objData);
@@ -657,7 +673,7 @@ function renderComponentToHtml(component: EmailComponent): string {
           ? `background: linear-gradient(${gradientAngle}deg, ${gradientColor1} ${colorDistribution}%, ${gradientColor2} 100%);`
           : `background: radial-gradient(circle, ${gradientColor1} ${colorDistribution}%, ${gradientColor2} 100%);`;
 
-      return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 25px 0;">
+      return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0px;">
         <tr>
           <td style="${gradientStyle} border-radius: 8px; padding: 16px 20px; text-align: left;">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0">
