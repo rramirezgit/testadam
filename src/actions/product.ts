@@ -21,7 +21,7 @@ type ProductsData = {
 };
 
 export function useGetProducts() {
-  const url = endpoints.product.list;
+  const url = '';
 
   const { data, isLoading, error, isValidating } = useSWR<ProductsData>(url, fetcher, swrOptions);
 
@@ -46,7 +46,7 @@ type ProductData = {
 };
 
 export function useGetProduct(productId: string) {
-  const url = productId ? [endpoints.product.details, { params: { productId } }] : '';
+  const url = productId ? ['', { params: { productId } }] : '';
 
   const { data, isLoading, error, isValidating } = useSWR<ProductData>(url, fetcher, swrOptions);
 
@@ -70,7 +70,7 @@ type SearchResultsData = {
 };
 
 export function useSearchProducts(query: string) {
-  const url = query ? [endpoints.product.search, { params: { query } }] : '';
+  const url = query ? ['', { params: { query } }] : '';
 
   const { data, isLoading, error, isValidating } = useSWR<SearchResultsData>(url, fetcher, {
     ...swrOptions,

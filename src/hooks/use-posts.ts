@@ -28,7 +28,7 @@ export const usePosts = (initialFilters?: PostFilters) => {
   } = usePostStore();
 
   // Ref para almacenar los filtros anteriores y detectar cambios
-  const prevFiltersRef = useRef<PostFilters | undefined>();
+  const prevFiltersRef = useRef<PostFilters | undefined>(initialFilters);
 
   // Función para comparar filtros profundamente
   const areFiltersEqual = (filters1?: PostFilters, filters2?: PostFilters) => {
