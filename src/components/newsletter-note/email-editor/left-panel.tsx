@@ -19,8 +19,9 @@ import {
 } from '@mui/material';
 
 import TemplateCard from './TemplateCard';
+import ContentLibrary from './content-library';
 
-import type { ComponentType } from './types';
+import type { ComponentType, NewsletterNote } from './types';
 
 interface LeftPanelProps {
   searchQuery: string;
@@ -42,6 +43,11 @@ interface LeftPanelProps {
   setOpenSaveDialog: (open: boolean) => void;
   activeVersion: string;
   setActiveVersion: (version: 'web' | 'newsletter') => void;
+  // Nuevas props para newsletter
+  isNewsletterMode?: boolean;
+  newsletterNotes?: NewsletterNote[];
+  onAddNewsletterNote?: (note: NewsletterNote) => void;
+  onEditNote?: (note: any) => void;
 }
 
 export default function LeftPanel({
@@ -58,6 +64,11 @@ export default function LeftPanel({
   setOpenSaveDialog,
   activeVersion,
   setActiveVersion,
+  // Nuevas props para newsletter
+  isNewsletterMode = false,
+  newsletterNotes = [],
+  onAddNewsletterNote = () => {},
+  onEditNote = () => {},
 }: LeftPanelProps) {
   const [activeTab, setActiveTab] = React.useState('templates');
 
@@ -91,8 +102,8 @@ export default function LeftPanel({
             border: 'none',
             '& .MuiToggleButton-root': {
               flex: 1,
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              padding: { xs: '4px 8px', sm: '6px 12px' },
+              fontSize: { xs: '0.65rem', sm: '0.75rem' },
+              padding: { xs: '4px 6px', sm: '6px 8px' },
             },
           }}
         >
@@ -102,6 +113,11 @@ export default function LeftPanel({
           <ToggleButton value="content" aria-label="content">
             Contenido
           </ToggleButton>
+          {isNewsletterMode && (
+            <ToggleButton value="library" aria-label="library">
+              Biblioteca
+            </ToggleButton>
+          )}
         </ToggleButtonGroup>
       </Box>
 
@@ -390,36 +406,49 @@ export default function LeftPanel({
         </>
       )}
 
-      {/* Botones de acción */}
-      <Box sx={{ p: 1, borderTop: '1px solid #e0e0e0', flexShrink: 0 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          fullWidth
-          onClick={handleGenerateEmailHtml}
-          disabled={generatingEmail}
-          startIcon={<Icon icon="mdi:email-outline" />}
-          sx={{
-            mb: 1,
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            py: { xs: 0.5, sm: 1 },
-          }}
-        >
-          {generatingEmail ? <CircularProgress size={16} color="inherit" /> : 'Generar HTML'}
-        </Button>
-        <Button
-          variant="outlined"
-          fullWidth
-          onClick={() => setOpenSaveDialog(true)}
-          startIcon={<Icon icon="mdi:content-save" />}
-          sx={{
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            py: { xs: 0.5, sm: 1 },
-          }}
-        >
-          Guardar
-        </Button>
-      </Box>
+      {/* Tab de Biblioteca para Newsletter */}
+      {activeTab === 'library' && isNewsletterMode && (
+        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+          <ContentLibrary
+            selectedNotes={newsletterNotes}
+            onAddNote={onAddNewsletterNote}
+            onEditNote={onEditNote}
+          />
+        </Box>
+      )}
+
+      {/* Botones de acción - Solo mostrar en modo normal o tabs de plantillas/contenido */}
+      {(!isNewsletterMode || activeTab !== 'library') && (
+        <Box sx={{ p: 1, borderTop: '1px solid #e0e0e0', flexShrink: 0 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={handleGenerateEmailHtml}
+            disabled={generatingEmail}
+            startIcon={<Icon icon="mdi:email-outline" />}
+            sx={{
+              mb: 1,
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              py: { xs: 0.5, sm: 1 },
+            }}
+          >
+            {generatingEmail ? <CircularProgress size={16} color="inherit" /> : 'Generar HTML'}
+          </Button>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => setOpenSaveDialog(true)}
+            startIcon={<Icon icon="mdi:content-save" />}
+            sx={{
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              py: { xs: 0.5, sm: 1 },
+            }}
+          >
+            Guardar
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 }

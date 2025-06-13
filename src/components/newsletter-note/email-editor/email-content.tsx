@@ -7,15 +7,18 @@ import type { BannerOption } from 'src/components/newsletter-note/banner-selecto
 import { Icon } from '@iconify/react';
 import React, { memo, useMemo } from 'react';
 
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Stack, Paper, Button, Typography, IconButton } from '@mui/material';
 
 import EmailList from './email-list';
 import EmailComponentRenderer from './email-component-renderer';
+
+import type { NewsletterNote } from './types';
 
 interface EmailContentProps {
   getActiveComponents: () => EmailComponent[];
   selectedComponentId: string | null;
   setSelectedComponentId: (id: string | null) => void;
+  onComponentSelect?: (id: string | null) => void;
   updateComponentContent: (id: string, content: string) => void;
   updateComponentProps: (id: string, props: Record<string, any>) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
@@ -41,13 +44,218 @@ interface EmailContentProps {
   containerMaxWidth: number;
   activeTemplate: string;
   activeVersion: 'newsletter' | 'web';
+  // Nuevas props para newsletter
+  isNewsletterMode?: boolean;
+  newsletterNotes?: NewsletterNote[];
+  onMoveNewsletterNote?: (noteId: string, direction: 'up' | 'down') => void;
+  onRemoveNewsletterNote?: (noteId: string) => void;
+  onEditNewsletterNote?: (note: any) => void;
+  // Nuevas props para preview HTML
+  showNewsletterPreview?: boolean;
+  newsletterHtml?: string;
+  // Nuevas funciones para editar componentes de newsletter
+  updateNewsletterNoteComponentContent?: (
+    noteId: string,
+    componentId: string,
+    content: string
+  ) => void;
+  updateNewsletterNoteComponentProps?: (
+    noteId: string,
+    componentId: string,
+    props: Record<string, any>
+  ) => void;
+  updateNewsletterNoteComponentStyle?: (
+    noteId: string,
+    componentId: string,
+    style: React.CSSProperties
+  ) => void;
+  moveNewsletterNoteComponent?: (
+    noteId: string,
+    componentId: string,
+    direction: 'up' | 'down'
+  ) => void;
+  removeNewsletterNoteComponent?: (noteId: string, componentId: string) => void;
+  // Función para manejar el estado del contenedor newsletter
+  onNewsletterContainerClick?: () => void;
 }
+
+// Componente para renderizar una nota del newsletter
+const NewsletterNotePreview = memo(
+  ({
+    note,
+    index,
+    isSelected,
+    onSelect,
+    onMoveUp,
+    onMoveDown,
+    onRemove,
+    onEdit,
+    canMoveUp,
+    canMoveDown,
+  }: {
+    note: NewsletterNote;
+    index: number;
+    isSelected: boolean;
+    onSelect: () => void;
+    onMoveUp: () => void;
+    onMoveDown: () => void;
+    onRemove: () => void;
+    onEdit: () => void;
+    canMoveUp: boolean;
+    canMoveDown: boolean;
+  }) => {
+    // Intentar parsear los componentes de la nota
+    const noteComponents = useMemo(() => {
+      try {
+        return JSON.parse(note.noteData.objData || '[]');
+      } catch {
+        return [];
+      }
+    }, [note.noteData.objData]);
+
+    return (
+      <Paper
+        elevation={isSelected ? 3 : 1}
+        sx={{
+          mb: 2,
+          p: 2,
+          border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
+          borderRadius: 2,
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          '&:hover': {
+            elevation: 2,
+            borderColor: '#1976d2',
+          },
+        }}
+        onClick={onSelect}
+      >
+        {/* Header de la nota con controles */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            {index + 1}. {note.noteData.title}
+          </Typography>
+          <Stack direction="row" spacing={0.5}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveUp();
+              }}
+              disabled={!canMoveUp}
+              title="Mover arriba"
+            >
+              <Icon icon="mdi:chevron-up" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveDown();
+              }}
+              disabled={!canMoveDown}
+              title="Mover abajo"
+            >
+              <Icon icon="mdi:chevron-down" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              title="Editar nota"
+            >
+              <Icon icon="mdi:pencil" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              color="error"
+              title="Eliminar nota"
+            >
+              <Icon icon="mdi:close" />
+            </IconButton>
+          </Stack>
+        </Box>
+
+        {/* Preview de los componentes de la nota */}
+        <Box
+          sx={{
+            border: '1px solid #f0f0f0',
+            borderRadius: 1,
+            p: 1,
+            bgcolor: '#fafafa',
+            maxHeight: 200,
+            overflow: 'auto',
+          }}
+        >
+          {noteComponents.length > 0 ? (
+            <Stack spacing={1}>
+              {noteComponents.slice(0, 3).map((component: any, idx: number) => (
+                <Box key={`${component.id}-${idx}`} sx={{ fontSize: '0.875rem' }}>
+                  {component.type === 'heading' && (
+                    <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+                      {component.content || 'Título'}
+                    </Typography>
+                  )}
+                  {component.type === 'paragraph' && (
+                    <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                      {component.content || 'Párrafo'}
+                    </Typography>
+                  )}
+                  {component.type === 'button' && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      sx={{ fontSize: '0.75rem', py: 0.5 }}
+                      disabled
+                    >
+                      {component.content || 'Botón'}
+                    </Button>
+                  )}
+                  {component.type === 'image' && (
+                    <Box
+                      sx={{
+                        height: 40,
+                        bgcolor: '#e0e0e0',
+                        borderRadius: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Icon icon="mdi:image" />
+                    </Box>
+                  )}
+                </Box>
+              ))}
+              {noteComponents.length > 3 && (
+                <Typography variant="caption" color="text.secondary">
+                  ... y {noteComponents.length - 3} componente(s) más
+                </Typography>
+              )}
+            </Stack>
+          ) : (
+            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              Nota sin componentes
+            </Typography>
+          )}
+        </Box>
+      </Paper>
+    );
+  }
+);
 
 const EmailContent = memo(
   ({
     getActiveComponents,
     selectedComponentId,
     setSelectedComponentId,
+    onComponentSelect = () => {},
     updateComponentContent,
     updateComponentProps,
     updateComponentStyle,
@@ -73,6 +281,23 @@ const EmailContent = memo(
     containerMaxWidth,
     activeTemplate,
     activeVersion,
+    // Nuevas props para newsletter
+    isNewsletterMode = false,
+    newsletterNotes = [],
+    onMoveNewsletterNote = () => {},
+    onRemoveNewsletterNote = () => {},
+    onEditNewsletterNote = () => {},
+    // Nuevas props para preview HTML
+    showNewsletterPreview = false,
+    newsletterHtml = '',
+    // Nuevas funciones para editar componentes de newsletter
+    updateNewsletterNoteComponentContent = () => {},
+    updateNewsletterNoteComponentProps = () => {},
+    updateNewsletterNoteComponentStyle = () => {},
+    moveNewsletterNoteComponent = () => {},
+    removeNewsletterNoteComponent = () => {},
+    // Función para manejar el estado del contenedor newsletter
+    onNewsletterContainerClick = () => {},
   }: EmailContentProps) => {
     // Memoizar los componentes para evitar recálculos innecesarios
     const components = useMemo(() => getActiveComponents(), [getActiveComponents]);
@@ -145,6 +370,473 @@ const EmailContent = memo(
       [updateListItem, removeListItem, addListItem, updateComponentProps]
     );
 
+    // Si está en modo newsletter, mostrar las notas del newsletter o preview HTML
+    if (isNewsletterMode) {
+      // Si se está mostrando el preview HTML
+      if (showNewsletterPreview && newsletterHtml) {
+        return (
+          <Box
+            sx={{
+              ...backgroundStyle,
+              cursor: 'pointer',
+              border: isContainerSelected ? '2px solid #1976d2' : 'none',
+              borderRadius: isContainerSelected ? '8px' : '0px',
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onContainerClick();
+            }}
+          >
+            <Box
+              sx={{
+                maxWidth: `${containerMaxWidth}px`,
+                margin: '0 auto',
+                padding: `${containerPadding}px`,
+                borderRadius: `${containerBorderRadius}px`,
+                border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 3, textAlign: 'center' }}>
+                Preview HTML - Newsletter Completo
+              </Typography>
+
+              {/* Iframe para mostrar el HTML renderizado */}
+              <Box
+                sx={{
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  mb: 2,
+                }}
+              >
+                <iframe
+                  srcDoc={newsletterHtml}
+                  style={{
+                    width: '100%',
+                    height: '600px',
+                    border: 'none',
+                    borderRadius: '8px',
+                  }}
+                  title="Newsletter Preview"
+                />
+              </Box>
+
+              {/* Código HTML para copiar */}
+              <Box
+                sx={{
+                  backgroundColor: '#f5f5f5',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 2,
+                  p: 2,
+                  maxHeight: 300,
+                  overflow: 'auto',
+                }}
+              >
+                <Typography variant="caption" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+                  Código HTML:
+                </Typography>
+                <pre
+                  style={{
+                    margin: 0,
+                    fontSize: '12px',
+                    lineHeight: 1.4,
+                    fontFamily: 'monospace',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {newsletterHtml}
+                </pre>
+              </Box>
+            </Box>
+          </Box>
+        );
+      }
+
+      // Vista normal de notas - newsletter vacío
+      if (newsletterNotes.length === 0) {
+        return (
+          <Box
+            sx={{
+              ...backgroundStyle,
+              cursor: 'pointer',
+              border: isContainerSelected ? '2px solid #1976d2' : 'none',
+              borderRadius: isContainerSelected ? '8px' : '0px',
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onContainerClick();
+            }}
+          >
+            <Box
+              sx={{
+                maxWidth: `${containerMaxWidth}px`,
+                margin: '0 auto',
+                padding: `${containerPadding}px`,
+                borderRadius: `${containerBorderRadius}px`,
+                border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+                textAlign: 'center',
+                py: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon
+                icon="mdi:email-newsletter"
+                style={{
+                  fontSize: 64,
+                  color: 'rgba(0,0,0,0.2)',
+                  marginBottom: 16,
+                }}
+              />
+              <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
+                Tu newsletter está vacío
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
+                Agrega notas desde la biblioteca en el panel lateral izquierdo para crear tu
+                newsletter.
+              </Typography>
+            </Box>
+          </Box>
+        );
+      }
+
+      // Vista normal de notas - mostrar las notas del newsletter con componentes completos
+      return (
+        <Box
+          sx={{
+            ...backgroundStyle,
+            cursor: 'pointer',
+            border: isContainerSelected ? '2px solid #1976d2' : 'none',
+            borderRadius: isContainerSelected ? '8px' : '0px',
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onContainerClick();
+          }}
+        >
+          <Box
+            sx={{
+              maxWidth: `${containerMaxWidth}px`,
+              margin: '0 auto',
+              padding: `${containerPadding}px`,
+              borderRadius: `${containerBorderRadius}px`,
+              border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 3, textAlign: 'center' }}>
+              Newsletter Completo ({newsletterNotes.length} nota
+              {newsletterNotes.length !== 1 ? 's' : ''})
+            </Typography>
+
+            {newsletterNotes.map((note, noteIndex) => {
+              // Parsear los componentes de la nota
+              let noteComponents = [];
+              try {
+                noteComponents = JSON.parse(note.noteData.objData || '[]');
+              } catch {
+                noteComponents = [];
+              }
+
+              return (
+                <Box key={note.noteId} sx={{ mb: 4 }}>
+                  {/* Header de la nota con controles */}
+                  <Paper
+                    elevation={selectedComponentId === `note-${note.noteId}` ? 3 : 1}
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      border:
+                        selectedComponentId === `note-${note.noteId}`
+                          ? '2px solid #1976d2'
+                          : '1px solid #e0e0e0',
+                      borderRadius: 2,
+                      backgroundColor: '#f8f9fa',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        elevation: 2,
+                        borderColor: '#1976d2',
+                      },
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedComponentId(`note-${note.noteId}`);
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        📝 {noteIndex + 1}. {note.noteData.title}
+                      </Typography>
+                      <Stack direction="row" spacing={1}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMoveNewsletterNote(note.noteId, 'up');
+                          }}
+                          disabled={noteIndex === 0}
+                          title="Mover nota arriba"
+                          sx={{
+                            backgroundColor: 'white',
+                            '&:hover': { backgroundColor: '#f0f0f0' },
+                          }}
+                        >
+                          <Icon icon="mdi:chevron-up" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMoveNewsletterNote(note.noteId, 'down');
+                          }}
+                          disabled={noteIndex === newsletterNotes.length - 1}
+                          title="Mover nota abajo"
+                          sx={{
+                            backgroundColor: 'white',
+                            '&:hover': { backgroundColor: '#f0f0f0' },
+                          }}
+                        >
+                          <Icon icon="mdi:chevron-down" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditNewsletterNote(note.noteData);
+                          }}
+                          title="Editar nota"
+                          sx={{
+                            backgroundColor: 'white',
+                            '&:hover': { backgroundColor: '#e3f2fd' },
+                          }}
+                        >
+                          <Icon icon="mdi:pencil" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveNewsletterNote(note.noteId);
+                          }}
+                          title="Eliminar nota del newsletter"
+                          sx={{
+                            backgroundColor: 'white',
+                            color: 'error.main',
+                            '&:hover': { backgroundColor: '#ffebee' },
+                          }}
+                        >
+                          <Icon icon="mdi:close" />
+                        </IconButton>
+                      </Stack>
+                    </Box>
+
+                    {/* Información adicional de la nota */}
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {noteComponents.length} componente{noteComponents.length !== 1 ? 's' : ''} •
+                      Orden: {noteIndex + 1}
+                    </Typography>
+                  </Paper>
+
+                  {/* Contenido completo de la nota */}
+                  <Box
+                    sx={{
+                      border: '2px dashed #e0e0e0',
+                      borderRadius: 2,
+                      p: 3,
+                      backgroundColor: '#ffffff',
+                      minHeight: 100,
+                    }}
+                  >
+                    {noteComponents.length > 0 ? (
+                      <Stack spacing={2}>
+                        {noteComponents.map((component: any, componentIndex: number) => {
+                          const componentId = `${note.noteId}-${component.id}`;
+
+                          // Renderizar listas de forma especial
+                          if (component.type === 'bulletList') {
+                            return (
+                              <EmailList
+                                key={componentId}
+                                component={component}
+                                updateListItem={(listId, itemIndex, content) => {
+                                  // Actualizar item de lista en newsletter
+                                  updateNewsletterNoteComponentProps(note.noteId, component.id, {
+                                    ...component,
+                                    items: component.items?.map((item: any, idx: number) =>
+                                      idx === itemIndex ? { ...item, content } : item
+                                    ),
+                                  });
+                                }}
+                                removeListItem={(listId, itemIndex) => {
+                                  // Eliminar item de lista en newsletter
+                                  updateNewsletterNoteComponentProps(note.noteId, component.id, {
+                                    ...component,
+                                    items: component.items?.filter(
+                                      (_: any, idx: number) => idx !== itemIndex
+                                    ),
+                                  });
+                                }}
+                                addListItem={(listId) => {
+                                  // Agregar item de lista en newsletter
+                                  const newItem = {
+                                    id: Date.now().toString(),
+                                    content: 'Nuevo elemento',
+                                  };
+                                  updateNewsletterNoteComponentProps(note.noteId, component.id, {
+                                    ...component,
+                                    items: [...(component.items || []), newItem],
+                                  });
+                                }}
+                                updateComponentProps={(id, props) => {
+                                  updateNewsletterNoteComponentProps(note.noteId, id, props);
+                                }}
+                              />
+                            );
+                          }
+
+                          // Renderizar otros componentes
+                          return (
+                            <EmailComponentRenderer
+                              key={componentId}
+                              component={component}
+                              index={componentIndex}
+                              isSelected={selectedComponentId === componentId}
+                              onSelect={() => {
+                                console.log('🖱️ Newsletter component selected:', {
+                                  noteId: note.noteId,
+                                  componentId: component.id,
+                                  fullId: componentId,
+                                  componentType: component.type,
+                                });
+                                setSelectedComponentId(componentId);
+                                // Llamar también onComponentSelect para manejar el estado del panel
+                                onComponentSelect(componentId);
+                              }}
+                              updateComponentContent={(id, content) => {
+                                // Actualizar contenido del componente en newsletter
+                                updateNewsletterNoteComponentContent(note.noteId, id, content);
+                              }}
+                              updateComponentProps={(id, props) => {
+                                // Actualizar props del componente en newsletter
+                                updateNewsletterNoteComponentProps(note.noteId, id, props);
+                              }}
+                              handleSelectionUpdate={handleSelectionUpdate}
+                              moveComponent={(id, direction) => {
+                                // Mover componente dentro de la nota del newsletter
+                                moveNewsletterNoteComponent(note.noteId, id, direction);
+                              }}
+                              removeComponent={(id) => {
+                                // Eliminar componente de la nota del newsletter
+                                removeNewsletterNoteComponent(note.noteId, id);
+                              }}
+                              totalComponents={noteComponents.length}
+                              renderCustomContent={
+                                component.type === 'bulletList'
+                                  ? () => (
+                                      <EmailList
+                                        component={component}
+                                        updateListItem={(listId, itemIndex, content) => {
+                                          updateNewsletterNoteComponentProps(
+                                            note.noteId,
+                                            component.id,
+                                            {
+                                              ...component,
+                                              items: component.items?.map(
+                                                (item: any, idx: number) =>
+                                                  idx === itemIndex ? { ...item, content } : item
+                                              ),
+                                            }
+                                          );
+                                        }}
+                                        removeListItem={(listId, itemIndex) => {
+                                          updateNewsletterNoteComponentProps(
+                                            note.noteId,
+                                            component.id,
+                                            {
+                                              ...component,
+                                              items: component.items?.filter(
+                                                (_: any, idx: number) => idx !== itemIndex
+                                              ),
+                                            }
+                                          );
+                                        }}
+                                        addListItem={(listId) => {
+                                          const newItem = {
+                                            id: Date.now().toString(),
+                                            content: 'Nuevo elemento',
+                                          };
+                                          updateNewsletterNoteComponentProps(
+                                            note.noteId,
+                                            component.id,
+                                            {
+                                              ...component,
+                                              items: [...(component.items || []), newItem],
+                                            }
+                                          );
+                                        }}
+                                        updateComponentProps={(id, props) => {
+                                          updateNewsletterNoteComponentProps(
+                                            note.noteId,
+                                            id,
+                                            props
+                                          );
+                                        }}
+                                      />
+                                    )
+                                  : undefined
+                              }
+                            />
+                          );
+                        })}
+                      </Stack>
+                    ) : (
+                      // Nota sin componentes
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          py: 4,
+                          color: 'text.secondary',
+                        }}
+                      >
+                        <Icon
+                          icon="mdi:note-outline"
+                          style={{ fontSize: 48, opacity: 0.3, marginBottom: 16 }}
+                        />
+                        <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                          Esta nota no tiene componentes
+                        </Typography>
+                        <Button
+                          size="small"
+                          startIcon={<Icon icon="mdi:pencil" />}
+                          onClick={() => onEditNewsletterNote(note.noteData)}
+                          sx={{ mt: 2 }}
+                        >
+                          Editar nota para agregar contenido
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
+      );
+    }
+
+    // Modo normal (no newsletter)
     if (components.length === 0) {
       return (
         <Box
@@ -198,80 +890,66 @@ const EmailContent = memo(
               sx={{
                 borderRadius: '8px',
                 textTransform: 'none',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
               }}
             >
-              Añadir párrafo
+              Añadir tu primer componente
             </Button>
           </Box>
         </Box>
       );
     }
 
+    // Mostrar componentes normales
     return (
       <Box
         sx={{
           ...backgroundStyle,
-          cursor: activeTemplate === 'news' && activeVersion === 'web' ? 'default' : 'pointer',
-          border:
-            isContainerSelected && (activeTemplate !== 'news' || activeVersion === 'newsletter')
-              ? '2px solid #1976d2'
-              : 'none',
-          borderRadius:
-            isContainerSelected && (activeTemplate !== 'news' || activeVersion === 'newsletter')
-              ? '8px'
-              : '0px',
+          cursor: 'pointer',
+          border: isContainerSelected ? '2px solid #1976d2' : 'none',
+          borderRadius: isContainerSelected ? '8px' : '0px',
         }}
         onClick={(e) => {
           e.stopPropagation();
-          // Solo permitir clic del contenedor si NO es template 'news' + versión web
-          if (!(activeTemplate === 'news' && activeVersion === 'web')) {
-            onContainerClick();
-          }
+          onContainerClick();
         }}
       >
-        {/* nuevo borde de la nota - Template 'news': SOLO en newsletter, NO en web */}
         <Box
           sx={{
-            maxWidth:
-              activeTemplate === 'news' && activeVersion === 'web'
-                ? 'unset'
-                : `${containerMaxWidth}px`,
+            maxWidth: `${containerMaxWidth}px`,
             margin: '0 auto',
-            padding:
-              activeTemplate === 'news' && activeVersion === 'web' ? '0' : `${containerPadding}px`,
-            borderRadius:
-              activeTemplate === 'news' && activeVersion === 'web'
-                ? '0'
-                : `${containerBorderRadius}px`,
-            border:
-              activeTemplate === 'news' && activeVersion === 'web'
-                ? 'none'
-                : `${containerBorderWidth}px solid ${containerBorderColor}`,
+            padding: `${containerPadding}px`,
+            borderRadius: `${containerBorderRadius}px`,
+            border: `${containerBorderWidth}px solid ${containerBorderColor}`,
           }}
         >
-          {components.map((component, index) => (
-            <EmailComponentRenderer
-              key={component.id}
-              component={component}
-              index={index}
-              isSelected={component.id === selectedComponentId}
-              onSelect={() => setSelectedComponentId(component.id)}
-              updateComponentContent={updateComponentContent}
-              updateComponentProps={updateComponentProps}
-              handleSelectionUpdate={handleSelectionUpdate}
-              moveComponent={moveComponent}
-              removeComponent={removeComponent}
-              totalComponents={components.length}
-              renderCustomContent={component.type === 'bulletList' ? renderBulletList : undefined}
-            />
-          ))}
+          {components.map((component: any, index) => {
+            if (component.type === 'bulletList') {
+              return renderBulletList(component);
+            }
+
+            return (
+              <EmailComponentRenderer
+                key={component.id}
+                component={component}
+                index={index}
+                isSelected={selectedComponentId === component.id}
+                onSelect={() => setSelectedComponentId(component.id)}
+                updateComponentContent={updateComponentContent}
+                updateComponentProps={updateComponentProps}
+                handleSelectionUpdate={handleSelectionUpdate}
+                moveComponent={moveComponent}
+                removeComponent={removeComponent}
+                totalComponents={components.length}
+                renderCustomContent={
+                  component.type === 'bulletList' ? () => renderBulletList(component) : undefined
+                }
+              />
+            );
+          })}
         </Box>
       </Box>
     );
   }
 );
-
-EmailContent.displayName = 'EmailContent';
 
 export default EmailContent;

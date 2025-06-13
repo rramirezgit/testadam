@@ -35,6 +35,12 @@ interface EditorHeaderProps {
   transferToWeb?: () => void;
   transferToNewsletter?: () => void;
   noteStatus: string;
+  isNewsletterMode?: boolean;
+  onGenerateNewsletterHtml?: () => void;
+  onToggleNewsletterView?: () => void;
+  showNewsletterPreview?: boolean;
+  generatingNewsletterHtml?: boolean;
+  newsletterNotesCount?: number;
 }
 
 export default function EditorHeader({
@@ -50,6 +56,12 @@ export default function EditorHeader({
   transferToWeb = () => {},
   transferToNewsletter = () => {},
   noteStatus,
+  isNewsletterMode = false,
+  onGenerateNewsletterHtml = () => {},
+  onToggleNewsletterView = () => {},
+  showNewsletterPreview = false,
+  generatingNewsletterHtml = false,
+  newsletterNotesCount = 0,
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
@@ -88,7 +100,11 @@ export default function EditorHeader({
           component="div"
           sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
         >
-          {isEditingExistingNote ? initialNote?.title || 'Editor de Email' : 'Nuevo Email'}
+          {isNewsletterMode
+            ? 'Nuevo Newsletter'
+            : isEditingExistingNote
+              ? initialNote?.title || 'Editor de Email'
+              : 'Nuevo Email'}
         </Typography>
 
         {/* Selector de versión Web/Newsletter - Solo para template 'news' */}
@@ -256,38 +272,82 @@ export default function EditorHeader({
           </Menu>
         )}
 
-        <Button
-          variant="outlined"
-          color="inherit"
-          sx={{ mr: 1 }}
-          startIcon={<Icon icon="mdi:file-document-edit-outline" />}
-        >
-          {noteStatus === 'DRAFT'
-            ? 'Borrador'
-            : noteStatus === 'REVIEW'
-              ? 'En Revisión'
-              : noteStatus === 'APPROVED'
-                ? 'Aprobado'
-                : noteStatus === 'PUBLISHED'
-                  ? 'Publicado'
-                  : 'Borrador'}
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Icon icon="material-symbols:save" />}
-          onClick={openSaveDialog}
-        >
-          Guardar
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          endIcon={<Icon icon="mdi:chevron-down" />}
-          sx={{ backgroundColor: '#4f46e5' }}
-        >
-          Enviar
-        </Button>
+        {isNewsletterMode ? (
+          <>
+            {/* Contador de notas del newsletter */}
+            <Button
+              variant="outlined"
+              color="inherit"
+              sx={{ mr: 1 }}
+              startIcon={<Icon icon="mdi:note-multiple" />}
+            >
+              {newsletterNotesCount} Notas
+            </Button>
+
+            {/* Botón para generar/alternar vista de preview HTML */}
+            <Button
+              variant={showNewsletterPreview ? 'contained' : 'outlined'}
+              color="secondary"
+              sx={{ mr: 1 }}
+              startIcon={
+                generatingNewsletterHtml ? (
+                  <Icon icon="mdi:loading" className="animate-spin" />
+                ) : (
+                  <Icon icon={showNewsletterPreview ? 'mdi:eye-off' : 'mdi:eye'} />
+                )
+              }
+              onClick={showNewsletterPreview ? onToggleNewsletterView : onGenerateNewsletterHtml}
+              disabled={generatingNewsletterHtml}
+            >
+              {showNewsletterPreview ? 'Ver Notas' : 'Preview HTML'}
+            </Button>
+
+            {/* Botón de enviar newsletter */}
+            <Button
+              variant="contained"
+              color="primary"
+              endIcon={<Icon icon="mdi:send" />}
+              sx={{ backgroundColor: '#4f46e5' }}
+            >
+              Enviar Newsletter
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="outlined"
+              color="inherit"
+              sx={{ mr: 1 }}
+              startIcon={<Icon icon="mdi:file-document-edit-outline" />}
+            >
+              {noteStatus === 'DRAFT'
+                ? 'Borrador'
+                : noteStatus === 'REVIEW'
+                  ? 'En Revisión'
+                  : noteStatus === 'APPROVED'
+                    ? 'Aprobado'
+                    : noteStatus === 'PUBLISHED'
+                      ? 'Publicado'
+                      : 'Borrador'}
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Icon icon="material-symbols:save" />}
+              onClick={openSaveDialog}
+            >
+              Guardar
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              endIcon={<Icon icon="mdi:chevron-down" />}
+              sx={{ backgroundColor: '#4f46e5' }}
+            >
+              Enviar
+            </Button>
+          </>
+        )}
       </Toolbar>
     </AppBar>
   );
