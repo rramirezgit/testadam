@@ -12,7 +12,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import TextAlign from '@tiptap/extension-text-align';
 import FontFamily from '@tiptap/extension-font-family';
 import { useEditor, EditorContent } from '@tiptap/react';
-import { useRef, useMemo, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box } from '@mui/material';
 
@@ -176,12 +176,21 @@ export default function SimpleTipTapEditor({
           class: className || 'tiptap-editor-optimized',
           placeholder,
           'data-placeholder': placeholder,
+          // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Asegurar que el editor use elementos válidos
+          'data-testid': 'tiptap-editor',
         },
         // ⚡ ULTRA-OPTIMIZACIÓN: Eventos pasivos para mejor rendimiento
         handleDOMEvents: {
           keydown: () => false, // Permitir que el navegador maneje los eventos
           input: () => false, // Reducir interferencias
         },
+        // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Transformar el contenido para evitar anidación inválida
+        transformPastedHTML: (html: string) =>
+          // Asegurar que no hay divs dentro de párrafos
+          html
+            .replace(/<div([^>]*)>(.*?)<\/div>/gi, '<p$1>$2</p>')
+            .replace(/<p([^>]*)><p([^>]*)>/gi, '<p$1 $2>')
+            .replace(/<\/p><\/p>/gi, '</p>'),
       },
       // ⚡ ULTRA-OPTIMIZACIÓN: Parser optimizado
       parseOptions: {
@@ -194,11 +203,22 @@ export default function SimpleTipTapEditor({
       // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Configuración específica para SSR
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
+      // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Configuraciones adicionales
+      enableInputRules: true,
+      enablePasteRules: true,
+      enableCoreExtensions: true,
     }),
     [extensions, content, debouncedOnChange, throttledSelectionUpdate, className, placeholder]
   );
 
-  const editor = useEditor(editorConfig);
+  const editor = useEditor(editorConfig, []);
+
+  // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Asegurar que el editor esté disponible solo en el cliente
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // ⚡ ULTRA-OPTIMIZACIÓN: Actualización de contenido con batching
   useEffect(() => {
@@ -272,21 +292,37 @@ export default function SimpleTipTapEditor({
         opacity: 0.6,
       },
       // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Asegurar que los párrafos sean válidos
-      '& .tiptap-paragraph': {
+      '& .ProseMirror p': {
         margin: 0,
         padding: 0,
         display: 'block',
+        position: 'relative',
+        // Asegurar que no hay elementos de bloque dentro de párrafos
+        '& div, & section, & article, & aside, & header, & footer, & main, & nav': {
+          display: 'inline !important',
+        },
       },
-      '& .tiptap-heading': {
-        margin: 0,
-        padding: 0,
+      '& .ProseMirror h1, & .ProseMirror h2, & .ProseMirror h3, & .ProseMirror h4, & .ProseMirror h5, & .ProseMirror h6':
+        {
+          margin: 0,
+          padding: 0,
+          display: 'block',
+          position: 'relative',
+        },
+      // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Asegurar estructura correcta para listas
+      '& .ProseMirror ul, & .ProseMirror ol': {
         display: 'block',
+        position: 'relative',
+        '& li': {
+          display: 'list-item',
+          position: 'relative',
+        },
       },
     }),
     [showToolbar]
   );
 
-  // ⚡ ULTRA-OPTIMIZACIÓN: Memoización del contenedor
+  // ⚡ ULTRA-OPTIMIZACIÓN: Memoización del contenedor con prevención de hidratación
   const editorContainer = useMemo(
     () => (
       <Box
@@ -301,10 +337,10 @@ export default function SimpleTipTapEditor({
         }}
         sx={editorStyles}
       >
-        <EditorContent editor={editor} />
+        {isMounted && editor && <EditorContent editor={editor} />}
       </Box>
     ),
-    [className, style, editorStyles, editor]
+    [className, style, editorStyles, editor, isMounted]
   );
 
   return editorContainer;

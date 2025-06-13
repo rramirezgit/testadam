@@ -224,7 +224,7 @@ const HeadingComponent = memo(
         removeComponent={removeComponent}
         onClick={handleClick}
       >
-        <Box component="p" sx={boxStyles}>
+        <Box component="div" sx={boxStyles}>
           <MemoizedHeadingEditor
             content={component.content}
             onContentChange={handleContentChange}

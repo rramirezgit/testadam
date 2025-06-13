@@ -207,7 +207,7 @@ const ParagraphComponent = memo(
         removeComponent={removeComponent}
         onClick={handleClick}
       >
-        <Typography variant="body1" component="p" style={containerStyles}>
+        <Typography variant="body1" component="div" style={containerStyles}>
           <MemoizedEditor
             content={component.content}
             onContentChange={handleContentChange}

@@ -13,9 +13,9 @@ import { themeConfig, ThemeProvider } from 'src/theme';
 import { I18nProvider } from 'src/locales/i18n-provider';
 
 import { Snackbar } from 'src/components/snackbar';
-import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { detectSettings } from 'src/components/settings/server';
+import { HydrationMonitor } from 'src/components/hydration-monitor';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
 
 import { CheckoutProvider } from 'src/sections/checkout/context';
@@ -101,7 +101,8 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                     <MotionLazy>
                       <CheckoutProvider>
                         <Snackbar />
-                        <ProgressBar />
+                        {/* <ProgressBar /> */}
+                        <HydrationMonitor />
                         <SettingsDrawer defaultSettings={defaultSettings} />
                         {children}
                       </CheckoutProvider>
