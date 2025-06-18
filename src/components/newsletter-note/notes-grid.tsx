@@ -1,6 +1,6 @@
 'use client';
 
-import type { SavedNote } from 'src/types/saved-note';
+import type { Article } from 'src/store/PostStore';
 
 import { Icon } from '@iconify/react';
 
@@ -9,8 +9,8 @@ import { Box, Grid, Button, Typography } from '@mui/material';
 import NoteCard from './notes-card';
 
 interface NotesGridProps {
-  notes: SavedNote[];
-  onOpenNote: (note: SavedNote) => void;
+  notes: Article[];
+  onOpenNote: (note: Article) => void;
   onDeleteNote: (noteId: string) => void;
   onCreateNew: () => void;
 }

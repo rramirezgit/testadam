@@ -1,15 +1,19 @@
-import type { Metadata } from 'next';
+'use client';
 
-import { HomeView } from 'src/sections/home/view';
+import { useEffect } from 'react';
+
+import { useRouter } from 'src/routes/hooks';
+
+import { CONFIG } from 'src/global-config';
 
 // ----------------------------------------------------------------------
 
-export const metadata: Metadata = {
-  title: 'Minimals UI: The starting point for your next project',
-  description:
-    'The starting point for your next project with Minimal UI Kit, built on the newest version of Material-UI ©, ready to be customized to your style',
-};
-
 export default function Page() {
-  return <HomeView />;
+  const router = useRouter();
+
+  useEffect(() => {
+    router.push(CONFIG.auth.redirectPath);
+  }, [router]);
+
+  return null;
 }

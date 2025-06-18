@@ -34,6 +34,7 @@ export interface NewsletterHeader {
   gradientColors: string[];
   gradientDirection: number;
   showLogo: boolean;
+  showBanner: boolean;
   logoHeight: number;
   padding: number;
   sponsor?: {
@@ -85,4 +86,12 @@ export interface EmailEditorProps {
   newsletterTitle?: string;
   newsletterDescription?: string;
   onNewsletterInfoChange?: (info: { title: string; description: string }) => void;
+  // Nuevas props para el menú de envío
+  newsletterList?: any[];
+  currentNewsletterId?: string;
+  saving?: boolean;
+  setOpenSendDialog?: (open: boolean) => void;
+  setOpenAprob?: (open: boolean) => void;
+  setOpenSchedule?: (open: boolean) => void;
+  setOpenSendSubs?: (open: boolean) => void;
 }

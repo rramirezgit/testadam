@@ -65,6 +65,14 @@ interface EmailEditorProps {
   newsletterTitle?: string;
   newsletterDescription?: string;
   onNewsletterInfoChange?: (info: { title: string; description: string }) => void;
+  // Nuevas props para el menú de envío
+  newsletterList?: any[];
+  currentNewsletterId?: string;
+  saving?: boolean;
+  setOpenSendDialog?: (open: boolean) => void;
+  setOpenAprob?: (open: boolean) => void;
+  setOpenSchedule?: (open: boolean) => void;
+  setOpenSendSubs?: (open: boolean) => void;
 }
 
 export const EmailEditorMain: React.FC<EmailEditorProps> = ({
@@ -84,6 +92,14 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   newsletterTitle = '',
   newsletterDescription = '',
   onNewsletterInfoChange = () => {},
+  // Nuevas props para el menú de envío
+  newsletterList = [],
+  currentNewsletterId,
+  saving = false,
+  setOpenSendDialog,
+  setOpenAprob,
+  setOpenSchedule,
+  setOpenSendSubs,
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
@@ -129,8 +145,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     alignment: 'center',
     useGradient: true,
     gradientColors: ['#FFF9CE', '#E2E5FA'],
-    gradientDirection: 224,
+    gradientDirection: 135,
     showLogo: true,
+    showBanner: false,
     logoHeight: 60,
     padding: 32,
     sponsor: {
@@ -305,11 +322,29 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     setSelectedComponentId(null);
   }, []);
 
+  // Log cuando newsletterHeader cambie
+  useEffect(() => {
+    console.log('🔄 newsletterHeader cambió a:', newsletterHeader);
+  }, [newsletterHeader]);
+
+  // Log cuando newsletterFooter cambie
+  useEffect(() => {
+    console.log('🔄 newsletterFooter cambió a:', newsletterFooter);
+  }, [newsletterFooter]);
+
   const handleHeaderChange = useCallback(
     (newHeader: NewsletterHeader) => {
+      console.log('🔄 handleHeaderChange ejecutado con:', newHeader);
+      console.log('📊 newsletterHeader actual:', newsletterHeader);
+      console.log('📊 defaultNewsletterHeader:', defaultNewsletterHeader);
       const currentHeader = newsletterHeader || defaultNewsletterHeader;
       const currentFooter = newsletterFooter || defaultNewsletterFooter;
+      console.log('📤 Llamando onNewsletterConfigChange con:', {
+        header: newHeader,
+        footer: currentFooter,
+      });
       onNewsletterConfigChange({ header: newHeader, footer: currentFooter });
+      console.log('✅ onNewsletterConfigChange llamado');
     },
     [
       newsletterHeader,
@@ -435,7 +470,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         highlight: false,
       };
 
-      console.log('🚀 Calling updatePost with noteId:', noteData.currentNoteId);
+      console.log('�� Calling updatePost with noteId:', noteData.currentNoteId);
 
       // Actualizar post existente
       await updatePost(noteData.currentNoteId, postData);
@@ -1304,26 +1339,97 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       includesDash: selectedComponentId?.includes('-'),
     });
 
-    // Si está en modo newsletter y hay un componente seleccionado de una nota
-    if (isNewsletterMode && selectedComponentId && selectedComponentId.includes('-')) {
-      // Dividir correctamente: el noteId es la primera parte hasta el primer '-'
-      // y el componentId es todo lo que sigue después del primer '-'
-      const firstDashIndex = selectedComponentId.indexOf('-');
-      const noteId = selectedComponentId.substring(0, firstDashIndex);
-      const componentId = selectedComponentId.substring(firstDashIndex + 1);
+    // Si está en modo newsletter y hay un componente seleccionado
+    if (isNewsletterMode && selectedComponentId) {
+      // Componentes especiales de newsletter (header y footer)
+      if (selectedComponentId === 'newsletter-header') {
+        console.log('📤 Returning newsletter header component');
+        return [
+          {
+            id: 'newsletter-header',
+            type: 'newsletter-header',
+            content: newsletterHeader?.title || 'Newsletter Semanal',
+            style: {},
+            props: {
+              title: newsletterHeader?.title || 'Newsletter Semanal',
+              subtitle: newsletterHeader?.subtitle || 'Las mejores noticias y actualizaciones',
+              backgroundColor: newsletterHeader?.backgroundColor || '#FFF9CE',
+              textColor: newsletterHeader?.textColor || '#333333',
+              alignment: newsletterHeader?.alignment || 'center',
+              useGradient: newsletterHeader?.useGradient || true,
+              gradientColors: newsletterHeader?.gradientColors || ['#FFF9CE', '#E2E5FA'],
+              gradientDirection: newsletterHeader?.gradientDirection || 224,
+              logo: newsletterHeader?.logo || '',
+              logoAlt: newsletterHeader?.logoAlt || 'Logo',
+              bannerImage: newsletterHeader?.bannerImage || '',
+              showLogo: newsletterHeader?.showLogo || true,
+              logoHeight: newsletterHeader?.logoHeight || 60,
+              padding: newsletterHeader?.padding || 32,
+              sponsor: newsletterHeader?.sponsor || {
+                enabled: false,
+                label: 'Juntos con',
+                image: '',
+                imageAlt: 'Sponsor',
+              },
+            },
+          },
+        ];
+      }
 
-      console.log('🔄 Splitting selectedComponentId correctly:', {
-        fullId: selectedComponentId,
-        noteId,
-        componentId,
-      });
+      if (selectedComponentId === 'newsletter-footer') {
+        console.log('📤 Returning newsletter footer component');
+        return [
+          {
+            id: 'newsletter-footer',
+            type: 'newsletter-footer',
+            content: newsletterFooter?.companyName || 'Tu Empresa',
+            style: {},
+            props: {
+              companyName: newsletterFooter?.companyName || 'Tu Empresa',
+              address: newsletterFooter?.address || '123 Calle Principal, Ciudad, País',
+              contactEmail: newsletterFooter?.contactEmail || 'contacto@ejemplo.com',
+              socialLinks: newsletterFooter?.socialLinks || [
+                { platform: 'twitter', url: 'https://twitter.com', enabled: true },
+                { platform: 'facebook', url: 'https://facebook.com', enabled: true },
+                { platform: 'instagram', url: 'https://instagram.com', enabled: true },
+                { platform: 'linkedin', url: 'https://linkedin.com', enabled: false },
+              ],
+              unsubscribeLink: newsletterFooter?.unsubscribeLink || '#unsubscribe',
+              backgroundColor: newsletterFooter?.backgroundColor || '#f5f5f5',
+              textColor: newsletterFooter?.textColor || '#666666',
+              useGradient: newsletterFooter?.useGradient || false,
+              gradientColors: newsletterFooter?.gradientColors || ['#f5f5f5', '#e0e0e0'],
+              gradientDirection: newsletterFooter?.gradientDirection || 180,
+              showSocial: newsletterFooter?.showSocial || true,
+              showAddress: newsletterFooter?.showAddress || true,
+              padding: newsletterFooter?.padding || 24,
+              fontSize: newsletterFooter?.fontSize || 12,
+            },
+          },
+        ];
+      }
 
-      const component = getNewsletterNoteComponent(noteId, componentId);
+      // Si hay un componente seleccionado de una nota
+      if (selectedComponentId.includes('-')) {
+        // Dividir correctamente: el noteId es la primera parte hasta el primer '-'
+        // y el componentId es todo lo que sigue después del primer '-'
+        const firstDashIndex = selectedComponentId.indexOf('-');
+        const noteId = selectedComponentId.substring(0, firstDashIndex);
+        const componentId = selectedComponentId.substring(firstDashIndex + 1);
 
-      // Retornar el componente seleccionado como si fuera una lista de componentes
-      const result = component ? [component] : [];
-      console.log('📤 Returning newsletter component:', result);
-      return result;
+        console.log('🔄 Splitting selectedComponentId correctly:', {
+          fullId: selectedComponentId,
+          noteId,
+          componentId,
+        });
+
+        const component = getNewsletterNoteComponent(noteId, componentId);
+
+        // Retornar el componente seleccionado como si fuera una lista de componentes
+        const result = component ? [component] : [];
+        console.log('📤 Returning newsletter component:', result);
+        return result;
+      }
     }
 
     // Modo normal - usar la función original
@@ -1337,6 +1443,8 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     emailComponents,
     activeTemplate,
     activeVersion,
+    newsletterHeader,
+    newsletterFooter,
   ]);
 
   // NUEVA FUNCIÓN: Obtener el ID real del componente para el panel
@@ -1355,28 +1463,86 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   // NUEVA FUNCIÓN: Función de actualización que funciona tanto para newsletter como modo normal
   const updateComponentForPanel = useCallback(
     (updateType: 'content' | 'props' | 'style', id: string, data: any) => {
-      // Si está en modo newsletter y hay un componente seleccionado de una nota
-      if (isNewsletterMode && selectedComponentId && selectedComponentId.includes('-')) {
-        // Dividir correctamente: el noteId es la primera parte hasta el primer '-'
-        // y el componentId es todo lo que sigue después del primer '-'
-        const firstDashIndex = selectedComponentId.indexOf('-');
-        const noteId = selectedComponentId.substring(0, firstDashIndex);
-        const componentId = selectedComponentId.substring(firstDashIndex + 1);
+      // Si está en modo newsletter
+      if (isNewsletterMode && selectedComponentId) {
+        // Manejar componentes especiales de newsletter (header y footer)
+        if (selectedComponentId === 'newsletter-header') {
+          const currentHeader = newsletterHeader || defaultNewsletterHeader;
+          let updatedHeader = { ...currentHeader };
 
-        switch (updateType) {
-          case 'content':
-            updateNewsletterNoteComponentContent(noteId, componentId, data);
-            break;
-          case 'props':
-            updateNewsletterNoteComponentProps(noteId, componentId, data);
-            break;
-          case 'style':
-            updateNewsletterNoteComponentStyle(noteId, componentId, data);
-            break;
-          default:
-            console.warn('Unknown update type for newsletter component:', updateType);
+          switch (updateType) {
+            case 'content':
+              updatedHeader.title = data;
+              break;
+            case 'props':
+              updatedHeader = { ...updatedHeader, ...data };
+              break;
+            case 'style':
+              // Los estilos se pueden aplicar como props también
+              updatedHeader = { ...updatedHeader, ...data };
+              break;
+            default:
+              console.warn('Unknown update type for newsletter header:', updateType);
+          }
+
+          console.log('🎯 Updating newsletter header:', updatedHeader);
+          onNewsletterConfigChange({
+            header: updatedHeader,
+            footer: newsletterFooter || defaultNewsletterFooter,
+          });
+          return;
         }
-        return;
+
+        if (selectedComponentId === 'newsletter-footer') {
+          const currentFooter = newsletterFooter || defaultNewsletterFooter;
+          let updatedFooter = { ...currentFooter };
+
+          switch (updateType) {
+            case 'content':
+              updatedFooter.companyName = data;
+              break;
+            case 'props':
+              updatedFooter = { ...updatedFooter, ...data };
+              break;
+            case 'style':
+              // Los estilos se pueden aplicar como props también
+              updatedFooter = { ...updatedFooter, ...data };
+              break;
+            default:
+              console.warn('Unknown update type for newsletter footer:', updateType);
+          }
+
+          console.log('🎯 Updating newsletter footer:', updatedFooter);
+          onNewsletterConfigChange({
+            header: newsletterHeader || defaultNewsletterHeader,
+            footer: updatedFooter,
+          });
+          return;
+        }
+
+        // Si hay un componente seleccionado de una nota
+        if (selectedComponentId.includes('-')) {
+          // Dividir correctamente: el noteId es la primera parte hasta el primer '-'
+          // y el componentId es todo lo que sigue después del primer '-'
+          const firstDashIndex = selectedComponentId.indexOf('-');
+          const noteId = selectedComponentId.substring(0, firstDashIndex);
+          const componentId = selectedComponentId.substring(firstDashIndex + 1);
+
+          switch (updateType) {
+            case 'content':
+              updateNewsletterNoteComponentContent(noteId, componentId, data);
+              break;
+            case 'props':
+              updateNewsletterNoteComponentProps(noteId, componentId, data);
+              break;
+            case 'style':
+              updateNewsletterNoteComponentStyle(noteId, componentId, data);
+              break;
+            default:
+              console.warn('Unknown update type for newsletter component:', updateType);
+          }
+          return;
+        }
       }
 
       // Modo normal - usar las funciones originales
@@ -1397,6 +1563,11 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     [
       isNewsletterMode,
       selectedComponentId,
+      newsletterHeader,
+      newsletterFooter,
+      defaultNewsletterHeader,
+      defaultNewsletterFooter,
+      onNewsletterConfigChange,
       updateNewsletterNoteComponentContent,
       updateNewsletterNoteComponentProps,
       updateNewsletterNoteComponentStyle,
@@ -1429,6 +1600,14 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         showNewsletterPreview={showNewsletterPreview}
         generatingNewsletterHtml={generatingNewsletterHtml}
         newsletterNotesCount={newsletterNotes.length}
+        // Nuevas props para el menú de envío
+        newsletterList={newsletterList}
+        currentNewsletterId={currentNewsletterId}
+        saving={saving}
+        setOpenSendDialog={setOpenSendDialog}
+        setOpenAprob={setOpenAprob}
+        setOpenSchedule={setOpenSchedule}
+        setOpenSendSubs={setOpenSendSubs}
       />
 
       {/* Banner de sincronización automática */}
@@ -1559,6 +1738,21 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             moveNewsletterNoteComponent={moveNewsletterNoteComponent}
             removeNewsletterNoteComponent={removeNewsletterNoteComponent}
             onNewsletterContainerClick={handleNewsletterContainerClick}
+            // Props para componentes de newsletter (header y footer)
+            newsletterHeader={newsletterHeader || defaultNewsletterHeader}
+            newsletterFooter={newsletterFooter || defaultNewsletterFooter}
+            onNewsletterHeaderUpdate={(header) =>
+              onNewsletterConfigChange({
+                header,
+                footer: newsletterFooter || defaultNewsletterFooter,
+              })
+            }
+            onNewsletterFooterUpdate={(footer) =>
+              onNewsletterConfigChange({
+                header: newsletterHeader || defaultNewsletterHeader,
+                footer,
+              })
+            }
           />
         </Box>
 

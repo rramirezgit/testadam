@@ -3,8 +3,8 @@
 import type { SavedNote } from 'src/types/saved-note';
 
 import Image from 'next/image';
-import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useState, useCallback } from 'react';
 
 import {
   Box,
@@ -41,6 +41,13 @@ interface EditorHeaderProps {
   showNewsletterPreview?: boolean;
   generatingNewsletterHtml?: boolean;
   newsletterNotesCount?: number;
+  newsletterList?: any[];
+  currentNewsletterId?: string;
+  saving?: boolean;
+  setOpenSendDialog?: (open: boolean) => void;
+  setOpenAprob?: (open: boolean) => void;
+  setOpenSchedule?: (open: boolean) => void;
+  setOpenSendSubs?: (open: boolean) => void;
 }
 
 export default function EditorHeader({
@@ -62,10 +69,60 @@ export default function EditorHeader({
   showNewsletterPreview = false,
   generatingNewsletterHtml = false,
   newsletterNotesCount = 0,
+  newsletterList,
+  currentNewsletterId,
+  saving,
+  setOpenSendDialog,
+  setOpenAprob,
+  setOpenSchedule,
+  setOpenSendSubs,
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
   const openTransferMenu = Boolean(transferMenuAnchor);
+
+  // Estado para el menú de envío
+  const [sendMenuAnchor, setSendMenuAnchor] = useState<null | HTMLElement>(null);
+  const openSendMenu = Boolean(sendMenuAnchor);
+
+  // Función para deshabilitar opciones del menú de envío
+  const disableOption = useCallback(
+    (option: 'Prueba' | 'Aprobacion' | 'Subscriptores' | 'schedule') => {
+      if (saving) {
+        return true;
+      }
+
+      const newsletter = newsletterList?.find((item) => item.id === currentNewsletterId);
+
+      if (option === 'Aprobacion') {
+        if (newsletter) {
+          if (
+            newsletter.status === 'APPROVED' ||
+            newsletter.status === 'PENDING_APPROVAL' ||
+            newsletter.status === 'SENDED'
+          ) {
+            return true;
+          }
+        }
+      }
+
+      if (option === 'Subscriptores' || option === 'schedule') {
+        if (newsletter) {
+          if (
+            newsletter.status === 'DRAFT' ||
+            newsletter.status === 'REJECTED' ||
+            newsletter.status === 'SENDED' ||
+            newsletter.status === 'PENDING_APPROVAL'
+          ) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    },
+    [currentNewsletterId, newsletterList, saving]
+  );
 
   // Debug: Log del activeTemplate
   console.log('🔍 EditorHeader - activeTemplate:', activeTemplate);
@@ -79,6 +136,16 @@ export default function EditorHeader({
   // Cerrar el menú de transferencia
   const handleTransferMenuClose = () => {
     setTransferMenuAnchor(null);
+  };
+
+  // Abrir el menú de envío
+  const handleSendMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setSendMenuAnchor(event.currentTarget);
+  };
+
+  // Cerrar el menú de envío
+  const handleSendMenuClose = () => {
+    setSendMenuAnchor(null);
   };
 
   return (
@@ -306,11 +373,81 @@ export default function EditorHeader({
             <Button
               variant="contained"
               color="primary"
-              endIcon={<Icon icon="mdi:send" />}
+              endIcon={<Icon icon="mdi:chevron-down" />}
               sx={{ backgroundColor: '#4f46e5' }}
+              onClick={handleSendMenuClick}
+              aria-controls={openSendMenu ? 'send-menu-newsletter' : undefined}
+              aria-haspopup="true"
+              aria-expanded={openSendMenu ? 'true' : undefined}
             >
               Enviar Newsletter
             </Button>
+
+            {/* Menú de envío para newsletter */}
+            <Menu
+              id="send-menu-newsletter"
+              anchorEl={sendMenuAnchor}
+              open={openSendMenu}
+              onClose={handleSendMenuClose}
+              MenuListProps={{
+                'aria-labelledby': 'send-newsletter-button',
+              }}
+              PaperProps={{
+                sx: { minWidth: '200px' },
+              }}
+            >
+              <MenuItem
+                disabled={disableOption('Prueba')}
+                onClick={() => {
+                  setOpenSendDialog?.(true);
+                  handleSendMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="mdi:test-tube" width={24} height={24} />
+                </ListItemIcon>
+                <ListItemText>Prueba</ListItemText>
+              </MenuItem>
+
+              <MenuItem
+                disabled={disableOption('Aprobacion')}
+                onClick={() => {
+                  setOpenAprob?.(true);
+                  handleSendMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="mdi:check-circle-outline" width={24} height={24} />
+                </ListItemIcon>
+                <ListItemText>Aprobación</ListItemText>
+              </MenuItem>
+
+              <MenuItem
+                disabled={disableOption('schedule')}
+                onClick={() => {
+                  setOpenSchedule?.(true);
+                  handleSendMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="material-symbols:schedule-outline" width={24} height={24} />
+                </ListItemIcon>
+                <ListItemText>Programar</ListItemText>
+              </MenuItem>
+
+              <MenuItem
+                disabled={disableOption('Subscriptores')}
+                onClick={() => {
+                  setOpenSendSubs?.(true);
+                  handleSendMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="fluent-mdl2:group" width={24} height={24} />
+                </ListItemIcon>
+                <ListItemText>Enviar ahora</ListItemText>
+              </MenuItem>
+            </Menu>
           </>
         ) : (
           <>
@@ -343,9 +480,79 @@ export default function EditorHeader({
               color="primary"
               endIcon={<Icon icon="mdi:chevron-down" />}
               sx={{ backgroundColor: '#4f46e5' }}
+              onClick={handleSendMenuClick}
+              aria-controls={openSendMenu ? 'send-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={openSendMenu ? 'true' : undefined}
             >
               Enviar
             </Button>
+
+            {/* Menú de envío */}
+            <Menu
+              id="send-menu"
+              anchorEl={sendMenuAnchor}
+              open={openSendMenu}
+              onClose={handleSendMenuClose}
+              MenuListProps={{
+                'aria-labelledby': 'send-button',
+              }}
+              PaperProps={{
+                sx: { minWidth: '200px' },
+              }}
+            >
+              <MenuItem
+                disabled={disableOption('Prueba')}
+                onClick={() => {
+                  setOpenSendDialog?.(true);
+                  handleSendMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="mdi:test-tube" width={24} height={24} />
+                </ListItemIcon>
+                <ListItemText>Prueba</ListItemText>
+              </MenuItem>
+
+              <MenuItem
+                disabled={disableOption('Aprobacion')}
+                onClick={() => {
+                  setOpenAprob?.(true);
+                  handleSendMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="mdi:check-circle-outline" width={24} height={24} />
+                </ListItemIcon>
+                <ListItemText>Aprobación</ListItemText>
+              </MenuItem>
+
+              <MenuItem
+                disabled={disableOption('schedule')}
+                onClick={() => {
+                  setOpenSchedule?.(true);
+                  handleSendMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="material-symbols:schedule-outline" width={24} height={24} />
+                </ListItemIcon>
+                <ListItemText>Programar</ListItemText>
+              </MenuItem>
+
+              <MenuItem
+                disabled={disableOption('Subscriptores')}
+                onClick={() => {
+                  setOpenSendSubs?.(true);
+                  handleSendMenuClose();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="fluent-mdl2:group" width={24} height={24} />
+                </ListItemIcon>
+                <ListItemText>Enviar ahora</ListItemText>
+              </MenuItem>
+            </Menu>
           </>
         )}
       </Toolbar>

@@ -2,7 +2,7 @@
 
 'use client';
 
-import type { SavedNote } from 'src/types/saved-note';
+import type { Article } from 'src/store/PostStore';
 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -21,8 +21,8 @@ import {
 } from '@mui/material';
 
 interface NoteCardProps {
-  note: SavedNote;
-  onOpen: (note: SavedNote) => void;
+  note: Article;
+  onOpen: (note: Article) => void;
   onDelete: (noteId: string) => void;
 }
 
@@ -31,10 +31,9 @@ export default function NoteCard({ note, onOpen, onDelete }: NoteCardProps) {
   const [hora, setHora] = useState<string>('');
 
   useEffect(() => {
-    if (note?.configNote) {
+    if (note?.createdAt) {
       try {
-        const config = JSON.parse(note.configNote);
-        const dateCreated = config.dateCreated;
+        const dateCreated = note.createdAt;
         if (dateCreated) {
           setFecha(format(new Date(dateCreated), "dd 'de' MMMM yyyy", { locale: es }));
           setHora(format(new Date(dateCreated), 'hh:mm a'));
@@ -43,16 +42,7 @@ export default function NoteCard({ note, onOpen, onDelete }: NoteCardProps) {
         console.error('Error parsing note config:', error);
       }
     }
-  }, [note?.configNote]);
-
-  const getConfigValue = (key: string) => {
-    try {
-      const config = JSON.parse(note.configNote);
-      return config[key];
-    } catch (error) {
-      return null;
-    }
-  };
+  }, [note?.createdAt]);
 
   return (
     <Card
@@ -79,11 +69,17 @@ export default function NoteCard({ note, onOpen, onDelete }: NoteCardProps) {
             justifyContent: 'center',
           }}
         >
-          <Icon icon="mdi:email-outline" width={48} height={48} style={{ opacity: 0.5 }} />
+          {note.coverImageUrl && (
+            <img
+              src={note.coverImageUrl}
+              alt="Note Cover"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          )}
         </Box>
 
         {/* Chip IA */}
-        {getConfigValue('origin') === 'IA' && (
+        {note.origin === 'IA' && (
           <Chip
             label="IA"
             size="small"

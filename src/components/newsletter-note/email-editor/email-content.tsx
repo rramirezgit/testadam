@@ -12,7 +12,7 @@ import { Box, Stack, Paper, Button, Typography, IconButton } from '@mui/material
 import EmailList from './email-list';
 import EmailComponentRenderer from './email-component-renderer';
 
-import type { NewsletterNote } from './types';
+import type { NewsletterNote, NewsletterHeader, NewsletterFooter } from './types';
 
 interface EmailContentProps {
   getActiveComponents: () => EmailComponent[];
@@ -77,7 +77,306 @@ interface EmailContentProps {
   removeNewsletterNoteComponent?: (noteId: string, componentId: string) => void;
   // Función para manejar el estado del contenedor newsletter
   onNewsletterContainerClick?: () => void;
+  // Props para componentes de newsletter (header y footer)
+  newsletterHeader?: NewsletterHeader;
+  newsletterFooter?: NewsletterFooter;
+  onNewsletterHeaderUpdate?: (header: NewsletterHeader) => void;
+  onNewsletterFooterUpdate?: (footer: NewsletterFooter) => void;
 }
+
+// Componente para el header del newsletter
+const NewsletterHeaderComponent = ({
+  isSelected,
+  onSelect,
+  header,
+}: {
+  isSelected: boolean;
+  onSelect: () => void;
+  header?: NewsletterHeader;
+}) => {
+  console.log('🔍 NewsletterHeaderComponent render:', {
+    useGradient: header?.useGradient,
+    gradientColors: header?.gradientColors,
+    gradientDirection: header?.gradientDirection,
+    textColor: header?.textColor,
+    backgroundColor: header?.backgroundColor,
+  });
+
+  const backgroundStyle = (() => {
+    if (header?.useGradient && header?.gradientColors && header.gradientColors.length >= 2) {
+      const gradient = `linear-gradient(${header.gradientDirection || 135}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]})`;
+      console.log('🎨 Aplicando gradiente al header:', gradient);
+      return {
+        background: gradient,
+      };
+    }
+    console.log('🎨 Aplicando color sólido al header:', header?.backgroundColor);
+    return {
+      backgroundColor: header?.backgroundColor || '#f5f5f5',
+    };
+  })();
+
+  return (
+    <Paper
+      elevation={isSelected ? 3 : 1}
+      sx={{
+        mb: 3,
+        p: header?.padding ? header.padding / 8 : 3,
+        border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
+        borderRadius: 2,
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        ...backgroundStyle,
+        textAlign: header?.alignment || 'center',
+        position: 'relative',
+        '&:hover': {
+          elevation: 2,
+          borderColor: '#1976d2',
+        },
+      }}
+      onClick={onSelect}
+    >
+      <Box sx={{ position: 'relative' }}>
+        {/* Logo si está habilitado */}
+        {header?.showLogo && header?.logo && (
+          <Box sx={{ mb: 2 }}>
+            <img
+              src={header.logo}
+              alt={header.logoAlt || 'Logo'}
+              style={{
+                maxHeight: header.logoHeight || 60,
+                display: 'block',
+                margin: '0 auto',
+              }}
+            />
+          </Box>
+        )}
+
+        {/* Sponsor si está habilitado */}
+        {header?.sponsor?.enabled && header?.sponsor?.image && (
+          <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ color: header.textColor, mb: 1 }}>
+              {header.sponsor.label || 'Juntos con'}
+            </Typography>
+            <img
+              src={header.sponsor.image}
+              alt={header.sponsor.imageAlt || 'Sponsor'}
+              style={{ maxHeight: 48 }}
+            />
+          </Box>
+        )}
+
+        {/* Título solo si no está vacío */}
+        {header?.title && header.title.trim() !== '' && (
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              color: header?.textColor || '#333333',
+              mb: 1,
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+            }}
+          >
+            {header.title}
+          </Typography>
+        )}
+
+        {/* Subtítulo solo si no está vacío */}
+        {header?.subtitle && header.subtitle.trim() !== '' && (
+          <Typography
+            variant="subtitle1"
+            sx={{
+              color: header?.textColor || '#666666',
+              mb: 2,
+              fontStyle: 'italic',
+            }}
+          >
+            {header.subtitle}
+          </Typography>
+        )}
+
+        {/* Banner image si está habilitado y existe */}
+        {header?.showBanner && header?.bannerImage && (
+          <Box sx={{ mt: 2 }}>
+            <img
+              src={header.bannerImage}
+              alt="Banner"
+              style={{
+                width: '100%',
+                borderRadius: '8px',
+                display: 'block',
+              }}
+            />
+          </Box>
+        )}
+
+        {/* Indicador de edición */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -8,
+            right: -8,
+            backgroundColor: '#1976d2',
+            color: 'white',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            opacity: isSelected ? 1 : 0,
+            transition: 'opacity 0.2s',
+          }}
+        >
+          <Icon icon="mdi:pencil" width={12} height={12} />
+        </Box>
+      </Box>
+    </Paper>
+  );
+};
+
+// Componente para el footer del newsletter
+const NewsletterFooterComponent = memo(
+  ({
+    isSelected,
+    onSelect,
+    footer,
+  }: {
+    isSelected: boolean;
+    onSelect: () => void;
+    footer?: NewsletterFooter;
+  }) => {
+    // Crear el estilo de fondo basado en la configuración del footer
+    const backgroundStyle = useMemo(() => {
+      if (!footer) return { backgroundColor: '#f5f5f5' };
+
+      if (footer.useGradient && footer.gradientColors && footer.gradientColors.length >= 2) {
+        return {
+          backgroundImage: `linear-gradient(${footer.gradientDirection || 180}deg, ${footer.gradientColors[0]} 0%, ${footer.gradientColors[1]} 100%)`,
+        };
+      }
+      return { backgroundColor: footer.backgroundColor || '#f5f5f5' };
+    }, [footer]);
+
+    // Filtrar redes sociales habilitadas
+    const enabledSocialLinks = useMemo(
+      () => footer?.socialLinks?.filter((link) => link.enabled) || [],
+      [footer?.socialLinks]
+    );
+
+    return (
+      <Paper
+        elevation={isSelected ? 3 : 1}
+        sx={{
+          mt: 4,
+          p: footer?.padding ? footer.padding / 8 : 3,
+          border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
+          borderRadius: 2,
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          ...backgroundStyle,
+          textAlign: 'center',
+          position: 'relative',
+          '&:hover': {
+            elevation: 2,
+            borderColor: '#1976d2',
+          },
+        }}
+        onClick={onSelect}
+      >
+        <Box sx={{ position: 'relative' }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              color: footer?.textColor || '#333',
+              mb: 1,
+              fontSize: footer?.fontSize ? `${footer.fontSize + 4}px` : '1.125rem',
+            }}
+          >
+            {footer?.companyName || 'Tu Empresa'}
+          </Typography>
+
+          {footer?.showAddress && footer?.address && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: footer?.textColor || '#666',
+                mb: 1,
+                fontSize: footer?.fontSize ? `${footer.fontSize}px` : '0.875rem',
+              }}
+            >
+              {footer.address}
+            </Typography>
+          )}
+
+          {footer?.contactEmail && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: footer?.textColor || '#666',
+                mb: 2,
+                fontSize: footer?.fontSize ? `${footer.fontSize}px` : '0.875rem',
+              }}
+            >
+              Contacto: {footer.contactEmail}
+            </Typography>
+          )}
+
+          {footer?.showSocial && enabledSocialLinks.length > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: footer?.textColor || '#666',
+                  fontSize: footer?.fontSize ? `${footer.fontSize - 2}px` : '0.75rem',
+                }}
+              >
+                {enabledSocialLinks
+                  .map((link) => link.platform.charAt(0).toUpperCase() + link.platform.slice(1))
+                  .join(' • ')}
+              </Typography>
+            </Box>
+          )}
+
+          <Typography
+            variant="caption"
+            sx={{
+              color: footer?.textColor || '#999',
+              fontSize: footer?.fontSize ? `${footer.fontSize - 2}px` : '0.75rem',
+            }}
+          >
+            © {new Date().getFullYear()} {footer?.companyName || 'Tu Empresa'}. Todos los derechos
+            reservados.
+          </Typography>
+
+          {/* Indicador de edición */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: -8,
+              right: -8,
+              backgroundColor: '#1976d2',
+              color: 'white',
+              borderRadius: '50%',
+              width: 24,
+              height: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+              opacity: isSelected ? 1 : 0,
+              transition: 'opacity 0.2s',
+            }}
+          >
+            <Icon icon="mdi:pencil" width={12} height={12} />
+          </Box>
+        </Box>
+      </Paper>
+    );
+  }
+);
 
 // Componente para renderizar una nota del newsletter
 const NewsletterNotePreview = memo(
@@ -298,6 +597,11 @@ const EmailContent = memo(
     removeNewsletterNoteComponent = () => {},
     // Función para manejar el estado del contenedor newsletter
     onNewsletterContainerClick = () => {},
+    // Props para componentes de newsletter (header y footer)
+    newsletterHeader,
+    newsletterFooter,
+    onNewsletterHeaderUpdate = () => {},
+    onNewsletterFooterUpdate = () => {},
   }: EmailContentProps) => {
     // Memoizar los componentes para evitar recálculos innecesarios
     const components = useMemo(() => getActiveComponents(), [getActiveComponents]);
@@ -475,29 +779,56 @@ const EmailContent = memo(
                 padding: `${containerPadding}px`,
                 borderRadius: `${containerBorderRadius}px`,
                 border: `${containerBorderWidth}px solid ${containerBorderColor}`,
-                textAlign: 'center',
-                py: 8,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
               }}
             >
-              <Icon
-                icon="mdi:email-newsletter"
-                style={{
-                  fontSize: 64,
-                  color: 'rgba(0,0,0,0.2)',
-                  marginBottom: 16,
+              {/* NEWSLETTER HEADER - Componente fijo superior */}
+              <NewsletterHeaderComponent
+                isSelected={selectedComponentId === 'newsletter-header'}
+                onSelect={() => {
+                  console.log('🎯 Newsletter header selected');
+                  setSelectedComponentId('newsletter-header');
+                  onComponentSelect('newsletter-header');
                 }}
+                header={newsletterHeader}
               />
-              <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
-                Tu newsletter está vacío
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
-                Agrega notas desde la biblioteca en el panel lateral izquierdo para crear tu
-                newsletter.
-              </Typography>
+
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  py: 8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon
+                  icon="mdi:email-newsletter"
+                  style={{
+                    fontSize: 64,
+                    color: 'rgba(0,0,0,0.2)',
+                    marginBottom: 16,
+                  }}
+                />
+                <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
+                  Tu newsletter está vacío
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400 }}>
+                  Agrega notas desde la biblioteca en el panel lateral izquierdo para crear tu
+                  newsletter.
+                </Typography>
+              </Box>
+
+              {/* NEWSLETTER FOOTER - Componente fijo inferior */}
+              <NewsletterFooterComponent
+                isSelected={selectedComponentId === 'newsletter-footer'}
+                onSelect={() => {
+                  console.log('🎯 Newsletter footer selected');
+                  setSelectedComponentId('newsletter-footer');
+                  onComponentSelect('newsletter-footer');
+                }}
+                footer={newsletterFooter}
+              />
             </Box>
           </Box>
         );
@@ -526,10 +857,15 @@ const EmailContent = memo(
               border: `${containerBorderWidth}px solid ${containerBorderColor}`,
             }}
           >
-            <Typography variant="h6" sx={{ mb: 3, textAlign: 'center' }}>
-              Newsletter Completo ({newsletterNotes.length} nota
-              {newsletterNotes.length !== 1 ? 's' : ''})
-            </Typography>
+            {/* NEWSLETTER HEADER - Componente fijo superior */}
+            <NewsletterHeaderComponent
+              isSelected={selectedComponentId === 'newsletter-header'}
+              onSelect={() => {
+                setSelectedComponentId('newsletter-header');
+                onComponentSelect('newsletter-header');
+              }}
+              header={newsletterHeader}
+            />
 
             {newsletterNotes.map((note, noteIndex) => {
               // Parsear los componentes de la nota
@@ -831,6 +1167,17 @@ const EmailContent = memo(
                 </Box>
               );
             })}
+
+            {/* NEWSLETTER FOOTER - Componente fijo inferior */}
+            <NewsletterFooterComponent
+              isSelected={selectedComponentId === 'newsletter-footer'}
+              onSelect={() => {
+                console.log('🎯 Newsletter footer selected');
+                setSelectedComponentId('newsletter-footer');
+                onComponentSelect('newsletter-footer');
+              }}
+              footer={newsletterFooter}
+            />
           </Box>
         </Box>
       );

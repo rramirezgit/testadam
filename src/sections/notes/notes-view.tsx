@@ -2,8 +2,7 @@
 
 'use client';
 
-import type { SavedNote } from 'src/types/saved-note';
-import type { PostFilters } from 'src/store/PostStore';
+import type { Article, PostFilters } from 'src/store/PostStore';
 
 import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
@@ -66,7 +65,7 @@ const TABS: Tab[] = [
 
 export default function NotesView() {
   const [openEditor, setOpenEditor] = useState(false);
-  const [currentNote, setCurrentNote] = useState<SavedNote | null>(null);
+  const [currentNote, setCurrentNote] = useState<Article | null>(null);
   const [tab, setTab] = useState('draft');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -98,24 +97,7 @@ export default function NotesView() {
   const { loading, posts, meta, error, removePost, refreshPosts } = usePosts(currentFilters);
 
   // Convertir posts de Article a SavedNote para compatibilidad
-  const notes = posts.map(
-    (post): SavedNote => ({
-      id: post.id,
-      title: post.title,
-      configNote: JSON.stringify({
-        templateType: 'default',
-        dateCreated: post.createdAt,
-        dateModified: post.createdAt,
-        style: 'modern',
-        theme: 'aurora',
-        headerConfig: {},
-        footerConfig: {},
-        socialMedia: {},
-      }),
-      objData: JSON.stringify([]),
-      objDataWeb: JSON.stringify(''),
-    })
-  );
+  const notes = posts;
 
   // Manejar búsqueda con debounce
   const handleSearch = useCallback(
@@ -151,7 +133,7 @@ export default function NotesView() {
     }
   }, [openEditor, refreshPosts]);
 
-  const handleOpenEditor = (note?: SavedNote) => {
+  const handleOpenEditor = (note?: Article) => {
     if (note) {
       setCurrentNote(note);
     } else {

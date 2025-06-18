@@ -1,13 +1,18 @@
-import type { Metadata } from 'next';
+'use client';
 
-import { CONFIG } from 'src/global-config';
+import { useEffect } from 'react';
 
-import { OverviewAppView } from 'src/sections/overview/app/view';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 // ----------------------------------------------------------------------
 
-export const metadata: Metadata = { title: `Dashboard - ${CONFIG.appName}` };
-
 export default function Page() {
-  return <OverviewAppView />;
+  const router = useRouter();
+
+  useEffect(() => {
+    router.push(paths.dashboard.newsletter.list);
+  }, [router]);
+
+  return null;
 }

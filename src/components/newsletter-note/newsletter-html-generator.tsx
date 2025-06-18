@@ -360,7 +360,7 @@ export function generateNewsletterHtml(
                 </div>`
                     : ''
                 }
-                <p class="header-title">${header.title || title || 'Newsletter'}</p>
+                ${header.title || title ? `<p class="header-title">${header.title || title || ''}</p>` : ''}
                 ${header.subtitle ? `<p class="header-subtitle">${header.subtitle}</p>` : ''}
                 ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 20px; border-radius: 8px;">` : ''}
               </td>

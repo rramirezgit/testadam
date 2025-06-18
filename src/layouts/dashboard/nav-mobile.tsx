@@ -69,7 +69,7 @@ export function NavMobile({
         </Box>
       )}
 
-      <Scrollbar fillContent>
+      {/* <Scrollbar fillContent>
         <NavSectionVertical
           data={data}
           checkPermissions={checkPermissions}
@@ -77,7 +77,7 @@ export function NavMobile({
           {...other}
         />
         <NavUpgrade />
-      </Scrollbar>
+      </Scrollbar> */}
 
       {slots?.bottomArea}
     </Drawer>

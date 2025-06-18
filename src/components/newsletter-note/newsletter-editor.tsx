@@ -19,6 +19,8 @@ import usePostStore from 'src/store/PostStore';
 import EmailEditor from './email-editor';
 import { generateNewsletterHtml as generateFullNewsletterHtml } from './newsletter-html-generator';
 
+import type { NewsletterHeader, NewsletterFooter } from './email-editor/types';
+
 // Custom Snackbar component
 const CustomSnackbar = ({
   open,
@@ -91,8 +93,8 @@ interface NoteEditTracker {
 }
 
 export default function NewsletterEditor({ onClose, initialNewsletter }: NewsletterEditorProps) {
-  const [title, setTitle] = useState('Mi Newsletter Semanal');
-  const [description, setDescription] = useState('Las mejores noticias y actualizaciones');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedNotes, setSelectedNotes] = useState<NewsletterNote[]>([]);
   const [editingNote, setEditingNote] = useState<SavedNote | null>(null);
   const [openNoteEditor, setOpenNoteEditor] = useState(false);
@@ -111,11 +113,19 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
   const [showSaveChangesDialog, setShowSaveChangesDialog] = useState(false);
   const [pendingSaveAction, setPendingSaveAction] = useState<(() => void) | null>(null);
 
+  // Estados para el menú de envío
+  const [newsletterList, setNewsletterList] = useState<any[]>([]);
+  const [currentNewsletterId, setCurrentNewsletterId] = useState<string>('');
+  const [openSendDialog, setOpenSendDialog] = useState(false);
+  const [openAprob, setOpenAprob] = useState(false);
+  const [openSchedule, setOpenSchedule] = useState(false);
+  const [openSendSubs, setOpenSendSubs] = useState(false);
+
   // Estados para configuración del newsletter
-  const [header, setHeader] = useState({
-    title: 'Newsletter Semanal',
-    subtitle: 'Las mejores noticias y actualizaciones',
-    logo: 'https://ejemplo.com/logo.png',
+  const [header, setHeader] = useState<NewsletterHeader>({
+    title: '',
+    subtitle: '',
+    logo: 'https://s3.amazonaws.com/s3.condoor.ai/adam/d5a5c0e8d1.png',
     logoAlt: 'Logo',
     bannerImage: '',
     backgroundColor: '#FFF9CE',
@@ -123,8 +133,9 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     alignment: 'center',
     useGradient: true,
     gradientColors: ['#FFF9CE', '#E2E5FA'],
-    gradientDirection: 224,
+    gradientDirection: 135,
     showLogo: true,
+    showBanner: false,
     logoHeight: 60,
     padding: 32,
     sponsor: {
@@ -136,7 +147,7 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
     },
   });
 
-  const [footer, setFooter] = useState({
+  const [footer, setFooter] = useState<NewsletterFooter>({
     companyName: 'Tu Empresa',
     address: '123 Calle Principal, Ciudad, País',
     contactEmail: 'contacto@ejemplo.com',
@@ -489,14 +500,21 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
         newsletterHeader={header}
         newsletterFooter={footer}
         onNewsletterConfigChange={({ header: newHeader, footer: newFooter }) => {
+          console.log('📥 onNewsletterConfigChange ejecutado con:', { newHeader, newFooter });
           if (newHeader) {
-            setHeader((prev) => ({
-              ...prev,
-              ...newHeader,
-              sponsor: newHeader.sponsor || prev.sponsor,
-            }));
+            console.log('🔄 Actualizando header...');
+            setHeader((prev) => {
+              const updatedHeader = {
+                ...prev,
+                ...newHeader,
+                sponsor: newHeader.sponsor || prev.sponsor,
+              };
+              console.log('✅ Header actualizado a:', updatedHeader);
+              return updatedHeader;
+            });
           }
           if (newFooter) {
+            console.log('🔄 Actualizando footer...');
             setFooter((prev) => ({ ...prev, ...newFooter }));
           }
         }}
@@ -511,6 +529,13 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
           }
         }}
         onSave={handleSaveNoteWithTracking}
+        newsletterList={newsletterList}
+        currentNewsletterId={currentNewsletterId}
+        saving={isSaving}
+        setOpenSendDialog={setOpenSendDialog}
+        setOpenAprob={setOpenAprob}
+        setOpenSchedule={setOpenSchedule}
+        setOpenSendSubs={setOpenSendSubs}
       />
 
       {/* Note Editor Dialog */}

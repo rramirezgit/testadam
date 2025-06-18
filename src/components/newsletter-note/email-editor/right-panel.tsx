@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useRef, useState } from 'react';
 
 import {
   Box,
   Tab,
   Tabs,
+  Alert,
   AppBar,
   Select,
   Button,
@@ -17,6 +18,7 @@ import {
   Typography,
   InputLabel,
   FormControl,
+  LinearProgress,
 } from '@mui/material';
 
 // Importaciones de los componentes individuales
@@ -27,11 +29,14 @@ import GalleryOptions from './right-panel/GalleryOptions';
 import DividerOptions from './right-panel/DividerOptions';
 import SummaryOptions from './right-panel/SummaryOptions';
 import CategoryOptions from './right-panel/CategoryOptions';
+import { useImageUpload } from './right-panel/useImageUpload';
 import ContainerOptions from './right-panel/ContainerOptions';
 import SmartDesignOptions from './right-panel/SmartDesignOptions';
 import HerramientasOptions from './right-panel/HerramientasOptions';
 import RespaldadoPorOptions from './right-panel/RespaldadoPorOptions';
 import TituloConIconoOptions from './right-panel/TituloConIconoOptions';
+import NewsletterHeaderOptions from './right-panel/NewsletterHeaderOptions';
+import NewsletterFooterOptions from './right-panel/NewsletterFooterOptions';
 
 import type { RightPanelProps } from './right-panel/types';
 
@@ -102,6 +107,46 @@ export default function RightPanel({
 }: RightPanelProps) {
   // Estado para los tabs del contenedor
   const [containerTab, setContainerTab] = useState(0);
+
+  // Referencias para input de archivo de portada
+  const coverImageFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Hook para subida de imágenes
+  const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
+
+  // Función para manejar selección de archivo de portada
+  const handleSelectCoverImage = () => {
+    coverImageFileInputRef.current?.click();
+  };
+
+  // Función para manejar cambio de archivo de portada
+  const handleCoverImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        setNoteCoverImageUrl(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Función para subir imagen de portada a S3
+  const handleUploadCoverImageToS3 = async () => {
+    if (!noteCoverImageUrl || !noteCoverImageUrl.startsWith('data:image/')) {
+      alert('No hay imagen de portada para subir o ya está subida');
+      return;
+    }
+
+    try {
+      const s3Url = await uploadImageToS3(noteCoverImageUrl, `note_cover_${Date.now()}`);
+      setNoteCoverImageUrl(s3Url);
+    } catch (error) {
+      alert('Error al subir la imagen de portada a S3');
+      console.error(error);
+    }
+  };
 
   // Si no hay componente seleccionado, mostrar un mensaje
   const renderEmptyState = () => (
@@ -217,49 +262,129 @@ export default function RightPanel({
                 Imagen de Portada
               </Typography>
 
+              {/* Vista previa de la imagen */}
+              {noteCoverImageUrl && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" gutterBottom>
+                    Vista previa:
+                  </Typography>
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      maxWidth: '100%',
+                    }}
+                  >
+                    <img
+                      src={noteCoverImageUrl}
+                      alt="Cover preview"
+                      style={{
+                        width: '100%',
+                        maxHeight: '120px',
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        border: '1px solid #e0e0e0',
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    {noteCoverImageUrl.startsWith('data:image/') && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          backgroundColor: 'rgba(255, 152, 0, 0.9)',
+                          color: 'white',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          fontSize: '0.75rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                        }}
+                      >
+                        <Icon icon="mdi:cloud-upload-outline" fontSize="12px" />
+                        Subir a S3
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Alertas de estado */}
+              {noteCoverImageUrl && noteCoverImageUrl.startsWith('data:image/') && (
+                <Alert severity="warning" sx={{ mb: 2, fontSize: '0.875rem' }}>
+                  ⚠️ Esta imagen debe subirse a S3 antes de guardar
+                </Alert>
+              )}
+
+              {noteCoverImageUrl &&
+                !noteCoverImageUrl.startsWith('data:image/') &&
+                noteCoverImageUrl.startsWith('http') && (
+                  <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
+                    ✅ Imagen guardada en S3 correctamente
+                  </Alert>
+                )}
+
+              {/* Botón para seleccionar imagen */}
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                startIcon={<Icon icon="mdi:image-plus" />}
+                onClick={handleSelectCoverImage}
+                sx={{ mb: 2 }}
+              >
+                {noteCoverImageUrl ? 'Cambiar Imagen de Portada' : 'Seleccionar Imagen de Portada'}
+              </Button>
+
+              {/* Campo URL manual */}
               <TextField
                 fullWidth
-                label="URL de la imagen"
+                label="URL de la imagen (opcional)"
                 value={noteCoverImageUrl}
                 onChange={(e) => setNoteCoverImageUrl(e.target.value)}
                 sx={{ mb: 2 }}
                 helperText="URL de la imagen que aparecerá como portada"
                 placeholder="https://ejemplo.com/imagen.jpg"
+                size="small"
               />
 
-              {/* Vista previa de la imagen */}
-              {noteCoverImageUrl && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Vista previa:
-                  </Typography>
-                  <Box
-                    component="img"
-                    src={noteCoverImageUrl}
-                    alt="Vista previa"
-                    sx={{
-                      width: '100%',
-                      maxHeight: 120,
-                      objectFit: 'cover',
-                      borderRadius: 1,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                    }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </Box>
+              {/* Botón de subida a S3 */}
+              {noteCoverImageUrl && noteCoverImageUrl.startsWith('data:image/') && (
+                <>
+                  {uploading && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" gutterBottom>
+                        Subiendo: {uploadProgress}%
+                      </Typography>
+                      <LinearProgress variant="determinate" value={uploadProgress} />
+                    </Box>
+                  )}
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    fullWidth
+                    startIcon={<Icon icon="mdi:cloud-upload" />}
+                    onClick={handleUploadCoverImageToS3}
+                    loading={uploading}
+                    sx={{ mb: 2 }}
+                  >
+                    ⚠️ Subir Imagen a S3 (Requerido)
+                  </Button>
+                </>
               )}
 
-              <Button
-                variant="outlined"
-                startIcon={<Icon icon="solar:upload-outline" />}
-                sx={{ mb: 2 }}
-                disabled
-              >
-                Subir Imagen (Próximamente)
-              </Button>
+              {/* Input de archivo oculto para imagen de portada */}
+              <input
+                type="file"
+                ref={coverImageFileInputRef}
+                style={{ display: 'none' }}
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                onChange={handleCoverImageFileChange}
+              />
             </Box>
           )}
 
@@ -382,7 +507,11 @@ export default function RightPanel({
                             ? 'Respaldo'
                             : componentType === 'divider'
                               ? 'Separador'
-                              : 'Tipografía'
+                              : (componentType as string) === 'newsletter-header'
+                                ? 'Header Newsletter'
+                                : (componentType as string) === 'newsletter-footer'
+                                  ? 'Footer Newsletter'
+                                  : 'Tipografía'
           }
         />
         {(componentType === 'summary' || componentType === 'herramientas') && (
@@ -424,6 +553,24 @@ export default function RightPanel({
 
             {componentType === 'divider' && (
               <DividerOptions
+                selectedComponentId={selectedComponentId}
+                selectedComponent={selectedComponent}
+                updateComponentProps={updateComponentProps}
+                updateComponentStyle={updateComponentStyle}
+              />
+            )}
+
+            {(componentType as string) === 'newsletter-header' && (
+              <NewsletterHeaderOptions
+                selectedComponentId={selectedComponentId}
+                selectedComponent={selectedComponent}
+                updateComponentProps={updateComponentProps}
+                updateComponentStyle={updateComponentStyle}
+              />
+            )}
+
+            {(componentType as string) === 'newsletter-footer' && (
+              <NewsletterFooterOptions
                 selectedComponentId={selectedComponentId}
                 selectedComponent={selectedComponent}
                 updateComponentProps={updateComponentProps}
