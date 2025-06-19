@@ -304,13 +304,31 @@ const SummaryComponent = memo(
                 border: '1px solid rgba(255,255,255,0.3)',
               }}
             >
-              <Icon
-                icon={icon}
-                style={{
-                  fontSize: 18,
-                  color: iconColor,
-                }}
-              />
+              {/* Renderizar PNG o icono legacy */}
+              {icon.startsWith('http') ? (
+                <img
+                  src={icon}
+                  alt="Icon"
+                  style={{
+                    width: 18,
+                    height: 18,
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                  onError={(e) => {
+                    // Fallback si la imagen no carga
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <Icon
+                  icon={icon}
+                  style={{
+                    fontSize: 18,
+                    color: iconColor,
+                  }}
+                />
+              )}
             </Box>
 
             <Typography

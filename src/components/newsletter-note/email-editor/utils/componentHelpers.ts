@@ -42,7 +42,7 @@ export const createNewComponent = (
               ? { items: ['List item 1'], listStyle: 'disc', listColor: '#000000' }
               : type === 'tituloConIcono'
                 ? {
-                    icon: 'mdi:newspaper-variant-outline',
+                    icon: 'https://img.icons8.com/color/48/line-chart.png',
                     gradientColor1: '#4facfe',
                     gradientColor2: '#00f2fe',
                     gradientType: 'linear',
@@ -52,8 +52,13 @@ export const createNewComponent = (
                   ? {
                       texto: 'Respaldado por',
                       nombre: 'Redacción',
-                      avatarUrl: '/default-avatar.png',
-                      avatarTamano: 36,
+                      avatarUrl: '',
+                      avatarTamano: 21,
+                      mostrarEscritorPropietario: false,
+                      escritorNombre: 'Escritor',
+                      escritorAvatarUrl: '',
+                      propietarioNombre: 'Propietario',
+                      propietarioAvatarUrl: '',
                     }
                   : {},
     style:

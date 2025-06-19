@@ -487,42 +487,63 @@ export default function RightPanel({
           },
         }}
       >
-        <Tab
-          label={
-            componentType === 'image'
-              ? 'Imagen'
-              : componentType === 'button'
-                ? 'Botón'
-                : componentType === 'gallery'
-                  ? 'Galería'
-                  : componentType === 'summary'
-                    ? 'Texto'
-                    : componentType === 'category'
-                      ? 'Categorías'
-                      : componentType === 'tituloConIcono'
-                        ? 'Título'
-                        : componentType === 'herramientas'
-                          ? 'Herramientas'
-                          : componentType === 'respaldadoPor'
-                            ? 'Respaldo'
-                            : componentType === 'divider'
-                              ? 'Separador'
-                              : (componentType as string) === 'newsletter-header'
-                                ? 'Header Newsletter'
-                                : (componentType as string) === 'newsletter-footer'
-                                  ? 'Footer Newsletter'
-                                  : 'Tipografía'
-          }
-        />
-        {(componentType === 'summary' || componentType === 'herramientas') && (
-          <Tab label={componentType === 'summary' ? 'Summary' : 'Configuración'} />
-        )}
-        <Tab label="🎨 Smart" />
+        {/* Para Summary y RespaldadoPor, solo mostrar la tab de configuración */}
+        {componentType === 'summary' || componentType === 'respaldadoPor'
+          ? [<Tab key="config" label="📝 Configuración" />]
+          : [
+              <Tab
+                key="main"
+                label={
+                  componentType === 'image'
+                    ? 'Imagen'
+                    : componentType === 'button'
+                      ? 'Botón'
+                      : componentType === 'gallery'
+                        ? 'Galería'
+                        : componentType === 'category'
+                          ? 'Categorías'
+                          : componentType === 'tituloConIcono'
+                            ? 'Título'
+                            : componentType === 'herramientas'
+                              ? 'Herramientas'
+                              : componentType === 'divider'
+                                ? 'Separador'
+                                : (componentType as string) === 'newsletter-header'
+                                  ? 'Header Newsletter'
+                                  : (componentType as string) === 'newsletter-footer'
+                                    ? 'Footer Newsletter'
+                                    : 'Tipografía'
+                }
+              />,
+              ...(componentType === 'herramientas'
+                ? [<Tab key="herramientas-config" label="Configuración" />]
+                : []),
+              <Tab key="smart" label="🎨 Smart" />,
+            ]}
       </Tabs>
 
       <Box sx={{ overflow: 'auto', flexGrow: 1, p: { xs: 1, sm: 2 } }}>
         {rightPanelTab === 0 && (
           <>
+            {/* Para Summary, mostrar directamente las opciones de configuración */}
+            {componentType === 'summary' && (
+              <SummaryOptions
+                selectedComponentId={selectedComponentId}
+                getActiveComponents={getActiveComponents}
+                updateComponentProps={updateComponentProps}
+                setShowIconPicker={setShowIconPicker}
+              />
+            )}
+
+            {/* Para RespaldadoPor, mostrar directamente las opciones de configuración */}
+            {componentType === 'respaldadoPor' && (
+              <RespaldadoPorOptions
+                selectedComponentId={selectedComponentId}
+                getActiveComponents={getActiveComponents}
+                updateComponentProps={updateComponentProps}
+              />
+            )}
+
             {componentType === 'image' && (
               <ImageOptions
                 selectedComponentId={selectedComponentId}
@@ -580,8 +601,7 @@ export default function RightPanel({
 
             {(componentType === 'heading' ||
               componentType === 'paragraph' ||
-              componentType === 'bulletList' ||
-              componentType === 'summary') && (
+              componentType === 'bulletList') && (
               <TextOptions
                 componentType={componentType}
                 selectedComponent={selectedComponent}
@@ -664,14 +684,7 @@ export default function RightPanel({
               />
             )}
 
-            {componentType === 'respaldadoPor' && (
-              <RespaldadoPorOptions
-                selectedComponentId={selectedComponentId}
-                getActiveComponents={getActiveComponents}
-                updateComponentProps={updateComponentProps}
-              />
-            )}
-
+            {/* Herramientas - solo en tab 0 cuando NO es summary */}
             {componentType === 'herramientas' && (
               <HerramientasOptions
                 selectedComponentId={selectedComponentId}
@@ -683,15 +696,7 @@ export default function RightPanel({
           </>
         )}
 
-        {rightPanelTab === 1 && componentType === 'summary' && (
-          <SummaryOptions
-            selectedComponentId={selectedComponentId}
-            getActiveComponents={getActiveComponents}
-            updateComponentProps={updateComponentProps}
-            setShowIconPicker={setShowIconPicker}
-          />
-        )}
-
+        {/* Tab 1: Solo para herramientas (configuración) */}
         {rightPanelTab === 1 && componentType === 'herramientas' && (
           <HerramientasOptions
             selectedComponentId={selectedComponentId}
@@ -701,15 +706,17 @@ export default function RightPanel({
           />
         )}
 
-        {rightPanelTab ===
-          (componentType === 'summary' || componentType === 'herramientas' ? 2 : 1) && (
-          <SmartDesignOptions
-            selectedComponentId={selectedComponentId}
-            selectedComponent={selectedComponent}
-            updateComponentStyle={updateComponentStyle}
-            updateComponentProps={updateComponentProps}
-          />
-        )}
+        {/* Tab Smart: Última tab para todos los componentes excepto Summary y RespaldadoPor */}
+        {componentType !== 'summary' &&
+          componentType !== 'respaldadoPor' &&
+          rightPanelTab === (componentType === 'herramientas' ? 2 : 1) && (
+            <SmartDesignOptions
+              selectedComponentId={selectedComponentId}
+              selectedComponent={selectedComponent}
+              updateComponentStyle={updateComponentStyle}
+              updateComponentProps={updateComponentProps}
+            />
+          )}
       </Box>
     </Box>
   );

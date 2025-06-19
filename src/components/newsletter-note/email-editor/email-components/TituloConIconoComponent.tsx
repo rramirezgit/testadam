@@ -80,8 +80,8 @@ const TituloConIconoComponent = ({
         <IconPicker
           open={showIconPickerTitulo}
           onClose={() => setShowIconPickerTitulo(false)}
-          onSelectIcon={(iconName) => {
-            handleIconChangeTitulo(iconName);
+          onSelectIcon={(iconUrl) => {
+            handleIconChangeTitulo(iconUrl);
             setShowIconPickerTitulo(false);
           }}
           currentIcon={component.props?.icon || 'mdi:chart-line'}

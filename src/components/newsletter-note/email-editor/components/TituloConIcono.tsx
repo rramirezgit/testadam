@@ -114,7 +114,21 @@ export default function TituloConIcono({
             color: textColor,
           }}
         >
-          <Icon icon={icon} width={24} height={24} />
+          {/* Renderizado condicional para PNG URLs vs iconos legacy */}
+          {icon && icon.startsWith('http') ? (
+            <img
+              src={icon}
+              alt="Icono"
+              style={{
+                width: 24,
+                height: 24,
+                objectFit: 'contain',
+                display: 'block',
+              }}
+            />
+          ) : (
+            <Icon icon={icon} width={24} height={24} />
+          )}
         </Box>
 
         {isEditingTitle ? (

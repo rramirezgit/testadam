@@ -6,7 +6,7 @@ import type { SavedNote } from 'src/types/saved-note';
 import { Icon } from '@iconify/react';
 import { useRef, useState, useEffect, useCallback } from 'react';
 
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button } from '@mui/material';
 
 import { usePost } from 'src/hooks/use-posts';
 
@@ -762,6 +762,83 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     containerPadding,
     containerMaxWidth,
     showNotification,
+  ]);
+
+  // Función para generar HTML sin mostrar preview (para envío de pruebas)
+  const generateHtmlForSending = useCallback(async (): Promise<string> => {
+    try {
+      if (isNewsletterMode) {
+        // Para newsletters, usar el generador de newsletter
+        const { generateNewsletterHtml: generateNewsletterHtmlFn } = await import(
+          '../newsletter-html-generator'
+        );
+        return generateNewsletterHtmlFn(
+          newsletterTitle || 'Newsletter',
+          newsletterDescription || '',
+          newsletterNotes,
+          newsletterHeader || {
+            title: 'Newsletter',
+            subtitle: '',
+            logo: '',
+            bannerImage: '',
+            backgroundColor: '#ffffff',
+            textColor: '#333333',
+            alignment: 'center',
+          },
+          newsletterFooter || {
+            companyName: 'Mi Empresa',
+            address: '',
+            contactEmail: '',
+            socialLinks: [],
+            unsubscribeLink: '',
+            backgroundColor: '#f5f5f5',
+            textColor: '#666666',
+          }
+        );
+      } else {
+        // ✅ NUEVO: Para notas individuales, usar generateSingleNoteHtml (sin header y footer)
+        const { generateSingleNoteHtml } = await import('../newsletter-html-generator');
+
+        const components = getActiveComponents();
+        const postData = currentPost; // Usar la variable ya existente del scope superior
+
+        // Configuración del contenedor desde el panel derecho
+        const containerConfig = {
+          borderWidth: containerBorderWidth,
+          borderColor: containerBorderColor,
+          borderRadius: containerBorderRadius,
+          padding: containerPadding,
+          maxWidth: containerMaxWidth,
+        };
+
+        return generateSingleNoteHtml(
+          postData?.title || noteData.noteTitle || 'Nota',
+          postData?.description || noteData.noteDescription || '',
+          components,
+          containerConfig
+        );
+      }
+    } catch (error) {
+      console.error('Error generating HTML for sending:', error);
+      throw new Error('No se pudo generar el contenido HTML');
+    }
+  }, [
+    isNewsletterMode,
+    newsletterTitle,
+    newsletterDescription,
+    newsletterNotes,
+    newsletterHeader,
+    newsletterFooter,
+    getActiveComponents,
+    noteData.noteTitle,
+    noteData.noteDescription,
+    currentPost,
+    // Agregar las configuraciones del contenedor
+    containerBorderWidth,
+    containerBorderColor,
+    containerBorderRadius,
+    containerPadding,
+    containerMaxWidth,
   ]);
 
   // Función para manejar la selección del contenedor principal
@@ -1608,6 +1685,8 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         setOpenAprob={setOpenAprob}
         setOpenSchedule={setOpenSchedule}
         setOpenSendSubs={setOpenSendSubs}
+        // Nueva prop para generar HTML para envío
+        onGenerateHtml={generateHtmlForSending}
       />
 
       {/* Banner de sincronización automática */}
@@ -1915,7 +1994,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       </CustomDialog>
 
       {/* 🔍 NUEVO: Indicador de cambios */}
-      {hasUnsavedChanges && (
+      {/* {hasUnsavedChanges && (
         <Box
           sx={{
             position: 'fixed',
@@ -1935,7 +2014,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           <Icon icon="mdi:alert-circle" />
           <Typography variant="body2">Tienes cambios sin guardar ({changeCount})</Typography>
         </Box>
-      )}
+      )} */}
 
       {/* Snackbar para mensajes */}
       <CustomSnackbar
@@ -1969,10 +2048,10 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         <IconPicker
           open={showIconPicker}
           onClose={() => setShowIconPicker(false)}
-          onSelectIcon={(iconName) => {
+          onSelectIcon={(iconUrl) => {
             const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
             if (component && component.type === 'summary') {
-              updateComponentProps(selectedComponentId, { icon: iconName });
+              updateComponentProps(selectedComponentId, { icon: iconUrl });
             }
             setShowIconPicker(false);
           }}

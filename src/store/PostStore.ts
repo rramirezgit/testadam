@@ -3,6 +3,8 @@ import { persist, devtools, createJSONStorage } from 'zustand/middleware';
 
 import { endpoints, createAxiosInstance } from 'src/utils/axiosInstance';
 
+import { generateEscapedHtml } from 'src/components/newsletter-note/newsletter-html-generator';
+
 // Interfaces
 interface Author {
   id: string;
@@ -128,6 +130,19 @@ interface PostFilters {
   newsletterId?: string;
 }
 
+interface SendTestData {
+  subject: string;
+  content: string;
+  approverEmails?: string[];
+  emails?: string[];
+}
+
+interface SendNewsletterData {
+  subject: string;
+  content: string;
+  approverEmails: string[];
+}
+
 interface PostState {
   loading: boolean;
   posts: Article[];
@@ -145,6 +160,16 @@ interface PostState {
   create: (data: CreatePostData) => Promise<Post | null>;
   update: (id: string, data: UpdatePostData) => Promise<Post | null>;
   delete: (id: string) => Promise<boolean>;
+
+  // Email sending operations
+  sendPostForReview: (postId: string, emails: string[], htmlContent: string) => Promise<boolean>;
+  sendNewsletterForReview: (
+    newsletterId: string,
+    emails: string[],
+    htmlContent: string
+  ) => Promise<boolean>;
+  sendNewsletter: (newsletterId: string, htmlContent: string) => Promise<boolean>;
+  requestNewsletterApproval: (newsletterId: string, htmlContent: string) => Promise<boolean>;
 
   // Utility functions
   clearCurrentPost: () => void;
@@ -348,6 +373,117 @@ const usePostStore = create<PostState>()(
           const { findAll } = get();
           await findAll();
         },
+
+        sendPostForReview: async (postId: string, emails: string[], htmlContent: string) => {
+          try {
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const currentPost = get().currentPost;
+            const subject = currentPost?.title || `Post ${postId}`;
+            // No escapar el HTML para envío normal de emails
+            const content = htmlContent;
+
+            const sendData: SendTestData = {
+              subject,
+              content,
+              emails,
+            };
+
+            await axiosInstance.post(endpoints.post.sendForReview, sendData);
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('Error enviando post para revisión:', error);
+            const errorMessage = error.response?.data?.message || 'Error al enviar el post';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return false;
+          }
+        },
+
+        sendNewsletterForReview: async (
+          newsletterId: string,
+          emails: string[],
+          htmlContent: string
+        ) => {
+          try {
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            // No escapar el HTML para envío normal de emails
+            const content = htmlContent;
+            const sendData: SendTestData = {
+              subject: `Newsletter ${newsletterId} - Prueba`,
+              content,
+              emails,
+            };
+
+            await axiosInstance.post(endpoints.newsletter.sendForReview(newsletterId), sendData);
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('Error enviando newsletter para revisión:', error);
+            const errorMessage = error.response?.data?.message || 'Error al enviar el newsletter';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return false;
+          }
+        },
+
+        sendNewsletter: async (newsletterId: string, htmlContent: string) => {
+          try {
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            // Para envío masivo, sí usar escape si es necesario para AWS SES
+            const escapedContent = generateEscapedHtml(htmlContent);
+            const sendData = {
+              content: escapedContent,
+            };
+
+            await axiosInstance.post(endpoints.newsletter.send(newsletterId), sendData);
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('Error enviando newsletter:', error);
+            const errorMessage = error.response?.data?.message || 'Error al enviar el newsletter';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return false;
+          }
+        },
+
+        requestNewsletterApproval: async (newsletterId: string, htmlContent: string) => {
+          try {
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            // No escapar el HTML para envío de aprobación
+            const content = htmlContent;
+            const sendData = {
+              content,
+            };
+
+            await axiosInstance.post(endpoints.newsletter.requestApproval(newsletterId), sendData);
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('Error solicitando aprobación del newsletter:', error);
+            const errorMessage = error.response?.data?.message || 'Error al solicitar aprobación';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return false;
+          }
+        },
       }),
       {
         name: 'post-storage',
@@ -378,6 +514,8 @@ export type {
   ApiResponse,
   PostFilters,
   Subcategory,
+  SendTestData,
   UpdatePostData,
   CreatePostData,
+  SendNewsletterData,
 };

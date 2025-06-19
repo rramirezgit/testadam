@@ -1,6 +1,6 @@
 import { Icon } from '@iconify/react';
 
-import { Box, Paper, Button, TextField, Typography } from '@mui/material';
+import { Box, Chip, Paper, Stack, Button, Divider, TextField, Typography } from '@mui/material';
 
 import GeneralColorPicker from 'src/components/newsletter-note/general-color-picker';
 
@@ -87,215 +87,354 @@ export default function SummaryOptions({
   };
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-        📝 Configuración del Bloque
-      </Typography>
-
-      {/* Selector de tipo */}
-      <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2 }}>
-          Tipo de Bloque
+    <Box sx={{ height: '100%', overflow: 'auto' }}>
+      {/* Header mejorado */}
+      <Box sx={{ mb: 3, textAlign: 'center' }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
+          📝 Configurar Bloque Summary
         </Typography>
-
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
-          {(Object.keys(SUMMARY_TYPES) as SummaryType[]).map((type) => {
-            const config = SUMMARY_TYPES[type];
-            const isSelected = summaryType === type;
-
-            return (
-              <Paper
-                key={type}
-                elevation={isSelected ? 3 : 1}
-                sx={{
-                  p: 1.5,
-                  cursor: 'pointer',
-                  border: isSelected ? '2px solid #1976d2' : '1px solid transparent',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    borderColor: '#1976d2',
-                    transform: 'translateY(-1px)',
-                  },
-                }}
-                onClick={() => handleTypeChange(type)}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                  <Box
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: '6px',
-                      backgroundColor: config.backgroundColor,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Icon icon={config.icon} style={{ fontSize: 14, color: config.iconColor }} />
-                  </Box>
-                  <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                    {config.label}
-                  </Typography>
-                </Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontSize: '0.65rem', lineHeight: 1.2 }}
-                >
-                  {config.description}
-                </Typography>
-              </Paper>
-            );
-          })}
-        </Box>
-      </Paper>
-
-      {/* Personalización */}
-      <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2 }}>
-          🎨 Personalización
+        <Typography variant="body2" color="text.secondary">
+          Personaliza el estilo y contenido de tu bloque informativo
         </Typography>
+      </Box>
 
-        {/* Texto personalizado */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-            Texto del encabezado
+      {/* Selector de tipo mejorado */}
+      <Paper
+        elevation={2}
+        sx={{
+          mb: 3,
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+        }}
+      >
+        <Box sx={{ p: 2, backgroundColor: 'primary.main', color: 'white' }}>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            <Icon icon="mdi:format-list-bulleted-type" />
+            Tipo de Bloque
           </Typography>
-          <TextField
-            fullWidth
-            size="small"
-            value={label}
-            onChange={(e) => updateComponentProps(selectedComponentId, { label: e.target.value })}
-            placeholder="Ej: Resumen, Concepto, etc."
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'white',
-              },
-            }}
-          />
         </Box>
 
-        {/* Colores */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <Box sx={{ flex: 1 }}>
-            <GeneralColorPicker
-              selectedColor={backgroundColor}
-              onChange={(color) =>
-                updateComponentProps(selectedComponentId, { backgroundColor: color })
-              }
-              label="Fondo"
-              size="small"
-            />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <GeneralColorPicker
-              selectedColor={iconColor}
-              onChange={(color) => updateComponentProps(selectedComponentId, { iconColor: color })}
-              label="Icono"
-              size="small"
-            />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <GeneralColorPicker
-              selectedColor={textColor}
-              onChange={(color) => updateComponentProps(selectedComponentId, { textColor: color })}
-              label="Texto"
-              size="small"
-            />
-          </Box>
-        </Box>
+        <Box sx={{ p: 2 }}>
+          <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
+            {(Object.keys(SUMMARY_TYPES) as SummaryType[]).map((type) => {
+              const config = SUMMARY_TYPES[type];
+              const isSelected = summaryType === type;
 
-        {/* Icono personalizado */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              return (
+                <Chip
+                  key={type}
+                  label={config.label}
+                  variant={isSelected ? 'filled' : 'outlined'}
+                  color={isSelected ? 'primary' : 'default'}
+                  onClick={() => handleTypeChange(type)}
+                  icon={<Icon icon={config.icon} />}
+                  sx={{
+                    fontSize: '0.8rem',
+                    fontWeight: isSelected ? 600 : 400,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 2,
+                    },
+                  }}
+                />
+              );
+            })}
+          </Stack>
+
+          {/* Descripción del tipo seleccionado */}
           <Box
             sx={{
-              p: 1.5,
-              border: '1px solid #ddd',
-              borderRadius: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 48,
-              height: 48,
-              bgcolor: 'white',
+              p: 2,
+              borderRadius: 2,
+              backgroundColor,
+              border: '1px solid rgba(0,0,0,0.08)',
             }}
           >
-            <Icon icon={icon} style={{ fontSize: 20, color: iconColor }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Box
+                sx={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(255,255,255,0.9)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Icon icon={icon} style={{ fontSize: 14, color: iconColor }} />
+              </Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: textColor }}>
+                {label}
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              {typeConfig.description}
+            </Typography>
           </Box>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => setShowIconPicker(true)}
-            startIcon={<Icon icon="mdi:swap-horizontal" />}
-          >
-            Cambiar Icono
-          </Button>
         </Box>
       </Paper>
 
-      {/* Vista previa */}
-      <Paper elevation={2} sx={{ p: 2, bgcolor: 'grey.100' }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2 }}>
-          👁️ Vista Previa
-        </Typography>
+      {/* Personalización mejorada */}
+      <Paper elevation={2} sx={{ mb: 3, overflow: 'hidden' }}>
+        <Box sx={{ p: 2, backgroundColor: 'secondary.main', color: 'white' }}>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            <Icon icon="mdi:palette" />
+            Personalización
+          </Typography>
+        </Box>
 
-        <Box
-          sx={{
-            backgroundColor,
-            borderRadius: '12px',
-            border: '1px solid rgba(0,0,0,0.08)',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Header preview */}
+        <Box sx={{ p: 2 }}>
+          {/* Texto personalizado */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: 'text.primary' }}>
+              Texto del encabezado
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              value={label}
+              onChange={(e) => updateComponentProps(selectedComponentId, { label: e.target.value })}
+              placeholder="Ej: Resumen, Concepto, etc."
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: 'white',
+                  '&:hover': {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
+                  },
+                },
+              }}
+            />
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Colores en una disposición más elegante */}
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
+            Colores del bloque
+          </Typography>
+
+          <Stack spacing={2}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ minWidth: 60 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Fondo
+                </Typography>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <GeneralColorPicker
+                  selectedColor={backgroundColor}
+                  onChange={(color) =>
+                    updateComponentProps(selectedComponentId, { backgroundColor: color })
+                  }
+                  label=""
+                  size="small"
+                />
+              </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ minWidth: 60 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Icono
+                </Typography>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <GeneralColorPicker
+                  selectedColor={iconColor}
+                  onChange={(color) =>
+                    updateComponentProps(selectedComponentId, { iconColor: color })
+                  }
+                  label=""
+                  size="small"
+                />
+              </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ minWidth: 60 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Texto
+                </Typography>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <GeneralColorPicker
+                  selectedColor={textColor}
+                  onChange={(color) =>
+                    updateComponentProps(selectedComponentId, { textColor: color })
+                  }
+                  label=""
+                  size="small"
+                />
+              </Box>
+            </Box>
+          </Stack>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Icono personalizado mejorado */}
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
+            Icono personalizado
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                p: 2,
+                border: '2px dashed #ddd',
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 64,
+                height: 64,
+                bgcolor: 'grey.50',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'primary.light',
+                  transform: 'scale(1.05)',
+                },
+              }}
+            >
+              {/* Renderizar PNG o icono legacy */}
+              {icon.startsWith('http') ? (
+                <img
+                  src={icon}
+                  alt="Icon"
+                  style={{
+                    width: 24,
+                    height: 24,
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <Icon icon={icon} style={{ fontSize: 24, color: iconColor }} />
+              )}
+            </Box>
+            <Button
+              variant="outlined"
+              size="medium"
+              onClick={() => setShowIconPicker(true)}
+              startIcon={<Icon icon="mdi:swap-horizontal" />}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 500,
+              }}
+            >
+              Cambiar Icono
+            </Button>
+          </Box>
+        </Box>
+      </Paper>
+
+      {/* Vista previa mejorada */}
+      <Paper elevation={3} sx={{ overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ p: 2, backgroundColor: 'success.main', color: 'white' }}>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            <Icon icon="mdi:eye" />
+            Vista Previa
+          </Typography>
+        </Box>
+
+        <Box sx={{ p: 3, backgroundColor: 'grey.50' }}>
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              padding: '12px 16px 8px 16px',
-              borderBottom: '1px solid rgba(0,0,0,0.05)',
+              backgroundColor,
+              borderRadius: '12px',
+              border: '1px solid rgba(0,0,0,0.08)',
+              overflow: 'hidden',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             }}
           >
+            {/* Header preview mejorada */}
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                width: 24,
-                height: 24,
-                borderRadius: '6px',
-                backgroundColor: 'rgba(255,255,255,0.7)',
-                border: '1px solid rgba(255,255,255,0.3)',
+                gap: 1.5,
+                padding: '16px 20px 12px 20px',
+                borderBottom: '1px solid rgba(0,0,0,0.05)',
               }}
             >
-              <Icon icon={icon} style={{ fontSize: 14, color: iconColor }} />
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '8px',
+                  backgroundColor: 'rgba(255,255,255,0.7)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                {/* Renderizar PNG o icono legacy en preview */}
+                {icon.startsWith('http') ? (
+                  <img
+                    src={icon}
+                    alt="Icon"
+                    style={{
+                      width: 18,
+                      height: 18,
+                      objectFit: 'contain',
+                      display: 'block',
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <Icon icon={icon} style={{ fontSize: 18, color: iconColor }} />
+                )}
+              </Box>
+
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  color: textColor,
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {label}
+              </Typography>
             </Box>
 
-            <Typography
-              variant="caption"
-              sx={{
-                color: textColor,
-                fontWeight: 600,
-                fontSize: '14px',
-              }}
-            >
-              {label}
-            </Typography>
-          </Box>
-
-          {/* Content preview */}
-          <Box sx={{ padding: '12px 16px 16px 16px' }}>
-            <Typography
-              variant="caption"
-              sx={{
-                color: '#6c757d',
-                fontSize: '13px',
-                fontStyle: 'italic',
-              }}
-            >
-              Escribe el contenido aquí...
-            </Typography>
+            {/* Content preview mejorada */}
+            <Box sx={{ padding: '16px 20px 20px 20px' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: '#6c757d',
+                  fontSize: '15px',
+                  fontStyle: 'italic',
+                  lineHeight: 1.6,
+                }}
+              >
+                Escribe el contenido aquí...
+              </Typography>
+            </Box>
           </Box>
         </Box>
       </Paper>

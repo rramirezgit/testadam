@@ -517,41 +517,63 @@ function renderComponentToHtml(component: EmailComponent): string {
       // Verificar si hay múltiples categorías o una sola
       if (component.props?.categorias && Array.isArray(component.props.categorias)) {
         // Renderizar múltiples categorías con sus colores personalizados
+        const borderRadius = component.props?.borderRadius || 16;
+        const padding = component.props?.padding || 4;
+        const fontSize = component.props?.fontSize || 14;
+        const fontWeight = component.props?.fontWeight || 'bold';
+
         let categoriasHtml = '<div class="component-category-group" style="margin: 15px 0;">';
         component.props.categorias.forEach((categoria: any) => {
           categoriasHtml += `<span class="component-category" style="
             display: inline-block;
             background-color: ${categoria.colorFondo || '#e3f2fd'};
             color: ${categoria.colorTexto || '#1976d2'};
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
-            margin: 5px 5px 5px 0;
+            padding-top: ${padding}px;
+            padding-bottom: ${padding}px;
+            padding-left: ${padding * 2}px;
+            padding-right: ${padding * 2}px;
+            border-radius: ${borderRadius}px;
+            font-size: ${fontSize}px;
+            font-weight: ${fontWeight};
+            margin: 0 6px 6px 0;
             text-decoration: none;
+            line-height: 1.2;
+            vertical-align: top;
           ">${escapeHtml(categoria.texto)}</span>`;
         });
         categoriasHtml += '</div>';
         return categoriasHtml;
       } else {
-        // Renderizar categoría única (legacy)
+        // Renderizar categoría única (legacy) - también usar las propiedades configurables
         const backgroundColor = component.props?.color || component.props?.colorFondo || '#e3f2fd';
         const textColor = component.props?.textColor || component.props?.colorTexto || '#1976d2';
-        return `<span class="component-category" style="
-          display: inline-block;
-          background-color: ${backgroundColor};
-          color: ${textColor};
-          padding: 8px 16px;
-          border-radius: 20px;
-          font-size: 14px;
-          font-weight: 500;
-          margin: 5px 5px 5px 0;
-          text-decoration: none;
-        ">${escapeHtml(component.content)}</span>`;
+        const borderRadius = component.props?.borderRadius || 16;
+        const padding = component.props?.padding || 4;
+        const fontSize = component.props?.fontSize || 14;
+        const fontWeight = component.props?.fontWeight || 'bold';
+
+        return `<div class="component-category-group" style="margin: 15px 0;">
+          <span class="component-category" style="
+            display: inline-block;
+            background-color: ${backgroundColor};
+            color: ${textColor};
+            padding-top: ${padding}px;
+            padding-bottom: ${padding}px;
+            padding-left: ${padding * 2}px;
+            padding-right: ${padding * 2}px;
+            border-radius: ${borderRadius}px;
+            font-size: ${fontSize}px;
+            font-weight: ${fontWeight};
+            margin: 0 6px 6px 0;
+            text-decoration: none;
+            line-height: 1.2;
+            vertical-align: top;
+          ">${escapeHtml(component.content)}</span>
+        </div>`;
       }
 
     case 'summary':
-      // Obtener configuración del tipo de summary
+      // Obtener configuración del tipo de summary (exactamente igual que SummaryComponent)
       const summaryType = component.props?.summaryType || 'resumen';
       const SUMMARY_TYPES = {
         resumen: {
@@ -592,45 +614,84 @@ function renderComponentToHtml(component: EmailComponent): string {
       };
 
       const typeConfig = SUMMARY_TYPES[summaryType] || SUMMARY_TYPES.resumen;
+      // Usar valores personalizados o por defecto (igual que SummaryComponent)
       const summaryBgColor = component.props?.backgroundColor || typeConfig.backgroundColor;
       const summaryIconColor = component.props?.iconColor || typeConfig.iconColor;
       const summaryTextColor = component.props?.textColor || typeConfig.textColor;
       const summaryIcon = component.props?.icon || typeConfig.icon;
       const summaryLabel = component.props?.label || typeConfig.label;
 
-      return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 25px 0;">
-        <tr>
-          <td style="background-color: ${summaryBgColor}; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); overflow: hidden;">
-            <!-- Header -->
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-              <tr>
-                <td style="padding: 16px 20px 12px 20px; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
-                    <tr>
-                      <td style="vertical-align: middle; padding-right: 12px;">
-                        <div style="width: 32px; height: 32px; border-radius: 8px; background-color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center;">
-                          <img src="https://api.iconify.design/${summaryIcon.replace(':', '/')}.svg?color=${encodeURIComponent(summaryIconColor)}&height=18" width="18" height="18" alt="${summaryLabel}" style="display: block;">
-                        </div>
-                      </td>
-                      <td style="vertical-align: middle;">
-                        <span style="color: ${summaryTextColor}; font-weight: 600; font-size: 16px; letter-spacing: -0.01em; display: block;">${summaryLabel}</span>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-            <!-- Content -->
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-              <tr>
-                <td style="padding: 16px 20px 20px 20px;">
-                  <div style="color: #6c757d; font-size: 15px; line-height: 1.6; margin: 0;">${component.content}</div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>`;
+      // ⚡ MEJORADO: Usar URL directa del PNG (compatible con emails)
+      let iconUrl = '';
+
+      // Si el icono ya es una URL completa (PNG de Icons8), usarla directamente
+      if (summaryIcon.startsWith('http')) {
+        iconUrl = summaryIcon;
+      }
+      // Fallback para iconos legacy (convertir a Icons8 PNG)
+      else if (summaryIcon.includes(':')) {
+        // Extraer el nombre del icono de formato collection:name
+        const iconName = summaryIcon.split(':')[1] || summaryIcon.split(':')[0];
+        iconUrl = `https://img.icons8.com/color/48/${iconName}.png`;
+      }
+      // Si es solo un nombre de icono, usar Icons8 PNG
+      else {
+        iconUrl = `https://img.icons8.com/color/48/${summaryIcon}.png`;
+      }
+
+      // ⚡ NUEVO: HTML que coincide EXACTAMENTE con SummaryComponent
+      return `<div style="position: relative; width: 100%; margin: 25px 0;">
+        <div style="
+          background-color: ${summaryBgColor};
+          border-radius: 12px;
+          border: 1px solid rgba(0,0,0,0.08);
+          overflow: hidden;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        ">
+          <!-- Header idéntico al SummaryComponent -->
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px 12px 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+          ">
+            <div style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 32px;
+              height: 32px;
+              border-radius: 8px;
+              background-color: rgba(255,255,255,0.7);
+              backdrop-filter: blur(8px);
+              -webkit-backdrop-filter: blur(8px);
+              border: 1px solid rgba(255,255,255,0.3);
+            ">
+              <img src="${iconUrl}" width="18" height="18" alt="${summaryLabel}" style="display: block; max-width: 18px; max-height: 18px;">
+            </div>
+            <span style="
+              color: ${summaryTextColor};
+              font-weight: 600;
+              font-size: 16px;
+              letter-spacing: -0.01em;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            ">${summaryLabel}</span>
+          </div>
+          
+          <!-- Contenido idéntico al SummaryComponent -->
+          <div style="padding: 16px 20px 20px 20px;">
+            <div style="
+              color: #6c757d;
+              font-size: 15px;
+              line-height: 1.6;
+              margin: 0;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            ">${component.content}</div>
+          </div>
+        </div>
+      </div>`;
 
     case 'author':
       const authorName = component.props?.name || component.content;
@@ -673,13 +734,27 @@ function renderComponentToHtml(component: EmailComponent): string {
           ? `background: linear-gradient(${gradientAngle}deg, ${gradientColor1} ${colorDistribution}%, ${gradientColor2} 100%);`
           : `background: radial-gradient(circle, ${gradientColor1} ${colorDistribution}%, ${gradientColor2} 100%);`;
 
+      // Generar URL del icono PNG para TituloConIcono (compatible con emails)
+      let tituloIconUrl = '';
+      const tituloIcon = component.props?.icon || 'chart-line';
+
+      if (tituloIcon.startsWith('http')) {
+        tituloIconUrl = tituloIcon;
+      } else if (tituloIcon.includes(':')) {
+        // Extraer nombre del icono de formato collection:name
+        const iconName = tituloIcon.split(':')[1] || tituloIcon.split(':')[0];
+        tituloIconUrl = `https://img.icons8.com/color/48/${iconName}.png`;
+      } else {
+        tituloIconUrl = `https://img.icons8.com/color/48/${tituloIcon}.png`;
+      }
+
       return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0px;">
         <tr>
           <td style="${gradientStyle} border-radius: 8px; padding: 16px 20px; text-align: left;">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0">
               <tr>
                 <td style="vertical-align: middle; padding-right: 12px;">
-                  <span style="font-size: 24px; color: ${textColor};">📰</span>
+                  <img src="${tituloIconUrl}" width="24" height="24" alt="Icono" style="display: block; max-width: 24px; max-height: 24px;">
                 </td>
                 <td style="vertical-align: middle;">
                   <span style="font-size: 20px; font-weight: bold; color: ${textColor}; line-height: 1.2;">${escapeHtml(component.content)}</span>
@@ -743,8 +818,23 @@ function renderComponentToHtml(component: EmailComponent): string {
               <tr>
                 <td>
                   ${herramientas
-                    .map(
-                      (herramienta: any) => `
+                    .map((herramienta: any) => {
+                      // Generar URL del icono PNG para herramientas (compatible con emails)
+                      let herramientaIconUrl = '';
+                      const herramientaIcon = herramienta.icono || 'hammer-wrench';
+
+                      if (herramientaIcon.startsWith('http')) {
+                        herramientaIconUrl = herramientaIcon;
+                      } else if (herramientaIcon.includes(':')) {
+                        // Extraer nombre del icono de formato collection:name
+                        const iconName =
+                          herramientaIcon.split(':')[1] || herramientaIcon.split(':')[0];
+                        herramientaIconUrl = `https://img.icons8.com/color/48/${iconName}.png`;
+                      } else {
+                        herramientaIconUrl = `https://img.icons8.com/color/48/${herramientaIcon}.png`;
+                      }
+
+                      return `
                     <span style="
                       display: inline-flex;
                       align-items: center;
@@ -760,11 +850,11 @@ function renderComponentToHtml(component: EmailComponent): string {
                       text-decoration: none;
                       vertical-align: top;
                     ">
-                      <img src="https://api.iconify.design/${herramienta.icono.replace(':', '/')}.svg?color=${encodeURIComponent(herramienta.colorIcono)}&height=16" width="16" height="16" alt="${herramienta.nombre}" style="display: inline-block; vertical-align: middle;">
+                      <img src="${herramientaIconUrl}" width="16" height="16" alt="${herramienta.nombre}" style="display: inline-block; vertical-align: middle; max-width: 16px; max-height: 16px;">
                       ${escapeHtml(herramienta.nombre)}
                     </span>
-                  `
-                    )
+                  `;
+                    })
                     .join('')}
                 </td>
               </tr>
@@ -774,10 +864,56 @@ function renderComponentToHtml(component: EmailComponent): string {
       </table>`;
 
     case 'respaldadoPor':
-      return `<div class="component-respaldado" style="text-align: center; padding: 15px; background-color: #f0f0f0; border-radius: 8px; margin: 20px 0;">
-        <div style="font-size: 12px; color: #666666; margin-bottom: 5px;">Respaldado por</div>
-        <strong style="font-size: 16px; color: #333333;">${escapeHtml(component.content)}</strong>
-      </div>`;
+      // Obtener configuraciones del componente respaldadoPor
+      const respaldadoTexto = component.props?.texto || 'Respaldado por';
+      const respaldadoNombre = component.props?.nombre || component.content || 'Redacción';
+      const respaldadoAvatarUrl = component.props?.avatarUrl || '';
+      const respaldadoAvatarTamano = component.props?.avatarTamano || 21;
+
+      // Configuraciones para sección adicional
+      const mostrarEscritorPropietario = component.props?.mostrarEscritorPropietario || false;
+      const escritorNombre = component.props?.escritorNombre || 'Escritor';
+      const escritorAvatarUrl = component.props?.escritorAvatarUrl || '';
+      const propietarioNombre = component.props?.propietarioNombre || 'Propietario';
+      const propietarioAvatarUrl = component.props?.propietarioAvatarUrl || '';
+
+      const respaldadoHtml = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+        <tr>
+          <td style="text-align: left;">
+            <!-- Sección Principal: Respaldado por -->
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background-color: #f5f5f5; border-radius: 12px;">
+              <span style="font-size: 13px; color: #9e9e9e; line-height: 1; font-weight: 400; vertical-align: middle; margin: auto 0px;">${escapeHtml(respaldadoTexto)}</span>
+              ${
+                respaldadoAvatarUrl
+                  ? `<img src="${respaldadoAvatarUrl}" alt="${escapeHtml(respaldadoNombre)}" style="width: ${respaldadoAvatarTamano}px; height: ${respaldadoAvatarTamano}px; border-radius: 50%; object-fit: cover; vertical-align: middle; display: inline-block;">`
+                  : ''
+              }
+              <span style="font-size: 13px; color: #616161; font-weight: 400; line-height: 1; vertical-align: middle; margin: auto 0px;">${escapeHtml(respaldadoNombre)}</span>
+              ${
+                mostrarEscritorPropietario
+                  ? `
+              <!-- Sección Adicional: Escritor con Propietario (inline) -->
+              <span style="font-size: 13px; line-height: 1; font-weight: 400; vertical-align: middle; margin: auto 0px;">Escritor con</span>
+              ${
+                escritorAvatarUrl
+                  ? `<img src="${escritorAvatarUrl}" alt="${escapeHtml(escritorNombre)}" style="width: 21px; height: 21px; border-radius: 50%; object-fit: cover; vertical-align: middle; display: inline-block;">`
+                  : ''
+              }
+              <span style="font-size: 13px; font-weight: 400; line-height: 1; vertical-align: middle; margin: auto 0px;">${escapeHtml(escritorNombre)}</span>
+              ${
+                propietarioAvatarUrl
+                  ? `<img src="${propietarioAvatarUrl}" alt="${escapeHtml(propietarioNombre)}" style="width: 21px; height: 21px; border-radius: 50%; object-fit: cover; vertical-align: middle; display: inline-block;">`
+                  : ''
+              }
+              <span style="font-size: 13px; font-weight: 400; line-height: 1; vertical-align: middle; margin: auto 0px;">${escapeHtml(propietarioNombre)}</span>`
+                  : ''
+              }
+            </div>
+          </td>
+        </tr>
+      </table>`;
+
+      return respaldadoHtml;
 
     default:
       return `<div class="component-unknown" style="background-color: #fff3e0; border-left: 3px solid #ff9800; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">
@@ -806,4 +942,234 @@ function escapeHtml(text: string): string {
  */
 export function generateEscapedHtml(html: string): string {
   return html.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+}
+
+/**
+ * Genera HTML para una nota individual (sin header y footer)
+ * Usa los mismos estilos de componentes que el newsletter
+ */
+export function generateSingleNoteHtml(
+  noteTitle: string,
+  noteDescription: string,
+  components: EmailComponent[],
+  containerConfig?: {
+    borderWidth?: number;
+    borderColor?: string;
+    borderRadius?: number;
+    padding?: number;
+    maxWidth?: number;
+  }
+): string {
+  // Configuración del contenedor con valores por defecto
+  const config = {
+    borderWidth: containerConfig?.borderWidth ?? 1,
+    borderColor: containerConfig?.borderColor ?? '#e5e7eb',
+    borderRadius: containerConfig?.borderRadius ?? 12,
+    padding: containerConfig?.padding ?? 30,
+    maxWidth: containerConfig?.maxWidth ?? 560,
+  };
+
+  const html = `<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>${escapeHtml(noteTitle)}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:AllowPNG/>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    /* Reset styles */
+    body, table, td, p, a, li, blockquote { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    
+    /* Base styles */
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: #f8f9fa;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #333333;
+    }
+    
+    /* Container principal - CONFIGURABLE */
+    .email-container {
+      max-width: ${config.maxWidth}px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: ${config.borderRadius}px;
+      border: ${config.borderWidth}px solid ${config.borderColor};
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    /* Contenido de la nota - CONFIGURABLE */
+    .note-content {
+      padding: ${config.padding}px;
+    }
+    
+    /* Note title - Mismo estilo que las notas en el newsletter */
+    .note-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #111827;
+      margin: 0 0 20px 0;
+      line-height: 1.3;
+      letter-spacing: -0.25px;
+    }
+    
+    /* Note description */
+    .note-description {
+      font-size: 16px;
+      color: #6b7280;
+      margin: 0 0 32px 0;
+      line-height: 1.5;
+    }
+    
+    /* Components - Mismos estilos que el newsletter */
+    .component-heading {
+      font-weight: 600;
+      margin: 0 !important;
+      line-height: 1.3;
+      color: #111827;
+      letter-spacing: -0.25px;
+      display: block;
+    }
+    
+    .component-paragraph {
+      margin: 0 !important;
+      line-height: 1.7;
+      font-size: 16px;
+      color: #374151;
+    }
+    
+    .component-summary {
+      background-color: #f8fafc;
+      border-left: 3px solid #3b82f6;
+      padding: 20px 24px;
+      margin: 25px 0;
+      border-radius: 0 6px 6px 0;
+    }
+    
+    .component-bulletlist {
+      margin: 20px 0;
+      padding-left: 24px;
+    }
+    
+    .component-bulletlist li {
+      margin: 10px 0;
+      line-height: 1.6;
+      color: #374151;
+    }
+    
+    .component-divider {
+      border: none;
+      border-top: 1px solid #e5e7eb;
+      margin: 40px 0;
+      height: 1px;
+    }
+    
+    .component-image {
+      text-align: center;
+      margin: 0px 0px 25px 0px;
+    }
+    
+    .component-image img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+      margin: 0 auto;
+    }
+    
+    .component-button {
+      text-align: center;
+      margin: 30px 0;
+    }
+    
+    .component-button a {
+      display: inline-block;
+      padding: 14px 28px;
+      background-color: #3b82f6;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+    
+    .component-category {
+      display: inline-block;
+      background-color: #e3f2fd;
+      color: #1976d2;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 500;
+      margin: 5px 5px 5px 0;
+      text-decoration: none;
+    }
+    
+    .component-author {
+      margin: 25px 0;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border-left: 3px solid #28a745;
+    }
+    
+    .component-spacer {
+      display: block;
+      height: 20px;
+      line-height: 20px;
+      font-size: 1px;
+    }
+    
+    /* Responsive */
+    @media only screen and (max-width: 600px) {
+      .email-container {
+        margin: 20px 10px !important;
+        border-radius: ${Math.max(config.borderRadius - 4, 0)}px !important;
+        max-width: calc(100% - 20px) !important;
+      }
+      
+      .note-content {
+        padding: ${Math.max(config.padding - 10, 10)}px !important;
+      }
+      
+      .note-title {
+        font-size: 20px !important;
+      }
+      
+      .note-description {
+        font-size: 15px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="note-content">
+      <div class="components">
+        ${components.map((component) => renderComponentToHtml(component)).join('')}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  return html;
 }

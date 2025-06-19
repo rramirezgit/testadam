@@ -321,7 +321,7 @@ export const newsComponents: EmailComponent[] = [
     type: 'tituloConIcono',
     content: 'Título de la noticia',
     props: {
-      icon: 'mdi:chart-line',
+      icon: 'https://img.icons8.com/color/48/line-chart.png',
       gradientColor1: 'rgba(255, 184, 77, 0.08)',
       gradientColor2: 'rgba(243, 156, 18, 0.00)',
       gradientType: 'linear',
@@ -348,8 +348,13 @@ export const newsComponents: EmailComponent[] = [
     props: {
       texto: 'Respaldado por',
       nombre: 'Redacción',
-      avatarUrl: '/default-avatar.png',
-      avatarTamano: 36,
+      avatarUrl: '',
+      avatarTamano: 21,
+      mostrarEscritorPropietario: false,
+      escritorNombre: 'Escritor',
+      escritorAvatarUrl: '',
+      propietarioNombre: 'Propietario',
+      propietarioAvatarUrl: '',
     },
   },
   {
@@ -401,8 +406,13 @@ export const newsComponentsWeb: EmailComponent[] = [
     props: {
       texto: 'Respaldado por',
       nombre: 'Juan Pérez',
-      avatarUrl: '/default-avatar.png',
-      avatarTamano: 36,
+      avatarUrl: '',
+      avatarTamano: 21,
+      mostrarEscritorPropietario: false,
+      escritorNombre: 'Escritor',
+      escritorAvatarUrl: '',
+      propietarioNombre: 'Propietario',
+      propietarioAvatarUrl: '',
     },
   },
   {

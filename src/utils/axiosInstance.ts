@@ -61,5 +61,11 @@ export const endpoints = {
     create: '/posts',
     update: (id: string) => `/posts/${id}`,
     delete: (id: string) => `/posts/${id}`,
+    sendForReview: '/email/send',
+  },
+  newsletter: {
+    send: (id: string) => `/newsletters/${id}/send`,
+    sendForReview: (id: string) => `/newsletters/${id}/send-for-review`,
+    requestApproval: (id: string) => `/newsletters/${id}/request-approval`,
   },
 };

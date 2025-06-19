@@ -18,12 +18,12 @@ import GeneralColorPicker from 'src/components/newsletter-note/general-color-pic
 
 import type { TituloConIconoOptionsProps } from './types';
 
-// Gradientes preestablecidos sutiles
+// Gradientes preestablecidos sutiles con iconos PNG
 const PRESET_GRADIENTS = [
   {
     id: 'mercado',
     name: 'Mercado',
-    icon: 'mdi:chart-line',
+    icon: 'https://img.icons8.com/color/48/line-chart.png',
     gradientColor1: 'rgba(255, 184, 77, 0.08)',
     gradientColor2: 'rgba(243, 156, 18, 0.00)',
     textColor: '#E67E22',
@@ -32,7 +32,7 @@ const PRESET_GRADIENTS = [
   {
     id: 'innovacion',
     name: 'Innovación',
-    icon: 'mdi:lightbulb-on',
+    icon: 'https://img.icons8.com/color/48/light-on.png',
     gradientColor1: 'rgba(82, 196, 26, 0.07)',
     gradientColor2: 'rgba(56, 158, 13, 0.00)',
     textColor: '#27AE60',
@@ -41,7 +41,7 @@ const PRESET_GRADIENTS = [
   {
     id: 'invitacion',
     name: 'Invitación Especial',
-    icon: 'mdi:star',
+    icon: 'https://img.icons8.com/color/48/star.png',
     gradientColor1: 'rgba(156, 136, 255, 0.08)',
     gradientColor2: 'rgba(124, 77, 255, 0.00)',
     textColor: '#6C63FF',
@@ -50,7 +50,7 @@ const PRESET_GRADIENTS = [
   {
     id: 'nota-dia',
     name: 'Nota del Día',
-    icon: 'mdi:calendar-today',
+    icon: 'https://img.icons8.com/color/48/calendar.png',
     gradientColor1: 'rgba(78, 205, 196, 0.06)',
     gradientColor2: 'rgba(38, 166, 154, 0.00)',
     textColor: '#00C3C3',
@@ -59,7 +59,7 @@ const PRESET_GRADIENTS = [
   {
     id: 'urgente',
     name: 'Urgente',
-    icon: 'mdi:alert-circle',
+    icon: 'https://img.icons8.com/color/48/error.png',
     gradientColor1: 'rgba(255, 107, 107, 0.07)',
     gradientColor2: 'rgba(231, 76, 60, 0.00)',
     textColor: '#E74C3C',
@@ -68,7 +68,7 @@ const PRESET_GRADIENTS = [
   {
     id: 'recursos',
     name: 'Recursos',
-    icon: 'mdi:folder-open',
+    icon: 'https://img.icons8.com/color/48/folder-tree.png',
     gradientColor1: 'rgba(74, 144, 226, 0.06)',
     gradientColor2: 'rgba(53, 122, 189, 0.00)',
     textColor: '#3498DB',
@@ -77,7 +77,7 @@ const PRESET_GRADIENTS = [
   {
     id: 'tendencias',
     name: 'Tendencias',
-    icon: 'mdi:trending-up',
+    icon: 'https://img.icons8.com/color/48/graph.png',
     gradientColor1: 'rgba(155, 89, 182, 0.07)',
     gradientColor2: 'rgba(142, 68, 173, 0.00)',
     textColor: '#8E44AD',
@@ -86,7 +86,7 @@ const PRESET_GRADIENTS = [
   {
     id: 'comunidad',
     name: 'Comunidad',
-    icon: 'mdi:account-group',
+    icon: 'https://img.icons8.com/color/48/conference-call.png',
     gradientColor1: 'rgba(255, 159, 67, 0.08)',
     gradientColor2: 'rgba(255, 118, 117, 0.00)',
     textColor: '#FF6B35',
@@ -291,10 +291,24 @@ export default function TituloConIconoOptions({
                 borderColor: 'grey.200',
               }}
             >
-              <Icon
-                icon={component.props?.icon || 'mdi:chart-line'}
-                style={{ fontSize: 24, color: textColor }}
-              />
+              {/* Renderizado condicional para PNG URLs vs iconos legacy */}
+              {component.props?.icon && component.props.icon.startsWith('http') ? (
+                <img
+                  src={component.props.icon}
+                  alt="Icono seleccionado"
+                  style={{
+                    width: 24,
+                    height: 24,
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                />
+              ) : (
+                <Icon
+                  icon={component.props?.icon || 'mdi:chart-line'}
+                  style={{ fontSize: 24, color: textColor }}
+                />
+              )}
             </Paper>
             <Button
               variant="outlined"
@@ -569,15 +583,31 @@ export default function TituloConIconoOptions({
           }}
         >
           {/* Icono */}
-          <Icon
-            icon={component.props?.icon || 'mdi:newspaper-variant-outline'}
-            style={{
-              fontSize: 24,
-              color: textColor,
-              marginRight: 12,
-              zIndex: 2,
-            }}
-          />
+          {/* Renderizado condicional para PNG URLs vs iconos legacy */}
+          {component.props?.icon && component.props.icon.startsWith('http') ? (
+            <img
+              src={component.props.icon}
+              alt="Icono seleccionado"
+              style={{
+                width: 24,
+                height: 24,
+                objectFit: 'contain',
+                display: 'block',
+                marginRight: 12,
+                zIndex: 2,
+              }}
+            />
+          ) : (
+            <Icon
+              icon={component.props?.icon || 'mdi:newspaper-variant-outline'}
+              style={{
+                fontSize: 24,
+                color: textColor,
+                marginRight: 12,
+                zIndex: 2,
+              }}
+            />
+          )}
 
           {/* Texto */}
           <Typography
