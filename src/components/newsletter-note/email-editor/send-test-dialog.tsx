@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -38,6 +38,26 @@ export default function SendTestDialog({
   const [loading, setLoading] = useState<boolean>(false);
 
   const theme = useTheme();
+
+  const handleClose = () => {
+    setSuccess(false);
+    setOpen(false);
+    setEmailsLocal([]);
+    setErrorsEmails([]);
+  };
+
+  // Auto-cerrar el diálogo de éxito después de 3 segundos
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        handleClose();
+      }, 3000); // 3 segundos
+
+      // Limpiar el timer si el componente se desmonta o si success cambia
+      return () => clearTimeout(timer);
+    }
+    return undefined; // Return undefined when success is false
+  }, [success]);
 
   const handleChangeEmails = (e: any) => {
     const emails = e.target.value.split(';').map((item: string) => item.trim());
@@ -81,13 +101,6 @@ export default function SendTestDialog({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleClose = () => {
-    setSuccess(false);
-    setOpen(false);
-    setEmailsLocal([]);
-    setErrorsEmails([]);
   };
 
   return (

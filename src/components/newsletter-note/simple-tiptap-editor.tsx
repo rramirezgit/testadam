@@ -5,16 +5,32 @@ import './tiptap-optimizations.css';
 
 import type React from 'react';
 
+import { Icon } from '@iconify/react';
+import Link from '@tiptap/extension-link';
 import Color from '@tiptap/extension-color';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextStyle from '@tiptap/extension-text-style';
 import TextAlign from '@tiptap/extension-text-align';
 import FontFamily from '@tiptap/extension-font-family';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, BubbleMenu, EditorContent } from '@tiptap/react';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box } from '@mui/material';
+import {
+  Box,
+  Paper,
+  Dialog,
+  Button,
+  Tooltip,
+  Popover,
+  TextField,
+  IconButton,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+
+import TextColorPicker from './email-editor/color-picker/TextColorPicker';
 
 interface SimpleTipTapEditorProps {
   content: string;
@@ -54,6 +70,13 @@ const getExtensions = () => {
       Color,
       FontFamily,
       Underline,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+      }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
@@ -122,6 +145,71 @@ export default function SimpleTipTapEditor({
   const editorRef = useRef<any>(null);
   const isUpdatingContent = useRef(false);
   const lastContent = useRef(content);
+
+  // Estados para el BubbleMenu de enlaces
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+
+  // Estados para el color picker en BubbleMenu
+  const [colorAnchorEl, setColorAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedTextColor, setSelectedTextColor] = useState('#000000');
+
+  // Funciones para el BubbleMenu
+  const handleCreateLink = () => {
+    setLinkUrl('');
+    setShowLinkDialog(true);
+  };
+
+  const handleEditLink = () => {
+    if (editor) {
+      const { href } = editor.getAttributes('link');
+      setLinkUrl(href || '');
+      setShowLinkDialog(true);
+    }
+  };
+
+  const handleApplyLink = () => {
+    if (!linkUrl.trim() || !editor) return;
+
+    let validUrl = linkUrl.trim();
+    if (
+      !validUrl.startsWith('http://') &&
+      !validUrl.startsWith('https://') &&
+      !validUrl.startsWith('mailto:')
+    ) {
+      validUrl = 'https://' + validUrl;
+    }
+
+    editor.chain().focus().setLink({ href: validUrl, target: '_blank' }).run();
+    setShowLinkDialog(false);
+    setLinkUrl('');
+  };
+
+  const handleRemoveLink = () => {
+    if (editor) {
+      editor.chain().focus().unsetLink().run();
+    }
+  };
+
+  // Funciones para el color picker
+  const handleColorClick = (event: React.MouseEvent<HTMLElement>) => {
+    setColorAnchorEl(event.currentTarget);
+  };
+
+  const handleColorClose = () => {
+    setColorAnchorEl(null);
+  };
+
+  const handleApplyTextColor = (color: string) => {
+    if (editor) {
+      if (color) {
+        editor.chain().focus().setColor(color).run();
+      } else {
+        editor.chain().focus().unsetColor().run();
+      }
+      setSelectedTextColor(color);
+    }
+  };
 
   // ⚡ ULTRA-OPTIMIZACIÓN: Memoizar extensiones con cache global
   const extensions = useMemo(() => getExtensions(), []);
@@ -337,11 +425,246 @@ export default function SimpleTipTapEditor({
         }}
         sx={editorStyles}
       >
-        {isMounted && editor && <EditorContent editor={editor} />}
+        {isMounted && editor && (
+          <>
+            <EditorContent editor={editor} />
+
+            {/* BubbleMenu para enlaces */}
+            <BubbleMenu
+              editor={editor}
+              tippyOptions={{ duration: 100 }}
+              shouldShow={({ from, to }) =>
+                // Solo mostrar cuando hay texto seleccionado
+                from !== to
+              }
+            >
+              <Paper
+                elevation={3}
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  p: 0.5,
+                  bgcolor: 'background.paper',
+                  borderRadius: 1,
+                  minWidth: 'auto',
+                }}
+              >
+                {/* Botón de formato negrita */}
+                <Tooltip title="Negrita">
+                  <IconButton
+                    size="small"
+                    onClick={() => editor.chain().focus().toggleBold().run()}
+                    sx={{
+                      bgcolor: editor.isActive('bold') ? 'grey.300' : 'transparent',
+                      color: editor.isActive('bold') ? 'black' : 'inherit',
+                    }}
+                  >
+                    <Icon icon="mdi:format-bold" />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Botón de formato cursiva */}
+                <Tooltip title="Cursiva">
+                  <IconButton
+                    size="small"
+                    onClick={() => editor.chain().focus().toggleItalic().run()}
+                    sx={{
+                      bgcolor: editor.isActive('italic') ? 'grey.300' : 'transparent',
+                      color: editor.isActive('italic') ? 'black' : 'inherit',
+                    }}
+                  >
+                    <Icon icon="mdi:format-italic" />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Botón de subrayado */}
+                <Tooltip title="Subrayado">
+                  <IconButton
+                    size="small"
+                    onClick={() => editor.chain().focus().toggleUnderline().run()}
+                    sx={{
+                      bgcolor: editor.isActive('underline') ? 'grey.300' : 'transparent',
+                      color: editor.isActive('underline') ? 'black' : 'inherit',
+                    }}
+                  >
+                    <Icon icon="mdi:format-underline" />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Separador */}
+                <Box sx={{ width: 1, bgcolor: 'divider', mx: 0.5 }} />
+
+                {/* Botón de color de texto */}
+                <Tooltip title="Color de texto">
+                  <IconButton
+                    size="small"
+                    onClick={handleColorClick}
+                    sx={{
+                      bgcolor: 'transparent',
+                      color: 'inherit',
+                      position: 'relative',
+                    }}
+                  >
+                    <Icon icon="mdi:format-color-text" />
+                    {/* Indicador de color actual */}
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        bottom: 2,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: 12,
+                        height: 2,
+                        bgcolor: selectedTextColor,
+                        borderRadius: 1,
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Separador */}
+                <Box sx={{ width: 1, bgcolor: 'divider', mx: 0.5 }} />
+
+                {/* Botón de enlace */}
+                <Tooltip title={editor.isActive('link') ? 'Editar enlace' : 'Crear enlace'}>
+                  <IconButton
+                    size="small"
+                    onClick={editor.isActive('link') ? handleEditLink : handleCreateLink}
+                    sx={{
+                      bgcolor: editor.isActive('link') ? 'grey.300' : 'transparent',
+                      color: editor.isActive('link') ? 'black' : 'inherit',
+                    }}
+                  >
+                    <Icon icon="mdi:link" />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Botón para quitar enlace (solo si hay enlace activo) */}
+                {editor.isActive('link') && (
+                  <Tooltip title="Quitar enlace">
+                    <IconButton
+                      size="small"
+                      onClick={handleRemoveLink}
+                      sx={{
+                        color: 'error.main',
+                        '&:hover': { bgcolor: 'error.50' },
+                      }}
+                    >
+                      <Icon icon="mdi:link-off" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Paper>
+            </BubbleMenu>
+
+            {/* Diálogo para crear/editar enlaces */}
+            <Dialog
+              open={showLinkDialog}
+              onClose={() => setShowLinkDialog(false)}
+              maxWidth="sm"
+              fullWidth
+            >
+              <DialogTitle>
+                {editor?.isActive('link') ? 'Editar enlace' : 'Crear enlace'}
+              </DialogTitle>
+              <DialogContent>
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  label="URL del enlace"
+                  type="url"
+                  fullWidth
+                  variant="outlined"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://ejemplo.com"
+                  helperText="Se agregará https:// automáticamente si no lo incluyes"
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={() => setShowLinkDialog(false)}>Cancelar</Button>
+                <Button onClick={handleApplyLink} variant="contained" disabled={!linkUrl.trim()}>
+                  {editor?.isActive('link') ? 'Actualizar' : 'Crear enlace'}
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            {/* Popover para color picker */}
+            <Popover
+              open={Boolean(colorAnchorEl)}
+              anchorEl={colorAnchorEl}
+              onClose={handleColorClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'center',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'center',
+              }}
+              PaperProps={{
+                sx: {
+                  p: 1,
+                  borderRadius: 2,
+                  boxShadow: 3,
+                },
+              }}
+            >
+              <TextColorPicker
+                selectedColor={selectedTextColor}
+                applyTextColor={(color) => {
+                  handleApplyTextColor(color);
+                  handleColorClose();
+                }}
+              />
+            </Popover>
+          </>
+        )}
       </Box>
     ),
-    [className, style, editorStyles, editor, isMounted]
+    [
+      className,
+      style,
+      editorStyles,
+      editor,
+      isMounted,
+      showLinkDialog,
+      linkUrl,
+      colorAnchorEl,
+      selectedTextColor,
+    ]
   );
+
+  // Exponer el editor globalmente para acceso desde TextOptions
+  useEffect(() => {
+    if (editor) {
+      (window as any).currentTipTapEditor = editor;
+    }
+    return () => {
+      if ((window as any).currentTipTapEditor === editor) {
+        (window as any).currentTipTapEditor = null;
+      }
+    };
+  }, [editor]);
+
+  // Actualizar color seleccionado cuando cambia la selección
+  useEffect(() => {
+    if (editor) {
+      const updateSelectedColor = () => {
+        const color = editor.getAttributes('textStyle').color || '#000000';
+        setSelectedTextColor(color);
+      };
+
+      editor.on('selectionUpdate', updateSelectedColor);
+      editor.on('transaction', updateSelectedColor);
+
+      return () => {
+        editor.off('selectionUpdate', updateSelectedColor);
+        editor.off('transaction', updateSelectedColor);
+      };
+    }
+    return undefined;
+  }, [editor]);
 
   return editorContainer;
 }

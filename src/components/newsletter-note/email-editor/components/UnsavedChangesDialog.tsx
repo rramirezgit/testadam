@@ -73,27 +73,6 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
       <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
         ¿Qué te gustaría hacer con tus cambios antes de salir?
       </Typography>
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Icon icon="mdi:content-save" style={{ color: '#4caf50' }} />
-          <Typography variant="body2">
-            <strong>Guardar y salir:</strong> Tus cambios se guardarán permanentemente
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Icon icon="mdi:close-circle" style={{ color: '#f44336' }} />
-          <Typography variant="body2">
-            <strong>Salir sin guardar:</strong> Se perderán todos los cambios realizados
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Icon icon="mdi:pencil" style={{ color: '#2196f3' }} />
-          <Typography variant="body2">
-            <strong>Continuar editando:</strong> Volver al editor para seguir trabajando
-          </Typography>
-        </Box>
-      </Box>
     </DialogContent>
 
     <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>

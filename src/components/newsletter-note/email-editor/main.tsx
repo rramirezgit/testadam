@@ -3,7 +3,6 @@
 import type React from 'react';
 import type { SavedNote } from 'src/types/saved-note';
 
-import { Icon } from '@iconify/react';
 import { useRef, useState, useEffect, useCallback } from 'react';
 
 import { Box, Button } from '@mui/material';
@@ -1689,29 +1688,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         onGenerateHtml={generateHtmlForSending}
       />
 
-      {/* Banner de sincronización automática */}
-      {versionSync.syncEnabled && (
-        <Box
-          sx={{
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            py: 0.5,
-            px: 2,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.875rem',
-            color: 'primary.main',
-            borderBottom: '1px solid rgba(25, 118, 210, 0.15)',
-          }}
-        >
-          <Icon icon="mdi:sync" style={{ marginRight: '0.5rem', fontSize: '1rem' }} />
-          Sincronización automática activada. Solo se actualizarán los valores de componentes
-          existentes manteniendo su estructura y posición.
-        </Box>
-      )}
-
-      {/* ❌ ELIMINADO: Indicador de Auto-guardado */}
-
       {/* Contenedor principal */}
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         {/* Panel izquierdo - Componentes */}
@@ -2050,7 +2026,10 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           onClose={() => setShowIconPicker(false)}
           onSelectIcon={(iconUrl) => {
             const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
-            if (component && component.type === 'summary') {
+            if (
+              component &&
+              (component.type === 'summary' || component.type === 'tituloConIcono')
+            ) {
               updateComponentProps(selectedComponentId, { icon: iconUrl });
             }
             setShowIconPicker(false);

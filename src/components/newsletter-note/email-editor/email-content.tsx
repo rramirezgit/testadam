@@ -1203,8 +1203,18 @@ const EmailContent = memo(
               maxWidth: `${containerMaxWidth}px`,
               margin: '0 auto',
               padding: `${containerPadding}px`,
-              borderRadius: `${containerBorderRadius}px`,
-              border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+              ...(activeTemplate === 'news' && activeVersion === 'web'
+                ? {
+                    // Sin bordes para la versión web del template de noticias
+                    borderRadius: 0,
+                    border: 'none',
+                    maxWidth: '100%',
+                  }
+                : {
+                    // Bordes normales para otros casos
+                    borderRadius: `${containerBorderRadius}px`,
+                    border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+                  }),
               textAlign: 'center',
               py: 8,
               display: 'flex',
@@ -1262,11 +1272,20 @@ const EmailContent = memo(
       >
         <Box
           sx={{
-            maxWidth: `${containerMaxWidth}px`,
             margin: '0 auto',
             padding: `${containerPadding}px`,
-            borderRadius: `${containerBorderRadius}px`,
-            border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+            ...(activeTemplate === 'news' && activeVersion === 'web'
+              ? {
+                  // Sin bordes para la versión web del template de noticias
+                  borderRadius: 0,
+                  border: 'none',
+                }
+              : {
+                  // Bordes normales para otros casos
+                  borderRadius: `${containerBorderRadius}px`,
+                  border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+                  maxWidth: `${containerMaxWidth}px`,
+                }),
           }}
         >
           {components.map((component: any, index) => {

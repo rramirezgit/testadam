@@ -27,7 +27,6 @@ const PRESET_GRADIENTS = [
     gradientColor1: 'rgba(255, 184, 77, 0.08)',
     gradientColor2: 'rgba(243, 156, 18, 0.00)',
     textColor: '#E67E22',
-    description: 'Naranja sutil para finanzas',
   },
   {
     id: 'innovacion',
@@ -36,7 +35,6 @@ const PRESET_GRADIENTS = [
     gradientColor1: 'rgba(82, 196, 26, 0.07)',
     gradientColor2: 'rgba(56, 158, 13, 0.00)',
     textColor: '#27AE60',
-    description: 'Verde natural muy sutil',
   },
   {
     id: 'invitacion',
@@ -45,7 +43,6 @@ const PRESET_GRADIENTS = [
     gradientColor1: 'rgba(156, 136, 255, 0.08)',
     gradientColor2: 'rgba(124, 77, 255, 0.00)',
     textColor: '#6C63FF',
-    description: 'Violeta elegante y sutil',
   },
   {
     id: 'nota-dia',
@@ -54,7 +51,6 @@ const PRESET_GRADIENTS = [
     gradientColor1: 'rgba(78, 205, 196, 0.06)',
     gradientColor2: 'rgba(38, 166, 154, 0.00)',
     textColor: '#00C3C3',
-    description: 'Turquesa muy suave',
   },
   {
     id: 'urgente',
@@ -63,7 +59,6 @@ const PRESET_GRADIENTS = [
     gradientColor1: 'rgba(255, 107, 107, 0.07)',
     gradientColor2: 'rgba(231, 76, 60, 0.00)',
     textColor: '#E74C3C',
-    description: 'Rojo muy sutil para urgencia',
   },
   {
     id: 'recursos',
@@ -72,7 +67,6 @@ const PRESET_GRADIENTS = [
     gradientColor1: 'rgba(74, 144, 226, 0.06)',
     gradientColor2: 'rgba(53, 122, 189, 0.00)',
     textColor: '#3498DB',
-    description: 'Azul corporativo sutil',
   },
   {
     id: 'tendencias',
@@ -81,7 +75,6 @@ const PRESET_GRADIENTS = [
     gradientColor1: 'rgba(155, 89, 182, 0.07)',
     gradientColor2: 'rgba(142, 68, 173, 0.00)',
     textColor: '#8E44AD',
-    description: 'Púrpura moderno muy sutil',
   },
   {
     id: 'comunidad',
@@ -90,7 +83,6 @@ const PRESET_GRADIENTS = [
     gradientColor1: 'rgba(255, 159, 67, 0.08)',
     gradientColor2: 'rgba(255, 118, 117, 0.00)',
     textColor: '#FF6B35',
-    description: 'Coral cálido y sutil',
   },
 ];
 
@@ -157,14 +149,10 @@ export default function TituloConIconoOptions({
     <Box sx={{ p: 2 }}>
       {/* Sección de Estilos Preestablecidos */}
       <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
-        🎨 Estilos Preestablecidos
+        Estilos Preestablecidos
       </Typography>
 
       <Box sx={{ mb: 3 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-          Aplica un estilo completo con gradiente, ícono y colores predefinidos
-        </Typography>
-
         <Box
           sx={{
             display: 'grid',
@@ -214,15 +202,6 @@ export default function TituloConIconoOptions({
                   {preset.name}
                 </Typography>
               </Box>
-
-              <Typography
-                variant="caption"
-                display="block"
-                color="text.secondary"
-                sx={{ fontSize: '0.6rem', lineHeight: 1.2 }}
-              >
-                {preset.description}
-              </Typography>
             </Paper>
           ))}
         </Box>
@@ -232,40 +211,14 @@ export default function TituloConIconoOptions({
 
       {/* Configuración Manual Profesional */}
       <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-        ⚙️ Configuración Avanzada
+        Configuración Avanzada
       </Typography>
 
-      {/* Sección: Contenido */}
-      <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Icon icon="mdi:text-box-outline" style={{ marginRight: 8, fontSize: 18 }} />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            Contenido del Título
-          </Typography>
-        </Box>
-
-        <TextField
-          fullWidth
-          size="small"
-          value={titulo}
-          onChange={(e) => updateComponentProps(selectedComponentId, { content: e.target.value })}
-          placeholder="Escriba el título aquí..."
-          sx={{
-            mb: 1,
-            '& .MuiOutlinedInput-root': {
-              bgcolor: 'white',
-            },
-          }}
-        />
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-          Este será el texto principal que aparecerá en la barra
-        </Typography>
-      </Paper>
+      <Divider sx={{ mb: 2 }} />
 
       {/* Sección: Apariencia Visual */}
-      <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+      <Paper elevation={0} sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Icon icon="mdi:palette-outline" style={{ marginRight: 8, fontSize: 18 }} />
           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
             Apariencia Visual
           </Typography>
@@ -320,9 +273,6 @@ export default function TituloConIconoOptions({
               Cambiar
             </Button>
           </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-            El icono aparecerá a la izquierda del título
-          </Typography>
         </Box>
 
         {/* Color del texto */}
@@ -330,44 +280,22 @@ export default function TituloConIconoOptions({
           <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
             Color del Texto
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'start', gap: 2 }}>
             <GeneralColorPicker
               selectedColor={textColor}
               onChange={(newColor) =>
                 updateComponentProps(selectedComponentId, { textColor: newColor })
               }
-              label="Texto e Icono"
-              size="medium"
+              label=""
+              size="small"
             />
-            <Box sx={{ flex: 1 }}>
-              <Chip
-                size="small"
-                label={textColor.toUpperCase()}
-                sx={{
-                  backgroundColor: textColor,
-                  color: '#fff',
-                  fontSize: '0.7rem',
-                  fontWeight: 'bold',
-                  height: 24,
-                  minWidth: 80,
-                }}
-              />
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', mt: 0.5 }}
-              >
-                Color que tendrá el texto y el icono
-              </Typography>
-            </Box>
           </Box>
         </Box>
       </Paper>
 
       {/* Sección: Configuración de Gradiente */}
-      <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+      <Paper elevation={0} sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Icon icon="mdi:gradient-horizontal" style={{ marginRight: 8, fontSize: 18 }} />
           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
             Configuración de Gradiente
           </Typography>
@@ -553,84 +481,6 @@ export default function TituloConIconoOptions({
             0% = degradado muy suave, 100% = degradado más intenso
           </Typography>
         </Box>
-      </Paper>
-
-      {/* Sección: Vista Previa */}
-      <Paper elevation={2} sx={{ p: 2, bgcolor: 'grey.100' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Icon icon="mdi:eye-outline" style={{ marginRight: 8, fontSize: 18 }} />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            Vista Previa en Tiempo Real
-          </Typography>
-        </Box>
-
-        <Box
-          sx={{
-            height: 56,
-            borderRadius: 2,
-            background:
-              gradientType === 'linear'
-                ? `linear-gradient(${gradientAngle}deg, ${gradientColor1} ${colorDistribution}%, ${gradientColor2} 100%)`
-                : `radial-gradient(circle, ${gradientColor1} ${colorDistribution}%, ${gradientColor2} 100%)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            px: 3,
-            border: '2px solid',
-            borderColor: 'grey.300',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Icono */}
-          {/* Renderizado condicional para PNG URLs vs iconos legacy */}
-          {component.props?.icon && component.props.icon.startsWith('http') ? (
-            <img
-              src={component.props.icon}
-              alt="Icono seleccionado"
-              style={{
-                width: 24,
-                height: 24,
-                objectFit: 'contain',
-                display: 'block',
-                marginRight: 12,
-                zIndex: 2,
-              }}
-            />
-          ) : (
-            <Icon
-              icon={component.props?.icon || 'mdi:newspaper-variant-outline'}
-              style={{
-                fontSize: 24,
-                color: textColor,
-                marginRight: 12,
-                zIndex: 2,
-              }}
-            />
-          )}
-
-          {/* Texto */}
-          <Typography
-            variant="h6"
-            sx={{
-              color: textColor,
-              fontWeight: 'bold',
-              fontSize: '1rem',
-              zIndex: 2,
-              textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-            }}
-          >
-            {titulo || 'Vista Previa'}
-          </Typography>
-        </Box>
-
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: 'block', mt: 1, textAlign: 'center' }}
-        >
-          Así se verá tu título con imagen en el newsletter
-        </Typography>
       </Paper>
     </Box>
   );

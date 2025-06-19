@@ -8,6 +8,7 @@ import {
   Alert,
   Button,
   Select,
+  Slider,
   Divider,
   MenuItem,
   TextField,
@@ -103,12 +104,12 @@ export default function CategoryOptions({
 
   // Definir presets de colores para categorías individuales
   const colorPresets = [
-    { name: 'Tecnología', bg: '#e3f2fd', text: '#1565c0' },
-    { name: 'Negocios', bg: '#f3e5f5', text: '#7b1fa2' },
-    { name: 'Diseño', bg: '#fce4ec', text: '#c2185b' },
-    { name: 'Marketing', bg: '#e8f5e8', text: '#388e3c' },
-    { name: 'Desarrollo', bg: '#fff3e0', text: '#f57c00' },
-    { name: 'Educación', bg: '#e1f5fe', text: '#0277bd' },
+    { name: 'Azul', bg: '#e3f2fd', text: '#1565c0' },
+    { name: 'Morado', bg: '#f3e5f5', text: '#7b1fa2' },
+    { name: 'Rojo', bg: '#fce4ec', text: '#c2185b' },
+    { name: 'Verde', bg: '#e8f5e8', text: '#388e3c' },
+    { name: 'Amarillo', bg: '#fff3e0', text: '#f57c00' },
+    { name: 'Celeste', bg: '#e1f5fe', text: '#0277bd' },
   ];
 
   // Sistema de categorías rápidas prediseñadas
@@ -148,40 +149,6 @@ export default function CategoryOptions({
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Icon icon="mdi:tag-multiple" />
-        Configurar Categorías
-      </Typography>
-
-      {/* Vista previa de todas las categorías */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-          Vista previa
-        </Typography>
-        <Card variant="outlined" sx={{ p: 2, backgroundColor: '#fafafa' }}>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            {categorias.map((categoria) => (
-              <Chip
-                key={categoria.id}
-                label={categoria.texto}
-                sx={{
-                  backgroundColor: categoria.colorFondo,
-                  color: categoria.colorTexto,
-                  borderRadius: `${borderRadius}px`,
-                  fontSize: `${fontSize}px`,
-                  fontWeight,
-                  py: `${padding}px`,
-                  px: `${padding * 2}px`,
-                  '& .MuiChip-label': {
-                    padding: 0,
-                  },
-                }}
-              />
-            ))}
-          </Stack>
-        </Card>
-      </Box>
-
       {/* Categorías rápidas prediseñadas */}
       <Box sx={{ mb: 4 }}>
         <Typography
@@ -189,11 +156,7 @@ export default function CategoryOptions({
           gutterBottom
           sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
         >
-          <Icon icon="mdi:lightning-bolt" />
           Categorías Rápidas
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Agrega categorías populares con colores prediseñados de un solo clic
         </Typography>
 
         <Box
@@ -364,74 +327,109 @@ export default function CategoryOptions({
 
       {/* Configuración de estilo global */}
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Icon icon="mdi:palette" />
         Estilo Global
       </Typography>
 
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle2" gutterBottom>
-          Bordes redondeados
+          Bordes redondeados: {borderRadius}px
         </Typography>
-        <TextField
-          type="number"
-          fullWidth
+        <Slider
           size="small"
-          InputProps={{
-            inputProps: { min: 0, max: 50 },
-            endAdornment: <Typography variant="caption">px</Typography>,
-          }}
           value={borderRadius}
-          onChange={(e) =>
-            updateComponentProps(selectedComponentId, {
-              borderRadius: Number(e.target.value),
-            })
-          }
-          helperText="0 = rectangular, 50 = completamente redondo"
+          onChange={(_, value) => {
+            if (selectedComponentId) {
+              updateComponentProps(selectedComponentId, {
+                borderRadius: value as number,
+              });
+            }
+          }}
+          min={0}
+          max={50}
+          marks={[
+            { value: 0, label: '0' },
+            { value: 12, label: '12' },
+            { value: 25, label: '25' },
+            { value: 50, label: '50' },
+          ]}
+          sx={{
+            '& .MuiSlider-thumb': {
+              width: 20,
+              height: 20,
+            },
+          }}
         />
+        <Typography variant="caption" color="text.secondary">
+          0 = rectangular, 50 = completamente redondo
+        </Typography>
       </Box>
 
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle2" gutterBottom>
-          Relleno interno
+          Relleno interno: {padding}px
         </Typography>
-        <TextField
-          type="number"
-          fullWidth
+        <Slider
           size="small"
-          InputProps={{
-            inputProps: { min: 0, max: 20 },
-            endAdornment: <Typography variant="caption">px</Typography>,
-          }}
           value={padding}
-          onChange={(e) =>
-            updateComponentProps(selectedComponentId, {
-              padding: Number(e.target.value),
-            })
-          }
-          helperText="Espaciado dentro de cada categoría"
+          onChange={(_, value) => {
+            if (selectedComponentId) {
+              updateComponentProps(selectedComponentId, {
+                padding: value as number,
+              });
+            }
+          }}
+          min={0}
+          max={20}
+          marks={[
+            { value: 0, label: '0' },
+            { value: 5, label: '5' },
+            { value: 10, label: '10' },
+            { value: 20, label: '20' },
+          ]}
+          sx={{
+            '& .MuiSlider-thumb': {
+              width: 20,
+              height: 20,
+            },
+          }}
         />
+        <Typography variant="caption" color="text.secondary">
+          Espaciado dentro de cada categoría
+        </Typography>
       </Box>
 
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle2" gutterBottom>
-          Tamaño de fuente
+          Tamaño de fuente: {fontSize}px
         </Typography>
-        <TextField
-          type="number"
-          fullWidth
+        <Slider
           size="small"
-          InputProps={{
-            inputProps: { min: 10, max: 24 },
-            endAdornment: <Typography variant="caption">px</Typography>,
-          }}
           value={fontSize}
-          onChange={(e) =>
-            updateComponentProps(selectedComponentId, {
-              fontSize: Number(e.target.value),
-            })
-          }
-          helperText="Tamaño del texto de las categorías"
+          onChange={(_, value) => {
+            if (selectedComponentId) {
+              updateComponentProps(selectedComponentId, {
+                fontSize: value as number,
+              });
+            }
+          }}
+          min={10}
+          max={24}
+          marks={[
+            { value: 10, label: '10' },
+            { value: 14, label: '14' },
+            { value: 18, label: '18' },
+            { value: 24, label: '24' },
+          ]}
+          sx={{
+            '& .MuiSlider-thumb': {
+              width: 20,
+              height: 20,
+            },
+          }}
         />
+        <Typography variant="caption" color="text.secondary">
+          Tamaño del texto de las categorías
+        </Typography>
       </Box>
 
       <Box sx={{ mb: 3 }}>
@@ -441,11 +439,13 @@ export default function CategoryOptions({
             labelId="font-weight-label"
             value={fontWeight}
             label="Grosor de fuente"
-            onChange={(e) =>
-              updateComponentProps(selectedComponentId, {
-                fontWeight: e.target.value,
-              })
-            }
+            onChange={(e) => {
+              if (selectedComponentId) {
+                updateComponentProps(selectedComponentId, {
+                  fontWeight: e.target.value,
+                });
+              }
+            }}
           >
             <MenuItem value="300">Fino (300)</MenuItem>
             <MenuItem value="normal">Normal (400)</MenuItem>
@@ -466,12 +466,14 @@ export default function CategoryOptions({
             size="small"
             variant="outlined"
             onClick={() => {
-              updateComponentProps(selectedComponentId, {
-                borderRadius: 16,
-                padding: 4,
-                fontSize: 14,
-                fontWeight: 'bold',
-              });
+              if (selectedComponentId) {
+                updateComponentProps(selectedComponentId, {
+                  borderRadius: 16,
+                  padding: 4,
+                  fontSize: 14,
+                  fontWeight: 'bold',
+                });
+              }
             }}
           >
             Moderno
@@ -480,12 +482,14 @@ export default function CategoryOptions({
             size="small"
             variant="outlined"
             onClick={() => {
-              updateComponentProps(selectedComponentId, {
-                borderRadius: 4,
-                padding: 6,
-                fontSize: 12,
-                fontWeight: 'normal',
-              });
+              if (selectedComponentId) {
+                updateComponentProps(selectedComponentId, {
+                  borderRadius: 4,
+                  padding: 6,
+                  fontSize: 12,
+                  fontWeight: 'normal',
+                });
+              }
             }}
           >
             Clásico
@@ -494,12 +498,14 @@ export default function CategoryOptions({
             size="small"
             variant="outlined"
             onClick={() => {
-              updateComponentProps(selectedComponentId, {
-                borderRadius: 50,
-                padding: 8,
-                fontSize: 13,
-                fontWeight: '500',
-              });
+              if (selectedComponentId) {
+                updateComponentProps(selectedComponentId, {
+                  borderRadius: 50,
+                  padding: 8,
+                  fontSize: 13,
+                  fontWeight: '500',
+                });
+              }
             }}
           >
             Pastilla

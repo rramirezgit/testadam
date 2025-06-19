@@ -31,7 +31,6 @@ import SummaryOptions from './right-panel/SummaryOptions';
 import CategoryOptions from './right-panel/CategoryOptions';
 import { useImageUpload } from './right-panel/useImageUpload';
 import ContainerOptions from './right-panel/ContainerOptions';
-import SmartDesignOptions from './right-panel/SmartDesignOptions';
 import HerramientasOptions from './right-panel/HerramientasOptions';
 import RespaldadoPorOptions from './right-panel/RespaldadoPorOptions';
 import TituloConIconoOptions from './right-panel/TituloConIconoOptions';
@@ -324,7 +323,7 @@ export default function RightPanel({
                 !noteCoverImageUrl.startsWith('data:image/') &&
                 noteCoverImageUrl.startsWith('http') && (
                   <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
-                    ✅ Imagen guardada en S3 correctamente
+                    ✅ Imagen guardada correctamente
                   </Alert>
                 )}
 
@@ -518,7 +517,7 @@ export default function RightPanel({
               ...(componentType === 'herramientas'
                 ? [<Tab key="herramientas-config" label="Configuración" />]
                 : []),
-              <Tab key="smart" label="🎨 Smart" />,
+              // <Tab key="smart" label="🎨 Smart" />,
             ]}
       </Tabs>
 
@@ -707,7 +706,7 @@ export default function RightPanel({
         )}
 
         {/* Tab Smart: Última tab para todos los componentes excepto Summary y RespaldadoPor */}
-        {componentType !== 'summary' &&
+        {/* {componentType !== 'summary' &&
           componentType !== 'respaldadoPor' &&
           rightPanelTab === (componentType === 'herramientas' ? 2 : 1) && (
             <SmartDesignOptions
@@ -716,7 +715,7 @@ export default function RightPanel({
               updateComponentStyle={updateComponentStyle}
               updateComponentProps={updateComponentProps}
             />
-          )}
+          )} */}
       </Box>
     </Box>
   );

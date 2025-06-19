@@ -1,19 +1,15 @@
 import { useRef } from 'react';
 import { Icon } from '@iconify/react';
 
-import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Paper,
   Avatar,
   Button,
   Slider,
-  Switch,
-  Divider,
   TextField,
   Typography,
   LinearProgress,
-  FormControlLabel,
 } from '@mui/material';
 
 import { useImageUpload } from './useImageUpload';
@@ -57,44 +53,36 @@ export default function RespaldadoPorOptions({
   const handleSelectEscritorAvatar = () => escritorAvatarFileInputRef.current?.click();
   const handleSelectPropietarioAvatar = () => propietarioAvatarFileInputRef.current?.click();
 
-  // Funciones para manejar cambios de archivos
-  const handleAvatarFileChange = (event: React.ChangeEvent<HTMLInputElement>, field: string) => {
+  // Funciones para manejar cambios de archivos con subida automática a S3
+  const handleAvatarFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    field: string
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const base64 = e.target?.result as string;
+        // Primero actualizar con la imagen base64 para mostrar preview
         updateComponentProps(selectedComponentId, { [field]: base64 });
+
+        // Luego subir automáticamente a S3
+        try {
+          const s3Url = await uploadImageToS3(base64, `respaldado_${field}_${Date.now()}`);
+          updateComponentProps(selectedComponentId, { [field]: s3Url });
+        } catch (error) {
+          console.error('Error al subir la imagen a S3:', error);
+          // Mantener la imagen base64 si falla la subida
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Función para subir avatar a S3
-  const handleUploadAvatarToS3 = async (field: string, currentUrl: string) => {
-    if (!currentUrl || !isBase64Image(currentUrl)) {
-      alert('No hay imagen de avatar para subir o ya está subida');
-      return;
-    }
-
-    try {
-      const s3Url = await uploadImageToS3(currentUrl, `respaldado_${field}_${Date.now()}`);
-      updateComponentProps(selectedComponentId, { [field]: s3Url });
-    } catch (error) {
-      alert('Error al subir la imagen del avatar a S3');
-      console.error(error);
-    }
-  };
-
   return (
     <Box sx={{ p: 2 }}>
-      {/* Header */}
-      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-        📝 Configuración de Respaldo
-      </Typography>
-
       {/* Sección Principal: Respaldado por */}
-      <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+      <Paper elevation={0}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <Icon icon="mdi:shield-check" style={{ marginRight: 8, fontSize: 18 }} />
           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
@@ -102,19 +90,58 @@ export default function RespaldadoPorOptions({
           </Typography>
         </Box>
 
-        {/* Texto descriptivo */}
-        <Box sx={{ mb: 2 }}>
+        {/* Avatar principal - PRIMERO */}
+        <Box sx={{ mb: 3 }}>
           <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-            Texto Descriptivo
+            Avatar Principal
           </Typography>
+
+          {avatarUrl && (
+            <Box sx={{ mb: 2, textAlign: 'center' }}>
+              <Avatar
+                src={avatarUrl}
+                alt={nombre}
+                sx={{
+                  width: Math.max(avatarTamano, 40),
+                  height: Math.max(avatarTamano, 40),
+                  border: '2px solid #e0e0e0',
+                  margin: '0 auto',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
+              />
+              {isBase64Image(avatarUrl) && uploading && (
+                <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 0.5 }}>
+                  📤 Subiendo a S3...
+                </Typography>
+              )}
+            </Box>
+          )}
+
+          <Button
+            variant="contained"
+            size="medium"
+            color="primary"
+            startIcon={<Icon icon="mdi:camera-plus" />}
+            onClick={handleSelectAvatar}
+            fullWidth
+            sx={{
+              mb: 2,
+              textTransform: 'none',
+            }}
+          >
+            {avatarUrl ? 'Cambiar Avatar' : 'Subir Avatar'}
+          </Button>
+
           <TextField
             fullWidth
+            label="URL del Avatar (opcional)"
+            value={avatarUrl || ''}
+            onChange={(e) =>
+              updateComponentProps(selectedComponentId, { avatarUrl: e.target.value })
+            }
+            placeholder="https://ejemplo.com/avatar.jpg"
             size="small"
-            value={texto}
-            onChange={(e) => updateComponentProps(selectedComponentId, { texto: e.target.value })}
-            placeholder="Respaldado por"
             sx={{
-              mb: 1,
               '& .MuiOutlinedInput-root': {
                 bgcolor: 'white',
               },
@@ -122,7 +149,7 @@ export default function RespaldadoPorOptions({
           />
         </Box>
 
-        {/* Nombre del autor */}
+        {/* Nombre del autor - SEGUNDO */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
             Nombre del Autor
@@ -134,7 +161,6 @@ export default function RespaldadoPorOptions({
             onChange={(e) => updateComponentProps(selectedComponentId, { nombre: e.target.value })}
             placeholder="Redacción"
             sx={{
-              mb: 1,
               '& .MuiOutlinedInput-root': {
                 bgcolor: 'white',
               },
@@ -142,70 +168,18 @@ export default function RespaldadoPorOptions({
           />
         </Box>
 
-        {/* Avatar principal */}
+        {/* Texto descriptivo - TERCERO */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-            Avatar Principal
+            Texto Descriptivo
           </Typography>
-
-          {avatarUrl && (
-            <Box sx={{ mb: 1, textAlign: 'center' }}>
-              <Avatar
-                src={avatarUrl}
-                alt={nombre}
-                sx={{
-                  width: Math.max(avatarTamano, 30),
-                  height: Math.max(avatarTamano, 30),
-                  border: '1px solid #e0e0e0',
-                  margin: '0 auto',
-                }}
-              />
-              {isBase64Image(avatarUrl) && (
-                <Typography
-                  variant="caption"
-                  color="warning.main"
-                  sx={{ display: 'block', mt: 0.5 }}
-                >
-                  ⚠️ Pendiente subir a S3
-                </Typography>
-              )}
-            </Box>
-          )}
-
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Icon icon="mdi:image-plus" />}
-            onClick={handleSelectAvatar}
-            sx={{ mb: 1, mr: 1 }}
-          >
-            {avatarUrl ? 'Cambiar' : 'Seleccionar'}
-          </Button>
-
-          {avatarUrl && isBase64Image(avatarUrl) && (
-            <LoadingButton
-              variant="contained"
-              color="warning"
-              size="small"
-              startIcon={<Icon icon="mdi:cloud-upload" />}
-              onClick={() => handleUploadAvatarToS3('avatarUrl', avatarUrl)}
-              loading={uploading}
-            >
-              Subir S3
-            </LoadingButton>
-          )}
-
           <TextField
             fullWidth
-            label="URL del Avatar"
-            value={avatarUrl || ''}
-            onChange={(e) =>
-              updateComponentProps(selectedComponentId, { avatarUrl: e.target.value })
-            }
-            placeholder="https://ejemplo.com/avatar.jpg"
             size="small"
+            value={texto}
+            onChange={(e) => updateComponentProps(selectedComponentId, { texto: e.target.value })}
+            placeholder="Respaldado por"
             sx={{
-              mt: 1,
               '& .MuiOutlinedInput-root': {
                 bgcolor: 'white',
               },
@@ -213,7 +187,7 @@ export default function RespaldadoPorOptions({
           />
         </Box>
 
-        {/* Tamaño del avatar */}
+        {/* Tamaño del avatar - CUARTO */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
             Tamaño del Avatar: {avatarTamano}px
@@ -225,19 +199,25 @@ export default function RespaldadoPorOptions({
               updateComponentProps(selectedComponentId, { avatarTamano: value as number })
             }
             min={16}
-            max={40}
+            max={50}
             marks={[
-              { value: 16, label: '16px' },
-              { value: 21, label: '21px' },
-              { value: 30, label: '30px' },
-              { value: 40, label: '40px' },
+              { value: 16, label: '16' },
+              { value: 25, label: '25' },
+              { value: 35, label: '35' },
+              { value: 50, label: '50' },
             ]}
+            sx={{
+              '& .MuiSlider-thumb': {
+                width: 20,
+                height: 20,
+              },
+            }}
           />
         </Box>
       </Paper>
 
       {/* Switch para activar sección adicional */}
-      <FormControlLabel
+      {/* <FormControlLabel
         control={
           <Switch
             checked={mostrarEscritorPropietario}
@@ -251,14 +231,11 @@ export default function RespaldadoPorOptions({
         }
         label="Mostrar sección 'Escritor con Propietario'"
         sx={{ mb: 2 }}
-      />
+      /> */}
 
       {/* Sección Adicional: Escritor con Propietario */}
       {mostrarEscritorPropietario && (
-        <Paper
-          elevation={1}
-          sx={{ p: 2, mb: 2, bgcolor: 'blue.50', border: '1px solid', borderColor: 'blue.200' }}
-        >
+        <Paper elevation={0} sx={{}}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Icon icon="mdi:account-group" style={{ marginRight: 8, fontSize: 18 }} />
             <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
@@ -272,6 +249,49 @@ export default function RespaldadoPorOptions({
               👤 Escritor
             </Typography>
 
+            {/* Avatar del Escritor */}
+            {escritorAvatarUrl && (
+              <Box sx={{ mb: 2, textAlign: 'center' }}>
+                <Avatar
+                  src={escritorAvatarUrl}
+                  alt={escritorNombre}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    border: '2px solid',
+                    borderColor: 'primary.main',
+                    margin: '0 auto',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  }}
+                />
+                {isBase64Image(escritorAvatarUrl) && uploading && (
+                  <Typography
+                    variant="caption"
+                    color="info.main"
+                    sx={{ display: 'block', mt: 0.5 }}
+                  >
+                    📤 Subiendo a S3...
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            <Button
+              variant="contained"
+              size="medium"
+              startIcon={<Icon icon="mdi:camera-plus" />}
+              onClick={handleSelectEscritorAvatar}
+              fullWidth
+              sx={{
+                mb: 2,
+                py: 1.5,
+                textTransform: 'none',
+                borderRadius: 2,
+              }}
+            >
+              {escritorAvatarUrl ? 'Cambiar Avatar' : 'Subir Avatar'}
+            </Button>
+
             <TextField
               fullWidth
               size="small"
@@ -281,51 +301,12 @@ export default function RespaldadoPorOptions({
                 updateComponentProps(selectedComponentId, { escritorNombre: e.target.value })
               }
               placeholder="Escritor"
-              sx={{ mb: 1 }}
+              sx={{ mb: 2 }}
             />
-
-            {escritorAvatarUrl && (
-              <Box sx={{ mb: 1, textAlign: 'center' }}>
-                <Avatar
-                  src={escritorAvatarUrl}
-                  alt={escritorNombre}
-                  sx={{
-                    width: 30,
-                    height: 30,
-                    border: '1px solid #e0e0e0',
-                    margin: '0 auto',
-                  }}
-                />
-              </Box>
-            )}
-
-            <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Icon icon="mdi:image-plus" />}
-                onClick={handleSelectEscritorAvatar}
-              >
-                Avatar Escritor
-              </Button>
-
-              {escritorAvatarUrl && isBase64Image(escritorAvatarUrl) && (
-                <LoadingButton
-                  variant="contained"
-                  color="warning"
-                  size="small"
-                  startIcon={<Icon icon="mdi:cloud-upload" />}
-                  onClick={() => handleUploadAvatarToS3('escritorAvatarUrl', escritorAvatarUrl)}
-                  loading={uploading}
-                >
-                  S3
-                </LoadingButton>
-              )}
-            </Box>
 
             <TextField
               fullWidth
-              label="URL Avatar Escritor"
+              label="URL Avatar Escritor (opcional)"
               value={escritorAvatarUrl || ''}
               onChange={(e) =>
                 updateComponentProps(selectedComponentId, { escritorAvatarUrl: e.target.value })
@@ -340,6 +321,49 @@ export default function RespaldadoPorOptions({
               🏢 Propietario
             </Typography>
 
+            {/* Avatar del Propietario */}
+            {propietarioAvatarUrl && (
+              <Box sx={{ mb: 2, textAlign: 'center' }}>
+                <Avatar
+                  src={propietarioAvatarUrl}
+                  alt={propietarioNombre}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    border: '2px solid',
+                    borderColor: 'primary.main',
+                    margin: '0 auto',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  }}
+                />
+                {isBase64Image(propietarioAvatarUrl) && uploading && (
+                  <Typography
+                    variant="caption"
+                    color="info.main"
+                    sx={{ display: 'block', mt: 0.5 }}
+                  >
+                    📤 Subiendo a S3...
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            <Button
+              variant="contained"
+              size="medium"
+              startIcon={<Icon icon="mdi:camera-plus" />}
+              onClick={handleSelectPropietarioAvatar}
+              fullWidth
+              sx={{
+                mb: 2,
+                py: 1.5,
+                textTransform: 'none',
+                borderRadius: 2,
+              }}
+            >
+              {propietarioAvatarUrl ? 'Cambiar Avatar' : 'Subir Avatar'}
+            </Button>
+
             <TextField
               fullWidth
               size="small"
@@ -349,53 +373,12 @@ export default function RespaldadoPorOptions({
                 updateComponentProps(selectedComponentId, { propietarioNombre: e.target.value })
               }
               placeholder="Propietario"
-              sx={{ mb: 1 }}
+              sx={{ mb: 2 }}
             />
-
-            {propietarioAvatarUrl && (
-              <Box sx={{ mb: 1, textAlign: 'center' }}>
-                <Avatar
-                  src={propietarioAvatarUrl}
-                  alt={propietarioNombre}
-                  sx={{
-                    width: 30,
-                    height: 30,
-                    border: '1px solid #e0e0e0',
-                    margin: '0 auto',
-                  }}
-                />
-              </Box>
-            )}
-
-            <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Icon icon="mdi:image-plus" />}
-                onClick={handleSelectPropietarioAvatar}
-              >
-                Avatar Propietario
-              </Button>
-
-              {propietarioAvatarUrl && isBase64Image(propietarioAvatarUrl) && (
-                <LoadingButton
-                  variant="contained"
-                  color="warning"
-                  size="small"
-                  startIcon={<Icon icon="mdi:cloud-upload" />}
-                  onClick={() =>
-                    handleUploadAvatarToS3('propietarioAvatarUrl', propietarioAvatarUrl)
-                  }
-                  loading={uploading}
-                >
-                  S3
-                </LoadingButton>
-              )}
-            </Box>
 
             <TextField
               fullWidth
-              label="URL Avatar Propietario"
+              label="URL Avatar Propietario (opcional)"
               value={propietarioAvatarUrl || ''}
               onChange={(e) =>
                 updateComponentProps(selectedComponentId, { propietarioAvatarUrl: e.target.value })
@@ -415,98 +398,6 @@ export default function RespaldadoPorOptions({
           <LinearProgress variant="determinate" value={uploadProgress} />
         </Box>
       )}
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Vista Previa */}
-      <Paper elevation={2} sx={{ p: 2, bgcolor: 'grey.100' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Icon icon="mdi:eye-outline" style={{ marginRight: 8, fontSize: 18 }} />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            Vista Previa
-          </Typography>
-        </Box>
-
-        {/* Vista previa sección principal */}
-        <Box
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 1,
-            p: 1,
-            backgroundColor: '#f0f0f0',
-            borderRadius: 1,
-            mb: mostrarEscritorPropietario ? 2 : 0,
-          }}
-        >
-          <Typography variant="caption" sx={{ fontSize: '12px', color: '#666666' }}>
-            {texto}
-          </Typography>
-          {avatarUrl && (
-            <Avatar
-              src={avatarUrl}
-              alt={nombre}
-              sx={{
-                width: avatarTamano,
-                height: avatarTamano,
-              }}
-            />
-          )}
-          <Typography variant="body2" sx={{ fontSize: '15px', color: '#333333', fontWeight: 500 }}>
-            {nombre}
-          </Typography>
-        </Box>
-
-        {/* Vista previa sección adicional */}
-        {mostrarEscritorPropietario && (
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 1,
-              p: 1,
-              backgroundColor: '#e3f2fd',
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="caption" sx={{ fontSize: '12px', color: '#1565c0' }}>
-              Escritor con
-            </Typography>
-            {escritorAvatarUrl && (
-              <Avatar
-                src={escritorAvatarUrl}
-                alt={escritorNombre}
-                sx={{
-                  width: 21,
-                  height: 21,
-                }}
-              />
-            )}
-            <Typography
-              variant="body2"
-              sx={{ fontSize: '15px', color: '#1565c0', fontWeight: 500 }}
-            >
-              {escritorNombre}
-            </Typography>
-            {propietarioAvatarUrl && (
-              <Avatar
-                src={propietarioAvatarUrl}
-                alt={propietarioNombre}
-                sx={{
-                  width: 21,
-                  height: 21,
-                }}
-              />
-            )}
-            <Typography
-              variant="body2"
-              sx={{ fontSize: '15px', color: '#1565c0', fontWeight: 500 }}
-            >
-              {propietarioNombre}
-            </Typography>
-          </Box>
-        )}
-      </Paper>
 
       {/* Inputs de archivo ocultos */}
       <input

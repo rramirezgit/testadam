@@ -16,7 +16,6 @@ import {
 } from '@mui/material';
 
 import ListStyleOptions from './ListStyleOptions';
-import TextColorPicker from '../color-picker/TextColorPicker';
 
 import type { TextOptionsProps } from './types';
 
@@ -208,12 +207,12 @@ const TextOptions = ({
         </Select>
       </FormControl>
 
-      <Typography variant="subtitle2" gutterBottom>
+      {/* <Typography variant="subtitle2" gutterBottom>
         Color de texto
       </Typography>
       <Box sx={{ mb: 3 }}>
         <TextColorPicker selectedColor={selectedColor} applyTextColor={applyTextColor} />
-      </Box>
+      </Box> */}
 
       {/* ⚡ NUEVO: Controles de Espaciado */}
       <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
@@ -362,35 +361,6 @@ const TextOptions = ({
           </Button>
         </Box>
       </Paper>
-
-      {/* Añadir botones para convertir a lista si es un párrafo */}
-      {isParagraphComponent && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Convertir a lista
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<Icon icon="mdi:format-list-bulleted" />}
-              onClick={() => convertTextToList(selectedComponentId, 'unordered')}
-              fullWidth
-              size="small"
-            >
-              Lista con viñetas
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<Icon icon="mdi:format-list-numbered" />}
-              onClick={() => convertTextToList(selectedComponentId, 'ordered')}
-              fullWidth
-              size="small"
-            >
-              Lista numerada
-            </Button>
-          </Box>
-        </Box>
-      )}
 
       {/* Mostrar opciones de estilo de lista si es un componente de lista */}
       {selectedComponent?.type === 'bulletList' && (

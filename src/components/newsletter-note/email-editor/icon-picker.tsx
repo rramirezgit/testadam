@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
-import { Chip, Stack, Alert, CircularProgress } from '@mui/material';
+import { Alert, IconButton, CircularProgress } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -306,13 +306,24 @@ export default function IconPicker({ open, onClose, onSelectIcon, currentIcon }:
         },
       }}
     >
-      <DialogTitle sx={{ pb: 1 }}>
+      <DialogTitle
+        sx={{ pb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+      >
         <Typography variant="h6" component="div">
-          Seleccionar Icono PNG
+          Seleccionar Icono
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Iconos PNG compatibles con emails
-        </Typography>
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{
+            color: 'grey.500',
+            '&:hover': {
+              backgroundColor: 'grey.100',
+            },
+          }}
+        >
+          <Iconify icon="mingcute:close-line" />
+        </IconButton>
       </DialogTitle>
 
       <DialogContent>
@@ -339,40 +350,11 @@ export default function IconPicker({ open, onClose, onSelectIcon, currentIcon }:
               ),
             }}
           />
-
-          {/* Filtros por fuente */}
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Chip
-              label="Todos"
-              variant={selectedSource === 'all' ? 'filled' : 'outlined'}
-              onClick={() => setSelectedSource('all')}
-              size="small"
-            />
-            <Chip
-              label="Icons8 PNG"
-              variant={selectedSource === 'icons8' ? 'filled' : 'outlined'}
-              onClick={() => setSelectedSource('icons8')}
-              size="small"
-              sx={{ color: ICON_APIS.icons8.color }}
-            />
-          </Stack>
         </Box>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
-          </Alert>
-        )}
-
-        {/* Información sobre compatibilidad */}
-        {!searchTerm && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            <Typography variant="body2">
-              <strong>✅ Iconos compatibles con email:</strong>
-              <br />• <strong>Formato PNG:</strong> Compatible con todos los clientes de email
-              <br />• <strong>URLs directas:</strong> No requieren JavaScript
-              <br />• <strong>Carga rápida:</strong> Optimizados para web y email
-            </Typography>
           </Alert>
         )}
 
@@ -382,6 +364,7 @@ export default function IconPicker({ open, onClose, onSelectIcon, currentIcon }:
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
             gap: 1,
+            mb: 4,
           }}
         >
           {searchResults.map((icon, index) => (
@@ -397,6 +380,7 @@ export default function IconPicker({ open, onClose, onSelectIcon, currentIcon }:
                   transition: 'all 0.2s',
                   border: currentIcon === icon.url ? '2px solid #3f51b5' : '2px solid transparent',
                   minHeight: 80,
+                  position: 'relative',
                   '&:hover': {
                     transform: 'scale(1.05)',
                     boxShadow: 4,
@@ -444,19 +428,6 @@ export default function IconPicker({ open, onClose, onSelectIcon, currentIcon }:
                 >
                   {icon.name}
                 </Typography>
-
-                {/* Badge de la fuente */}
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 2,
-                    right: 2,
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    backgroundColor: ICON_APIS.icons8.color,
-                  }}
-                />
               </Paper>
             </Box>
           ))}

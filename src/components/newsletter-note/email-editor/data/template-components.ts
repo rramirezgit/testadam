@@ -339,7 +339,12 @@ export const newsComponents: EmailComponent[] = [
       alt: 'Imagen de la noticia',
     },
   },
-  { id: 'category-1', type: 'category', content: 'Tecnología', props: { color: '#4caf50' } },
+  {
+    id: 'category-1',
+    type: 'category',
+    content: 'Tecnología',
+    props: { color: '#e3f2fd', textColor: '#1565c0' },
+  },
   { id: 'heading-1', type: 'heading', content: 'Título de la noticia', props: { level: 1 } },
   {
     id: 'respaldadoPor-1',
@@ -398,7 +403,12 @@ export const newsComponentsWeb: EmailComponent[] = [
       alt: 'Imagen principal de la noticia',
     },
   },
-  { id: 'category-1-web', type: 'category', content: 'Tecnología', props: { color: '#4caf50' } },
+  {
+    id: 'category-1-web',
+    type: 'category',
+    content: 'Tecnología',
+    props: { color: '#e3f2fd', textColor: '#1565c0' },
+  },
   {
     id: 'respaldadoPor-1-web',
     type: 'respaldadoPor',

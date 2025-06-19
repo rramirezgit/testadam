@@ -11,7 +11,7 @@ export default function Page() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push(paths.dashboard.newsletter.list);
+    router.push(paths.dashboard.notes.list);
   }, [router]);
 
   return null;

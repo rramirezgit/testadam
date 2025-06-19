@@ -3,7 +3,7 @@ import type React from 'react';
 import { Icon } from '@iconify/react';
 import { memo, useRef, useMemo, useState, useCallback } from 'react';
 
-import { Box, Typography } from '@mui/material';
+import { Box, TextField, Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
@@ -14,35 +14,35 @@ import type { EmailComponentProps } from './types';
 const SUMMARY_TYPES = {
   resumen: {
     label: 'Resumen',
-    icon: 'mdi:note-text-outline',
+    icon: 'https://img.icons8.com/color/48/note.png',
     backgroundColor: '#f8f9fa',
     iconColor: '#6c757d',
     textColor: '#495057',
   },
   concepto: {
     label: 'Concepto',
-    icon: 'mdi:lightbulb-outline',
+    icon: 'https://img.icons8.com/color/48/light-on.png',
     backgroundColor: '#e7f3ff',
     iconColor: '#0066cc',
     textColor: '#003d7a',
   },
   dato: {
     label: 'Dato',
-    icon: 'mdi:lightbulb-on',
+    icon: 'https://img.icons8.com/color/48/info.png',
     backgroundColor: '#fff8e1',
     iconColor: '#f57c00',
     textColor: '#e65100',
   },
   tip: {
     label: 'TIP',
-    icon: 'mdi:rocket-launch',
+    icon: 'https://img.icons8.com/color/48/rocket.png',
     backgroundColor: '#f3e5f5',
     iconColor: '#8e24aa',
     textColor: '#4a148c',
   },
   analogia: {
     label: 'Analogía',
-    icon: 'mdi:brain',
+    icon: 'https://img.icons8.com/color/48/brain.png',
     backgroundColor: '#e8f5e8',
     iconColor: '#388e3c',
     textColor: '#1b5e20',
@@ -151,6 +151,8 @@ const SummaryComponent = memo(
   }: EmailComponentProps) => {
     const lastRenderTime = useRef(performance.now());
     const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
+    const [isEditingLabel, setIsEditingLabel] = useState(false);
+    const [tempLabel, setTempLabel] = useState('');
 
     // Determinar el tipo de summary (por defecto 'resumen')
     const summaryType: SummaryType = (component.props?.summaryType as SummaryType) || 'resumen';
@@ -222,6 +224,44 @@ const SummaryComponent = memo(
       },
       [updateComponentContent, component.id, component.content]
     );
+
+    // Manejar la edición del label
+    const handleLabelClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setTempLabel(label);
+        setIsEditingLabel(true);
+      },
+      [label]
+    );
+
+    const handleLabelChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+      setTempLabel(e.target.value);
+    }, []);
+
+    const handleLabelSubmit = useCallback(() => {
+      if (updateComponentProps && tempLabel.trim() !== label) {
+        updateComponentProps(component.id, { label: tempLabel.trim() });
+      }
+      setIsEditingLabel(false);
+    }, [updateComponentProps, component.id, tempLabel, label]);
+
+    const handleLabelKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleLabelSubmit();
+        } else if (e.key === 'Escape') {
+          setIsEditingLabel(false);
+          setTempLabel(label);
+        }
+      },
+      [handleLabelSubmit, label]
+    );
+
+    const handleLabelBlur = useCallback(() => {
+      handleLabelSubmit();
+    }, [handleLabelSubmit]);
 
     // ⚡ ULTRA-OPTIMIZAÇÃO: Manejo de clics optimizado
     const handleClick = useCallback(
@@ -331,17 +371,55 @@ const SummaryComponent = memo(
               )}
             </Box>
 
-            <Typography
-              variant="subtitle1"
-              sx={{
-                color: textColor,
-                fontWeight: 600,
-                fontSize: '16px',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {label}
-            </Typography>
+            {/* Título editable */}
+            {isEditingLabel ? (
+              <TextField
+                value={tempLabel}
+                onChange={handleLabelChange}
+                onKeyDown={handleLabelKeyDown}
+                onBlur={handleLabelBlur}
+                autoFocus
+                variant="standard"
+                size="small"
+                sx={{
+                  '& .MuiInput-root': {
+                    color: textColor,
+                    fontWeight: 600,
+                    fontSize: '16px',
+                    letterSpacing: '-0.01em',
+                    '&:before': {
+                      borderBottom: 'none',
+                    },
+                    '&:after': {
+                      borderBottom: `2px solid ${textColor}`,
+                    },
+                    '&:hover:not(.Mui-disabled):before': {
+                      borderBottom: 'none',
+                    },
+                  },
+                  '& .MuiInput-input': {
+                    padding: 0,
+                  },
+                }}
+              />
+            ) : (
+              <Typography
+                variant="subtitle1"
+                onClick={handleLabelClick}
+                sx={{
+                  color: textColor,
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  letterSpacing: '-0.01em',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    opacity: 0.8,
+                  },
+                }}
+              >
+                {label}
+              </Typography>
+            )}
           </Box>
 
           {/* Contenido */}

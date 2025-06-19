@@ -591,7 +591,7 @@ export default function NewsletterConfig({
 
                       {header.logo && !isBase64Image(header.logo) && (
                         <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
-                          ✅ Imagen guardada en S3 correctamente
+                          ✅ Imagen guardada correctamente
                         </Alert>
                       )}
 
@@ -752,7 +752,7 @@ export default function NewsletterConfig({
 
                     {header.sponsor?.image && !isBase64Image(header.sponsor.image) && (
                       <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
-                        ✅ Imagen guardada en S3 correctamente
+                        ✅ Imagen guardada correctamente
                       </Alert>
                     )}
 

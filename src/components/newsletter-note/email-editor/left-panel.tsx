@@ -99,9 +99,9 @@ export default function LeftPanel({
   enabledComponents = {
     heading: true,
     paragraph: true,
-    bulletList: false,
+    bulletList: true,
     image: true,
-    gallery: false,
+    gallery: true,
     button: false,
     divider: true,
     spacer: false,
@@ -110,7 +110,7 @@ export default function LeftPanel({
     summary: true,
     tituloConIcono: true,
     herramientas: false,
-    respaldadoPor: false,
+    respaldadoPor: true,
   },
 }: LeftPanelProps) {
   const [activeTab, setActiveTab] = React.useState('templates');

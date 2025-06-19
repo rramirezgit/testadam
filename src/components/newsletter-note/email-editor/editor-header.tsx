@@ -9,6 +9,8 @@ import { useState, useCallback } from 'react';
 import {
   Box,
   Menu,
+  Chip,
+  Stack,
   AppBar,
   Button,
   Toolbar,
@@ -180,10 +182,17 @@ export default function EditorHeader({
         // Enviar newsletter para revisión
         await sendNewsletterForReview(currentNewsletterId, emails, content);
       } else if (initialNote?.id) {
-        // Enviar post para revisión
+        // Enviar post para revisión (nota existente)
         await sendPostForReview(initialNote.id, emails, content);
       } else {
-        throw new Error('No se pudo identificar el contenido a enviar');
+        // Enviar prueba de nota nueva (sin ID todavía)
+        // Crear un objeto temporal para el envío
+        const tempNote = {
+          id: `temp_${Date.now()}`, // ID temporal
+          title: initialNote?.title || 'Nueva Nota',
+          content,
+        };
+        await sendPostForReview(tempNote.id, emails, content);
       }
     } catch (error) {
       console.error('Error enviando prueba:', error);
@@ -209,7 +218,12 @@ export default function EditorHeader({
           <Typography
             variant="subtitle1"
             component="div"
-            sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '250px',
+            }}
           >
             {isNewsletterMode
               ? 'Nuevo Newsletter'
@@ -240,6 +254,7 @@ export default function EditorHeader({
                 }}
                 sx={{
                   border: 'none',
+                  gap: 2,
                 }}
                 aria-label="Versión del contenido"
                 size="small"
@@ -300,7 +315,7 @@ export default function EditorHeader({
                 aria-haspopup="true"
                 aria-expanded={openTransferMenu ? 'true' : undefined}
               >
-                <Icon icon="cil:transfer" />
+                <Icon icon="mingcute:transfer-line" />
               </IconButton>
             </Tooltip>
           )}
@@ -389,7 +404,7 @@ export default function EditorHeader({
               <Button
                 variant="outlined"
                 color="inherit"
-                sx={{ mr: 1 }}
+                sx={{ mr: 1, height: '42px' }}
                 startIcon={<Icon icon="mdi:note-multiple" />}
               >
                 {newsletterNotesCount} Notas
@@ -399,7 +414,7 @@ export default function EditorHeader({
               <Button
                 variant={showNewsletterPreview ? 'contained' : 'outlined'}
                 color="secondary"
-                sx={{ mr: 1 }}
+                sx={{ mr: 1, height: '42px' }}
                 startIcon={
                   generatingNewsletterHtml ? (
                     <Icon icon="mdi:loading" className="animate-spin" />
@@ -418,7 +433,7 @@ export default function EditorHeader({
                 variant="contained"
                 color="primary"
                 endIcon={<Icon icon="mdi:chevron-down" />}
-                sx={{ backgroundColor: '#4f46e5' }}
+                sx={{ backgroundColor: '#4f46e5', height: '42px' }}
                 onClick={handleSendMenuClick}
                 aria-controls={openSendMenu ? 'send-menu-newsletter' : undefined}
                 aria-haspopup="true"
@@ -494,26 +509,28 @@ export default function EditorHeader({
               </Menu>
             </>
           ) : (
-            <>
-              <Button
+            <Stack direction="row" spacing={1}>
+              <Chip
                 variant="outlined"
-                color="inherit"
-                sx={{ mr: 1 }}
-                startIcon={<Icon icon="mdi:file-document-edit-outline" />}
-              >
-                {noteStatus === 'DRAFT'
-                  ? 'Borrador'
-                  : noteStatus === 'REVIEW'
-                    ? 'En Revisión'
-                    : noteStatus === 'APPROVED'
-                      ? 'Aprobado'
-                      : noteStatus === 'PUBLISHED'
-                        ? 'Publicado'
-                        : 'Borrador'}
-              </Button>
+                sx={{
+                  margin: 'auto 0',
+                }}
+                label={
+                  noteStatus === 'DRAFT'
+                    ? 'Borrador'
+                    : noteStatus === 'REVIEW'
+                      ? 'En Revisión'
+                      : noteStatus === 'APPROVED'
+                        ? 'Aprobado'
+                        : noteStatus === 'PUBLISHED'
+                          ? 'Publicado'
+                          : 'Borrador'
+                }
+              />
               <Button
                 variant="contained"
                 color="primary"
+                sx={{ height: '42px' }}
                 startIcon={<Icon icon="material-symbols:save" />}
                 onClick={openSaveDialog}
               >
@@ -523,7 +540,7 @@ export default function EditorHeader({
                 variant="contained"
                 color="primary"
                 endIcon={<Icon icon="mdi:chevron-down" />}
-                sx={{ backgroundColor: '#4f46e5' }}
+                sx={{ backgroundColor: '#4f46e5', height: '42px' }}
                 onClick={handleSendMenuClick}
                 aria-controls={openSendMenu ? 'send-menu' : undefined}
                 aria-haspopup="true"
@@ -558,7 +575,7 @@ export default function EditorHeader({
                   <ListItemText>Prueba</ListItemText>
                 </MenuItem>
 
-                <MenuItem
+                {/* <MenuItem
                   disabled={disableOption('Aprobacion')}
                   onClick={() => {
                     setOpenAprob?.(true);
@@ -569,9 +586,9 @@ export default function EditorHeader({
                     <Icon icon="mdi:check-circle-outline" width={24} height={24} />
                   </ListItemIcon>
                   <ListItemText>Aprobación</ListItemText>
-                </MenuItem>
+                </MenuItem> */}
 
-                <MenuItem
+                {/* <MenuItem
                   disabled={disableOption('schedule')}
                   onClick={() => {
                     setOpenSchedule?.(true);
@@ -582,9 +599,9 @@ export default function EditorHeader({
                     <Icon icon="material-symbols:schedule-outline" width={24} height={24} />
                   </ListItemIcon>
                   <ListItemText>Programar</ListItemText>
-                </MenuItem>
+                </MenuItem> */}
 
-                <MenuItem
+                {/* <MenuItem
                   disabled={disableOption('Subscriptores')}
                   onClick={() => {
                     setOpenSendSubs?.(true);
@@ -595,9 +612,9 @@ export default function EditorHeader({
                     <Icon icon="fluent-mdl2:group" width={24} height={24} />
                   </ListItemIcon>
                   <ListItemText>Enviar ahora</ListItemText>
-                </MenuItem>
+                </MenuItem> */}
               </Menu>
-            </>
+            </Stack>
           )}
         </Toolbar>
       </AppBar>

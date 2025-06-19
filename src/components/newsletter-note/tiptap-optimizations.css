@@ -128,3 +128,55 @@
   box-sizing: border-box;
   position: relative;
 }
+
+/* ⚡ ESTILOS PARA ENLACES - Simplicados para TipTap nativo */
+.ProseMirror a {
+  color: #1976d2;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.ProseMirror a:hover {
+  opacity: 0.8;
+}
+
+/* Asegurar que los enlaces mantengan su estilo en el HTML final */
+.ProseMirror a[href] {
+  display: inline;
+  word-break: break-word;
+}
+
+/* Estilo para enlaces seleccionados */
+.ProseMirror a.ProseMirror-selectednode {
+  outline: 2px solid #1976d2;
+  outline-offset: 1px;
+  border-radius: 2px;
+}
+
+/* ⚡ ESTILOS PARA BUBBLEMENU */
+.tippy-box[data-theme~='bubble-menu'] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tippy-box[data-theme~='bubble-menu'] .tippy-content {
+  padding: 0;
+}
+
+/* Animaciones suaves para el BubbleMenu */
+.tippy-box[data-animation='fade'][data-state='hidden'] {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.tippy-box[data-animation='fade'][data-state='visible'] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Asegurar que el BubbleMenu esté por encima de otros elementos */
+.tippy-popper {
+  z-index: 9999 !important;
+}

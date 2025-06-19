@@ -59,6 +59,10 @@ const CategoryComponent = ({
           categorias={categorias}
           onCategoriasChange={handleCategoriasChange}
           editable={isSelected}
+          borderRadius={component.props?.borderRadius ?? 16}
+          padding={component.props?.padding ?? 4}
+          fontSize={component.props?.fontSize ?? 14}
+          fontWeight={component.props?.fontWeight ?? 500}
         />
       </ComponentWithToolbar>
     </Box>
