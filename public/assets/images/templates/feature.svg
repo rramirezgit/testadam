@@ -1,0 +1,35 @@
+<svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo -->
+  <rect width="200" height="120" rx="8" fill="#f8f9fa" stroke="#e9ecef" stroke-width="1"/>
+  
+  <!-- Header con icono y título -->
+  <rect x="10" y="10" width="180" height="20" rx="4" fill="white" stroke="#e9ecef" stroke-width="1"/>
+  <circle cx="20" cy="20" r="4" fill="#ff9800"/>
+  <text x="30" y="24" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#000">Características Principales</text>
+  
+  <!-- Primera característica -->
+  <rect x="10" y="35" width="180" height="22" rx="4" fill="white" stroke="#e9ecef" stroke-width="1"/>
+  <rect x="15" y="40" width="12" height="12" rx="2" fill="#e3f2fd" stroke="#1565c0" stroke-width="1"/>
+  <text x="32" y="48" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="#1565c0">Fácil de usar</text>
+  <text x="32" y="53" font-family="Arial, sans-serif" font-size="5" fill="#666">Interfaz intuitiva y simple</text>
+  
+  <!-- Segunda característica -->
+  <rect x="10" y="62" width="180" height="22" rx="4" fill="white" stroke="#e9ecef" stroke-width="1"/>
+  <rect x="15" y="67" width="12" height="12" rx="2" fill="#e3f2fd" stroke="#1565c0" stroke-width="1"/>
+  <text x="32" y="75" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="#1565c0">Altamente seguro</text>
+  <text x="32" y="80" font-family="Arial, sans-serif" font-size="5" fill="#666">Protección de datos empresarial</text>
+  
+  <!-- Tercera característica -->
+  <rect x="10" y="89" width="180" height="22" rx="4" fill="white" stroke="#e9ecef" stroke-width="1"/>
+  <rect x="15" y="94" width="12" height="12" rx="2" fill="#e3f2fd" stroke="#1565c0" stroke-width="1"/>
+  <text x="32" y="102" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="#1565c0">Soporte 24/7</text>
+  <text x="32" y="107" font-family="Arial, sans-serif" font-size="5" fill="#666">Ayuda cuando la necesites</text>
+  
+  <!-- Iconos decorativos -->
+  <circle cx="21" cy="46" r="2" fill="#1565c0"/>
+  <circle cx="21" cy="73" r="2" fill="#1565c0"/>
+  <circle cx="21" cy="100" r="2" fill="#1565c0"/>
+  
+  <!-- Estrella en el header -->
+  <polygon points="20,16 21,19 24,19 22,21 23,24 20,22 17,24 18,21 16,19 19,19" fill="#ff9800"/>
+</svg> 

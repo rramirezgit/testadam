@@ -8,7 +8,10 @@ import DividerComponent from './DividerComponent';
 import GalleryComponent from './GalleryComponent';
 import CategoryComponent from './CategoryComponent';
 import ParagraphComponent from './ParagraphComponent';
+import ImageTextComponent from './ImageTextComponent';
 import BulletListComponent from './BulletListComponent';
+import TwoColumnsComponent from './TwoColumnsComponent';
+import TextWithIconComponent from './TextWithIconComponent';
 import HerramientasComponent from './HerramientasComponent';
 import RespaldadoPorComponent from './RespaldadoPorComponent';
 import TituloConIconoComponent from './TituloConIconoComponent';
@@ -39,6 +42,12 @@ const EmailComponentRenderer = (props: EmailComponentProps) => {
       return <ImageComponent {...props} />;
     case 'gallery':
       return <GalleryComponent {...props} />;
+    case 'imageText':
+      return <ImageTextComponent {...props} />;
+    case 'twoColumns':
+      return <TwoColumnsComponent {...props} />;
+    case 'textWithIcon':
+      return <TextWithIconComponent {...props} />;
     case 'tituloConIcono':
       return <TituloConIconoComponent {...props} />;
     case 'herramientas':

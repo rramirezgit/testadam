@@ -232,8 +232,8 @@ export default function EditorHeader({
                 : 'Nuevo Email'}
           </Typography>
 
-          {/* Selector de versión Web/Newsletter - Solo para template 'news' */}
-          {activeTemplate === 'news' ? (
+          {/* Selector de versión Web/Newsletter - Solo para template 'news' y 'market' */}
+          {activeTemplate === 'news' || activeTemplate === 'market' ? (
             <Box
               sx={{
                 display: 'flex',
@@ -278,8 +278,8 @@ export default function EditorHeader({
             <Box sx={{ flexGrow: 1 }} />
           )}
 
-          {/* Indicador de sincronización - Solo para template 'news' */}
-          {activeTemplate === 'news' && syncEnabled && (
+          {/* Indicador de sincronización - Solo para template 'news' y 'market' */}
+          {(activeTemplate === 'news' || activeTemplate === 'market') && syncEnabled && (
             <Tooltip title="Sincronización automática activa: Se sincroniza solo el contenido">
               <Box
                 sx={{
@@ -301,8 +301,8 @@ export default function EditorHeader({
             </Tooltip>
           )}
 
-          {/* Botón de transferencia con menú desplegable - Solo para template 'news' */}
-          {activeTemplate === 'news' && (
+          {/* Botón de transferencia con menú desplegable - Solo para template 'news' y 'market' */}
+          {(activeTemplate === 'news' || activeTemplate === 'market') && (
             <Tooltip title="Transferir y sincronizar contenido entre versiones">
               <IconButton
                 color="primary"
@@ -320,8 +320,8 @@ export default function EditorHeader({
             </Tooltip>
           )}
 
-          {/* Menú de transferencia - Solo para template 'news' */}
-          {activeTemplate === 'news' && (
+          {/* Menú de transferencia - Solo para template 'news' y 'market' */}
+          {(activeTemplate === 'news' || activeTemplate === 'market') && (
             <Menu
               id="transfer-menu"
               anchorEl={transferMenuAnchor}

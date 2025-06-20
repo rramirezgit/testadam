@@ -1,10 +1,22 @@
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
 
 import type { EmailComponentProps } from './types';
+
+interface GalleryImage {
+  src: string;
+  alt: string;
+  crop?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
 
 const GalleryComponent = ({
   component,
@@ -16,9 +28,52 @@ const GalleryComponent = ({
   removeComponent,
   totalComponents,
 }: EmailComponentProps) => {
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+
+  // Inicializar con 4 imágenes vacías si no existen
+  const images = component.props?.images || [
+    { src: '', alt: 'Imagen 1' },
+    { src: '', alt: 'Imagen 2' },
+    { src: '', alt: 'Imagen 3' },
+    { src: '', alt: 'Imagen 4' },
+  ];
+
+  // Asegurar que siempre tengamos exactamente 4 imágenes
+  const galleryImages: GalleryImage[] = Array.from(
+    { length: 4 },
+    (_, idx) => images[idx] || { src: '', alt: `Imagen ${idx + 1}` }
+  );
+
+  const spacing = component.props?.spacing || 8;
+  const borderRadius = component.props?.borderRadius || 8;
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect();
+  };
+
+  const handleImageClick = (e: React.MouseEvent, imageIndex: number) => {
+    e.stopPropagation();
+
+    // Si el componente no está seleccionado, seleccionarlo primero
+    if (!isSelected) {
+      onSelect();
+    }
+
+    // Seleccionar la imagen específica para editar
+    setSelectedImageIndex(imageIndex);
+    // Actualizar el componente para indicar qué imagen está seleccionada
+    updateComponentProps(component.id, { selectedImageIndex: imageIndex });
+  };
+
+  const getPlaceholderIcon = (iconIdx: number) => {
+    const icons = [
+      'mdi:image-outline',
+      'mdi:image-multiple-outline',
+      'mdi:camera-outline',
+      'mdi:picture-in-picture-outline',
+    ];
+    return icons[iconIdx] || 'mdi:image-outline';
   };
 
   return (
@@ -31,104 +86,93 @@ const GalleryComponent = ({
       removeComponent={removeComponent}
       onClick={handleClick}
     >
-      <Box sx={{ textAlign: 'center', mb: 2, ...(component.style || {}) }}>
-        <Typography variant="subtitle2" gutterBottom>
-          Galería de imágenes -{' '}
-          {component.props?.layout === 'single'
-            ? 'Una imagen'
-            : component.props?.layout === 'double'
-              ? 'Dos imágenes'
-              : component.props?.layout === 'feature'
-                ? 'Tres imágenes (Destacada)'
-                : component.props?.layout === 'masonry'
-                  ? 'Tres imágenes (Mosaico)'
-                  : component.props?.layout === 'hero'
-                    ? 'Tres imágenes (Hero)'
-                    : 'Cuadrícula (4 imágenes)'}
-        </Typography>
+      <Box sx={{ mb: 2, ...(component.style || {}) }}>
         <Box
           sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 1,
-            justifyContent: 'center',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: `${spacing}px`,
+            maxWidth: '100%',
           }}
         >
-          {(component.props?.images || [])
-            .slice(
-              0,
-              component.props?.layout === 'single'
-                ? 1
-                : component.props?.layout === 'double'
-                  ? 2
-                  : component.props?.layout === 'grid'
-                    ? 4
-                    : 3
-            )
-            .map((img, idx) => (
-              <img
-                key={idx}
-                src={img?.src || '/placeholder.svg'}
-                alt={img?.alt || `Gallery image ${idx + 1}`}
-                style={{
-                  maxWidth:
-                    component.props?.layout === 'single'
-                      ? '100%'
-                      : component.props?.layout === 'double'
-                        ? '48%'
-                        : component.props?.layout === 'grid'
-                          ? '48%'
-                          : component.props?.layout === 'feature' && idx < 2
-                            ? '30%'
-                            : component.props?.layout === 'feature' && idx === 2
-                              ? '65%'
-                              : component.props?.layout === 'masonry' && idx === 0
-                                ? '65%'
-                                : component.props?.layout === 'masonry' && idx > 0
-                                  ? '30%'
-                                  : component.props?.layout === 'hero' && idx === 0
-                                    ? '100%'
-                                    : '48%',
-                  height: 'auto',
-                  margin: '0 auto',
-                  borderRadius: '8px',
-                }}
-              />
-            ))}
-        </Box>
-        {isSelected && (
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="caption" display="block" gutterBottom>
-              Tipo de layout
-            </Typography>
-            <TextField
-              select
-              fullWidth
-              size="small"
-              value={component.props?.layout || 'single'}
-              onChange={(e) => updateComponentProps(component.id, { layout: e.target.value })}
-              sx={{ mb: 2 }}
-            >
-              <option value="single">Una imagen</option>
-              <option value="double">Dos imágenes</option>
-              <option value="grid">Cuadrícula (4 imágenes)</option>
-              <option value="feature">Tres imágenes (Destacada)</option>
-              <option value="masonry">Tres imágenes (Mosaico)</option>
-              <option value="hero">Tres imágenes (Hero)</option>
-            </TextField>
-            <Button
-              variant="outlined"
-              fullWidth
-              startIcon={<Icon icon="mdi:pencil" />}
-              onClick={(e) => {
-                e.stopPropagation();
-                // Aquí iría la lógica para editar las imágenes de la galería
+          {galleryImages.map((image, idx) => (
+            <Box
+              key={idx}
+              onClick={(e) => handleImageClick(e, idx)}
+              sx={{
+                position: 'relative',
+                aspectRatio: '4/3',
+                borderRadius: `${borderRadius}px`,
+                overflow: 'hidden',
+                cursor: 'pointer',
+                border:
+                  isSelected && selectedImageIndex === idx
+                    ? '3px solid #2196f3'
+                    : '1px solid #e0e0e0',
+                transition: 'all 0.2s ease',
+                backgroundColor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': {
+                  border: isSelected ? '2px solid #2196f3' : '2px solid #bdbdbd',
+                  transform: 'scale(1.02)',
+                },
               }}
             >
-              Editar imágenes
-            </Button>
-          </Box>
-        )}
+              {image.src ? (
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#9e9e9e',
+                    gap: 1,
+                  }}
+                >
+                  <Icon icon={getPlaceholderIcon(idx)} width="32" height="32" />
+                  <Typography variant="caption" sx={{ textAlign: 'center' }}>
+                    {image.alt}
+                  </Typography>
+                </Box>
+              )}
+
+              {isSelected && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    borderRadius: '50%',
+                    width: 24,
+                    height: 24,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {idx + 1}
+                </Box>
+              )}
+            </Box>
+          ))}
+        </Box>
       </Box>
     </ComponentWithToolbar>
   );

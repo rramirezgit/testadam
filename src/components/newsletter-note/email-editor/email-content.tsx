@@ -1203,9 +1203,10 @@ const EmailContent = memo(
               maxWidth: `${containerMaxWidth}px`,
               margin: '0 auto',
               padding: `${containerPadding}px`,
-              ...(activeTemplate === 'news' && activeVersion === 'web'
+              ...((activeTemplate === 'news' || activeTemplate === 'market') &&
+              activeVersion === 'web'
                 ? {
-                    // Sin bordes para la versión web del template de noticias
+                    // Sin bordes para la versión web del template de noticias/mercado
                     borderRadius: 0,
                     border: 'none',
                     maxWidth: '100%',
@@ -1274,9 +1275,10 @@ const EmailContent = memo(
           sx={{
             margin: '0 auto',
             padding: `${containerPadding}px`,
-            ...(activeTemplate === 'news' && activeVersion === 'web'
+            ...((activeTemplate === 'news' || activeTemplate === 'market') &&
+            activeVersion === 'web'
               ? {
-                  // Sin bordes para la versión web del template de noticias
+                  // Sin bordes para la versión web del template de noticias/mercado
                   borderRadius: 0,
                   border: 'none',
                 }

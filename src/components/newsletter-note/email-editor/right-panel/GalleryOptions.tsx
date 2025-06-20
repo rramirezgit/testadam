@@ -1,6 +1,34 @@
-import { Box, Grid, Paper, Button, TextField, Typography } from '@mui/material';
+import { Icon } from '@iconify/react';
+import { useRef, useState } from 'react';
+
+import {
+  Box,
+  Chip,
+  Grid,
+  Paper,
+  Button,
+  Slider,
+  Avatar,
+  TextField,
+  Typography,
+  LinearProgress,
+} from '@mui/material';
+
+import { useImageUpload } from './useImageUpload';
+import { isBase64Image } from '../utils/imageValidation';
 
 import type { GalleryOptionsProps } from './types';
+
+interface GalleryImage {
+  src: string;
+  alt: string;
+  crop?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
 
 const GalleryOptions = ({
   selectedComponentId,
@@ -8,179 +36,299 @@ const GalleryOptions = ({
   updateComponentProps,
   updateComponentStyle,
 }: GalleryOptionsProps) => {
-  const layout = selectedComponent.props?.layout || 'single';
-  const images = selectedComponent.props?.images || [];
+  const [editingImageIndex, setEditingImageIndex] = useState<number>(0);
 
-  // Determinar cuántas imágenes mostrar según el layout
-  const getImageCount = (layoutType: string) => {
-    switch (layoutType) {
-      case 'single':
-        return 1;
-      case 'double':
-        return 2;
-      case 'grid':
-        return 4;
-      case 'feature':
-        return 3;
-      case 'masonry':
-        return 3;
-      case 'hero':
-        return 3;
-      default:
-        return 1;
+  // Referencias para input de archivos
+  const imageFileInputRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  // Hook para subida de imágenes
+  const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
+
+  // Obtener las imágenes actuales o inicializar con 4 imágenes vacías
+  const images: GalleryImage[] = selectedComponent.props?.images || [
+    { src: '', alt: 'Imagen 1' },
+    { src: '', alt: 'Imagen 2' },
+    { src: '', alt: 'Imagen 3' },
+    { src: '', alt: 'Imagen 4' },
+  ];
+
+  // Asegurar que siempre tengamos exactamente 4 imágenes
+  const galleryImages: GalleryImage[] = Array.from(
+    { length: 4 },
+    (_, idx) => images[idx] || { src: '', alt: `Imagen ${idx + 1}` }
+  );
+
+  const spacing = selectedComponent.props?.spacing || 8;
+  const borderRadius = selectedComponent.props?.borderRadius || 8;
+  const selectedImageIndex = selectedComponent.props?.selectedImageIndex ?? editingImageIndex;
+
+  // Funciones para manejar selección de archivos
+  const handleSelectImage = (imageIndex: number) => {
+    imageFileInputRefs[imageIndex].current?.click();
+  };
+
+  // Función para manejar cambios de archivos con subida automática a S3
+  const handleImageFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    imageIndex: number
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+
+        // Primero actualizar con la imagen base64 para mostrar preview
+        const newImages = [...galleryImages];
+        newImages[imageIndex] = { ...newImages[imageIndex], src: base64 };
+        updateComponentProps(selectedComponentId!, { images: newImages });
+
+        // Luego subir automáticamente a S3
+        try {
+          const s3Url = await uploadImageToS3(base64, `gallery_${imageIndex}_${Date.now()}`);
+          const updatedImages = [...galleryImages];
+          updatedImages[imageIndex] = { ...updatedImages[imageIndex], src: s3Url };
+          updateComponentProps(selectedComponentId!, { images: updatedImages });
+        } catch (error) {
+          console.error('Error al subir la imagen a S3:', error);
+          // Mantener la imagen base64 si falla la subida
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  return (
-    <>
-      <Typography variant="subtitle2" gutterBottom>
-        Tipo de layout
-      </Typography>
-      <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        <Button
-          variant={layout === 'single' ? 'contained' : 'outlined'}
-          onClick={() => updateComponentProps(selectedComponentId!, { layout: 'single' })}
-          sx={{ minWidth: '80px', flex: '1 0 auto', mb: 1 }}
-        >
-          1 Imagen
-        </Button>
-        <Button
-          variant={layout === 'double' ? 'contained' : 'outlined'}
-          onClick={() => updateComponentProps(selectedComponentId!, { layout: 'double' })}
-          sx={{ minWidth: '80px', flex: '1 0 auto', mb: 1 }}
-        >
-          2 Imágenes
-        </Button>
-        <Button
-          variant={layout === 'grid' ? 'contained' : 'outlined'}
-          onClick={() => updateComponentProps(selectedComponentId!, { layout: 'grid' })}
-          sx={{ minWidth: '80px', flex: '1 0 auto', mb: 1 }}
-        >
-          4 Imágenes
-        </Button>
-        <Button
-          variant={layout === 'feature' ? 'contained' : 'outlined'}
-          onClick={() => updateComponentProps(selectedComponentId!, { layout: 'feature' })}
-          sx={{ minWidth: '80px', flex: '1 0 auto', mb: 1 }}
-        >
-          3 Imágenes (Destacada)
-        </Button>
-        <Button
-          variant={layout === 'masonry' ? 'contained' : 'outlined'}
-          onClick={() => updateComponentProps(selectedComponentId!, { layout: 'masonry' })}
-          sx={{ minWidth: '80px', flex: '1 0 auto', mb: 1 }}
-        >
-          3 Imágenes (Mosaico)
-        </Button>
-        <Button
-          variant={layout === 'hero' ? 'contained' : 'outlined'}
-          onClick={() => updateComponentProps(selectedComponentId!, { layout: 'hero' })}
-          sx={{ minWidth: '80px', flex: '1 0 auto', mb: 1 }}
-        >
-          3 Imágenes (Hero)
-        </Button>
-      </Box>
+  // Función para actualizar una imagen específica
+  const updateImage = (imageIndex: number, updates: Partial<GalleryImage>) => {
+    const newImages = [...galleryImages];
+    newImages[imageIndex] = { ...newImages[imageIndex], ...updates };
+    updateComponentProps(selectedComponentId!, { images: newImages });
+  };
 
-      <Typography variant="subtitle2" gutterBottom>
-        Imágenes de la galería
+  const currentImage = galleryImages[selectedImageIndex];
+
+  return (
+    <Box sx={{ p: 2 }}>
+      {/* Selector de imagen */}
+      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Icon icon="mdi:view-grid" />
+        Galería de 4 Imágenes
       </Typography>
-      <Grid container spacing={1} sx={{ mb: 3 }}>
-        {Array.from({ length: getImageCount(layout) }).map((_, index) => {
-          const image = images[index] || { src: '/placeholder.svg', alt: `Imagen ${index + 1}` };
-          return (
-            <Grid size={{ xs: 12 }} key={index}>
+
+      {/* Grid de miniaturas para seleccionar imagen */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Selecciona una imagen para editar
+        </Typography>
+        <Grid container spacing={1}>
+          {galleryImages.map((image, idx) => (
+            <Grid key={idx} size={{ xs: 6 }}>
               <Paper
-                elevation={2}
+                elevation={selectedImageIndex === idx ? 3 : 1}
                 sx={{
                   p: 1,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
                   cursor: 'pointer',
+                  border: selectedImageIndex === idx ? '2px solid #2196f3' : '1px solid #e0e0e0',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
                     boxShadow: 3,
                   },
                 }}
+                onClick={() => {
+                  setEditingImageIndex(idx);
+                  updateComponentProps(selectedComponentId!, { selectedImageIndex: idx });
+                }}
               >
                 <Box
                   sx={{
-                    height: 80,
+                    height: 60,
                     mb: 1,
-                    backgroundImage: `url(${image.src || '/placeholder.svg'})`,
+                    backgroundImage: image.src ? `url(${image.src})` : 'none',
+                    backgroundColor: image.src ? 'transparent' : '#f5f5f5',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
-                />
-                <TextField
-                  size="small"
-                  placeholder="URL de la imagen"
-                  value={image.src || ''}
-                  onChange={(e) => {
-                    const newImages = [...images];
-                    if (!newImages[index]) {
-                      newImages[index] = { src: '', alt: `Imagen ${index + 1}` };
-                    }
-                    newImages[index].src = e.target.value;
-                    updateComponentProps(selectedComponentId!, { images: newImages });
-                  }}
-                  sx={{ mb: 1 }}
-                />
-                <TextField
-                  size="small"
-                  placeholder="Texto alternativo"
-                  value={image.alt || ''}
-                  onChange={(e) => {
-                    const newImages = [...images];
-                    if (!newImages[index]) {
-                      newImages[index] = { src: '/placeholder.svg', alt: '' };
-                    }
-                    newImages[index].alt = e.target.value;
-                    updateComponentProps(selectedComponentId!, { images: newImages });
-                  }}
-                />
+                >
+                  {!image.src && (
+                    <Icon icon="mdi:image-outline" width="24" height="24" color="#9e9e9e" />
+                  )}
+                </Box>
+                <Box
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                >
+                  <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+                    Imagen {idx + 1}
+                  </Typography>
+                  {image.src && isBase64Image(image.src) && (
+                    <Chip size="small" label="Subiendo..." color="warning" />
+                  )}
+                </Box>
               </Paper>
             </Grid>
-          );
-        })}
-      </Grid>
+          ))}
+        </Grid>
+      </Box>
 
-      <Typography variant="subtitle2" gutterBottom>
-        Espaciado entre imágenes
-      </Typography>
-      <TextField
-        type="number"
-        size="small"
-        fullWidth
-        InputProps={{
-          inputProps: { min: 0, max: 20 },
-          endAdornment: <Typography variant="caption">px</Typography>,
-        }}
-        defaultValue={8}
-        onChange={(e) => {
-          updateComponentStyle(selectedComponentId!, { gap: `${e.target.value}px` });
-        }}
-        sx={{ mb: 3 }}
-      />
+      {/* Editor de imagen seleccionada */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="subtitle2"
+          gutterBottom
+          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+        >
+          <Icon icon="mdi:image-edit" />
+          Editando: Imagen {selectedImageIndex + 1}
+        </Typography>
 
-      <Typography variant="subtitle2" gutterBottom>
-        Bordes de imágenes
-      </Typography>
-      <TextField
-        type="number"
-        size="small"
-        fullWidth
-        InputProps={{
-          inputProps: { min: 0, max: 20 },
-          endAdornment: <Typography variant="caption">px</Typography>,
-        }}
-        defaultValue={8}
-        onChange={(e) => {
-          updateComponentStyle(selectedComponentId!, { borderRadius: `${e.target.value}px` });
-        }}
-        sx={{ mb: 3 }}
-      />
-    </>
+        {/* Preview de la imagen actual */}
+        {currentImage.src && (
+          <Box sx={{ mb: 2, textAlign: 'center' }}>
+            <Avatar
+              src={currentImage.src}
+              alt={currentImage.alt}
+              variant="rounded"
+              sx={{
+                width: 120,
+                height: 90,
+                margin: '0 auto',
+                border: '2px solid #e0e0e0',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              }}
+            />
+            {isBase64Image(currentImage.src) && uploading && (
+              <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 0.5 }}>
+                📤 Subiendo a S3...
+              </Typography>
+            )}
+          </Box>
+        )}
+
+        {/* Botón para cambiar imagen */}
+        <Button
+          variant="contained"
+          size="medium"
+          startIcon={<Icon icon="mdi:camera-plus" />}
+          onClick={() => handleSelectImage(selectedImageIndex)}
+          fullWidth
+          sx={{
+            mb: 2,
+            py: 1.5,
+            textTransform: 'none',
+          }}
+        >
+          {currentImage.src ? 'Cambiar Imagen' : 'Subir Imagen'}
+        </Button>
+
+        {/* Texto alternativo */}
+        <TextField
+          fullWidth
+          label="Texto alternativo"
+          value={currentImage.alt || ''}
+          onChange={(e) => updateImage(selectedImageIndex, { alt: e.target.value })}
+          placeholder={`Descripción de la imagen ${selectedImageIndex + 1}`}
+          size="small"
+          sx={{ mb: 2 }}
+        />
+
+        {/* URL manual */}
+        <TextField
+          fullWidth
+          label="URL de la imagen (opcional)"
+          value={currentImage.src || ''}
+          onChange={(e) => updateImage(selectedImageIndex, { src: e.target.value })}
+          placeholder="https://ejemplo.com/imagen.jpg"
+          size="small"
+          helperText="Puedes pegar una URL directamente en lugar de subir un archivo"
+        />
+      </Box>
+
+      {/* Configuración global de la galería */}
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="subtitle2"
+          gutterBottom
+          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+        >
+          <Icon icon="mdi:tune" />
+          Configuración Global
+        </Typography>
+
+        {/* Espaciado entre imágenes */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+            Espaciado entre imágenes: {spacing}px
+          </Typography>
+          <Slider
+            size="small"
+            value={spacing}
+            onChange={(_, value) => {
+              updateComponentProps(selectedComponentId!, { spacing: value as number });
+            }}
+            min={0}
+            max={20}
+            marks={[
+              { value: 0, label: '0' },
+              { value: 8, label: '8' },
+              { value: 16, label: '16' },
+              { value: 20, label: '20' },
+            ]}
+          />
+        </Box>
+
+        {/* Bordes redondeados */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+            Bordes redondeados: {borderRadius}px
+          </Typography>
+          <Slider
+            size="small"
+            value={borderRadius}
+            onChange={(_, value) => {
+              updateComponentProps(selectedComponentId!, { borderRadius: value as number });
+            }}
+            min={0}
+            max={20}
+            marks={[
+              { value: 0, label: '0' },
+              { value: 8, label: '8' },
+              { value: 12, label: '12' },
+              { value: 20, label: '20' },
+            ]}
+          />
+        </Box>
+      </Box>
+
+      {/* Progreso de subida */}
+      {uploading && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" gutterBottom>
+            Subiendo: {uploadProgress}%
+          </Typography>
+          <LinearProgress variant="determinate" value={uploadProgress} />
+        </Box>
+      )}
+
+      {/* Inputs de archivo ocultos */}
+      {imageFileInputRefs.map((ref, idx) => (
+        <input
+          key={idx}
+          type="file"
+          ref={ref}
+          style={{ display: 'none' }}
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+          onChange={(e) => handleImageFileChange(e, idx)}
+        />
+      ))}
+    </Box>
   );
 };
 

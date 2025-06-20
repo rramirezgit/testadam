@@ -353,11 +353,11 @@ export const newsComponents: EmailComponent[] = [
     props: {
       texto: 'Respaldado por',
       nombre: 'Redacción',
-      avatarUrl: '',
+      avatarUrl: '/default-avatar.png',
       avatarTamano: 21,
       mostrarEscritorPropietario: false,
       escritorNombre: 'Escritor',
-      escritorAvatarUrl: '',
+      escritorAvatarUrl: '/default-avatar.png',
       propietarioNombre: 'Propietario',
       propietarioAvatarUrl: '',
     },
@@ -416,7 +416,7 @@ export const newsComponentsWeb: EmailComponent[] = [
     props: {
       texto: 'Respaldado por',
       nombre: 'Juan Pérez',
-      avatarUrl: '',
+      avatarUrl: '/default-avatar.png',
       avatarTamano: 21,
       mostrarEscritorPropietario: false,
       escritorNombre: 'Escritor',
@@ -505,5 +505,305 @@ export const newsComponentsWeb: EmailComponent[] = [
     content:
       'Si te interesó esta noticia, también podrían interesarte nuestros artículos relacionados sobre inteligencia artificial y desarrollo web.',
     props: {},
+  },
+];
+
+// Market components
+export const marketComponents: EmailComponent[] = [
+  {
+    id: 'tituloConIcono-1',
+    type: 'tituloConIcono',
+    content: 'Análisis de mercado',
+    props: {
+      icon: 'https://img.icons8.com/color/48/combo-chart.png',
+      gradientColor1: 'rgba(46, 204, 113, 0.08)',
+      gradientColor2: 'rgba(39, 174, 96, 0.00)',
+      gradientType: 'linear',
+      gradientAngle: 180,
+      colorDistribution: 0,
+      textColor: '#27AE60',
+    },
+  },
+  {
+    id: 'gallery-1',
+    type: 'gallery',
+    content: '',
+    props: {
+      images: [
+        { src: '', alt: 'Imagen 1' },
+        { src: '', alt: 'Imagen 2' },
+        { src: '', alt: 'Imagen 3' },
+        { src: '', alt: 'Imagen 4' },
+      ],
+      spacing: 8,
+      borderRadius: 8,
+    },
+  },
+  {
+    id: 'category-1',
+    type: 'category',
+    content: 'Mercado',
+    props: { color: '#e8f5e8', textColor: '#2e7d32' },
+  },
+  {
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Título del análisis de mercado',
+    props: { level: 1 },
+  },
+  {
+    id: 'respaldadoPor-1',
+    type: 'respaldadoPor',
+    content: 'Respaldado por texto',
+    props: {
+      texto: 'Respaldado por',
+      nombre: 'Equipo de Análisis',
+      avatarUrl: '/default-avatar.png',
+      avatarTamano: 21,
+      mostrarEscritorPropietario: false,
+      escritorNombre: 'Analista',
+      escritorAvatarUrl: '/default-avatar.png',
+      propietarioNombre: 'Director',
+      propietarioAvatarUrl: '/default-avatar.png',
+    },
+  },
+  {
+    id: 'summary-1',
+    type: 'summary',
+    content: 'Resumen ejecutivo del análisis de mercado',
+    props: {
+      icon: 'mdi:chart-line',
+      label: 'Resumen del análisis',
+    },
+  },
+  {
+    id: 'paragraph-1',
+    type: 'paragraph',
+    content:
+      'Este análisis de mercado presenta los puntos clave y tendencias más relevantes del sector. Incluye datos actualizados y proyecciones basadas en investigación de mercado.',
+    props: {},
+  },
+  {
+    id: 'paragraph-2',
+    type: 'paragraph',
+    content:
+      'El formato newsletter proporciona una visión condensada pero completa de las oportunidades y desafíos del mercado actual.',
+    props: {},
+  },
+];
+
+export const marketComponentsWeb: EmailComponent[] = [
+  {
+    id: 'heading-1-web',
+    type: 'heading',
+    content: 'Análisis completo de mercado - Tendencias y oportunidades',
+    props: { level: 1 },
+  },
+  {
+    id: 'gallery-1-web',
+    type: 'gallery',
+    content: '',
+    props: {
+      images: [
+        { src: '', alt: 'Gráfico de tendencias' },
+        { src: '', alt: 'Análisis sectorial' },
+        { src: '', alt: 'Datos comparativos' },
+        { src: '', alt: 'Proyecciones futuras' },
+      ],
+      spacing: 8,
+      borderRadius: 8,
+    },
+  },
+  {
+    id: 'category-1-web',
+    type: 'category',
+    content: 'Mercado',
+    props: { color: '#e8f5e8', textColor: '#2e7d32' },
+  },
+  {
+    id: 'respaldadoPor-1-web',
+    type: 'respaldadoPor',
+    content: 'Respaldado por texto',
+    props: {
+      texto: 'Respaldado por',
+      nombre: 'María González',
+      avatarUrl: '/default-avatar.png',
+      avatarTamano: 21,
+      mostrarEscritorPropietario: false,
+      escritorNombre: 'Analista Senior',
+      escritorAvatarUrl: '/default-avatar.png',
+      propietarioNombre: 'Director de Investigación',
+      propietarioAvatarUrl: '/default-avatar.png',
+    },
+  },
+  {
+    id: 'summary-1-web',
+    type: 'summary',
+    content:
+      'Análisis exhaustivo del estado actual del mercado, incluyendo tendencias emergentes, oportunidades de inversión y factores de riesgo. Este informe proporciona una perspectiva integral para la toma de decisiones estratégicas.',
+    props: {
+      icon: 'mdi:chart-line',
+      label: 'Resumen ejecutivo',
+    },
+  },
+  {
+    id: 'paragraph-1-web',
+    type: 'paragraph',
+    content:
+      'El mercado actual presenta una serie de dinámicas complejas que requieren un análisis detallado. En este primer apartado, exploramos las tendencias macroeconómicas que están definiendo el panorama actual.',
+    props: {},
+  },
+  {
+    id: 'paragraph-2-web',
+    type: 'paragraph',
+    content:
+      'Los datos recopilados durante el último trimestre muestran patrones interesantes en el comportamiento del consumidor y las preferencias del mercado, que analizaremos en profundidad.',
+    props: {},
+  },
+  {
+    id: 'gallery-2-web',
+    type: 'gallery',
+    content: '',
+    props: {
+      images: [
+        { src: '', alt: 'Datos demográficos' },
+        { src: '', alt: 'Segmentación de mercado' },
+        { src: '', alt: 'Comportamiento del consumidor' },
+        { src: '', alt: 'Canales de distribución' },
+      ],
+      spacing: 8,
+      borderRadius: 8,
+    },
+  },
+  {
+    id: 'paragraph-3-web',
+    type: 'paragraph',
+    content:
+      'Después del análisis visual, procedemos a examinar los factores cualitativos que complementan los datos cuantitativos presentados en las imágenes anteriores.',
+    props: {},
+  },
+  {
+    id: 'heading-2-web',
+    type: 'heading',
+    content: 'Oportunidades de crecimiento identificadas',
+    props: { level: 2 },
+  },
+  {
+    id: 'paragraph-4-web',
+    type: 'paragraph',
+    content:
+      'Hemos identificado varias áreas clave donde existe potencial de crecimiento significativo. Estas oportunidades se basan en gaps del mercado y necesidades no satisfechas.',
+    props: {},
+  },
+  {
+    id: 'bulletList-1-web',
+    type: 'bulletList',
+    content: '',
+    props: {
+      items: [
+        'Segmentos emergentes con alta demanda latente',
+        'Oportunidades de diferenciación competitiva',
+        'Canales de distribución subutilizados',
+        'Innovaciones tecnológicas aplicables al sector',
+        'Mercados geográficos con potencial de expansión',
+      ],
+    },
+  },
+  {
+    id: 'paragraph-5-web',
+    type: 'paragraph',
+    content:
+      'Para capitalizar estas oportunidades, es fundamental desarrollar una estrategia integral que considere tanto los aspectos operativos como los financieros.',
+    props: {},
+  },
+  { id: 'divider-1-web', type: 'divider', content: '', props: {} },
+  {
+    id: 'paragraph-6-web',
+    type: 'paragraph',
+    content:
+      'Este análisis forma parte de nuestros informes mensuales de mercado. Para acceder a análisis más específicos por sector, puedes consultar nuestro centro de recursos.',
+    props: {},
+  },
+];
+
+// Feature template components (solo versión de correo)
+export const featureComponents: EmailComponent[] = [
+  {
+    id: 'tituloConIcono-1',
+    type: 'tituloConIcono',
+    content: 'Características Principales',
+    props: {
+      icon: 'mdi:star-outline',
+      iconColor: '#ff9800',
+      iconSize: 32,
+      textColor: '#000000',
+      backgroundColor: '#ffffff',
+      fontSize: 24,
+      fontWeight: 'bold',
+      alignment: 'center',
+      spacing: 16,
+      borderRadius: 12,
+      padding: 20,
+    },
+  },
+  {
+    id: 'imageText-1',
+    type: 'imageText',
+    content: '',
+    props: {
+      imageUrl: '',
+      imageAlt: 'Característica 1',
+      title: 'Fácil de usar',
+      description:
+        'Interfaz intuitiva diseñada para que cualquier usuario pueda aprovechar al máximo todas las funcionalidades sin complicaciones.',
+      imageWidth: 35,
+      spacing: 16,
+      borderRadius: 8,
+      backgroundColor: '#f8f9fa',
+      textColor: '#333333',
+      titleColor: '#1565c0',
+      fontSize: 14,
+      titleSize: 18,
+    },
+  },
+  {
+    id: 'imageText-2',
+    type: 'imageText',
+    content: '',
+    props: {
+      imageUrl: '',
+      imageAlt: 'Característica 2',
+      title: 'Altamente seguro',
+      description:
+        'Protección de datos de nivel empresarial con cifrado de extremo a extremo y cumplimiento de los estándares internacionales de seguridad.',
+      imageWidth: 35,
+      spacing: 16,
+      borderRadius: 8,
+      backgroundColor: '#f8f9fa',
+      textColor: '#333333',
+      titleColor: '#1565c0',
+      fontSize: 14,
+      titleSize: 18,
+    },
+  },
+  {
+    id: 'imageText-3',
+    type: 'imageText',
+    content: '',
+    props: {
+      imageUrl: '',
+      imageAlt: 'Característica 3',
+      title: 'Soporte 24/7',
+      description:
+        'Nuestro equipo de expertos está disponible las 24 horas del día, los 7 días de la semana para ayudarte cuando lo necesites.',
+      imageWidth: 35,
+      spacing: 16,
+      borderRadius: 8,
+      backgroundColor: '#f8f9fa',
+      textColor: '#333333',
+      titleColor: '#1565c0',
+      fontSize: 14,
+      titleSize: 18,
+    },
   },
 ];

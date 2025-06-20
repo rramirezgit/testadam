@@ -28,10 +28,13 @@ interface EnabledComponents {
   heading?: boolean;
   paragraph?: boolean;
   bulletList?: boolean;
+  textWithIcon?: boolean;
 
   // Componentes de Multimedia
   image?: boolean;
   gallery?: boolean;
+  imageText?: boolean;
+  twoColumns?: boolean;
 
   // Componentes de Diseño
   button?: boolean;
@@ -100,8 +103,11 @@ export default function LeftPanel({
     heading: true,
     paragraph: true,
     bulletList: true,
+    textWithIcon: true,
     image: true,
     gallery: true,
+    imageText: true,
+    twoColumns: true,
     button: false,
     divider: true,
     spacer: false,
@@ -126,10 +132,18 @@ export default function LeftPanel({
     switch (category) {
       case 'texto':
         return (
-          enabledComponents.heading || enabledComponents.paragraph || enabledComponents.bulletList
+          enabledComponents.heading ||
+          enabledComponents.paragraph ||
+          enabledComponents.bulletList ||
+          enabledComponents.textWithIcon
         );
       case 'multimedia':
-        return enabledComponents.image || enabledComponents.gallery;
+        return (
+          enabledComponents.image ||
+          enabledComponents.gallery ||
+          enabledComponents.imageText ||
+          enabledComponents.twoColumns
+        );
       case 'diseño':
         return enabledComponents.button || enabledComponents.divider || enabledComponents.spacer;
       case 'noticias':
@@ -199,7 +213,12 @@ export default function LeftPanel({
             <AccordionDetails sx={{ p: 1 }}>
               <Grid container spacing={1}>
                 {emailTemplates
-                  .filter((template) => template.id === 'news')
+                  .filter(
+                    (template) =>
+                      template.id === 'news' ||
+                      template.id === 'market' ||
+                      template.id === 'feature'
+                  )
                   .map((template) => (
                     <Grid size={12} key={template.id}>
                       <TemplateCard
@@ -221,7 +240,7 @@ export default function LeftPanel({
             <AccordionDetails sx={{ p: 1 }}>
               <Grid container spacing={1}>
                 {emailTemplates
-                  .filter((template) => template.id !== 'news')
+                  .filter((template) => template.id !== 'news' && template.id !== 'market' && template.id !== 'feature')
                   .map((template) => (
                     <Grid size={{ xs: 12, sm: 6 }} key={template.id}>
                       <TemplateCard
@@ -326,6 +345,26 @@ export default function LeftPanel({
                         </Button>
                       </Grid>
                     )}
+                    {enabledComponents.textWithIcon && (
+                      <Grid size={4}>
+                        <Button
+                          onClick={() => addComponent('textWithIcon')}
+                          fullWidth
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            p: 1,
+                            minHeight: '60px',
+                          }}
+                        >
+                          <Icon icon="mdi:text-box-outline" style={{ fontSize: '1.5rem' }} />
+                          <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                            Texto+Icono
+                          </Typography>
+                        </Button>
+                      </Grid>
+                    )}
                   </Grid>
                 </AccordionDetails>
               </Accordion>
@@ -383,6 +422,46 @@ export default function LeftPanel({
                           <Icon icon="mdi:image-multiple" style={{ fontSize: '1.5rem' }} />
                           <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
                             Galería
+                          </Typography>
+                        </Button>
+                      </Grid>
+                    )}
+                    {enabledComponents.imageText && (
+                      <Grid size={6}>
+                        <Button
+                          onClick={() => addComponent('imageText')}
+                          fullWidth
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            p: 1,
+                            minHeight: '60px',
+                          }}
+                        >
+                          <Icon icon="mdi:image-text" style={{ fontSize: '1.5rem' }} />
+                          <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                            Imagen+Texto
+                          </Typography>
+                        </Button>
+                      </Grid>
+                    )}
+                    {enabledComponents.twoColumns && (
+                      <Grid size={6}>
+                        <Button
+                          onClick={() => addComponent('twoColumns')}
+                          fullWidth
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            p: 1,
+                            minHeight: '60px',
+                          }}
+                        >
+                          <Icon icon="mdi:view-column" style={{ fontSize: '1.5rem' }} />
+                          <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                            Dos Columnas
                           </Typography>
                         </Button>
                       </Grid>

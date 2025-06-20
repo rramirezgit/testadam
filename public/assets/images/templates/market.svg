@@ -1,0 +1,44 @@
+<svg width="200" height="150" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo -->
+  <rect width="200" height="150" fill="#f8f9fa" rx="8"/>
+  
+  <!-- Título con ícono -->
+  <rect x="20" y="20" width="160" height="20" fill="#e8f5e8" rx="4"/>
+  <rect x="25" y="25" width="10" height="10" fill="#27AE60" rx="2"/>
+  <rect x="40" y="24" width="80" height="12" fill="#2e7d32" rx="2"/>
+  
+  <!-- Galería de 4 imágenes -->
+  <rect x="20" y="50" width="75" height="50" fill="#e0e0e0" rx="4"/>
+  <rect x="105" y="50" width="75" height="50" fill="#e0e0e0" rx="4"/>
+  <rect x="20" y="110" width="75" height="50" fill="#e0e0e0" rx="4"/>
+  <rect x="105" y="110" width="75" height="50" fill="#e0e0e0" rx="4"/>
+  
+  <!-- Contenido de las imágenes (iconos de gráficos) -->
+  <!-- Imagen 1: Gráfico de barras -->
+  <rect x="35" y="65" width="6" height="20" fill="#4CAF50"/>
+  <rect x="45" y="60" width="6" height="25" fill="#4CAF50"/>
+  <rect x="55" y="70" width="6" height="15" fill="#4CAF50"/>
+  <rect x="65" y="55" width="6" height="30" fill="#4CAF50"/>
+  
+  <!-- Imagen 2: Gráfico circular -->
+  <circle cx="142" cy="75" r="15" fill="none" stroke="#2196F3" stroke-width="3"/>
+  <path d="M 142 60 A 15 15 0 0 1 157 75 L 142 75 Z" fill="#2196F3"/>
+  <path d="M 142 75 L 157 75 A 15 15 0 0 1 142 90 Z" fill="#FFC107"/>
+  
+  <!-- Imagen 3: Línea de tendencia -->
+  <polyline points="30,140 40,130 50,135 60,125 70,120 80,130" fill="none" stroke="#FF5722" stroke-width="2"/>
+  <circle cx="30" cy="140" r="2" fill="#FF5722"/>
+  <circle cx="40" cy="130" r="2" fill="#FF5722"/>
+  <circle cx="50" cy="135" r="2" fill="#FF5722"/>
+  <circle cx="60" cy="125" r="2" fill="#FF5722"/>
+  <circle cx="70" cy="120" r="2" fill="#FF5722"/>
+  <circle cx="80" cy="130" r="2" fill="#FF5722"/>
+  
+  <!-- Imagen 4: Indicadores -->
+  <rect x="120" y="125" width="40" height="4" fill="#E0E0E0" rx="2"/>
+  <rect x="120" y="125" width="25" height="4" fill="#4CAF50" rx="2"/>
+  <rect x="120" y="135" width="40" height="4" fill="#E0E0E0" rx="2"/>
+  <rect x="120" y="135" width="15" height="4" fill="#FF9800" rx="2"/>
+  <rect x="120" y="145" width="40" height="4" fill="#E0E0E0" rx="2"/>
+  <rect x="120" y="145" width="30" height="4" fill="#2196F3" rx="2"/>
+</svg> 

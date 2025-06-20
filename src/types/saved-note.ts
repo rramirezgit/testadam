@@ -15,6 +15,9 @@ export interface EmailComponent {
     | 'summary'
     | 'news'
     | 'gallery'
+    | 'imageText'
+    | 'twoColumns'
+    | 'textWithIcon'
     | 'tituloConIcono'
     | 'herramientas'
     | 'respaldadoPor';

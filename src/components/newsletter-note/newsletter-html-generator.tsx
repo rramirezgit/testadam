@@ -707,18 +707,65 @@ function renderComponentToHtml(component: EmailComponent): string {
 
     case 'gallery':
       const images = component.props?.images || [];
+      const spacing = component.props?.spacing || 8;
+      const borderRadius = component.props?.borderRadius || 8;
+
+      // Asegurar que siempre tengamos exactamente 4 imágenes para la cuadrícula 2x2
+      const galleryImages = Array.from(
+        { length: 4 },
+        (_, idx) => images[idx] || { src: '', alt: `Imagen ${idx + 1}` }
+      );
+
       let galleryHtml = '<div class="component-gallery" style="margin: 25px 0;">';
-      galleryHtml +=
-        '<table role="presentation" cellspacing="0" cellpadding="5" border="0" width="100%"><tr>';
-      images.forEach((img: any, index: number) => {
-        if (index % 3 === 0 && index > 0) {
-          galleryHtml += '</tr><tr>';
-        }
-        galleryHtml += `<td style="text-align: center; vertical-align: top; width: 33.33%;">
-          <img src="${img.src}" alt="${escapeHtml(img.alt || '')}" style="width: 100%; max-width: 150px; height: 100px; object-fit: cover; border-radius: 4px; display: block; margin: 0 auto;">
-        </td>`;
-      });
-      galleryHtml += '</tr></table></div>';
+      galleryHtml += `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">`;
+
+      // Primera fila (imágenes 1 y 2)
+      galleryHtml += '<tr>';
+      galleryHtml += `<td style="text-align: center; vertical-align: top; width: 50%; padding: ${spacing}px;">`;
+      if (galleryImages[0].src) {
+        galleryHtml += `<img src="${galleryImages[0].src}" alt="${escapeHtml(galleryImages[0].alt || '')}" style="width: 100%; max-width: 200px; height: 150px; object-fit: cover; border-radius: ${borderRadius}px; display: block; margin: 0 auto;">`;
+      } else {
+        galleryHtml += `<div style="width: 100%; max-width: 200px; height: 150px; background-color: #f5f5f5; border-radius: ${borderRadius}px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid #e0e0e0;">
+          <span style="color: #9e9e9e; font-size: 14px;">${escapeHtml(galleryImages[0].alt)}</span>
+        </div>`;
+      }
+      galleryHtml += '</td>';
+
+      galleryHtml += `<td style="text-align: center; vertical-align: top; width: 50%; padding: ${spacing}px;">`;
+      if (galleryImages[1].src) {
+        galleryHtml += `<img src="${galleryImages[1].src}" alt="${escapeHtml(galleryImages[1].alt || '')}" style="width: 100%; max-width: 200px; height: 150px; object-fit: cover; border-radius: ${borderRadius}px; display: block; margin: 0 auto;">`;
+      } else {
+        galleryHtml += `<div style="width: 100%; max-width: 200px; height: 150px; background-color: #f5f5f5; border-radius: ${borderRadius}px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid #e0e0e0;">
+          <span style="color: #9e9e9e; font-size: 14px;">${escapeHtml(galleryImages[1].alt)}</span>
+        </div>`;
+      }
+      galleryHtml += '</td>';
+      galleryHtml += '</tr>';
+
+      // Segunda fila (imágenes 3 y 4)
+      galleryHtml += '<tr>';
+      galleryHtml += `<td style="text-align: center; vertical-align: top; width: 50%; padding: ${spacing}px;">`;
+      if (galleryImages[2].src) {
+        galleryHtml += `<img src="${galleryImages[2].src}" alt="${escapeHtml(galleryImages[2].alt || '')}" style="width: 100%; max-width: 200px; height: 150px; object-fit: cover; border-radius: ${borderRadius}px; display: block; margin: 0 auto;">`;
+      } else {
+        galleryHtml += `<div style="width: 100%; max-width: 200px; height: 150px; background-color: #f5f5f5; border-radius: ${borderRadius}px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid #e0e0e0;">
+          <span style="color: #9e9e9e; font-size: 14px;">${escapeHtml(galleryImages[2].alt)}</span>
+        </div>`;
+      }
+      galleryHtml += '</td>';
+
+      galleryHtml += `<td style="text-align: center; vertical-align: top; width: 50%; padding: ${spacing}px;">`;
+      if (galleryImages[3].src) {
+        galleryHtml += `<img src="${galleryImages[3].src}" alt="${escapeHtml(galleryImages[3].alt || '')}" style="width: 100%; max-width: 200px; height: 150px; object-fit: cover; border-radius: ${borderRadius}px; display: block; margin: 0 auto;">`;
+      } else {
+        galleryHtml += `<div style="width: 100%; max-width: 200px; height: 150px; background-color: #f5f5f5; border-radius: ${borderRadius}px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid #e0e0e0;">
+          <span style="color: #9e9e9e; font-size: 14px;">${escapeHtml(galleryImages[3].alt)}</span>
+        </div>`;
+      }
+      galleryHtml += '</td>';
+      galleryHtml += '</tr>';
+
+      galleryHtml += '</table></div>';
       return galleryHtml;
 
     case 'tituloConIcono':
@@ -914,6 +961,186 @@ function renderComponentToHtml(component: EmailComponent): string {
       </table>`;
 
       return respaldadoHtml;
+
+    case 'imageText':
+      const imageTextImageUrl = component.props?.imageUrl || '';
+      const imageTextImageAlt = component.props?.imageAlt || 'Imagen';
+      const imageTextTitle = component.props?.title || 'Título';
+      const imageTextDescription = component.props?.description || 'Descripción';
+      const imageTextImageWidth = component.props?.imageWidth || 40;
+      const imageTextSpacing = component.props?.spacing || 16;
+      const imageTextBorderRadius = component.props?.borderRadius || 8;
+      const imageTextBackgroundColor = component.props?.backgroundColor || '#ffffff';
+      const imageTextTextColor = component.props?.textColor || '#333333';
+      const imageTextTitleColor = component.props?.titleColor || '#000000';
+      const imageTextFontSize = component.props?.fontSize || 14;
+      const imageTextTitleSize = component.props?.titleSize || 20;
+
+      return `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0; background-color: ${imageTextBackgroundColor}; border-radius: ${imageTextBorderRadius}px;">
+          <tr>
+            <td style="padding: 16px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <!--[if mso | IE]>
+                  <td style="width: ${imageTextImageWidth}%; vertical-align: top;">
+                  <![endif]-->
+                  <td style="width: ${imageTextImageWidth}%; vertical-align: top; padding-right: ${imageTextSpacing}px;" class="mobile-stack">
+                    ${imageTextImageUrl ? `<img src="${imageTextImageUrl}" alt="${escapeHtml(imageTextImageAlt)}" style="width: 100%; height: auto; border-radius: ${imageTextBorderRadius}px; display: block;">` : `<div style="width: 100%; height: 150px; background-color: #f5f5f5; border-radius: ${imageTextBorderRadius}px; display: flex; align-items: center; justify-content: center; color: #9e9e9e; font-size: 14px;">${escapeHtml(imageTextImageAlt)}</div>`}
+                  </td>
+                  <!--[if mso | IE]>
+                  </td>
+                  <td style="width: ${100 - imageTextImageWidth}%; vertical-align: top;">
+                  <![endif]-->
+                  <td style="width: ${100 - imageTextImageWidth}%; vertical-align: top;" class="mobile-stack">
+                    <h3 style="color: ${imageTextTitleColor}; font-size: ${imageTextTitleSize}px; font-weight: bold; margin: 0 0 8px 0; line-height: 1.2;">${escapeHtml(imageTextTitle)}</h3>
+                    <p style="color: ${imageTextTextColor}; font-size: ${imageTextFontSize}px; line-height: 1.5; margin: 0;">${escapeHtml(imageTextDescription)}</p>
+                  </td>
+                  <!--[if mso | IE]>
+                  </td>
+                  <![endif]-->
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        
+        <style>
+          @media only screen and (max-width: 600px) {
+            .mobile-stack {
+              display: block !important;
+              width: 100% !important;
+              padding-right: 0 !important;
+              padding-bottom: ${imageTextSpacing}px !important;
+            }
+          }
+        </style>
+      `;
+
+    case 'textWithIcon':
+      const textIconIcon = component.props?.icon || 'mdi:information-outline';
+      const textIconIconColor = component.props?.iconColor || '#2196f3';
+      const textIconIconSize = component.props?.iconSize || 24;
+      const textIconTitle = component.props?.title || 'Título con Icono';
+      const textIconDescription = component.props?.description || 'Escribe el contenido aquí...';
+      const textIconTitleColor = component.props?.titleColor || '#000000';
+      const textIconTextColor = component.props?.textColor || '#333333';
+      const textIconBackgroundColor = component.props?.backgroundColor || '#ffffff';
+      const textIconTitleSize = component.props?.titleSize || 20;
+      const textIconFontSize = component.props?.fontSize || 14;
+      const textIconAlignment = component.props?.alignment || 'left';
+      const textIconSpacing = component.props?.spacing || 12;
+      const textIconBorderRadius = component.props?.borderRadius || 8;
+      const textIconPadding = component.props?.padding || 16;
+
+      // Mapeo básico de iconos MDI a símbolos Unicode/HTML para correos
+      const iconMap: Record<string, string> = {
+        'mdi:information-outline': 'ℹ️',
+        'mdi:check-circle-outline': '✅',
+        'mdi:alert-circle-outline': '⚠️',
+        'mdi:lightbulb-outline': '💡',
+        'mdi:star-outline': '⭐',
+        'mdi:heart-outline': '❤️',
+        'mdi:fire': '🔥',
+        'mdi:trending-up': '📈',
+        'mdi:rocket-launch-outline': '🚀',
+        'mdi:shield-check-outline': '🛡️',
+        'mdi:clock-outline': '⏰',
+        'mdi:account-group-outline': '👥',
+      };
+
+      const iconSymbol = iconMap[textIconIcon] || '•';
+      const alignmentStyle =
+        textIconAlignment === 'center'
+          ? 'center'
+          : textIconAlignment === 'right'
+            ? 'right'
+            : 'left';
+
+      return `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="background-color: ${textIconBackgroundColor}; border-radius: ${textIconBorderRadius}px; padding: ${textIconPadding}px; text-align: ${alignmentStyle};">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                <tr>
+                  <td style="vertical-align: middle; padding-right: ${textIconSpacing}px;">
+                    <span style="font-size: ${textIconIconSize}px; color: ${textIconIconColor}; line-height: 1;">${iconSymbol}</span>
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <h3 style="color: ${textIconTitleColor}; font-size: ${textIconTitleSize}px; font-weight: bold; margin: 0; line-height: 1.2; display: inline;">${escapeHtml(textIconTitle)}</h3>
+                  </td>
+                </tr>
+              </table>
+              ${textIconDescription ? `<p style="color: ${textIconTextColor}; font-size: ${textIconFontSize}px; line-height: 1.5; margin: 8px 0 0 0;">${escapeHtml(textIconDescription)}</p>` : ''}
+            </td>
+          </tr>
+        </table>
+      `;
+
+    case 'twoColumns':
+      const twoColLeftColumn = component.props?.leftColumn || {
+        imageUrl: '',
+        imageAlt: 'Imagen',
+        title: 'Título',
+        description: 'Descripción',
+      };
+      const twoColRightColumn = component.props?.rightColumn || {
+        imageUrl: '',
+        imageAlt: 'Imagen',
+        title: 'Título',
+        description: 'Descripción',
+      };
+      const twoColSpacing = component.props?.spacing || 16;
+      const twoColBorderRadius = component.props?.borderRadius || 8;
+      const twoColBackgroundColor = component.props?.backgroundColor || '#ffffff';
+      const twoColTextColor = component.props?.textColor || '#333333';
+      const twoColTitleColor = component.props?.titleColor || '#000000';
+      const twoColFontSize = component.props?.fontSize || 14;
+      const twoColTitleSize = component.props?.titleSize || 18;
+      const twoColColumnPadding = component.props?.columnPadding || 16;
+
+      const renderTwoColumn = (columnData: any) => `
+        <td style="width: 50%; vertical-align: top; padding: ${twoColColumnPadding}px; background-color: ${twoColBackgroundColor}; border-radius: ${twoColBorderRadius}px; text-align: center;" class="mobile-column">
+          ${columnData.imageUrl ? `<img src="${columnData.imageUrl}" alt="${escapeHtml(columnData.imageAlt)}" style="width: 100%; height: auto; max-height: 200px; border-radius: ${twoColBorderRadius}px; object-fit: cover; display: block; margin-bottom: 16px;">` : `<div style="width: 100%; height: 150px; background-color: #f5f5f5; border-radius: ${twoColBorderRadius}px; display: flex; align-items: center; justify-content: center; color: #9e9e9e; font-size: 14px; margin-bottom: 16px;">${escapeHtml(columnData.imageAlt)}</div>`}
+          <h3 style="color: ${twoColTitleColor}; font-size: ${twoColTitleSize}px; font-weight: bold; margin: 0 0 8px 0; line-height: 1.2;">${escapeHtml(columnData.title)}</h3>
+          <p style="color: ${twoColTextColor}; font-size: ${twoColFontSize}px; line-height: 1.5; margin: 0;">${escapeHtml(columnData.description)}</p>
+        </td>
+      `;
+
+      return `
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 20px 0;">
+          <tr>
+            <td style="padding: 0 0 ${twoColSpacing}px 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-spacing: ${twoColSpacing}px;">
+                <tr>
+                  <!--[if mso | IE]>
+                  <td style="width: 50%; vertical-align: top;">
+                  <![endif]-->
+                  ${renderTwoColumn(twoColLeftColumn)}
+                  <!--[if mso | IE]>
+                  </td>
+                  <td style="width: 50%; vertical-align: top;">
+                  <![endif]-->
+                  ${renderTwoColumn(twoColRightColumn)}
+                  <!--[if mso | IE]>
+                  </td>
+                  <![endif]-->
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        
+        <style>
+          @media only screen and (max-width: 600px) {
+            .mobile-column {
+              display: block !important;
+              width: 100% !important;
+              margin-bottom: ${twoColSpacing}px !important;
+            }
+          }
+        </style>
+      `;
 
     default:
       return `<div class="component-unknown" style="background-color: #fff3e0; border-left: 3px solid #ff9800; padding: 15px; margin: 15px 0; border-radius: 0 4px 4px 0;">

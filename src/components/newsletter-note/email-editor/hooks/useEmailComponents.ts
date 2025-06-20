@@ -8,11 +8,14 @@ import {
   notionComponents,
   stripeComponents,
   vercelComponents,
+  marketComponents,
+  featureComponents,
   newsComponentsWeb,
   plaidComponentsWeb,
   notionComponentsWeb,
   stripeComponentsWeb,
   vercelComponentsWeb,
+  marketComponentsWeb,
 } from '../data/template-components';
 
 // Crear una plantilla vacía
@@ -38,6 +41,11 @@ export const useEmailComponents = () => {
   const [newsComponentsState, setNewsComponents] = useState<EmailComponent[]>(newsComponents);
   const [newsComponentsWebState, setNewsComponentsWeb] =
     useState<EmailComponent[]>(newsComponentsWeb);
+  const [marketComponentsState, setMarketComponents] = useState<EmailComponent[]>(marketComponents);
+  const [marketComponentsWebState, setMarketComponentsWeb] =
+    useState<EmailComponent[]>(marketComponentsWeb);
+  const [featureComponentsState, setFeatureComponents] =
+    useState<EmailComponent[]>(featureComponents);
 
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = useCallback(
@@ -56,6 +64,10 @@ export const useEmailComponents = () => {
             return vercelComponentsState;
           case 'news':
             return newsComponentsState;
+          case 'market':
+            return marketComponentsState;
+          case 'feature':
+            return featureComponentsState;
           default:
             return blankComponentsState;
         }
@@ -73,6 +85,8 @@ export const useEmailComponents = () => {
             return vercelComponentsWebState;
           case 'news':
             return newsComponentsWebState;
+          case 'market':
+            return marketComponentsWebState;
           default:
             return blankComponentsWebState;
         }
@@ -91,6 +105,8 @@ export const useEmailComponents = () => {
       vercelComponentsWebState,
       newsComponentsState,
       newsComponentsWebState,
+      marketComponentsState,
+      marketComponentsWebState,
     ]
   );
 
@@ -117,6 +133,9 @@ export const useEmailComponents = () => {
           case 'vercel':
             setVercelComponentsWeb(components);
             break;
+          case 'market':
+            setMarketComponentsWeb(components);
+            break;
           default:
             break;
         }
@@ -139,6 +158,12 @@ export const useEmailComponents = () => {
             break;
           case 'vercel':
             setVercelComponents(components);
+            break;
+          case 'market':
+            setMarketComponents(components);
+            break;
+          case 'feature':
+            setFeatureComponents(components);
             break;
           default:
             break;
@@ -165,6 +190,8 @@ export const useEmailComponents = () => {
             return [...stripeComponentsWebState];
           case 'vercel':
             return [...vercelComponentsWebState];
+          case 'market':
+            return [...marketComponentsWebState];
           default:
             return [...blankComponentsWebState];
         }
@@ -182,6 +209,10 @@ export const useEmailComponents = () => {
             return [...stripeComponentsState];
           case 'vercel':
             return [...vercelComponentsState];
+          case 'market':
+            return [...marketComponentsState];
+          case 'feature':
+            return [...featureComponentsState];
           default:
             return [...blankComponentsState];
         }
@@ -200,6 +231,8 @@ export const useEmailComponents = () => {
       vercelComponentsWebState,
       newsComponentsState,
       newsComponentsWebState,
+      marketComponentsState,
+      marketComponentsWebState,
     ]
   );
 
@@ -230,6 +263,13 @@ export const useEmailComponents = () => {
         setVercelComponents(objData);
         if (objDataWeb) setVercelComponentsWeb(objDataWeb);
         break;
+      case 'market':
+        setMarketComponents(objData);
+        if (objDataWeb) setMarketComponentsWeb(objDataWeb);
+        break;
+      case 'feature':
+        setFeatureComponents(objData);
+        break;
       default:
         setNotionComponents(objData);
         if (objDataWeb) setNotionComponentsWeb(objDataWeb);
@@ -250,6 +290,9 @@ export const useEmailComponents = () => {
     vercelComponentsWebState,
     newsComponentsState,
     newsComponentsWebState,
+    marketComponentsState,
+    marketComponentsWebState,
+    featureComponentsState,
 
     // Funciones
     getActiveComponents,
@@ -270,5 +313,8 @@ export const useEmailComponents = () => {
     setVercelComponentsWeb,
     setNewsComponents,
     setNewsComponentsWeb,
+    setMarketComponents,
+    setMarketComponentsWeb,
+    setFeatureComponents,
   };
 };

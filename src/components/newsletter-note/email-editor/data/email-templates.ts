@@ -14,6 +14,21 @@ export const emailTemplates = [
     image: '/assets/images/templates/news.svg',
   },
   {
+    id: 'market',
+    name: 'Mercado',
+    description: 'Template para análisis de mercado con galería de 4 imágenes y versión web',
+    icon: 'mdi:chart-line',
+    image: '/assets/images/templates/market.svg',
+  },
+  {
+    id: 'feature',
+    name: 'Características',
+    description:
+      'Template para mostrar características de producto con texto e íconos (solo correo)',
+    icon: 'mdi:star-box',
+    image: '/assets/images/templates/feature.svg',
+  },
+  {
     id: 'notion',
     name: 'Notion Magic Link',
     description: 'Template para enviar un enlace mágico de inicio de sesión',
