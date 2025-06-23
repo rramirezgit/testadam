@@ -33,6 +33,7 @@ import { useImageUpload } from './right-panel/useImageUpload';
 import ContainerOptions from './right-panel/ContainerOptions';
 import ImageTextOptions from './right-panel/ImageTextOptions';
 import TwoColumnsOptions from './right-panel/TwoColumnsOptions';
+import ChartOptions from './email-components/options/ChartOptions';
 import HerramientasOptions from './right-panel/HerramientasOptions';
 import TextWithIconOptions from './right-panel/TextWithIconOptions';
 import RespaldadoPorOptions from './right-panel/RespaldadoPorOptions';
@@ -505,19 +506,21 @@ export default function RightPanel({
                       ? 'Botón'
                       : componentType === 'gallery'
                         ? 'Galería'
-                        : componentType === 'category'
-                          ? 'Categorías'
-                          : componentType === 'tituloConIcono'
-                            ? 'Título'
-                            : componentType === 'herramientas'
-                              ? 'Herramientas'
-                              : componentType === 'divider'
-                                ? 'Separador'
-                                : (componentType as string) === 'newsletter-header'
-                                  ? 'Header Newsletter'
-                                  : (componentType as string) === 'newsletter-footer'
-                                    ? 'Footer Newsletter'
-                                    : 'Tipografía'
+                        : componentType === 'chart'
+                          ? 'Gráfica'
+                          : componentType === 'category'
+                            ? 'Categorías'
+                            : componentType === 'tituloConIcono'
+                              ? 'Título'
+                              : componentType === 'herramientas'
+                                ? 'Herramientas'
+                                : componentType === 'divider'
+                                  ? 'Separador'
+                                  : (componentType as string) === 'newsletter-header'
+                                    ? 'Header Newsletter'
+                                    : (componentType as string) === 'newsletter-footer'
+                                      ? 'Footer Newsletter'
+                                      : 'Tipografía'
                 }
               />,
               ...(componentType === 'herramientas'
@@ -583,6 +586,13 @@ export default function RightPanel({
 
             {componentType === 'textWithIcon' && (
               <TextWithIconOptions
+                component={selectedComponent}
+                updateComponentProps={updateComponentProps}
+              />
+            )}
+
+            {componentType === 'chart' && (
+              <ChartOptions
                 component={selectedComponent}
                 updateComponentProps={updateComponentProps}
               />

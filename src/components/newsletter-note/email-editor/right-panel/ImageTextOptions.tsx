@@ -68,11 +68,6 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Icon icon="mdi:image-text" />
-        Imagen + Texto
-      </Typography>
-
       {/* Sección de Imagen */}
       <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
         📷 Imagen

@@ -1,4 +1,5 @@
 import ImageComponent from './ImageComponent';
+import ChartComponent from './ChartComponent';
 import AuthorComponent from './AuthorComponent';
 import ButtonComponent from './ButtonComponent';
 import SpacerComponent from './SpacerComponent';
@@ -56,6 +57,8 @@ const EmailComponentRenderer = (props: EmailComponentProps) => {
       return <RespaldadoPorComponent {...props} />;
     case 'spacer':
       return <SpacerComponent {...props} />;
+    case 'chart':
+      return <ChartComponent {...props} />;
     default:
       return null;
   }

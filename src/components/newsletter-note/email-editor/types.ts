@@ -15,7 +15,8 @@ export type ComponentType =
   | 'textWithIcon'
   | 'tituloConIcono'
   | 'herramientas'
-  | 'respaldadoPor';
+  | 'respaldadoPor'
+  | 'chart';
 
 // Tipos para el newsletter
 export interface NewsletterNote {

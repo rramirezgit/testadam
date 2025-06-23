@@ -35,6 +35,7 @@ interface EnabledComponents {
   gallery?: boolean;
   imageText?: boolean;
   twoColumns?: boolean;
+  chart?: boolean;
 
   // Componentes de Diseño
   button?: boolean;
@@ -108,6 +109,7 @@ export default function LeftPanel({
     gallery: true,
     imageText: true,
     twoColumns: true,
+    chart: true,
     button: false,
     divider: true,
     spacer: false,
@@ -142,7 +144,8 @@ export default function LeftPanel({
           enabledComponents.image ||
           enabledComponents.gallery ||
           enabledComponents.imageText ||
-          enabledComponents.twoColumns
+          enabledComponents.twoColumns ||
+          enabledComponents.chart
         );
       case 'diseño':
         return enabledComponents.button || enabledComponents.divider || enabledComponents.spacer;
@@ -462,6 +465,26 @@ export default function LeftPanel({
                           <Icon icon="mdi:view-column" style={{ fontSize: '1.5rem' }} />
                           <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
                             Dos Columnas
+                          </Typography>
+                        </Button>
+                      </Grid>
+                    )}
+                    {enabledComponents.chart && (
+                      <Grid size={6}>
+                        <Button
+                          onClick={() => addComponent('chart')}
+                          fullWidth
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            p: 1,
+                            minHeight: '60px',
+                          }}
+                        >
+                          <Icon icon="mdi:chart-bar" style={{ fontSize: '1.5rem' }} />
+                          <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                            Gráficas
                           </Typography>
                         </Button>
                       </Grid>

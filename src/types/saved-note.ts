@@ -20,7 +20,8 @@ export interface EmailComponent {
     | 'textWithIcon'
     | 'tituloConIcono'
     | 'herramientas'
-    | 'respaldadoPor';
+    | 'respaldadoPor'
+    | 'chart';
   content: string;
   props: {
     level?: number;
