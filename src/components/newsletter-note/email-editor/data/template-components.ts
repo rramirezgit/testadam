@@ -353,11 +353,11 @@ export const newsComponents: EmailComponent[] = [
     props: {
       texto: 'Respaldado por',
       nombre: 'Redacción',
-      avatarUrl: '/default-avatar.png',
+      avatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
       avatarTamano: 21,
       mostrarEscritorPropietario: false,
       escritorNombre: 'Escritor',
-      escritorAvatarUrl: '/default-avatar.png',
+      escritorAvatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
       propietarioNombre: 'Propietario',
       propietarioAvatarUrl: '',
     },
@@ -367,8 +367,11 @@ export const newsComponents: EmailComponent[] = [
     type: 'summary',
     content: 'Resumen breve de la noticia',
     props: {
-      icon: 'mdi:text-box-outline',
-      label: 'Resumen de la noticia',
+      summaryType: 'resumen',
+      label: 'Resumen',
+      icon: 'https://img.icons8.com/color/48/note.png',
+      backgroundColor: '#f8f9fa',
+      textColor: '#495057',
     },
   },
   {
@@ -416,7 +419,7 @@ export const newsComponentsWeb: EmailComponent[] = [
     props: {
       texto: 'Respaldado por',
       nombre: 'Juan Pérez',
-      avatarUrl: '/default-avatar.png',
+      avatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
       avatarTamano: 21,
       mostrarEscritorPropietario: false,
       escritorNombre: 'Escritor',
@@ -431,8 +434,11 @@ export const newsComponentsWeb: EmailComponent[] = [
     content:
       'Resumen detallado de la noticia que proporciona una visión general del contenido completo que se desarrollará a continuación. Este resumen es más extenso que la versión de newsletter.',
     props: {
-      icon: 'mdi:text-box-outline',
-      label: 'Resumen de la noticia',
+      summaryType: 'resumen',
+      label: 'Resumen',
+      icon: 'https://img.icons8.com/color/48/note.png',
+      backgroundColor: '#f8f9fa',
+      textColor: '#495057',
     },
   },
   {
@@ -558,13 +564,13 @@ export const marketComponents: EmailComponent[] = [
     props: {
       texto: 'Respaldado por',
       nombre: 'Equipo de Análisis',
-      avatarUrl: '/default-avatar.png',
+      avatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
       avatarTamano: 21,
       mostrarEscritorPropietario: false,
       escritorNombre: 'Analista',
-      escritorAvatarUrl: '/default-avatar.png',
+      escritorAvatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
       propietarioNombre: 'Director',
-      propietarioAvatarUrl: '/default-avatar.png',
+      propietarioAvatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
     },
   },
   {
@@ -572,8 +578,11 @@ export const marketComponents: EmailComponent[] = [
     type: 'summary',
     content: 'Resumen ejecutivo del análisis de mercado',
     props: {
-      icon: 'mdi:chart-line',
-      label: 'Resumen del análisis',
+      summaryType: 'dato',
+      label: 'Dato',
+      icon: 'https://img.icons8.com/color/48/info.png',
+      backgroundColor: '#fff8e1',
+      textColor: '#e65100',
     },
   },
   {
@@ -627,13 +636,13 @@ export const marketComponentsWeb: EmailComponent[] = [
     props: {
       texto: 'Respaldado por',
       nombre: 'María González',
-      avatarUrl: '/default-avatar.png',
+      avatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
       avatarTamano: 21,
       mostrarEscritorPropietario: false,
       escritorNombre: 'Analista Senior',
-      escritorAvatarUrl: '/default-avatar.png',
+      escritorAvatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
       propietarioNombre: 'Director de Investigación',
-      propietarioAvatarUrl: '/default-avatar.png',
+      propietarioAvatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
     },
   },
   {
@@ -642,8 +651,11 @@ export const marketComponentsWeb: EmailComponent[] = [
     content:
       'Análisis exhaustivo del estado actual del mercado, incluyendo tendencias emergentes, oportunidades de inversión y factores de riesgo. Este informe proporciona una perspectiva integral para la toma de decisiones estratégicas.',
     props: {
-      icon: 'mdi:chart-line',
-      label: 'Resumen ejecutivo',
+      summaryType: 'dato',
+      label: 'Dato',
+      icon: 'https://img.icons8.com/color/48/info.png',
+      backgroundColor: '#fff8e1',
+      textColor: '#e65100',
     },
   },
   {
@@ -733,17 +745,13 @@ export const featureComponents: EmailComponent[] = [
     type: 'tituloConIcono',
     content: 'Características Principales',
     props: {
-      icon: 'mdi:star-outline',
-      iconColor: '#ff9800',
-      iconSize: 32,
-      textColor: '#000000',
-      backgroundColor: '#ffffff',
-      fontSize: 24,
-      fontWeight: 'bold',
-      alignment: 'center',
-      spacing: 16,
-      borderRadius: 12,
-      padding: 20,
+      icon: 'https://img.icons8.com/color/48/line-chart.png',
+      gradientColor1: 'rgba(255, 184, 77, 0.08)',
+      gradientColor2: 'rgba(243, 156, 18, 0.00)',
+      gradientType: 'linear',
+      gradientAngle: 180,
+      colorDistribution: 0,
+      textColor: '#E67E22',
     },
   },
   {

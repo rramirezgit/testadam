@@ -1,6 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import type React from 'react';
 
-import { Icon } from '@iconify/react';
 import { memo, useRef, useMemo, useState, useCallback } from 'react';
 
 import { Box, TextField, Typography } from '@mui/material';
@@ -10,57 +10,48 @@ import SimpleTipTapEditor from '../../simple-tiptap-editor';
 
 import type { EmailComponentProps } from './types';
 
-// Definición de tipos de summary con sus configuraciones
 const SUMMARY_TYPES = {
   resumen: {
     label: 'Resumen',
     icon: 'https://img.icons8.com/color/48/note.png',
     backgroundColor: '#f8f9fa',
-    iconColor: '#6c757d',
     textColor: '#495057',
   },
   concepto: {
     label: 'Concepto',
     icon: 'https://img.icons8.com/color/48/light-on.png',
     backgroundColor: '#e7f3ff',
-    iconColor: '#0066cc',
     textColor: '#003d7a',
   },
   dato: {
     label: 'Dato',
     icon: 'https://img.icons8.com/color/48/info.png',
     backgroundColor: '#fff8e1',
-    iconColor: '#f57c00',
     textColor: '#e65100',
   },
   tip: {
     label: 'TIP',
     icon: 'https://img.icons8.com/color/48/rocket.png',
     backgroundColor: '#f3e5f5',
-    iconColor: '#8e24aa',
     textColor: '#4a148c',
   },
   analogia: {
     label: 'Analogía',
     icon: 'https://img.icons8.com/color/48/brain.png',
     backgroundColor: '#e8f5e8',
-    iconColor: '#388e3c',
     textColor: '#1b5e20',
   },
 } as const;
 
 type SummaryType = keyof typeof SUMMARY_TYPES;
 
-// ⚡ ULTRA-OPTIMIZACIÓN: Cache de estilos computados para summaries
 const summaryStyleCache = new Map<string, React.CSSProperties>();
 
-// ⚡ ULTRA-OPTIMIZACIÓN: Función helper para crear cache key
 const createSummaryStyleKey = (component: any, isSelected: boolean, typeConfig: any): string => {
   const { style = {}, props = {} } = component;
   return `${JSON.stringify(style)}-${JSON.stringify(props)}-${isSelected}-${JSON.stringify(typeConfig)}`;
 };
 
-// ⚡ ULTRA-OPTIMIZACIÓN: Función para generar estilos optimizada para summaries
 const generateOptimizedSummaryStyles = (component: any, isSelected: boolean, typeConfig: any) => {
   const cacheKey = createSummaryStyleKey(component, isSelected, typeConfig);
 
@@ -74,13 +65,10 @@ const generateOptimizedSummaryStyles = (component: any, isSelected: boolean, typ
     position: 'relative',
     width: '100%',
     cursor: 'text',
-    // ⚡ ULTRA-OPTIMIZACIÓN: GPU acceleration y optimizaciones de rendering
     willChange: isSelected ? 'transform, box-shadow' : 'auto',
     backfaceVisibility: 'hidden',
     transform: 'translateZ(0)',
-    // ⚡ ULTRA-OPTIMIZACIÓN: Containment para mejor rendimiento
     contain: 'layout style',
-    // ⚡ ULTRA-OPTIMIZACIÓN: Optimización específica para summaries
     textRendering: 'optimizeSpeed' as any,
     fontKerning: 'none',
     backgroundColor,
@@ -104,7 +92,6 @@ const generateOptimizedSummaryStyles = (component: any, isSelected: boolean, typ
   return style;
 };
 
-// ⚡ ULTRA-OPTIMIZACIÓN: Componente interno memoizado para summaries
 const MemoizedSummaryEditor = memo(
   ({
     content,
@@ -126,7 +113,6 @@ const MemoizedSummaryEditor = memo(
     />
   ),
   (prevProps, nextProps) =>
-    // ⚡ ULTRA-OPTIMIZACIÓN: Comparación profunda optimizada
     prevProps.content === nextProps.content &&
     prevProps.onContentChange === nextProps.onContentChange &&
     prevProps.onSelectionUpdate === nextProps.onSelectionUpdate &&
@@ -135,7 +121,6 @@ const MemoizedSummaryEditor = memo(
 
 MemoizedSummaryEditor.displayName = 'MemoizedSummaryEditor';
 
-// ⚡ ULTRA-OPTIMIZACIÓN: Componente principal con memo avanzado
 const SummaryComponent = memo(
   ({
     component,
@@ -150,31 +135,24 @@ const SummaryComponent = memo(
     totalComponents,
   }: EmailComponentProps) => {
     const lastRenderTime = useRef(performance.now());
-    const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
     const [isEditingLabel, setIsEditingLabel] = useState(false);
     const [tempLabel, setTempLabel] = useState('');
 
-    // Determinar el tipo de summary (por defecto 'resumen')
     const summaryType: SummaryType = (component.props?.summaryType as SummaryType) || 'resumen';
     const typeConfig = SUMMARY_TYPES[summaryType];
 
-    // Permitir personalización pero usar valores por defecto del tipo
-    const iconColor = component.props?.iconColor || typeConfig.iconColor;
     const textColor = component.props?.textColor || typeConfig.textColor;
     const icon = component.props?.icon || typeConfig.icon;
     const label = component.props?.label || typeConfig.label;
 
-    // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos con cache
     const containerStyles = useMemo(
       () => generateOptimizedSummaryStyles(component, isSelected, typeConfig),
       [component.style, component.props, isSelected, typeConfig]
     );
 
-    // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos del editor
     const editorStyle = useMemo(
       () => ({
         outline: 'none',
-        // ⚡ ULTRA-OPTIMIZACIÓN: Optimizaciones específicas del texto para summaries
         fontDisplay: 'swap' as const,
         textSizeAdjust: 'none',
         WebkitFontSmoothing: 'antialiased' as const,
@@ -183,7 +161,6 @@ const SummaryComponent = memo(
       []
     );
 
-    // ⚡ ULTRA-OPTIMITZACIÓ: Memoización de estilos del contenido
     const contentBoxStyles = useMemo(
       () => ({
         color: '#6c757d',
@@ -202,11 +179,9 @@ const SummaryComponent = memo(
       []
     );
 
-    // ⚡ ULTRA-OPTIMIZAÇÃO: Callback memoizado con throttling integrado
     const handleContentChange = useCallback(
       (newContent: string) => {
         if (updateComponentContent && newContent !== component.content) {
-          // Usar scheduler nativo del navegador para mejor rendimiento
           if ('scheduler' in window && 'postTask' in (window as any).scheduler) {
             (window as any).scheduler.postTask(
               () => {
@@ -215,7 +190,6 @@ const SummaryComponent = memo(
               { priority: 'user-blocking' }
             );
           } else {
-            // Fallback con MessageChannel para batching
             const channel = new MessageChannel();
             channel.port2.onmessage = () => updateComponentContent(component.id, newContent);
             channel.port1.postMessage(null);
@@ -225,7 +199,6 @@ const SummaryComponent = memo(
       [updateComponentContent, component.id, component.content]
     );
 
-    // Manejar la edición del label
     const handleLabelClick = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -263,13 +236,11 @@ const SummaryComponent = memo(
       handleLabelSubmit();
     }, [handleLabelSubmit]);
 
-    // ⚡ ULTRA-OPTIMIZAÇÃO: Manejo de clics optimizado
     const handleClick = useCallback(
       (event: React.MouseEvent) => {
         event.stopPropagation();
         console.log('🔵 SummaryComponent clicked:', component.id, { onSelect: !!onSelect });
         if (onSelect) {
-          // Llamar inmediatamente en lugar de defer para debugging
           onSelect();
           console.log('🟢 SummaryComponent onSelect called for:', component.id);
         }
@@ -277,11 +248,9 @@ const SummaryComponent = memo(
       [onSelect, component.id]
     );
 
-    // ⚡ ULTRA-OPTIMIZAÇÃO: Manejo de selección optimizado
     const handleSelectionUpdateMemo = useCallback(
       (editor: any) => {
         if (isSelected && handleSelectionUpdate) {
-          // Usar requestAnimationFrame para mejor rendimiento
           requestAnimationFrame(() => {
             handleSelectionUpdate(editor);
           });
@@ -290,18 +259,15 @@ const SummaryComponent = memo(
       [isSelected, handleSelectionUpdate]
     );
 
-    // ⚡ ULTRA-OPTIMIZACIÓN: Log de rendimiento (solo en desarrollo)
     if (process.env.NODE_ENV === 'development') {
       const currentTime = performance.now();
       const renderTime = currentTime - lastRenderTime.current;
       if (renderTime > 16) {
-        // Solo si toma más de 1 frame (16ms)
         console.log(`SummaryComponent ${component.id} render took ${renderTime.toFixed(2)}ms`);
       }
       lastRenderTime.current = currentTime;
     }
 
-    // ⚡ ULTRA-OPTIMIZAÇÃO: Renderizado optimizado con el sistema original
     return (
       <ComponentWithToolbar
         isSelected={isSelected}
@@ -315,10 +281,6 @@ const SummaryComponent = memo(
         <Box
           sx={{
             ...containerStyles,
-            '&:hover': {
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              transform: 'translateY(-1px)',
-            },
           }}
         >
           {/* Header con icono y título */}
@@ -344,31 +306,21 @@ const SummaryComponent = memo(
                 border: '1px solid rgba(255,255,255,0.3)',
               }}
             >
-              {/* Renderizar PNG o icono legacy */}
-              {icon.startsWith('http') ? (
-                <img
-                  src={icon}
-                  alt="Icon"
-                  style={{
-                    width: 18,
-                    height: 18,
-                    objectFit: 'contain',
-                    display: 'block',
-                  }}
-                  onError={(e) => {
-                    // Fallback si la imagen no carga
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <Icon
-                  icon={icon}
-                  style={{
-                    fontSize: 18,
-                    color: iconColor,
-                  }}
-                />
-              )}
+              {/* Renderizar PNG (solo URLs) */}
+              <img
+                src={icon}
+                alt="Icon"
+                style={{
+                  width: 18,
+                  height: 18,
+                  objectFit: 'contain',
+                  display: 'block',
+                }}
+                onError={(e) => {
+                  // Fallback si la imagen no carga
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </Box>
 
             {/* Título editable */}
@@ -442,13 +394,11 @@ const SummaryComponent = memo(
     );
   },
   (prevProps, nextProps) => {
-    // ⚡ ULTRA-OPTIMIZAÇÃO: Comparación optimizada con early returns
     if (prevProps.component.id !== nextProps.component.id) return false;
     if (prevProps.component.content !== nextProps.component.content) return false;
     if (prevProps.isSelected !== nextProps.isSelected) return false;
     if (prevProps.index !== nextProps.index) return false;
 
-    // Comparación profunda de estilos y props solo si es necesario
     if (JSON.stringify(prevProps.component.style) !== JSON.stringify(nextProps.component.style))
       return false;
     if (JSON.stringify(prevProps.component.props) !== JSON.stringify(nextProps.component.props))

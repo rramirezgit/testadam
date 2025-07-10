@@ -2,6 +2,7 @@
 
 import type React from 'react';
 import type { SavedNote } from 'src/types/saved-note';
+import type { PostStatus } from 'src/store/PostStore';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 
@@ -105,6 +106,21 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   const [activeTemplate, setActiveTemplate] = useState<string>(initialTemplate);
   const [activeVersion, setActiveVersion] = useState<'newsletter' | 'web'>('newsletter');
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
+  const [selectedColumn, setSelectedColumn] = useState<'left' | 'right'>('left');
+
+  // Función para cambiar plantilla y resetear selección
+  const handleTemplateChange = useCallback(
+    (templateId: string) => {
+      console.log('🔄 Cambiando plantilla de', activeTemplate, 'a', templateId);
+      setActiveTemplate(templateId);
+      setSelectedComponentId(null); // Resetear componente seleccionado
+      setRightPanelTab(0); // Resetear tab del panel derecho
+      setIsContainerSelected(false); // Resetear selección del contenedor
+      setIsNewsletterContainerSelected(false); // Resetear selección del contenedor newsletter
+      console.log('✅ Componente seleccionado reseteado al cambiar plantilla');
+    },
+    [activeTemplate]
+  );
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     basic: true,
@@ -1160,7 +1176,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         title: currentPost.title,
         description: currentPost.description,
         coverImageUrl: currentPost.coverImageUrl,
-        status: (currentPost.status as 'draft' | 'published' | 'archived') || 'draft',
+        status: (currentPost.status as PostStatus) || 'DRAFT',
       });
 
       // También cargar los datos del editor si existen
@@ -1180,7 +1196,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           );
 
           // Set template and other settings
-          setActiveTemplate(configPost.templateType || 'blank');
+          handleTemplateChange(configPost.templateType || 'blank');
           if (configPost.activeVersion) {
             setActiveVersion(configPost.activeVersion);
           }
@@ -1653,6 +1669,19 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     ]
   );
 
+  // Función para manejar la selección de columna
+  const handleColumnSelect = useCallback(
+    (componentId: string, column: 'left' | 'right') => {
+      // Solo actualizar si es un componente TwoColumns
+      const components = getActiveComponents();
+      const component = components.find((c) => c.id === componentId);
+      if (component && component.type === 'twoColumns') {
+        setSelectedColumn(column);
+      }
+    },
+    [getActiveComponents]
+  );
+
   return (
     <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
       {/* Barra de navegación superior */}
@@ -1709,7 +1738,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             addComponent={addComponent}
             emailTemplates={emailTemplates}
             activeTemplate={activeTemplate}
-            setActiveTemplate={setActiveTemplate}
+            setActiveTemplate={handleTemplateChange}
             generatingEmail={generatingEmail}
             handleGenerateEmailHtml={handleGenerateEmailHtml}
             setOpenSaveDialog={() => noteData.setOpenSaveDialog(true)}
@@ -1752,6 +1781,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             selectedComponentId={selectedComponentId}
             setSelectedComponentId={handleComponentSelect}
             onComponentSelect={handleComponentSelect}
+            onColumnSelect={handleColumnSelect}
             updateComponentContent={updateComponentContent}
             updateComponentProps={updateComponentProps}
             updateComponentStyle={updateComponentStyle}
@@ -1932,6 +1962,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               setNoteCoverImageUrl={noteData.setNoteCoverImageUrl}
               noteStatus={noteData.noteStatus}
               setNoteStatus={noteData.setNoteStatus}
+              currentNoteId={noteData.currentNoteId}
+              updateStatus={noteData.updateStatus}
+              selectedColumn={selectedColumn}
             />
           )}
         </Box>

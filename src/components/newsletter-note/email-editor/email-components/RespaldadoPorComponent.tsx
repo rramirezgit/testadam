@@ -42,21 +42,21 @@ const RespaldadoPorComponent = ({
     updateComponentProps(component.id, { mostrarEscritorPropietario: mostrar });
   };
 
-  const handleEscritorNombreChange = (newName: string) => {
-    updateComponentProps(component.id, { escritorNombre: newName });
-  };
+  // const handleEscritorNombreChange = (newName: string) => {
+  //   updateComponentProps(component.id, { escritorNombre: newName });
+  // };
 
-  const handleEscritorAvatarChange = (newUrl: string) => {
-    updateComponentProps(component.id, { escritorAvatarUrl: newUrl });
-  };
+  // const handleEscritorAvatarChange = (newUrl: string) => {
+  //   updateComponentProps(component.id, { escritorAvatarUrl: newUrl });
+  // };
 
-  const handlePropietarioNombreChange = (newName: string) => {
-    updateComponentProps(component.id, { propietarioNombre: newName });
-  };
+  // const handlePropietarioNombreChange = (newName: string) => {
+  //   updateComponentProps(component.id, { propietarioNombre: newName });
+  // };
 
-  const handlePropietarioAvatarChange = (newUrl: string) => {
-    updateComponentProps(component.id, { propietarioAvatarUrl: newUrl });
-  };
+  // const handlePropietarioAvatarChange = (newUrl: string) => {
+  //   updateComponentProps(component.id, { propietarioAvatarUrl: newUrl });
+  // };
 
   return (
     <Box
@@ -84,7 +84,10 @@ const RespaldadoPorComponent = ({
           // Props principales
           texto={component.props?.texto || 'Respaldado por'}
           nombre={component.props?.nombre || 'Redacción'}
-          avatarUrl={component.props?.avatarUrl || ''}
+          avatarUrl={
+            component.props?.avatarUrl ||
+            'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp'
+          }
           avatarTamano={component.props?.avatarTamano || 21}
           // Props de la sección adicional
           mostrarEscritorPropietario={component.props?.mostrarEscritorPropietario || false}

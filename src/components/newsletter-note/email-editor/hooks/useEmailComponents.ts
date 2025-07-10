@@ -87,6 +87,8 @@ export const useEmailComponents = () => {
             return newsComponentsWebState;
           case 'market':
             return marketComponentsWebState;
+          case 'feature':
+            return featureComponentsState; // Feature solo tiene versión newsletter
           default:
             return blankComponentsWebState;
         }
@@ -107,6 +109,7 @@ export const useEmailComponents = () => {
       newsComponentsWebState,
       marketComponentsState,
       marketComponentsWebState,
+      featureComponentsState,
     ]
   );
 
@@ -135,6 +138,9 @@ export const useEmailComponents = () => {
             break;
           case 'market':
             setMarketComponentsWeb(components);
+            break;
+          case 'feature':
+            setFeatureComponents(components); // Feature solo tiene versión newsletter, actualizar la misma
             break;
           default:
             break;
@@ -192,6 +198,8 @@ export const useEmailComponents = () => {
             return [...vercelComponentsWebState];
           case 'market':
             return [...marketComponentsWebState];
+          case 'feature':
+            return [...featureComponentsState]; // Feature solo tiene versión newsletter
           default:
             return [...blankComponentsWebState];
         }
@@ -233,6 +241,7 @@ export const useEmailComponents = () => {
       newsComponentsWebState,
       marketComponentsState,
       marketComponentsWebState,
+      featureComponentsState,
     ]
   );
 

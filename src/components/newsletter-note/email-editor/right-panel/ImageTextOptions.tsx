@@ -22,8 +22,6 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
 
   const imageUrl = component.props?.imageUrl || '';
   const imageAlt = component.props?.imageAlt || 'Imagen';
-  const title = component.props?.title || 'Título';
-  const description = component.props?.description || 'Escribe el contenido aquí...';
   const imageWidth = component.props?.imageWidth || 40;
   const spacing = component.props?.spacing || 16;
   const borderRadius = component.props?.borderRadius || 8;
@@ -68,11 +66,6 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
 
   return (
     <Box sx={{ p: 2 }}>
-      {/* Sección de Imagen */}
-      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-        📷 Imagen
-      </Typography>
-
       {/* Preview de la imagen actual */}
       {imageUrl && (
         <Box sx={{ mb: 2, textAlign: 'center' }}>
@@ -140,34 +133,6 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
         fullWidth
         size="small"
         placeholder="https://ejemplo.com/imagen.jpg"
-        helperText="Puedes pegar una URL directamente en lugar de subir un archivo"
-        sx={{ mb: 2 }}
-      />
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Sección de Contenido */}
-      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-        📝 Contenido
-      </Typography>
-
-      <TextField
-        label="Título"
-        value={title}
-        onChange={(e) => handleInputChange('title', e.target.value)}
-        fullWidth
-        size="small"
-        sx={{ mb: 2 }}
-      />
-
-      <TextField
-        label="Descripción"
-        value={description}
-        onChange={(e) => handleInputChange('description', e.target.value)}
-        fullWidth
-        multiline
-        rows={3}
-        size="small"
         sx={{ mb: 2 }}
       />
 
@@ -175,7 +140,7 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
 
       {/* Sección de Diseño */}
       <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-        🎨 Diseño
+        Layout
       </Typography>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>

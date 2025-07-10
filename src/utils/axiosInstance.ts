@@ -29,15 +29,15 @@ export const createAxiosInstance = () => {
     (response) => {
       console.log(`Respuesta exitosa de ${response.config.url}:`, response.status);
       return response;
-    },
-    (error) => {
-      console.error(
-        `Error en petición a ${error.config?.url}:`,
-        error.response?.status,
-        error.message
-      );
-      return Promise.reject(error);
     }
+    // (error) => {
+    //   console.error(
+    //     `Error en petición a ${error.config?.url}:`,
+    //     error.response?.status,
+    //     error.message
+    //   );
+    //   return Promise.reject(error);
+    // }
   );
 
   return instance;
@@ -62,6 +62,7 @@ export const endpoints = {
     update: (id: string) => `/posts/${id}`,
     delete: (id: string) => `/posts/${id}`,
     sendForReview: '/email/send',
+    updateStatus: (id: string, status: string) => `/posts/status/${id}/${status}`,
   },
   newsletter: {
     send: (id: string) => `/newsletters/${id}/send`,

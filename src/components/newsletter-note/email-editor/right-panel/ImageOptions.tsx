@@ -2,13 +2,12 @@
 import 'react-image-crop/dist/ReactCrop.css';
 import 'src/styles/react-crop.css';
 
-import type { DependencyList } from 'react';
 import type { Crop, PixelCrop } from 'react-image-crop';
 
 import { m } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import ReactCrop from 'react-image-crop';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import {
@@ -17,14 +16,17 @@ import {
   Stack,
   Button,
   Slider,
+  Select,
   Divider,
+  MenuItem,
   TextField,
   Typography,
   IconButton,
+  InputLabel,
+  FormControl,
   LinearProgress,
 } from '@mui/material';
 
-import ColorPicker from './ColorPicker';
 import { imgPreview } from './imgPreview';
 import { useImageUpload } from './useImageUpload';
 import { isBase64Image } from '../utils/imageValidation';
@@ -44,7 +46,6 @@ const ImageOptions = ({
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [scale, setScale] = useState(1);
   const [rotate, setRotate] = useState(0);
-  const [bgColor, setBgColor] = useState('#ffffff');
   const [adjustImageCrop, setAdjustImageCrop] = useState(true);
 
   // Estados para imagen
@@ -191,32 +192,35 @@ const ImageOptions = ({
     }
   };
 
-  // Debounce hook personalizado
-  function useDebounceEffect(fn: any, waitTime: number, deps?: DependencyList) {
-    useEffect(() => {
-      const time = setTimeout(() => {
-        fn(...(deps || []));
-      }, waitTime);
-
-      return () => {
-        clearTimeout(time);
-      };
-    }, deps);
-  }
-
-  // 🚀 MODIFICADO: Solo generar preview del crop sin subir automáticamente
-  useDebounceEffect(
-    async () => {
+  // Efecto debounced para generar preview del crop
+  useEffect(() => {
+    const timeoutId = setTimeout(async () => {
       if (completedCrop?.width && completedCrop?.height && imgRef?.current && croppedImage) {
-        const croppedBase64 = imgPreview(imgRef.current, completedCrop, scale, rotate);
-        setPendingCrop(croppedBase64);
-        setHasPendingChanges(true);
-        setShowCropOptions(true);
+        try {
+          const croppedBase64 = imgPreview(imgRef.current, completedCrop, scale, rotate);
+          setPendingCrop(croppedBase64);
+          setHasPendingChanges(true);
+          setShowCropOptions(true);
+        } catch (error) {
+          console.error('Error generando preview del crop:', error);
+        }
       }
-    },
-    300,
-    [completedCrop, scale, rotate, bgColor, adjustImageCrop]
-  );
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [completedCrop, scale, rotate]);
+
+  // 🚀 NUEVO: Efecto para actualizar el ajuste de imagen inmediatamente
+  useEffect(() => {
+    if (selectedComponentId && selectedComponent.props?.src) {
+      updateComponentProps(selectedComponentId, {
+        style: {
+          ...selectedComponent.props?.style,
+          objectFit: adjustImageCrop ? 'contain' : 'cover',
+        },
+      });
+    }
+  }, [adjustImageCrop]);
 
   const handleSelectImage = () => {
     fileInputRef.current?.click();
@@ -248,7 +252,11 @@ const ImageOptions = ({
       updateComponentProps(selectedComponentId!, {
         src: finalImageUrl,
         alt: file.name,
-        style: { backgroundColor: bgColor },
+        style: {
+          objectFit: adjustImageCrop ? 'contain' : 'cover',
+          width: selectedComponent.props?.style?.width || '100%',
+          height: selectedComponent.props?.style?.height || 'auto',
+        },
       });
 
       // Reset crop settings
@@ -271,7 +279,6 @@ const ImageOptions = ({
     setCompletedCrop(undefined);
     setScale(1);
     setRotate(0);
-    setBgColor('#ffffff');
     setAdjustImageCrop(true);
     setPendingCrop('');
     setHasPendingChanges(false);
@@ -279,7 +286,11 @@ const ImageOptions = ({
     updateComponentProps(selectedComponentId!, {
       src: '',
       alt: 'Imagen por defecto',
-      style: { backgroundColor: '#ffffff' },
+      style: {
+        objectFit: 'contain',
+        width: '100%',
+        height: 'auto',
+      },
     });
   };
 
@@ -293,8 +304,9 @@ const ImageOptions = ({
       updateComponentProps(selectedComponentId!, {
         src: originalImage,
         style: {
-          backgroundColor: bgColor,
           objectFit: adjustImageCrop ? 'contain' : 'cover',
+          width: selectedComponent.props?.style?.width || '100%',
+          height: selectedComponent.props?.style?.height || 'auto',
         },
       });
       setCrop(undefined);
@@ -317,9 +329,9 @@ const ImageOptions = ({
     updateComponentProps(selectedComponentId!, {
       src: finalImageUrl,
       style: {
-        ...selectedComponent.props?.style,
-        backgroundColor: bgColor,
         objectFit: adjustImageCrop ? 'contain' : 'cover',
+        width: selectedComponent.props?.style?.width || '100%',
+        height: selectedComponent.props?.style?.height || 'auto',
       },
     });
 
@@ -328,9 +340,18 @@ const ImageOptions = ({
     setHasPendingChanges(false);
   };
 
-  const onImageLoad = () => {
+  // Callbacks memoizados para ReactCrop para evitar re-renders
+  const handleCropChange = useCallback((_, percentCrop: Crop) => {
+    setCrop(percentCrop);
+  }, []);
+
+  const handleCropComplete = useCallback((pixelCrop: PixelCrop) => {
+    setCompletedCrop(pixelCrop);
+  }, []);
+
+  const onImageLoad = useCallback(() => {
     // Image loaded, ready for cropping
-  };
+  }, []);
 
   const currentImageSrc = selectedComponent.props?.src;
   const needsUpload = isBase64Image(currentImageSrc);
@@ -428,13 +449,19 @@ const ImageOptions = ({
             Opciones de edición
           </Typography>
 
-          {/* Color de fondo */}
-          <ColorPicker
-            label="Color de fondo"
-            name="bgColor"
-            value={bgColor}
-            onChange={(e) => setBgColor(e.target.value)}
-          />
+          {/* 🚀 NUEVO: Control de ajuste de imagen */}
+          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+            <InputLabel>Ajuste de imagen</InputLabel>
+            <Select
+              value={adjustImageCrop ? 'contain' : 'cover'}
+              label="Ajuste de imagen"
+              onChange={(e) => setAdjustImageCrop(e.target.value === 'contain')}
+              disabled={isProcessing}
+            >
+              <MenuItem value="contain">Contener (mostrar toda la imagen)</MenuItem>
+              <MenuItem value="cover">Cubrir (llenar el espacio)</MenuItem>
+            </Select>
+          </FormControl>
 
           {/* Opciones de crop con animación */}
           {showCropOptions && (
@@ -510,8 +537,8 @@ const ImageOptions = ({
           <Box sx={{ mb: 2, opacity: isProcessing ? 0.5 : 1, transition: 'opacity 0.3s ease' }}>
             <ReactCrop
               crop={crop}
-              onChange={(_, percentCrop) => setCrop(percentCrop)}
-              onComplete={(c) => setCompletedCrop(c)}
+              onChange={handleCropChange}
+              onComplete={handleCropComplete}
               style={{ width: '100%' }}
               disabled={isProcessing}
             >
@@ -522,7 +549,6 @@ const ImageOptions = ({
                 onLoad={onImageLoad}
                 style={{
                   transform: `scale(${scale}) rotate(${rotate}deg)`,
-                  backgroundColor: bgColor,
                   objectFit: 'contain',
                   maxWidth: '100%',
                 }}

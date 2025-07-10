@@ -40,6 +40,7 @@ interface SimpleTipTapEditorProps {
   placeholder?: string;
   onSelectionUpdate?: (editor: any) => void;
   showToolbar?: boolean;
+  onBlur?: () => void;
 }
 
 // ⚡ ULTRA-OPTIMIZACIÓN: Cache global de extensiones
@@ -141,6 +142,7 @@ export default function SimpleTipTapEditor({
   placeholder = 'Escribe aquí...',
   onSelectionUpdate,
   showToolbar = true,
+  onBlur,
 }: SimpleTipTapEditorProps) {
   const editorRef = useRef<any>(null);
   const isUpdatingContent = useRef(false);
@@ -259,6 +261,11 @@ export default function SimpleTipTapEditor({
       onSelectionUpdate: ({ editor }: { editor: any }) => {
         throttledSelectionUpdate(editor);
       },
+      onBlur: () => {
+        if (onBlur) {
+          onBlur();
+        }
+      },
       editorProps: {
         attributes: {
           class: className || 'tiptap-editor-optimized',
@@ -296,7 +303,15 @@ export default function SimpleTipTapEditor({
       enablePasteRules: true,
       enableCoreExtensions: true,
     }),
-    [extensions, content, debouncedOnChange, throttledSelectionUpdate, className, placeholder]
+    [
+      extensions,
+      content,
+      debouncedOnChange,
+      throttledSelectionUpdate,
+      className,
+      placeholder,
+      onBlur,
+    ]
   );
 
   const editor = useEditor(editorConfig, []);

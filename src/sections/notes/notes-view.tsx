@@ -2,7 +2,7 @@
 
 'use client';
 
-import type { Article, PostFilters } from 'src/store/PostStore';
+import type { Article, PostStatus, PostFilters } from 'src/store/PostStore';
 
 import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
@@ -83,7 +83,7 @@ export default function NotesView() {
 
   // Configurar filtros basados en el tab actual
   const currentFilters: PostFilters = {
-    status: tab.toUpperCase(),
+    status: tab.toUpperCase() as PostStatus,
     page: filters.page,
     perPage: filters.perPage,
     ...(searchTerm && { title: searchTerm }),

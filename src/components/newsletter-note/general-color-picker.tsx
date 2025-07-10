@@ -150,11 +150,12 @@ const GeneralColorPicker: React.FC<GeneralColorPickerProps> = ({
 
         {/* Botón de reset */}
         {allowReset && (
-          <Tooltip title="Quitar color">
+          <Tooltip title="Reiniciar color">
             <IconButton
               onClick={handleRemoveColor}
               sx={{
                 width: colorSize,
+                padding: 0,
                 height: colorSize,
                 border: '1px solid #ddd',
                 backgroundColor: '#f5f5f5',
@@ -165,7 +166,7 @@ const GeneralColorPicker: React.FC<GeneralColorPickerProps> = ({
                 },
               }}
             >
-              <Icon icon="mdi:format-color-reset" style={{ fontSize: colorSize * 0.6 }} />
+              <Icon icon="mdi:format-color-reset" width={12} height={12} />
             </IconButton>
           </Tooltip>
         )}

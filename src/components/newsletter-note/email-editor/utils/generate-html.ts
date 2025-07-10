@@ -192,7 +192,7 @@ function generateComponentHtml(component: EmailComponent): string {
       const borderRadius = component.props?.borderRadius || 16;
       const padding = component.props?.padding || 4;
       const textColor = component.props?.textColor || 'white';
-      const fontWeight = component.props?.fontWeight || 'bold';
+      const fontWeight = component.props?.fontWeight || 'normal';
       const fontSize = component.props?.fontSize || 14;
 
       let categoryHtml = '<div style="margin: 16px 0;">';

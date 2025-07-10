@@ -1,5 +1,11 @@
 import { Icon } from '@iconify/react';
-import { useRef, useState } from 'react';
+import Link from '@tiptap/extension-link';
+import Color from '@tiptap/extension-color';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import TextStyle from '@tiptap/extension-text-style';
+import { useEditor, EditorContent } from '@tiptap/react';
+import { useRef, useMemo, useState, useCallback } from 'react';
 
 import { Box, TextField, Typography } from '@mui/material';
 
@@ -20,6 +26,134 @@ interface TituloConIconoProps {
   className?: string;
 }
 
+// Editor TipTap simplificado para títulos
+function TituloTipTapEditor({
+  content,
+  onChange,
+  textColor,
+  onBlur,
+}: {
+  content: string;
+  onChange: (content: string) => void;
+  textColor: string;
+  onBlur: () => void;
+}) {
+  const extensions = useMemo(
+    () => [
+      StarterKit.configure({
+        paragraph: {
+          HTMLAttributes: {
+            class: 'titulo-paragraph',
+          },
+        },
+      }),
+      TextStyle,
+      Color,
+      Underline,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+      }),
+    ],
+    []
+  );
+
+  const editor = useEditor({
+    extensions,
+    content,
+    onUpdate: ({ editor: tipTapEditor }) => {
+      onChange(tipTapEditor.getHTML());
+    },
+    onBlur,
+    editorProps: {
+      attributes: {
+        class: 'titulo-editor',
+        placeholder: 'Escribe el título...',
+      },
+    },
+    parseOptions: {
+      preserveWhitespace: 'full',
+    },
+    autofocus: true,
+    editable: true,
+  });
+
+  return (
+    <Box
+      sx={{
+        flexGrow: 1,
+        '& .titulo-editor': {
+          padding: '0 !important',
+          minHeight: 'auto !important',
+          border: 'none !important',
+          borderRadius: '0 !important',
+          backgroundColor: 'transparent !important',
+          outline: 'none',
+          color: textColor,
+          fontWeight: 'bold',
+          fontSize: '1.2rem',
+          fontFamily: '"Roboto","Helvetica","Arial",sans-serif',
+          lineHeight: '1.2',
+          '& .ProseMirror': {
+            padding: '0 !important',
+            minHeight: 'auto !important',
+            outline: 'none',
+            color: textColor,
+            fontWeight: 'bold',
+            fontSize: '1.2rem',
+            fontFamily: '"Roboto","Helvetica","Arial",sans-serif',
+            lineHeight: '1.2',
+            '& p': {
+              margin: '0 !important',
+              padding: '0 !important',
+              color: textColor,
+              fontWeight: 'bold',
+              fontSize: '1.2rem',
+              fontFamily: '"Roboto","Helvetica","Arial",sans-serif',
+              lineHeight: '1.2',
+            },
+            '& p.is-editor-empty:first-child::before': {
+              content: 'attr(data-placeholder)',
+              position: 'absolute',
+              color: `${textColor}80`,
+              pointerEvents: 'none',
+              height: 0,
+              opacity: 0.6,
+            },
+            // ⚡ PREVENIR MÁRGENES EXTRAÑOS: Asegurar que no hay márgenes en elementos de formato
+            '& strong, & b': {
+              margin: '0 !important',
+              padding: '0 !important',
+              fontWeight: 'bold !important',
+            },
+            '& em, & i': {
+              margin: '0 !important',
+              padding: '0 !important',
+              fontStyle: 'italic !important',
+            },
+            '& u': {
+              margin: '0 !important',
+              padding: '0 !important',
+              textDecoration: 'underline !important',
+            },
+            '& a': {
+              margin: '0 !important',
+              padding: '0 !important',
+              color: 'inherit !important',
+              textDecoration: 'underline !important',
+            },
+          },
+        },
+      }}
+    >
+      {editor && <EditorContent editor={editor} />}
+    </Box>
+  );
+}
+
 export default function TituloConIcono({
   titulo,
   icon,
@@ -37,12 +171,11 @@ export default function TituloConIcono({
 }: TituloConIconoProps) {
   // Estado para control de edición del título
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [tempTitulo, setTempTitulo] = useState(titulo);
+  const [tempTitle, setTempTitle] = useState('');
 
   const barRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLDivElement>(null);
   const tituloRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Estilos para el degradado
   const gradientStyle =
@@ -56,39 +189,51 @@ export default function TituloConIcono({
     setShowIconPicker(true);
   };
 
-  const handleTitleClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    setIsEditingTitle(true);
-    // Enfoca el input después de renderizarlo
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 0);
+  // Función para extraer texto plano del HTML
+  const extractPlainText = (html: string): string => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    return tempDiv.textContent || tempDiv.innerText || '';
   };
 
-  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTempTitulo(event.target.value);
-  };
+  const handleTitleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setTempTitle(extractPlainText(titulo));
+      setIsEditingTitle(true);
+    },
+    [titulo]
+  );
 
-  const handleTitleBlur = () => {
-    if (tempTitulo !== titulo) {
-      onTituloChange(tempTitulo);
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempTitle(e.target.value);
+  }, []);
+
+  const handleTitleSubmit = useCallback(() => {
+    // Si el título está vacío, usar un placeholder
+    const finalTitle = tempTitle.trim() || 'Título sin contenido';
+    if (finalTitle !== extractPlainText(titulo)) {
+      onTituloChange(finalTitle);
     }
     setIsEditingTitle(false);
-  };
+  }, [onTituloChange, tempTitle, titulo]);
 
-  const handleTitleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      if (tempTitulo !== titulo) {
-        onTituloChange(tempTitulo);
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleTitleSubmit();
+      } else if (e.key === 'Escape') {
+        setIsEditingTitle(false);
+        setTempTitle(extractPlainText(titulo));
       }
-      setIsEditingTitle(false);
-    } else if (event.key === 'Escape') {
-      setTempTitulo(titulo);
-      setIsEditingTitle(false);
-    }
-  };
+    },
+    [handleTitleSubmit, titulo]
+  );
+
+  const handleTitleBlur = useCallback(() => {
+    handleTitleSubmit();
+  }, [handleTitleSubmit]);
 
   return (
     <Box className={`news-TituloConIcono ${className || ''}`}>
@@ -101,6 +246,12 @@ export default function TituloConIcono({
           borderRadius: '8px 8px 0 0',
           background: gradientStyle,
           cursor: 'pointer',
+          // ⚡ PREVENIR DESBORDAMIENTO: Asegurar que el contenedor no se desborde
+          maxWidth: '100%',
+          overflow: 'hidden',
+          wordWrap: 'break-word',
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word',
         }}
       >
         <Box
@@ -133,30 +284,42 @@ export default function TituloConIcono({
 
         {isEditingTitle ? (
           <TextField
-            inputRef={inputRef}
-            fullWidth
-            value={tempTitulo}
+            value={tempTitle}
             onChange={handleTitleChange}
-            onBlur={handleTitleBlur}
             onKeyDown={handleTitleKeyDown}
-            variant="standard"
+            onBlur={handleTitleBlur}
             autoFocus
+            variant="standard"
+            fullWidth
+            placeholder="Escribe el título aquí..."
             sx={{
-              flexGrow: 1,
-              '& .MuiInputBase-input': {
+              '& .MuiInput-root': {
                 color: textColor,
                 fontWeight: 'bold',
                 fontSize: '1.2rem',
                 fontFamily: '"Roboto","Helvetica","Arial",sans-serif',
-                padding: '0',
+                lineHeight: '1.2',
+                '&:before': {
+                  borderBottom: 'none',
+                },
+                '&:after': {
+                  borderBottom: `2px solid ${textColor}`,
+                },
+                '&:hover:not(.Mui-disabled):before': {
+                  borderBottom: 'none',
+                },
               },
-              '& .MuiInput-underline:before, & .MuiInput-underline:after': {
-                borderBottomColor: 'none',
-                borderBottomWidth: '0px',
-              },
-              '& .MuiInput-underline:hover:not(.Mui-disabled):before': {
-                borderBottomColor: 'none',
-                borderBottomWidth: '0px',
+              '& .MuiInput-input': {
+                padding: 0,
+                color: textColor,
+                fontWeight: 'bold',
+                fontSize: '1.2rem',
+                fontFamily: '"Roboto","Helvetica","Arial",sans-serif',
+                lineHeight: '1.2',
+                // ⚡ PREVENIR DESBORDAMIENTO: Ajustar palabras largas en el input
+                wordWrap: 'break-word',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
               },
             }}
           />
@@ -170,11 +333,34 @@ export default function TituloConIcono({
               fontWeight: 'bold',
               flexGrow: 1,
               color: textColor,
-              cursor: 'text',
+              cursor: 'pointer',
+              // ⚡ PREVENIR DESBORDAMIENTO: Ajustar palabras largas dentro del contenedor
+              wordWrap: 'break-word',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+              hyphens: 'auto',
+              maxWidth: '100%',
+              // ⚡ PREVENIR COMPONENTE VACÍO: Asegurar que siempre haya contenido clickeable
+              minHeight: '1.2em',
+              '&:hover': {
+                opacity: 0.8,
+              },
+              // Estilo para placeholder cuando está vacío
+              '&:empty::before': {
+                content: '"Haz clic para editar título"',
+                color: `${textColor}80`,
+                fontStyle: 'italic',
+                opacity: 0.7,
+              },
             }}
-          >
-            {titulo}
-          </Typography>
+            dangerouslySetInnerHTML={{
+              __html:
+                titulo ||
+                '<span style="color: ' +
+                  textColor +
+                  '80; font-style: italic; opacity: 0.7;">Haz clic para editar título</span>',
+            }}
+          />
         )}
       </Box>
     </Box>

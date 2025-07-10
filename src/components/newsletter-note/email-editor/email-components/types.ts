@@ -13,6 +13,7 @@ export interface EmailComponentProps {
   removeComponent: (id: string) => void;
   totalComponents: number;
   renderCustomContent?: (component: EmailComponent) => React.ReactNode;
+  onColumnSelect?: (componentId: string, column: 'left' | 'right') => void;
 }
 
 export interface ComponentWithToolbarProps {

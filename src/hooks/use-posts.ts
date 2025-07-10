@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useRef, useEffect } from 'react';
 
 import usePostStore, {
@@ -121,7 +122,7 @@ export const usePosts = (initialFilters?: PostFilters) => {
       ...initialFilters,
       status,
     };
-    return await findAll(filters);
+    return await findAll(filters as PostFilters);
   };
 
   // Función para filtrar posts destacados

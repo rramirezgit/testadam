@@ -12,7 +12,6 @@ const SUMMARY_TYPES = {
     label: 'Resumen',
     icon: 'https://img.icons8.com/color/48/note.png',
     backgroundColor: '#f8f9fa',
-    iconColor: '#6c757d',
     textColor: '#495057',
     description: 'Para resúmenes generales',
   },
@@ -20,7 +19,6 @@ const SUMMARY_TYPES = {
     label: 'Concepto',
     icon: 'https://img.icons8.com/color/48/light-on.png',
     backgroundColor: '#e7f3ff',
-    iconColor: '#0066cc',
     textColor: '#003d7a',
     description: 'Para explicar conceptos',
   },
@@ -28,7 +26,6 @@ const SUMMARY_TYPES = {
     label: 'Dato',
     icon: 'https://img.icons8.com/color/48/info.png',
     backgroundColor: '#fff8e1',
-    iconColor: '#f57c00',
     textColor: '#e65100',
     description: 'Para datos importantes',
   },
@@ -36,7 +33,6 @@ const SUMMARY_TYPES = {
     label: 'TIP',
     icon: 'https://img.icons8.com/color/48/rocket.png',
     backgroundColor: '#f3e5f5',
-    iconColor: '#8e24aa',
     textColor: '#4a148c',
     description: 'Para consejos útiles',
   },
@@ -44,7 +40,6 @@ const SUMMARY_TYPES = {
     label: 'Analogía',
     icon: 'https://img.icons8.com/color/48/brain.png',
     backgroundColor: '#e8f5e8',
-    iconColor: '#388e3c',
     textColor: '#1b5e20',
     description: 'Para comparaciones',
   },
@@ -69,7 +64,6 @@ export default function SummaryOptions({
 
   const label = component.props?.label || typeConfig.label;
   const icon = component.props?.icon || typeConfig.icon;
-  const iconColor = component.props?.iconColor || typeConfig.iconColor;
   const textColor = component.props?.textColor || typeConfig.textColor;
   const backgroundColor = component.props?.backgroundColor || typeConfig.backgroundColor;
 
@@ -80,7 +74,6 @@ export default function SummaryOptions({
       summaryType: newType,
       label: newTypeConfig.label,
       icon: newTypeConfig.icon,
-      iconColor: newTypeConfig.iconColor,
       textColor: newTypeConfig.textColor,
       backgroundColor: newTypeConfig.backgroundColor,
     });
@@ -142,16 +135,6 @@ export default function SummaryOptions({
 
       {/* Personalización mejorada */}
       <Paper elevation={2} sx={{ mb: 3, overflow: 'hidden' }}>
-        <Box sx={{ p: 2, backgroundColor: 'secondary.main', color: 'white' }}>
-          <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
-          >
-            <Icon icon="mdi:palette" />
-            Personalización
-          </Typography>
-        </Box>
-
         <Box sx={{ p: 2 }}>
           {/* Colores en una disposición más elegante */}
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
@@ -170,24 +153,6 @@ export default function SummaryOptions({
                   selectedColor={backgroundColor}
                   onChange={(color) =>
                     updateComponentProps(selectedComponentId, { backgroundColor: color })
-                  }
-                  label=""
-                  size="small"
-                />
-              </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ minWidth: 60 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Icono
-                </Typography>
-              </Box>
-              <Box sx={{ flex: 1 }}>
-                <GeneralColorPicker
-                  selectedColor={iconColor}
-                  onChange={(color) =>
-                    updateComponentProps(selectedComponentId, { iconColor: color })
                   }
                   label=""
                   size="small"
@@ -241,24 +206,21 @@ export default function SummaryOptions({
                 },
               }}
             >
-              {/* Renderizar PNG o icono legacy */}
-              {icon.startsWith('http') ? (
-                <img
-                  src={icon}
-                  alt="Icon"
-                  style={{
-                    width: 24,
-                    height: 24,
-                    objectFit: 'contain',
-                    display: 'block',
-                  }}
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <Icon icon={icon} style={{ fontSize: 24, color: iconColor }} />
-              )}
+              {/* Renderizar PNG (solo URLs) */}
+              <img
+                src={icon}
+                alt="Icon"
+                style={{
+                  width: 24,
+                  height: 24,
+                  objectFit: 'contain',
+                  display: 'block',
+                }}
+                onError={(e) => {
+                  // Fallback si la imagen no carga
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </Box>
             <Button
               variant="outlined"

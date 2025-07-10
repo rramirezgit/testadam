@@ -19,6 +19,7 @@ interface EmailContentProps {
   selectedComponentId: string | null;
   setSelectedComponentId: (id: string | null) => void;
   onComponentSelect?: (id: string | null) => void;
+  onColumnSelect?: (componentId: string, column: 'left' | 'right') => void;
   updateComponentContent: (id: string, content: string) => void;
   updateComponentProps: (id: string, props: Record<string, any>) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
@@ -555,6 +556,7 @@ const EmailContent = memo(
     selectedComponentId,
     setSelectedComponentId,
     onComponentSelect = () => {},
+    onColumnSelect = () => {},
     updateComponentContent,
     updateComponentProps,
     updateComponentStyle,
@@ -1057,6 +1059,7 @@ const EmailContent = memo(
                                 // Llamar también onComponentSelect para manejar el estado del panel
                                 onComponentSelect(componentId);
                               }}
+                              onColumnSelect={onColumnSelect}
                               updateComponentContent={(id, content) => {
                                 // Actualizar contenido del componente en newsletter
                                 updateNewsletterNoteComponentContent(note.noteId, id, content);
@@ -1302,6 +1305,7 @@ const EmailContent = memo(
                 index={index}
                 isSelected={selectedComponentId === component.id}
                 onSelect={() => setSelectedComponentId(component.id)}
+                onColumnSelect={onColumnSelect}
                 updateComponentContent={updateComponentContent}
                 updateComponentProps={updateComponentProps}
                 handleSelectionUpdate={handleSelectionUpdate}

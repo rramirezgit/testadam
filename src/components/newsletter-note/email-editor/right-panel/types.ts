@@ -1,4 +1,5 @@
 import type React from 'react';
+import type { PostStatus } from 'src/types/post';
 import type { EmailComponent } from 'src/types/saved-note';
 import type { BannerOption } from 'src/components/newsletter-note/banner-selector';
 
@@ -58,14 +59,19 @@ export interface RightPanelProps {
   activeVersion: 'newsletter' | 'web';
 
   // Nuevos campos para la nota
+  currentNoteId: string | null;
   noteTitle: string;
   setNoteTitle: (title: string) => void;
   noteDescription: string;
   setNoteDescription: (description: string) => void;
   noteCoverImageUrl: string;
   setNoteCoverImageUrl: (url: string) => void;
-  noteStatus: string;
-  setNoteStatus: (status: string) => void;
+  noteStatus: PostStatus;
+  setNoteStatus: (status: PostStatus) => void;
+  updateStatus: (status: PostStatus) => Promise<void>;
+
+  // Prop para columna seleccionada en TwoColumns
+  selectedColumn?: 'left' | 'right';
 }
 
 export interface ListStyleOptionsProps {

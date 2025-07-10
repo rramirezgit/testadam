@@ -1,20 +1,9 @@
 import type { EmailComponent } from 'src/types/saved-note';
 
+import { useRef } from 'react';
 import { Icon } from '@iconify/react';
-import { useRef, useState } from 'react';
 
-import {
-  Box,
-  Tab,
-  Tabs,
-  Chip,
-  Slider,
-  Button,
-  Avatar,
-  Divider,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Chip, Slider, Button, Divider, TextField, Typography } from '@mui/material';
 
 import { useImageUpload } from './useImageUpload';
 import { isBase64Image } from '../utils/imageValidation';
@@ -29,11 +18,14 @@ interface ColumnData {
 interface TwoColumnsOptionsProps {
   component: EmailComponent;
   updateComponentProps: (componentId: string, props: Record<string, any>) => void;
+  selectedColumn?: 'left' | 'right';
 }
 
-const TwoColumnsOptions = ({ component, updateComponentProps }: TwoColumnsOptionsProps) => {
-  const [activeTab, setActiveTab] = useState(0);
-
+const TwoColumnsOptions = ({
+  component,
+  updateComponentProps,
+  selectedColumn = 'left',
+}: TwoColumnsOptionsProps) => {
   // Referencias para input de archivos (una para cada columna)
   const leftImageFileInputRef = useRef<HTMLInputElement>(null);
   const rightImageFileInputRef = useRef<HTMLInputElement>(null);
@@ -113,43 +105,28 @@ const TwoColumnsOptions = ({ component, updateComponentProps }: TwoColumnsOption
     updateComponentProps(component.id, { [field]: value });
   };
 
-  const currentColumn = activeTab === 0 ? leftColumn : rightColumn;
-  const columnKey = activeTab === 0 ? 'left' : 'right';
+  const currentColumn = selectedColumn === 'left' ? leftColumn : rightColumn;
+  const columnLabel = selectedColumn === 'left' ? 'Izquierda' : 'Derecha';
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Icon icon="mdi:view-column" />
-        Dos Columnas
-      </Typography>
-
-      {/* Tabs para seleccionar columna */}
-      <Tabs
-        value={activeTab}
-        onChange={(_, newValue) => setActiveTab(newValue)}
-        sx={{ mb: 2 }}
-        variant="fullWidth"
-      >
-        <Tab label="📄 Columna Izq." />
-        <Tab label="📄 Columna Der." />
-      </Tabs>
-
-      {/* Contenido de la columna seleccionada */}
-      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-        📝 Contenido - {activeTab === 0 ? 'Izquierda' : 'Derecha'}
+      {/* Opciones de imagen para la columna seleccionada */}
+      <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+        Imagen - {columnLabel}
       </Typography>
 
       {/* Preview de la imagen actual */}
       {currentColumn.imageUrl && (
         <Box sx={{ mb: 2, textAlign: 'center' }}>
-          <Avatar
+          <Box
+            component="img"
             src={currentColumn.imageUrl}
             alt={currentColumn.imageAlt}
-            variant="rounded"
             sx={{
               width: 120,
               height: 90,
-              margin: '0 auto',
+              objectFit: 'cover',
+              borderRadius: 1,
               border: '2px solid #e0e0e0',
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             }}
@@ -165,12 +142,11 @@ const TwoColumnsOptions = ({ component, updateComponentProps }: TwoColumnsOption
         </Box>
       )}
 
-      {/* Botón para cambiar imagen */}
       <Button
         variant="contained"
         size="medium"
         startIcon={<Icon icon="mdi:camera-plus" />}
-        onClick={() => handleSelectImage(columnKey)}
+        onClick={() => handleSelectImage(selectedColumn)}
         fullWidth
         sx={{
           mb: 2,
@@ -200,7 +176,7 @@ const TwoColumnsOptions = ({ component, updateComponentProps }: TwoColumnsOption
       <TextField
         label="Texto alternativo"
         value={currentColumn.imageAlt}
-        onChange={(e) => handleColumnChange(columnKey, 'imageAlt', e.target.value)}
+        onChange={(e) => handleColumnChange(selectedColumn, 'imageAlt', e.target.value)}
         fullWidth
         size="small"
         sx={{ mb: 2 }}
@@ -209,42 +185,22 @@ const TwoColumnsOptions = ({ component, updateComponentProps }: TwoColumnsOption
       <TextField
         label="URL de imagen (manual)"
         value={currentColumn.imageUrl}
-        onChange={(e) => handleColumnChange(columnKey, 'imageUrl', e.target.value)}
+        onChange={(e) => handleColumnChange(selectedColumn, 'imageUrl', e.target.value)}
         fullWidth
         size="small"
         placeholder="https://ejemplo.com/imagen.jpg"
-        helperText="Puedes pegar una URL directamente en lugar de subir un archivo"
-        sx={{ mb: 2 }}
-      />
-
-      <TextField
-        label="Título"
-        value={currentColumn.title}
-        onChange={(e) => handleColumnChange(columnKey, 'title', e.target.value)}
-        fullWidth
-        size="small"
-        sx={{ mb: 2 }}
-      />
-
-      <TextField
-        label="Descripción"
-        value={currentColumn.description}
-        onChange={(e) => handleColumnChange(columnKey, 'description', e.target.value)}
-        fullWidth
-        multiline
-        rows={3}
-        size="small"
-        sx={{ mb: 2 }}
+        helperText="Puedes pegar una URL directamente"
+        sx={{ mb: 3 }}
       />
 
       <Divider sx={{ my: 2 }} />
 
       {/* Configuración Global */}
-      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+      <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
         🎨 Configuración Global
       </Typography>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
         <Box>
           <Typography variant="body2" sx={{ mb: 1 }}>
             Espaciado: {spacing}px
@@ -336,10 +292,8 @@ const TwoColumnsOptions = ({ component, updateComponentProps }: TwoColumnsOption
         </Box>
       </Box>
 
-      <Divider sx={{ my: 2 }} />
-
       {/* Colores */}
-      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+      <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
         🎨 Colores
       </Typography>
 

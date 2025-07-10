@@ -1,147 +1,22 @@
+// Importar tipos centralizados
+import type {
+  Post,
+  Meta,
+  Article,
+  PostStatus,
+  ApiResponse,
+  PostFilters,
+  SendTestData,
+  UpdatePostData,
+  CreatePostData,
+} from 'src/types/post';
+
 import { create } from 'zustand';
 import { persist, devtools, createJSONStorage } from 'zustand/middleware';
 
 import { endpoints, createAxiosInstance } from 'src/utils/axiosInstance';
 
 import { generateEscapedHtml } from 'src/components/newsletter-note/newsletter-html-generator';
-
-// Interfaces
-interface Author {
-  id: string;
-  email: string;
-  name: string;
-  avatar: string;
-  idAuth0: string;
-  country: string;
-  state: string;
-  city: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface Subcategory {
-  id: string;
-  name: string;
-}
-
-interface Post {
-  id: string;
-  title: string;
-  content: string | null;
-  objDataWeb: string;
-  objData: string;
-  configPost: string;
-  description: string | null;
-  origin: string;
-  coverImageUrl: string;
-  slug: string | null;
-  status: string;
-  active: boolean;
-  publishedAt: string | null;
-  publishOnAdac: boolean;
-  highlight: boolean;
-  newsletterId: string;
-  createdAt: string;
-  updatedAt: string;
-  authorId: string;
-  categoryIDs: string[];
-  subcategoryIDs: string[];
-  sourceUrl: string | null;
-  sourceIcon: string | null;
-  aiTag: string | null;
-  sentiment: string | null;
-  sentimentStats: string | null;
-  aiRegion: string | null;
-  embedding: any[];
-  author: Author;
-  categories: Category[];
-  subcategories: Subcategory[];
-}
-
-interface Article {
-  id: string;
-  title: string;
-  coverImageUrl: string;
-  publishOnAdac: boolean;
-  origin: string;
-  status: string;
-  highlight: boolean;
-  newsletterId: string;
-  createdAt: string;
-}
-
-interface Meta {
-  total: number;
-  lastPage: number;
-  currentPage: number;
-  perPage: number;
-  prev: number | null;
-  next: number | null;
-}
-
-interface ApiResponse {
-  data: Article[];
-  meta: Meta;
-}
-
-interface UpdatePostData {
-  title?: string;
-  objData?: string;
-  objDataWeb?: string;
-  configPost?: string;
-  coverImageUrl?: string;
-  highlight?: boolean;
-  content?: string;
-  description?: string;
-  status?: string;
-  publishOnAdac?: boolean;
-}
-
-interface CreatePostData {
-  title: string;
-  objData?: string;
-  objDataWeb?: string;
-  configPost?: string;
-  description?: string;
-  coverImageUrl?: string;
-  newsletterId?: string;
-  origin?: string;
-  highlight?: boolean;
-}
-
-interface PostFilters {
-  page?: number;
-  perPage?: number;
-  status?: string;
-  origin?: string;
-  highlight?: boolean;
-  publishOnAdac?: boolean;
-  search?: string;
-  title?: string;
-  startDate?: string;
-  endDate?: string;
-  usedInNewsletter?: boolean;
-  orderBy?: string;
-  newsletterId?: string;
-}
-
-interface SendTestData {
-  subject: string;
-  content: string;
-  approverEmails?: string[];
-  emails?: string[];
-}
-
-interface SendNewsletterData {
-  subject: string;
-  content: string;
-  approverEmails: string[];
-}
 
 interface PostState {
   loading: boolean;
@@ -159,6 +34,7 @@ interface PostState {
   findById: (id: string) => Promise<Post | null>;
   create: (data: CreatePostData) => Promise<Post | null>;
   update: (id: string, data: UpdatePostData) => Promise<Post | null>;
+  updateStatus: (id: string, status: PostStatus) => Promise<Post | null>;
   delete: (id: string) => Promise<boolean>;
 
   // Email sending operations
@@ -211,7 +87,7 @@ const usePostStore = create<PostState>()(
 
             if (response.data) {
               set({
-                posts: response.data.data,
+                posts: response.data.data as Article[],
                 meta: response.data.meta,
                 loading: false,
               });
@@ -240,10 +116,10 @@ const usePostStore = create<PostState>()(
 
             if (response.data) {
               set({
-                currentPost: response.data,
+                currentPost: response.data as Post,
                 loading: false,
               });
-              return response.data;
+              return response.data as Post;
             }
 
             set({ loading: false });
@@ -324,6 +200,48 @@ const usePostStore = create<PostState>()(
           } catch (error: any) {
             console.error('Error al actualizar post:', error);
             const errorMessage = error.response?.data?.message || 'Error al actualizar el post';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return null;
+          }
+        },
+
+        updateStatus: async (id: string, status: string) => {
+          try {
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const response = await axiosInstance.patch<Post>(
+              endpoints.post.updateStatus(id, status.toLowerCase())
+            );
+
+            if (response.data) {
+              // Actualizar en la lista de posts si existe
+              const currentPosts = get().posts;
+              const updatedPosts = currentPosts.map((post) =>
+                post.id === id ? { ...post, status } : post
+              );
+
+              // Actualizar currentPost si es el mismo que se está editando
+              const currentPost = get().currentPost;
+              const updatedCurrentPost =
+                currentPost?.id === id ? { ...currentPost, status } : currentPost;
+              set({
+                posts: updatedPosts as Article[],
+                currentPost: updatedCurrentPost as Post,
+                loading: false,
+              });
+
+              return response.data;
+            }
+
+            set({ loading: false });
+            return null;
+          } catch (error: any) {
+            console.error('Error al actualizar status del post:', error);
+            const errorMessage = error.response?.data?.message || 'Error al actualizar el status';
             set({
               loading: false,
               error: errorMessage,
@@ -504,13 +422,14 @@ const usePostStore = create<PostState>()(
 
 export default usePostStore;
 
-// Exportar tipos para uso externo
+// Exportar tipos para uso externo (manteniendo compatibilidad)
 export type {
   Post,
   Meta,
   Author,
   Article,
   Category,
+  PostStatus,
   ApiResponse,
   PostFilters,
   Subcategory,
@@ -518,4 +437,4 @@ export type {
   UpdatePostData,
   CreatePostData,
   SendNewsletterData,
-};
+} from 'src/types/post';

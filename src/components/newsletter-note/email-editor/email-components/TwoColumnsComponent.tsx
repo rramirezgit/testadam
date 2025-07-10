@@ -1,8 +1,9 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
-import { Box, Typography } from '@mui/material';
+import { Box, TextField, Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
+import SimpleTipTapEditor from '../../simple-tiptap-editor';
 import { useImageUpload } from '../right-panel/useImageUpload';
 
 import type { EmailComponentProps } from './types';
@@ -20,13 +21,20 @@ const TwoColumnsComponent = ({
   isSelected,
   onSelect,
   updateComponentProps,
+  updateComponentContent,
   moveComponent,
   removeComponent,
   totalComponents,
+  onColumnSelect,
 }: EmailComponentProps) => {
   const leftImageFileInputRef = useRef<HTMLInputElement>(null);
   const rightImageFileInputRef = useRef<HTMLInputElement>(null);
   const { uploadImageToS3 } = useImageUpload();
+
+  // Estados para controlar qué campo está siendo editado
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>('');
+
   const leftColumn: ColumnData = component.props?.leftColumn || {
     imageUrl: '',
     imageAlt: 'Imagen',
@@ -55,11 +63,71 @@ const TwoColumnsComponent = ({
     onSelect();
   };
 
-  const handleImageClick = (e: React.MouseEvent, column: 'left' | 'right') => {
+  // Función para manejar la selección de una columna específica
+  const handleColumnClick = (columnKey: 'left' | 'right', e: React.MouseEvent) => {
     e.stopPropagation();
+
+    // Primero seleccionar el componente si no está seleccionado
     if (!isSelected) {
       onSelect();
     }
+
+    // Notificar al panel lateral qué columna está seleccionada
+    if (onColumnSelect) {
+      onColumnSelect(component.id, columnKey);
+    }
+  };
+
+  // Función para iniciar edición de un campo
+  const startEditing = (fieldKey: string, currentValue: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isSelected) {
+      onSelect();
+      return;
+    }
+    setEditingField(fieldKey);
+    setEditingValue(currentValue);
+  };
+
+  // Función para finalizar edición
+  const finishEditing = () => {
+    setEditingField(null);
+    setEditingValue('');
+  };
+
+  // Función para actualizar el contenido de una columna
+  const updateColumnContent = (
+    column: 'left' | 'right',
+    field: 'title' | 'description',
+    value: string
+  ) => {
+    const currentColumn = column === 'left' ? leftColumn : rightColumn;
+    const updatedColumn = { ...currentColumn, [field]: value };
+    updateComponentProps(component.id, { [`${column}Column`]: updatedColumn });
+  };
+
+  // Función para manejar Enter en campos de texto
+  const handleKeyDown = (
+    e: React.KeyboardEvent,
+    column: 'left' | 'right',
+    field: 'title' | 'description'
+  ) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      updateColumnContent(column, field, editingValue);
+      finishEditing();
+    } else if (e.key === 'Escape') {
+      finishEditing();
+    }
+  };
+
+  const handleImageClick = (e: React.MouseEvent, column: 'left' | 'right') => {
+    e.stopPropagation();
+
+    // Seleccionar la columna
+    handleColumnClick(column, e);
+
+    // Abrir selector de archivo
     if (column === 'left') {
       leftImageFileInputRef.current?.click();
     } else {
@@ -96,14 +164,124 @@ const TwoColumnsComponent = ({
     }
   };
 
+  const renderEditableTitle = (columnData: ColumnData, columnKey: 'left' | 'right') => {
+    const fieldKey = `${columnKey}-title`;
+    const isEditing = editingField === fieldKey;
+
+    if (isEditing) {
+      return (
+        <TextField
+          value={editingValue}
+          onChange={(e) => setEditingValue(e.target.value)}
+          onBlur={() => {
+            updateColumnContent(columnKey, 'title', editingValue);
+            finishEditing();
+          }}
+          onKeyDown={(e) => handleKeyDown(e, columnKey, 'title')}
+          autoFocus
+          fullWidth
+          variant="standard"
+          sx={{
+            '& .MuiInput-root': {
+              fontSize: `${titleSize}px`,
+              fontWeight: 'bold',
+              color: titleColor,
+            },
+            '& .MuiInput-input': {
+              textAlign: 'center',
+              padding: 0,
+            },
+            mb: 1,
+          }}
+        />
+      );
+    }
+
+    return (
+      <Typography
+        variant="h6"
+        onClick={(e) => {
+          handleColumnClick(columnKey, e);
+          startEditing(fieldKey, columnData.title, e);
+        }}
+        sx={{
+          color: titleColor,
+          fontSize: `${titleSize}px`,
+          fontWeight: 'bold',
+          mb: 1,
+          lineHeight: 1.2,
+          cursor: isSelected ? 'text' : 'pointer',
+          minHeight: '1.2em',
+          position: 'relative',
+          '&:hover': isSelected
+            ? {
+                backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                borderRadius: '4px',
+                padding: '2px 4px',
+                margin: '-2px -4px',
+              }
+            : {},
+        }}
+      >
+        {columnData.title}
+      </Typography>
+    );
+  };
+
+  const renderEditableDescription = (columnData: ColumnData, columnKey: 'left' | 'right') => {
+    const fieldKey = `${columnKey}-description`;
+    const isEditingDescription = editingField === fieldKey;
+
+    return (
+      <Box
+        onClick={(e) => handleColumnClick(columnKey, e)}
+        sx={{
+          color: textColor,
+          fontSize: `${fontSize}px`,
+          lineHeight: 1.5,
+          cursor: 'text',
+          minHeight: '1.5em',
+          position: 'relative',
+          '& p': {
+            margin: 0,
+            color: textColor,
+          },
+          '& p:empty::before': {
+            content: '"Escribe el contenido aquí..."',
+            color: '#adb5bd',
+            fontStyle: 'italic',
+          },
+        }}
+      >
+        <SimpleTipTapEditor
+          content={columnData.description}
+          onChange={(newContent) => updateColumnContent(columnKey, 'description', newContent)}
+          showToolbar={false}
+          style={{
+            outline: 'none',
+            textAlign: 'center',
+          }}
+        />
+      </Box>
+    );
+  };
+
   const renderColumn = (columnData: ColumnData, columnKey: 'left' | 'right') => (
     <Box
+      onClick={(e) => handleColumnClick(columnKey, e)}
       sx={{
         flex: 1,
         backgroundColor,
         borderRadius: `${borderRadius}px`,
         p: `${columnPadding}px`,
         textAlign: 'center',
+        position: 'relative',
+        cursor: 'pointer',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          transform: 'translateY(-1px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        },
       }}
     >
       {/* Imagen de la columna */}
@@ -160,31 +338,11 @@ const TwoColumnsComponent = ({
         )}
       </Box>
 
-      {/* Título de la columna */}
-      <Typography
-        variant="h6"
-        sx={{
-          color: titleColor,
-          fontSize: `${titleSize}px`,
-          fontWeight: 'bold',
-          mb: 1,
-          lineHeight: 1.2,
-        }}
-      >
-        {columnData.title}
-      </Typography>
+      {/* Título editable */}
+      {renderEditableTitle(columnData, columnKey)}
 
-      {/* Descripción de la columna */}
-      <Typography
-        variant="body1"
-        sx={{
-          color: textColor,
-          fontSize: `${fontSize}px`,
-          lineHeight: 1.5,
-        }}
-      >
-        {columnData.description}
-      </Typography>
+      {/* Descripción editable con TipTap */}
+      {renderEditableDescription(columnData, columnKey)}
     </Box>
   );
 

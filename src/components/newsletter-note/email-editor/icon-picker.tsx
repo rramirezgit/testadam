@@ -145,6 +145,48 @@ const POPULAR_ICONS = [
   },
 ];
 
+// Función para verificar si una URL de icono realmente retorna una imagen
+const isValidIconUrl = async (url: string): Promise<boolean> => {
+  if (!url) return false;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // Timeout de 3 segundos
+
+    const response = await fetch(url, {
+      method: 'HEAD',
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    // Verificar que la respuesta sea exitosa y que sea una imagen
+    return response.ok && response.headers.get('content-type')?.startsWith('image/');
+  } catch {
+    return false;
+  }
+};
+
+// Función para filtrar iconos válidos de forma asíncrona
+const filterValidIcons = async (icons: IconResult[]): Promise<IconResult[]> => {
+  const validIcons: IconResult[] = [];
+
+  // Procesar iconos en lotes para evitar demasiadas peticiones simultáneas
+  const batchSize = 8;
+  for (let i = 0; i < icons.length; i += batchSize) {
+    const batch = icons.slice(i, i + batchSize);
+    const validationPromises = batch.map(async (icon) => {
+      const isValid = await isValidIconUrl(icon.url);
+      return isValid ? icon : null;
+    });
+
+    const results = await Promise.all(validationPromises);
+    validIcons.push(...(results.filter(Boolean) as IconResult[]));
+  }
+
+  return validIcons;
+};
+
 export default function IconPicker({ open, onClose, onSelectIcon, currentIcon }: IconPickerProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<IconResult[]>(POPULAR_ICONS);
@@ -224,7 +266,10 @@ export default function IconPicker({ open, onClose, onSelectIcon, currentIcon }:
   // Función principal de búsqueda
   const searchIcons = async (query: string) => {
     if (!query.trim()) {
-      setSearchResults(POPULAR_ICONS);
+      // Filtrar duplicados en los populares y validar URLs
+      const uniquePopular = Array.from(new Map(POPULAR_ICONS.map((i) => [i.url, i])).values());
+      const validPopular = await filterValidIcons(uniquePopular);
+      setSearchResults(validPopular);
       return;
     }
 
@@ -258,7 +303,13 @@ export default function IconPicker({ open, onClose, onSelectIcon, currentIcon }:
         results = relatedIcons;
       }
 
-      setSearchResults(results.slice(0, 24)); // Limitar a 24 resultados
+      // Filtrar duplicados
+      const uniqueResults = Array.from(new Map(results.map((i) => [i.url, i])).values());
+
+      // Validar URLs de forma asíncrona
+      const validResults = await filterValidIcons(uniqueResults);
+
+      setSearchResults(validResults.slice(0, 24)); // Limitar a 24 resultados
     } catch (err) {
       setError('Error al buscar iconos. Intenta con otro término.');
       console.error('Search error:', err);

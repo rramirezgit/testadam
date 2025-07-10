@@ -2,7 +2,7 @@
 
 import { Box, Slider, Button, TextField, Typography } from '@mui/material';
 
-import ColorPicker from 'src/components/newsletter-note/color-picker';
+import GeneralColorPicker from '../../general-color-picker';
 
 interface ContainerOptionsProps {
   containerBorderWidth: number;
@@ -56,10 +56,11 @@ export default function ContainerOptions({
         <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
           Color del borde
         </Typography>
-        <ColorPicker
-          color={containerBorderColor}
-          onChange={setContainerBorderColor}
-          label="Color del borde"
+        <GeneralColorPicker
+          selectedColor={containerBorderColor}
+          onChange={(newColor) => setContainerBorderColor(newColor)}
+          label=""
+          size="small"
         />
       </Box>
 

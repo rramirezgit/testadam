@@ -465,7 +465,7 @@ function renderComponentToHtml(component: EmailComponent): string {
       }
 
       // ⚡ NUEVO: Usar <p> en lugar de <h1>, <h2>, etc.
-      return `<p class="${headingClass}" style="${headingInlineStyles}">${component.content}</p>`;
+      return `<p class="${headingClass}" style="${headingInlineStyles}">${cleanTipTapHtml(component.content)}</p>`;
 
     case 'paragraph':
       // ⚡ CRITICAL: Aplicar estilos personalizados de espaciado respetando configuración del usuario
@@ -484,7 +484,7 @@ function renderComponentToHtml(component: EmailComponent): string {
         paragraphInlineStyles += ' margin-top: 16px; margin-bottom: 0px;';
       }
 
-      return `<div class="component-paragraph" style="${paragraphInlineStyles}">${component.content}</div>`;
+      return `<div class="component-paragraph" style="${paragraphInlineStyles}">${cleanTipTapHtml(component.content)}</div>`;
 
     case 'bulletList':
       const items = component.props?.items || [];
@@ -502,15 +502,22 @@ function renderComponentToHtml(component: EmailComponent): string {
     case 'image':
       const src = component.props?.src || '/placeholder.svg';
       const alt = component.props?.alt || 'Image';
+
+      // 🚀 NUEVO: Obtener estilos del componente
+      const imgBackgroundColor = component.style?.backgroundColor || 'transparent';
+      const imgObjectFit = component.style?.objectFit || 'contain';
+      const imgWidth = component.style?.width || '100%';
+      const imgHeight = component.style?.height || 'auto';
+
       return `<div class="component-image" style="text-align: center; margin: 25px 0;">
-        <img src="${src}" alt="${escapeHtml(alt)}" style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;">
+        <img src="${src}" alt="${escapeHtml(alt)}" style="max-width: 100%; width: ${imgWidth}; height: ${imgHeight}; background-color: ${imgBackgroundColor}; object-fit: ${imgObjectFit}; border-radius: 8px; display: block; margin: 0 auto;">
       </div>`;
 
     case 'button':
       const buttonText = component.content || 'Button';
       const buttonUrl = component.props?.url || '#';
       return `<div class="component-button" style="text-align: center; margin: 25px 0;">
-        <a href="${buttonUrl}" style="display: inline-block; padding: 15px 30px; background-color: #1976d2; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">${escapeHtml(buttonText)}</a>
+        <a href="${buttonUrl}" style="display: inline-block; padding: 15px 30px; background-color: #1976d2; color: #ffffff !important; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">${cleanTipTapHtml(buttonText)}</a>
       </div>`;
 
     case 'category':
@@ -520,7 +527,7 @@ function renderComponentToHtml(component: EmailComponent): string {
         const borderRadius = component.props?.borderRadius || 16;
         const padding = component.props?.padding || 4;
         const fontSize = component.props?.fontSize || 14;
-        const fontWeight = component.props?.fontWeight || 'bold';
+        const fontWeight = component.props?.fontWeight || 'normal';
 
         let categoriasHtml = '<div class="component-category-group" style="margin: 15px 0;">';
         component.props.categorias.forEach((categoria: any) => {
@@ -550,7 +557,7 @@ function renderComponentToHtml(component: EmailComponent): string {
         const borderRadius = component.props?.borderRadius || 16;
         const padding = component.props?.padding || 4;
         const fontSize = component.props?.fontSize || 14;
-        const fontWeight = component.props?.fontWeight || 'bold';
+        const fontWeight = component.props?.fontWeight || 'normal';
 
         return `<div class="component-category-group" style="margin: 15px 0;">
           <span class="component-category" style="
@@ -568,7 +575,7 @@ function renderComponentToHtml(component: EmailComponent): string {
             text-decoration: none;
             line-height: 1.2;
             vertical-align: top;
-          ">${escapeHtml(component.content)}</span>
+          ">${cleanTipTapHtml(component.content)}</span>
         </div>`;
       }
 
@@ -663,19 +670,21 @@ function renderComponentToHtml(component: EmailComponent): string {
               justify-content: center;
               width: 32px;
               height: 32px;
+              margin-right: 12px;
               border-radius: 8px;
               background-color: rgba(255,255,255,0.7);
               backdrop-filter: blur(8px);
               -webkit-backdrop-filter: blur(8px);
               border: 1px solid rgba(255,255,255,0.3);
             ">
-              <img src="${iconUrl}" width="18" height="18" alt="${summaryLabel}" style="display: block; max-width: 18px; max-height: 18px;">
+              <img src="${iconUrl}" width="18" height="18" alt="${summaryLabel}" style="display: block; max-width: 18px; max-height: 18px; margin: auto;">
             </div>
             <span style="
               color: ${summaryTextColor};
               font-weight: 600;
               font-size: 16px;
               letter-spacing: -0.01em;
+              margin: auto 0px;
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
             ">${summaryLabel}</span>
           </div>
@@ -688,7 +697,7 @@ function renderComponentToHtml(component: EmailComponent): string {
               line-height: 1.6;
               margin: 0;
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-            ">${component.content}</div>
+            ">${cleanTipTapHtml(component.content)}</div>
           </div>
         </div>
       </div>`;
@@ -795,6 +804,18 @@ function renderComponentToHtml(component: EmailComponent): string {
         tituloIconUrl = `https://img.icons8.com/color/48/${tituloIcon}.png`;
       }
 
+      // ⚡ NUEVO: Manejar contenido HTML de TipTap de forma segura
+      // Si el contenido contiene HTML (de TipTap), usarlo directamente
+      // Si no, usar el contenido como texto plano
+      const tituloContent = component.content || '';
+      const isHtmlContent = tituloContent.includes('<') && tituloContent.includes('>');
+
+      // Función para limpiar HTML de TipTap y hacerlo compatible con emails
+
+      const finalContent = isHtmlContent
+        ? cleanTipTapHtml(tituloContent)
+        : escapeHtml(tituloContent);
+
       return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0px;">
         <tr>
           <td style="${gradientStyle} border-radius: 8px; padding: 16px 20px; text-align: left;">
@@ -804,7 +825,7 @@ function renderComponentToHtml(component: EmailComponent): string {
                   <img src="${tituloIconUrl}" width="24" height="24" alt="Icono" style="display: block; max-width: 24px; max-height: 24px;">
                 </td>
                 <td style="vertical-align: middle;">
-                  <span style="font-size: 20px; font-weight: bold; color: ${textColor}; line-height: 1.2;">${escapeHtml(component.content)}</span>
+                  <span style="font-size: 20px; font-weight: bold; color: ${textColor}; line-height: 1.2;">${finalContent}</span>
                 </td>
               </tr>
             </table>
@@ -932,7 +953,7 @@ function renderComponentToHtml(component: EmailComponent): string {
               <span style="font-size: 13px; color: #9e9e9e; line-height: 1; font-weight: 400; vertical-align: middle; margin: auto 0px;">${escapeHtml(respaldadoTexto)}</span>
               ${
                 respaldadoAvatarUrl
-                  ? `<img src="${respaldadoAvatarUrl}" alt="${escapeHtml(respaldadoNombre)}" style="width: ${respaldadoAvatarTamano}px; height: ${respaldadoAvatarTamano}px; border-radius: 50%; object-fit: cover; vertical-align: middle; display: inline-block;">`
+                  ? `<img src="${respaldadoAvatarUrl}" alt="${escapeHtml(respaldadoNombre)}" style="width: ${respaldadoAvatarTamano}px; height: ${respaldadoAvatarTamano}px; border-radius: 50%; object-fit: cover; vertical-align: middle; display: inline-block;margin: 0 6px;">`
                   : ''
               }
               <span style="font-size: 13px; color: #616161; font-weight: 400; line-height: 1; vertical-align: middle; margin: auto 0px;">${escapeHtml(respaldadoNombre)}</span>
@@ -994,7 +1015,7 @@ function renderComponentToHtml(component: EmailComponent): string {
                   <![endif]-->
                   <td style="width: ${100 - imageTextImageWidth}%; vertical-align: top;" class="mobile-stack">
                     <h3 style="color: ${imageTextTitleColor}; font-size: ${imageTextTitleSize}px; font-weight: bold; margin: 0 0 8px 0; line-height: 1.2;">${escapeHtml(imageTextTitle)}</h3>
-                    <p style="color: ${imageTextTextColor}; font-size: ${imageTextFontSize}px; line-height: 1.5; margin: 0;">${escapeHtml(imageTextDescription)}</p>
+                    <p style="color: ${imageTextTextColor}; font-size: ${imageTextFontSize}px; line-height: 1.5; margin: 0;">${cleanTipTapHtml(imageTextDescription)}</p>
                   </td>
                   <!--[if mso | IE]>
                   </td>
@@ -1071,7 +1092,7 @@ function renderComponentToHtml(component: EmailComponent): string {
                   </td>
                 </tr>
               </table>
-              ${textIconDescription ? `<p style="color: ${textIconTextColor}; font-size: ${textIconFontSize}px; line-height: 1.5; margin: 8px 0 0 0;">${escapeHtml(textIconDescription)}</p>` : ''}
+              ${textIconDescription ? `<p style="color: ${textIconTextColor}; font-size: ${textIconFontSize}px; line-height: 1.5; margin: 8px 0 0 0;">${cleanTipTapHtml(textIconDescription)}</p>` : ''}
             </td>
           </tr>
         </table>
@@ -1103,7 +1124,7 @@ function renderComponentToHtml(component: EmailComponent): string {
         <td style="width: 50%; vertical-align: top; padding: ${twoColColumnPadding}px; background-color: ${twoColBackgroundColor}; border-radius: ${twoColBorderRadius}px; text-align: center;" class="mobile-column">
           ${columnData.imageUrl ? `<img src="${columnData.imageUrl}" alt="${escapeHtml(columnData.imageAlt)}" style="width: 100%; height: auto; max-height: 200px; border-radius: ${twoColBorderRadius}px; object-fit: cover; display: block; margin-bottom: 16px;">` : `<div style="width: 100%; height: 150px; background-color: #f5f5f5; border-radius: ${twoColBorderRadius}px; display: flex; align-items: center; justify-content: center; color: #9e9e9e; font-size: 14px; margin-bottom: 16px;">${escapeHtml(columnData.imageAlt)}</div>`}
           <h3 style="color: ${twoColTitleColor}; font-size: ${twoColTitleSize}px; font-weight: bold; margin: 0 0 8px 0; line-height: 1.2;">${escapeHtml(columnData.title)}</h3>
-          <p style="color: ${twoColTextColor}; font-size: ${twoColFontSize}px; line-height: 1.5; margin: 0;">${escapeHtml(columnData.description)}</p>
+          <p style="color: ${twoColTextColor}; font-size: ${twoColFontSize}px; line-height: 1.5; margin: 0;">${cleanTipTapHtml(columnData.description)}</p>
         </td>
       `;
 
@@ -1162,6 +1183,36 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/**
+ * Limpia el HTML del TipTap editor para hacerlo compatible con emails
+ */
+function cleanTipTapHtml(html: string): string {
+  if (!html) return '';
+
+  return (
+    html
+      // Remover elementos de TipTap que no son compatibles con emails
+      .replace(/<p[^>]*class="[^"]*tiptap[^"]*"[^>]*>/gi, '')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<\/p>/gi, '')
+      // Mantener solo elementos básicos de formato
+      .replace(/<strong[^>]*>/gi, '<strong>')
+      .replace(/<\/strong>/gi, '</strong>')
+      .replace(/<em[^>]*>/gi, '<em>')
+      .replace(/<\/em>/gi, '</em>')
+      .replace(/<u[^>]*>/gi, '<u>')
+      .replace(/<\/u>/gi, '</u>')
+      .replace(
+        /<a[^>]*href="([^"]*)"[^>]*>/gi,
+        '<a href="$1" style="color: inherit; text-decoration: underline;">'
+      )
+      .replace(/<\/a>/gi, '</a>')
+      // Remover cualquier otro elemento HTML no compatible
+      .replace(/<[^>]*>/g, '')
+      .trim()
+  );
 }
 
 /**

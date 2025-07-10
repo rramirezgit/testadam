@@ -40,27 +40,35 @@ export const createNewComponent = (
             ? { src: 'https://via.placeholder.com/600x400', alt: 'Placeholder image' }
             : type === 'bulletList'
               ? { items: ['List item 1'], listStyle: 'disc', listColor: '#000000' }
-              : type === 'tituloConIcono'
+              : type === 'summary'
                 ? {
-                    icon: 'https://img.icons8.com/color/48/line-chart.png',
-                    gradientColor1: '#4facfe',
-                    gradientColor2: '#00f2fe',
-                    gradientType: 'linear',
-                    textColor: '#ffffff',
+                    summaryType: 'resumen',
+                    label: 'Resumen',
+                    icon: 'https://img.icons8.com/color/48/note.png',
+                    backgroundColor: '#f8f9fa',
+                    textColor: '#495057',
                   }
-                : type === 'respaldadoPor'
+                : type === 'tituloConIcono'
                   ? {
-                      texto: 'Respaldado por',
-                      nombre: 'Redacción',
-                      avatarUrl: '',
-                      avatarTamano: 21,
-                      mostrarEscritorPropietario: false,
-                      escritorNombre: 'Escritor',
-                      escritorAvatarUrl: '',
-                      propietarioNombre: 'Propietario',
-                      propietarioAvatarUrl: '',
+                      icon: 'https://img.icons8.com/color/48/line-chart.png',
+                      gradientColor1: '#4facfe',
+                      gradientColor2: '#00f2fe',
+                      gradientType: 'linear',
+                      textColor: '#ffffff',
                     }
-                  : {},
+                  : type === 'respaldadoPor'
+                    ? {
+                        texto: 'Respaldado por',
+                        nombre: 'Redacción',
+                        avatarUrl: '',
+                        avatarTamano: 21,
+                        mostrarEscritorPropietario: false,
+                        escritorNombre: 'Escritor',
+                        escritorAvatarUrl: '',
+                        propietarioNombre: 'Propietario',
+                        propietarioAvatarUrl: '',
+                      }
+                    : {},
     style:
       type === 'button'
         ? {

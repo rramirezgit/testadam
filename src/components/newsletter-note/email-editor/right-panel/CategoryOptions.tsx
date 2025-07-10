@@ -60,7 +60,7 @@ export default function CategoryOptions({
   const borderRadius = component.props?.borderRadius || 16;
   const padding = component.props?.padding || 4;
   const fontSize = component.props?.fontSize || 14;
-  const fontWeight = component.props?.fontWeight || 'bold';
+  const fontWeight = component.props?.fontWeight || 'normal';
 
   // Manejar edición de categoría
   const handleUpdateCategoria = (catId: string, field: keyof Categoria, value: string) => {

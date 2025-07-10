@@ -1348,7 +1348,15 @@ export default function NewsletterContentEditor({
               <img
                 src={component.props?.src || '/placeholder.svg'}
                 alt={component.props?.alt || 'Image'}
-                style={{ maxWidth: '100%', height: 'auto', margin: '0 auto' }}
+                style={{
+                  maxWidth: '100%',
+                  height: 'auto',
+                  margin: '0 auto',
+                  backgroundColor: component.style?.backgroundColor || 'transparent',
+                  objectFit: component.style?.objectFit || 'contain',
+                  borderRadius: '8px',
+                  display: 'block',
+                }}
               />
             </Box>
             {isSelected && (

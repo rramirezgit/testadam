@@ -1,5 +1,7 @@
 'use client';
 
+import type { PostStatus } from 'src/types/post';
+
 import { Icon } from '@iconify/react';
 import { useRef, useState } from 'react';
 
@@ -20,6 +22,8 @@ import {
   FormControl,
   LinearProgress,
 } from '@mui/material';
+
+import { POST_STATUS, isStatusDisabled } from 'src/types/post';
 
 // Importaciones de los componentes individuales
 import TextOptions from './right-panel/TextOptions';
@@ -99,6 +103,7 @@ export default function RightPanel({
   setContainerMaxWidth,
   activeTemplate,
   activeVersion,
+  currentNoteId,
   noteTitle,
   setNoteTitle,
   noteDescription,
@@ -107,6 +112,8 @@ export default function RightPanel({
   setNoteCoverImageUrl,
   noteStatus,
   setNoteStatus,
+  updateStatus,
+  selectedColumn,
 }: RightPanelProps) {
   // Estado para los tabs del contenedor
   const [containerTab, setContainerTab] = useState(0);
@@ -116,6 +123,26 @@ export default function RightPanel({
 
   // Hook para subida de imágenes
   const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
+
+  // Función para determinar si un status está deshabilitado (usando la función centralizada)
+  const checkStatusDisabled = (targetStatus: string): boolean =>
+    isStatusDisabled(noteStatus as PostStatus, targetStatus as PostStatus, !!currentNoteId);
+
+  // Función para manejar cambio de status
+  const handleStatusChange = async (newStatus: string) => {
+    if (!currentNoteId) {
+      console.warn('No se puede cambiar el estado de una nota no guardada');
+      return;
+    }
+
+    try {
+      await updateStatus(newStatus as PostStatus);
+      // No necesitamos llamar setNoteStatus aquí porque updateStatus ya lo hace internamente
+    } catch (error) {
+      console.error('Error al actualizar el status:', error);
+      // Mantener el status actual en caso de error
+    }
+  };
 
   // Función para manejar selección de archivo de portada
   const handleSelectCoverImage = () => {
@@ -252,13 +279,45 @@ export default function RightPanel({
                 <Select
                   value={noteStatus}
                   label="Estado"
-                  onChange={(e) => setNoteStatus(e.target.value)}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  disabled={!currentNoteId}
                 >
-                  <MenuItem value="DRAFT">Borrador</MenuItem>
-                  <MenuItem value="REVIEW">En Revisión</MenuItem>
-                  <MenuItem value="APPROVED">Aprobado</MenuItem>
-                  <MenuItem value="PUBLISHED">Publicado</MenuItem>
+                  <MenuItem
+                    value={POST_STATUS.DRAFT}
+                    disabled={checkStatusDisabled(POST_STATUS.DRAFT)}
+                  >
+                    Borrador
+                  </MenuItem>
+                  <MenuItem
+                    value={POST_STATUS.REVIEW}
+                    disabled={checkStatusDisabled(POST_STATUS.REVIEW)}
+                  >
+                    En Revisión
+                  </MenuItem>
+                  <MenuItem
+                    value={POST_STATUS.APPROVED}
+                    disabled={checkStatusDisabled(POST_STATUS.APPROVED)}
+                  >
+                    Aprobado
+                  </MenuItem>
+                  <MenuItem
+                    value={POST_STATUS.PUBLISHED}
+                    disabled={checkStatusDisabled(POST_STATUS.PUBLISHED)}
+                  >
+                    Publicado
+                  </MenuItem>
+                  <MenuItem
+                    value={POST_STATUS.REJECTED}
+                    disabled={checkStatusDisabled(POST_STATUS.REJECTED)}
+                  >
+                    Rechazado
+                  </MenuItem>
                 </Select>
+                {!currentNoteId && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    💡 Guarda la nota primero para cambiar su estado
+                  </Typography>
+                )}
               </FormControl>
 
               <Divider sx={{ my: 2 }} />
@@ -581,6 +640,7 @@ export default function RightPanel({
               <TwoColumnsOptions
                 component={selectedComponent}
                 updateComponentProps={updateComponentProps}
+                selectedColumn={selectedColumn}
               />
             )}
 
@@ -692,6 +752,7 @@ export default function RightPanel({
                 setContainerMaxWidth={setContainerMaxWidth}
                 activeTemplate={activeTemplate}
                 activeVersion={activeVersion}
+                currentNoteId={currentNoteId}
                 noteTitle={noteTitle}
                 setNoteTitle={setNoteTitle}
                 noteDescription={noteDescription}
@@ -700,6 +761,7 @@ export default function RightPanel({
                 setNoteCoverImageUrl={setNoteCoverImageUrl}
                 noteStatus={noteStatus}
                 setNoteStatus={setNoteStatus}
+                updateStatus={updateStatus}
               />
             )}
 
