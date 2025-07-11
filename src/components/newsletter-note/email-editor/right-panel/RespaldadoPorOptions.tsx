@@ -14,6 +14,7 @@ import {
 
 import { useImageUpload } from './useImageUpload';
 import { isBase64Image } from '../utils/imageValidation';
+import { findComponentById } from '../utils/componentHelpers';
 
 import type { RespaldadoPorOptionsProps } from './types';
 
@@ -32,7 +33,7 @@ export default function RespaldadoPorOptions({
 
   if (!selectedComponentId) return null;
 
-  const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
+  const component = findComponentById(getActiveComponents(), selectedComponentId);
   if (!component || component.type !== 'respaldadoPor') return null;
 
   // Valores por defecto para sección principal

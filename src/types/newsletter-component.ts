@@ -13,7 +13,8 @@ export interface NewsletterComponent {
     | 'category'
     | 'gallery'
     | 'banner'
-    | 'summary';
+    | 'summary'
+    | 'noteContainer';
   content: string;
   props?: Record<string, any>;
   style?: React.CSSProperties;

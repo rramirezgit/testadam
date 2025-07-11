@@ -8,12 +8,16 @@ export interface EmailComponentProps {
   onSelect: () => void;
   updateComponentContent: (id: string, content: string) => void;
   updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentStyle?: (id: string, style: React.CSSProperties) => void;
   handleSelectionUpdate: (editor: Editor) => void;
   moveComponent: (id: string, direction: 'up' | 'down') => void;
   removeComponent: (id: string) => void;
   totalComponents: number;
   renderCustomContent?: (component: EmailComponent) => React.ReactNode;
   onColumnSelect?: (componentId: string, column: 'left' | 'right') => void;
+  removeNoteContainer?: (containerId: string) => void;
+  getActiveComponents?: () => any[];
+  onComponentSelect?: (componentId: string) => void; // Nueva prop para selección de componentes
 }
 
 export interface ComponentWithToolbarProps {

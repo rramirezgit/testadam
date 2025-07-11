@@ -51,7 +51,7 @@ const ImageUploader = ({ data, componentStyle }: ImageUploaderProps) => {
               height,
               objectFit, // 🚀 NUEVO: Aplicar objectFit
               borderRadius: '8px',
-              cursor: 'default',
+              cursor: 'pointer', // Cambiar a pointer para indicar que es clickeable
               display: 'block',
             }}
           />
@@ -92,7 +92,7 @@ const ImageUploader = ({ data, componentStyle }: ImageUploaderProps) => {
             backgroundColor:
               backgroundColor !== 'transparent' ? backgroundColor : 'rgba(145, 158, 171, 0.12)', // 🚀 NUEVO: Usar color de fondo personalizado
             textAlign: 'center',
-            cursor: 'default',
+            cursor: 'pointer', // Cambiar a pointer para indicar que es clickeable
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -114,6 +114,7 @@ const ImageComponent = ({
   index,
   isSelected,
   onSelect,
+  onComponentSelect,
   updateComponentProps,
   moveComponent,
   removeComponent,
@@ -121,7 +122,14 @@ const ImageComponent = ({
 }: EmailComponentProps) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSelect();
+
+    // Usar onComponentSelect si está disponible (para componentes dentro de notas)
+    if (onComponentSelect) {
+      onComponentSelect(component.id);
+    } else {
+      // Usar onSelect para componentes normales
+      onSelect();
+    }
   };
 
   return (

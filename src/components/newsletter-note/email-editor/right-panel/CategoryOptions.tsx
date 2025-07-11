@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 
 import TextColorPicker from '../color-picker/TextColorPicker';
+import { findComponentById } from '../utils/componentHelpers';
 
 import type { CategoryOptionsProps } from './types';
 import type { Categoria } from '../components/Categorias';
@@ -30,7 +31,7 @@ export default function CategoryOptions({
 }: CategoryOptionsProps) {
   if (!selectedComponentId) return null;
 
-  const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
+  const component = findComponentById(getActiveComponents(), selectedComponentId);
   if (!component || component.type !== 'category') return null;
 
   // Convertir el color único a un array de categorías si es necesario

@@ -15,14 +15,19 @@ import TwoColumnsComponent from './TwoColumnsComponent';
 import TextWithIconComponent from './TextWithIconComponent';
 import HerramientasComponent from './HerramientasComponent';
 import RespaldadoPorComponent from './RespaldadoPorComponent';
+import NoteContainerComponent from './NoteContainerComponent';
 import TituloConIconoComponent from './TituloConIconoComponent';
+import ComponentContainerComponent from './ComponentContainerComponent';
+import NewsletterHeaderReusableComponent from './NewsletterHeaderReusableComponent';
+import NewsletterFooterReusableComponent from './NewsletterFooterReusableComponent';
 
+import type { ComponentType } from '../types';
 import type { EmailComponentProps } from './types';
 
 const EmailComponentRenderer = (props: EmailComponentProps) => {
   const { component } = props;
 
-  switch (component.type) {
+  switch (component.type as ComponentType) {
     case 'category':
       return <CategoryComponent {...props} />;
     case 'author':
@@ -36,7 +41,13 @@ const EmailComponentRenderer = (props: EmailComponentProps) => {
     case 'button':
       return <ButtonComponent {...props} />;
     case 'divider':
+      // Verificar si es un contenedor de componente individual (legacy)
+      if (component.props?.isComponentContainer) {
+        return <ComponentContainerComponent {...props} />;
+      }
       return <DividerComponent {...props} />;
+    case 'noteContainer':
+      return <NoteContainerComponent {...props} />;
     case 'bulletList':
       return <BulletListComponent {...props} />;
     case 'image':
@@ -59,6 +70,12 @@ const EmailComponentRenderer = (props: EmailComponentProps) => {
       return <SpacerComponent {...props} />;
     case 'chart':
       return <ChartComponent {...props} />;
+    case 'newsletterHeaderReusable':
+      return <NewsletterHeaderReusableComponent {...props} />;
+    case 'newsletterFooterReusable':
+      return <NewsletterFooterReusableComponent {...props} />;
+    // case 'newsletterHeader': // ELIMINADO: Solo header global
+    //   return <NewsletterHeaderComponent {...props} />;
     default:
       return null;
   }

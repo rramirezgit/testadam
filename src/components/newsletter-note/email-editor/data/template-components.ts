@@ -815,3 +815,108 @@ export const featureComponents: EmailComponent[] = [
     },
   },
 ];
+
+// Newsletter template components (versión newsletter)
+export const newsletterComponents: EmailComponent[] = [
+  {
+    id: 'newsletter-header-1',
+    type: 'newsletterHeaderReusable',
+    content: '',
+    props: {
+      // Configuración del gradiente
+      useGradient: true,
+      gradientColors: ['#667eea', '#764ba2'],
+      gradientDirection: 135,
+
+      // Configuración del logo
+      showLogo: true,
+      logo: 'https://img.icons8.com/color/48/newsletter.png',
+      logoAlt: 'Logo Newsletter',
+      logoHeight: 60,
+
+      // Configuración del sponsor
+      sponsor: {
+        enabled: true,
+        label: 'Juntos con',
+        image: 'https://img.icons8.com/color/48/partnership.png',
+        imageAlt: 'Partner',
+      },
+
+      // Configuración del título y subtítulo
+      title: 'Newsletter Semanal',
+      subtitle: 'Las mejores noticias y actualizaciones de la semana',
+
+      // Configuración del banner
+      showBanner: true,
+      bannerImage: 'https://img.icons8.com/color/48/newsletter-banner.png',
+
+      // Configuración de colores y estilo
+      backgroundColor: '#667eea',
+      textColor: '#ffffff',
+      alignment: 'center',
+      padding: 32,
+    },
+  },
+  {
+    id: 'paragraph-1',
+    type: 'paragraph',
+    content:
+      'Bienvenido a nuestro newsletter semanal. Aquí encontrarás las noticias más importantes y actualizaciones relevantes.',
+    props: {},
+  },
+  {
+    id: 'heading-2',
+    type: 'heading',
+    content: 'Noticias Destacadas',
+    props: { level: 2 },
+  },
+  {
+    id: 'paragraph-2',
+    type: 'paragraph',
+    content:
+      'Esta semana tenemos noticias muy interesantes que queremos compartir contigo. Sigue leyendo para conocer todos los detalles.',
+    props: {},
+  },
+  {
+    id: 'newsletter-footer-1',
+    type: 'newsletterFooterReusable',
+    content: '',
+    props: {
+      // Configuración del gradiente
+      useGradient: true,
+      gradientColors: ['#f5f5f5', '#e0e0e0'],
+      gradientDirection: 180,
+
+      // Configuración de la empresa
+      companyName: 'Tu Empresa',
+      showAddress: true,
+      address: '123 Calle Principal, Ciudad, País',
+      contactEmail: 'contacto@ejemplo.com',
+
+      // Configuración de redes sociales
+      showSocial: true,
+      socialLinks: [
+        { platform: 'twitter', url: 'https://twitter.com', enabled: true },
+        { platform: 'facebook', url: 'https://facebook.com', enabled: true },
+        { platform: 'instagram', url: 'https://instagram.com', enabled: true },
+        { platform: 'linkedin', url: 'https://linkedin.com', enabled: false },
+      ],
+
+      // Configuración de colores y estilo
+      backgroundColor: '#f5f5f5',
+      textColor: '#666666',
+      padding: 24,
+      fontSize: 12,
+    },
+  },
+];
+
+// Newsletter template components (versión web)
+export const newsletterComponentsWeb: EmailComponent[] = [
+  {
+    id: 'heading-1-web',
+    type: 'heading',
+    content: 'prueba',
+    props: { level: 1 },
+  },
+];

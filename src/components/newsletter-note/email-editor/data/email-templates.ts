@@ -29,6 +29,13 @@ export const emailTemplates = [
     image: '/assets/images/templates/feature.svg',
   },
   {
+    id: 'newsletter',
+    name: 'Newsletter',
+    description: 'Plantilla de prueba para newsletter',
+    icon: 'mdi:email-outline',
+    image: '/assets/images/templates/newsletter.svg',
+  },
+  {
     id: 'notion',
     name: 'Notion Magic Link',
     description: 'Template para enviar un enlace mágico de inicio de sesión',

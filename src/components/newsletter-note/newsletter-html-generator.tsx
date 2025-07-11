@@ -276,6 +276,92 @@ export function generateNewsletterHtml(
       vertical-align: middle;
     }
     
+    /* Note containers */
+    .note-container {
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      background-color: #ffffff;
+      position: relative;
+    }
+    
+    .note-container:hover {
+      border-color: #1976d2;
+      background-color: #f8f9fa;
+    }
+    
+    /* Note container header */
+    .note-container-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .note-container-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .note-container-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #1976d2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+    }
+    
+    .note-container-info h3 {
+      font-weight: 600;
+      color: #333;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    
+    .note-container-info p {
+      color: #666;
+      font-size: 0.75rem;
+      margin: 4px 0 0 0;
+    }
+    
+    .note-container-chip {
+      display: inline-block;
+      background-color: #e3f2fd;
+      color: #1976d2;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      border: 1px solid #1976d2;
+    }
+    
+    /* Note container content */
+    .note-container-content {
+      margin-top: 16px;
+    }
+    
+    .note-container-empty {
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-size: 0.875rem;
+      font-style: italic;
+      background-color: rgba(25, 118, 210, 0.05);
+      border-radius: 8px;
+      border: 1px dashed #1976d2;
+      padding: 16px;
+      text-align: center;
+    }
+    
     /* Footer */
     .email-footer {
       ${footerBackgroundStyle}
@@ -391,7 +477,14 @@ export function generateNewsletterHtml(
     // Render each component using the unified system
     const objData = JSON.parse(note.objData);
     objData.forEach((component: any) => {
-      html += renderComponentToHtml(component);
+      // Verificar si es un contenedor de nota
+      if (component.type === 'divider' && component.props?.isNoteContainer) {
+        // Renderizar el contenedor de nota con sus componentes
+        html += renderNoteContainerToHtml(component);
+      } else {
+        // Renderizar componente normal
+        html += renderComponentToHtml(component);
+      }
     });
 
     html += `</div>`; // Cerrar contenedor interno
@@ -498,6 +591,9 @@ function renderComponentToHtml(component: EmailComponent): string {
 
     case 'divider':
       return '<hr class="component-divider" style="border: none; border-top: 2px solid #e0e0e0; margin: 30px 0; height: 1px;">';
+
+    case 'noteContainer':
+      return renderNoteContainerToHtml(component);
 
     case 'image':
       const src = component.props?.src || '/placeholder.svg';
@@ -1098,6 +1194,120 @@ function renderComponentToHtml(component: EmailComponent): string {
         </table>
       `;
 
+    case 'newsletterHeaderReusable': {
+      const props = component.props || {};
+
+      // Crear el estilo de fondo
+      let backgroundStyle = '';
+      if (props.useGradient && props.gradientColors && props.gradientColors.length >= 2) {
+        backgroundStyle = `background: linear-gradient(${props.gradientDirection || 135}deg, ${props.gradientColors[0]}, ${props.gradientColors[1]});`;
+      } else {
+        backgroundStyle = `background-color: ${props.backgroundColor || '#f5f5f5'};`;
+      }
+
+      const headerTextColor = props.textColor || '#333333';
+      const padding = props.padding ? props.padding / 8 : 24;
+      const alignment = props.alignment || 'center';
+
+      let headerHtml = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="${backgroundStyle} margin-bottom: 24px; border-radius: 8px; border: 1px solid #e0e0e0;">
+        <tr>
+          <td style="padding: ${padding}px; text-align: ${alignment};">`;
+
+      // Logo
+      if (props.showLogo && props.logo) {
+        headerHtml += `<div style="margin-bottom: 16px;">
+          <img src="${props.logo}" alt="${props.logoAlt || 'Logo'}" style="max-height: ${props.logoHeight || 60}px; display: block; margin: 0 auto;">
+        </div>`;
+      }
+
+      // Sponsor
+      if (props.sponsor?.enabled && props.sponsor?.image) {
+        headerHtml += `<div style="margin-bottom: 16px;">
+          <div style="color: ${headerTextColor}; margin-bottom: 8px; font-size: 14px;">${escapeHtml(props.sponsor.label || 'Juntos con')}</div>
+          <img src="${props.sponsor.image}" alt="${props.sponsor.imageAlt || 'Sponsor'}" style="max-height: 48px;">
+        </div>`;
+      }
+
+      // Título
+      if (props.title && props.title.trim() !== '') {
+        headerHtml += `<h1 style="font-weight: 700; color: ${headerTextColor}; margin: 0 0 8px 0; font-size: 24px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">${escapeHtml(props.title)}</h1>`;
+      }
+
+      // Subtítulo
+      if (props.subtitle && props.subtitle.trim() !== '') {
+        headerHtml += `<p style="color: ${headerTextColor}; margin: 0 0 16px 0; font-style: italic; font-size: 16px;">${escapeHtml(props.subtitle)}</p>`;
+      }
+
+      // Banner image
+      if (props.showBanner && props.bannerImage) {
+        headerHtml += `<div style="margin-top: 16px;">
+          <img src="${props.bannerImage}" alt="Banner" style="width: 100%; border-radius: 8px; display: block;">
+        </div>`;
+      }
+
+      headerHtml += `
+          </td>
+        </tr>
+      </table>`;
+
+      return headerHtml;
+    }
+
+    case 'newsletterFooterReusable': {
+      const props = component.props || {};
+
+      // Crear el estilo de fondo
+      let backgroundStyle = '';
+      if (props.useGradient && props.gradientColors && props.gradientColors.length >= 2) {
+        backgroundStyle = `background: linear-gradient(${props.gradientDirection || 180}deg, ${props.gradientColors[0]}, ${props.gradientColors[1]});`;
+      } else {
+        backgroundStyle = `background-color: ${props.backgroundColor || '#f5f5f5'};`;
+      }
+
+      const footerTextColor = props.textColor || '#333333';
+      const padding = props.padding ? props.padding / 8 : 24;
+      const fontSize = props.fontSize || 14;
+
+      let footerHtml = `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="${backgroundStyle} margin-top: 32px; border-radius: 8px; border: 1px solid #e0e0e0;">
+        <tr>
+          <td style="padding: ${padding}px; text-align: center;">`;
+
+      // Nombre de la empresa
+      footerHtml += `<h3 style="font-weight: 600; color: ${footerTextColor}; margin: 0 0 8px 0; font-size: ${fontSize + 4}px;">${escapeHtml(props.companyName || 'Tu Empresa')}</h3>`;
+
+      // Dirección
+      if (props.showAddress && props.address) {
+        footerHtml += `<p style="color: ${footerTextColor}; margin: 0 0 8px 0; font-size: ${fontSize}px;">${escapeHtml(props.address)}</p>`;
+      }
+
+      // Email de contacto
+      if (props.contactEmail) {
+        footerHtml += `<p style="color: ${footerTextColor}; margin: 0 0 16px 0; font-size: ${fontSize}px;">Contacto: ${escapeHtml(props.contactEmail)}</p>`;
+      }
+
+      // Redes sociales
+      if (props.showSocial && props.socialLinks) {
+        const enabledSocialLinks = props.socialLinks.filter((link: any) => link.enabled);
+        if (enabledSocialLinks.length > 0) {
+          footerHtml += `<p style="color: ${footerTextColor}; margin: 0 0 16px 0; font-size: ${fontSize - 2}px;">`;
+          footerHtml += enabledSocialLinks
+            .map((link: any) => link.platform.charAt(0).toUpperCase() + link.platform.slice(1))
+            .join(' • ');
+          footerHtml += '</p>';
+        }
+      }
+
+      // Copyright
+      footerHtml += `<p style="color: ${footerTextColor}; margin: 0; font-size: ${fontSize - 2}px;">© ${new Date().getFullYear()} ${escapeHtml(props.companyName || 'Tu Empresa')}. Todos los derechos reservados.</p>`;
+
+      footerHtml += `
+          </td>
+        </tr>
+      </table>`;
+
+      return footerHtml;
+    }
+
     case 'twoColumns':
       const twoColLeftColumn = component.props?.leftColumn || {
         imageUrl: '',
@@ -1416,6 +1626,92 @@ export function generateSingleNoteHtml(
       font-size: 1px;
     }
     
+    /* Note containers */
+    .note-container {
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      background-color: #ffffff;
+      position: relative;
+    }
+    
+    .note-container:hover {
+      border-color: #1976d2;
+      background-color: #f8f9fa;
+    }
+    
+    /* Note container header */
+    .note-container-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .note-container-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .note-container-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #1976d2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+    }
+    
+    .note-container-info h3 {
+      font-weight: 600;
+      color: #333;
+      font-size: 1.1rem;
+      margin: 0;
+    }
+    
+    .note-container-info p {
+      color: #666;
+      font-size: 0.75rem;
+      margin: 4px 0 0 0;
+    }
+    
+    .note-container-chip {
+      display: inline-block;
+      background-color: #e3f2fd;
+      color: #1976d2;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      border: 1px solid #1976d2;
+    }
+    
+    /* Note container content */
+    .note-container-content {
+      margin-top: 16px;
+    }
+    
+    .note-container-empty {
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-size: 0.875rem;
+      font-style: italic;
+      background-color: rgba(25, 118, 210, 0.05);
+      border-radius: 8px;
+      border: 1px dashed #1976d2;
+      padding: 16px;
+      text-align: center;
+    }
+    
     /* Responsive */
     @media only screen and (max-width: 600px) {
       .email-container {
@@ -1442,7 +1738,16 @@ export function generateSingleNoteHtml(
   <div class="email-container">
     <div class="note-content">
       <div class="components">
-        ${components.map((component) => renderComponentToHtml(component)).join('')}
+        ${components
+          .map((component) => {
+            // Verificar si es un contenedor de nota
+            if (component.type === 'noteContainer') {
+              return renderNoteContainerToHtml(component);
+            } else {
+              return renderComponentToHtml(component);
+            }
+          })
+          .join('')}
       </div>
     </div>
   </div>
@@ -1450,4 +1755,35 @@ export function generateSingleNoteHtml(
 </html>`;
 
   return html;
+}
+
+// Función para renderizar contenedores de nota
+function renderNoteContainerToHtml(container: EmailComponent): string {
+  const componentsData = container.props?.componentsData || [];
+  const noteTitle = container.props?.noteTitle || 'Nota';
+  const containerStyle = container.props?.containerStyle || {};
+
+  // Convertir estilos del contenedor a CSS inline
+  const containerCss = Object.entries(containerStyle)
+    .map(([key, value]) => {
+      const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+      return `${cssKey}: ${value}`;
+    })
+    .join('; ');
+
+  // Renderizar los componentes internos
+  const innerComponentsHtml = componentsData
+    .map((component: EmailComponent) => renderComponentToHtml(component))
+    .join('');
+
+  return `
+    <div class="note-container" style="${containerCss}">
+      <div class="note-title" style="font-size: 18px; font-weight: bold; margin-bottom: 16px; color: #333;">
+        ${escapeHtml(noteTitle)}
+      </div>
+      <div class="note-content">
+        ${innerComponentsHtml}
+      </div>
+    </div>
+  `;
 }

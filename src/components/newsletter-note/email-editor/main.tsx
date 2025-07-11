@@ -1,8 +1,8 @@
 'use client';
 
 import type React from 'react';
-import type { SavedNote } from 'src/types/saved-note';
 import type { PostStatus } from 'src/store/PostStore';
+import type { SavedNote, EmailComponent } from 'src/types/saved-note';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 
@@ -25,20 +25,20 @@ import { bannerOptions } from './data/banner-options';
 import { emailTemplates } from './data/email-templates';
 import { useVersionSync } from './hooks/useVersionSync';
 import { type AutoSaveData } from './hooks/useAutoSave';
-import { generateEmailHtml } from './utils/generate-html';
 import { SaveNoteDialog } from './components/SaveNoteDialog';
 import { useTextFormatting } from './hooks/useTextFormatting';
 import { useEmailComponents } from './hooks/useEmailComponents';
 import { useResizablePanels } from './hooks/useResizablePanels';
-import { generateNewsletterHtml } from '../newsletter-html-generator';
 import { UnsavedChangesDialog } from './components/UnsavedChangesDialog';
 import { getImageStats, validateAllImagesUploaded } from './utils/imageValidation';
+import { generateNewsletterHtml, generateSingleNoteHtml } from '../newsletter-html-generator';
 import {
   createNewComponent,
   addComponentToArray,
   moveComponentInArray,
   updateComponentInArray,
   removeComponentFromArray,
+  updateComponentInArrayRecursive, // <-- importar la nueva función recursiva
   convertTextToList as convertParagraphToList,
 } from './utils/componentHelpers';
 
@@ -223,7 +223,12 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
 
   // PostStore integration
-  const { create: createPost, update: updatePost } = usePostStore();
+  const {
+    create: createPost,
+    update: updatePost,
+    findAll: findAllPosts,
+    findById: findPostById,
+  } = usePostStore();
 
   // Usar hooks personalizados
   const emailComponents = useEmailComponents();
@@ -611,14 +616,25 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       const components = getActiveComponents();
 
       // Solo actualizar si el contenido realmente cambió
-      const currentComponent = components.find((comp) => comp.id === id);
+      // Buscar recursivamente el componente actual
+      const findComponentById = (comps: any[]): any => {
+        for (const comp of comps) {
+          if (comp.id === id) return comp;
+          if (comp.props && Array.isArray(comp.props.componentsData)) {
+            const found = findComponentById(comp.props.componentsData);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const currentComponent = findComponentById(components);
       if (currentComponent && currentComponent.content === content) {
         console.log('🔵 No changes detected, skipping update');
         return; // No hay cambios, evitar re-render
       }
 
       console.log('🟢 Content changed, updating component');
-      const updatedComponents = updateComponentInArray(components, id, { content });
+      const updatedComponents = updateComponentInArrayRecursive(components, id, { content });
       updateActiveComponents(updatedComponents);
 
       // Sincronizar automáticamente si está habilitado
@@ -635,11 +651,24 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   const updateComponentProps = useCallback(
     (id: string, props: Record<string, any>) => {
       const components = getActiveComponents();
-      const component = components.find((comp) => comp.id === id);
+      // Buscar recursivamente el componente actual
+      const findComponentById = (comps: any[]): any => {
+        for (const comp of comps) {
+          if (comp.id === id) return comp;
+          if (comp.props && Array.isArray(comp.props.componentsData)) {
+            const found = findComponentById(comp.props.componentsData);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const component = findComponentById(components);
       if (!component) return;
 
       const updatedProps = { ...component.props, ...props };
-      const updatedComponents = updateComponentInArray(components, id, { props: updatedProps });
+      const updatedComponents = updateComponentInArrayRecursive(components, id, {
+        props: updatedProps,
+      });
       updateActiveComponents(updatedComponents);
 
       // Sincronizar automáticamente si está habilitado
@@ -655,11 +684,24 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   const updateComponentStyle = useCallback(
     (id: string, style: React.CSSProperties) => {
       const components = getActiveComponents();
-      const component = components.find((comp) => comp.id === id);
+      // Buscar recursivamente el componente actual
+      const findComponentById = (comps: any[]): any => {
+        for (const comp of comps) {
+          if (comp.id === id) return comp;
+          if (comp.props && Array.isArray(comp.props.componentsData)) {
+            const found = findComponentById(comp.props.componentsData);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      const component = findComponentById(components);
       if (!component) return;
 
       const updatedStyle = { ...component.style, ...style };
-      const updatedComponents = updateComponentInArray(components, id, { style: updatedStyle });
+      const updatedComponents = updateComponentInArrayRecursive(components, id, {
+        style: updatedStyle,
+      });
       updateActiveComponents(updatedComponents);
 
       // Sincronizar automáticamente si está habilitado
@@ -697,6 +739,63 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       }, 100);
     },
     [getActiveComponents, updateActiveComponents, activeVersion, notifyChange]
+  );
+
+  // Nueva función para inyectar componentes al newsletter
+  const injectComponentsToNewsletter = useCallback(
+    (components: EmailComponent[], noteTitle?: string) => {
+      if (activeTemplate !== 'newsletter' || activeVersion !== 'newsletter') {
+        console.warn('Solo se pueden inyectar componentes en template newsletter');
+        return;
+      }
+
+      const currentComponents = getActiveComponents();
+      const timestamp = Date.now();
+
+      // Generar IDs únicos para los nuevos componentes
+      const newComponents = components.map((component, index) => ({
+        ...component,
+        id: `${component.id}-injected-${timestamp}-${index}`,
+      }));
+
+      // Crear un contenedor para toda la nota con bordes
+      const noteContainer: EmailComponent = {
+        id: `note-container-${timestamp}`,
+        type: 'noteContainer', // Cambiar de 'divider' a 'noteContainer'
+        content: '',
+        props: {
+          noteTitle: noteTitle || 'Nota Inyectada',
+          containerStyle: {
+            border: '2px solid #e0e0e0',
+            borderRadius: '12px',
+            padding: '20px',
+            margin: '20px 0',
+            backgroundColor: '#ffffff',
+            position: 'relative',
+          },
+          // Agregar referencia a los componentes que pertenecen a esta nota
+          containedComponents: newComponents.map((comp) => comp.id),
+          // Almacenar los componentes completos en el contenedor
+          componentsData: newComponents,
+        },
+        style: {
+          border: '2px solid #e0e0e0',
+          borderRadius: '12px',
+          padding: '20px',
+          margin: '20px 0',
+          backgroundColor: '#ffffff',
+          position: 'relative',
+        },
+      };
+
+      // Agregar solo el contenedor de la nota (los componentes se renderizan dentro)
+      const updatedComponents = [...currentComponents, noteContainer];
+      updateActiveComponents(updatedComponents);
+
+      // Notificar al auto-guardado
+      notifyChange('components-injected');
+    },
+    [activeTemplate, activeVersion, getActiveComponents, updateActiveComponents, notifyChange]
   );
 
   // Eliminar un componente
@@ -741,19 +840,19 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     setGeneratingEmail(true);
     try {
       const components = getActiveComponents();
-      const html = await generateEmailHtml(
+
+      // Usar generateSingleNoteHtml para generar HTML de la nota individual
+      const html = generateSingleNoteHtml(
+        noteData.noteTitle || 'Nota',
+        noteData.noteDescription || '',
         components,
-        activeTemplate,
-        selectedBanner,
-        bannerOptions,
-        emailBackground,
-        showGradient,
-        gradientColors,
-        containerBorderWidth,
-        containerBorderColor,
-        containerBorderRadius,
-        containerPadding,
-        containerMaxWidth
+        {
+          borderWidth: containerBorderWidth,
+          borderColor: containerBorderColor,
+          borderRadius: containerBorderRadius,
+          padding: containerPadding,
+          maxWidth: containerMaxWidth,
+        }
       );
 
       setEmailHtml(html);
@@ -766,11 +865,8 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     }
   }, [
     getActiveComponents,
-    activeTemplate,
-    selectedBanner,
-    emailBackground,
-    showGradient,
-    gradientColors,
+    noteData.noteTitle,
+    noteData.noteDescription,
     containerBorderWidth,
     containerBorderColor,
     containerBorderRadius,
@@ -812,8 +908,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         );
       } else {
         // ✅ NUEVO: Para notas individuales, usar generateSingleNoteHtml (sin header y footer)
-        const { generateSingleNoteHtml } = await import('../newsletter-html-generator');
-
         const components = getActiveComponents();
         const postData = currentPost; // Usar la variable ya existente del scope superior
 
@@ -870,21 +964,16 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   }, [isNewsletterMode]);
 
   // Función para manejar la selección de componentes
-  const handleComponentSelect = useCallback(
-    (componentId: string | null) => {
-      console.log('🎯 handleComponentSelect called with:', componentId);
-      setSelectedComponentId(componentId);
-      if (componentId) {
-        setIsContainerSelected(false);
-        // También resetear el estado del newsletter container si estamos en modo newsletter
-        if (isNewsletterMode) {
-          setIsNewsletterContainerSelected(false);
-          console.log('🔄 Newsletter container deselected due to component selection');
-        }
-      }
-    },
-    [isNewsletterMode]
-  );
+  const handleComponentSelect = useCallback((componentId: string | null) => {
+    console.log('🎯 Component selected:', componentId);
+    setSelectedComponentId(componentId);
+
+    // Si se selecciona un componente, resetear la selección del contenedor
+    if (componentId) {
+      setIsContainerSelected(false);
+      setIsNewsletterContainerSelected(false);
+    }
+  }, []);
 
   // Función para convertir texto a lista
   const convertTextToList = useCallback(
@@ -911,6 +1000,14 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       }
     },
     [getActiveComponents, updateActiveComponents, activeVersion, showNotification]
+  );
+
+  // Función wrapper para convertTextToList que cumple con la interfaz esperada
+  const handleConvertTextToList = useCallback(
+    (componentId: string | null, listType: 'ordered' | 'unordered') => {
+      convertTextToList(componentId, listType);
+    },
+    [convertTextToList]
   );
 
   // Función para manejar el guardado de notas
@@ -1424,133 +1521,33 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   );
 
   // NUEVA FUNCIÓN: Obtener todos los componentes activos (incluyendo componentes de newsletter)
-  const getActiveComponentsForPanel = useCallback(() => {
-    console.log('🎛️ getActiveComponentsForPanel called with:', {
-      isNewsletterMode,
-      selectedComponentId,
-      includesDash: selectedComponentId?.includes('-'),
-    });
-
-    // Si está en modo newsletter y hay un componente seleccionado
-    if (isNewsletterMode && selectedComponentId) {
-      // Componentes especiales de newsletter (header y footer)
-      if (selectedComponentId === 'newsletter-header') {
-        console.log('📤 Returning newsletter header component');
-        return [
-          {
-            id: 'newsletter-header',
-            type: 'newsletter-header',
-            content: newsletterHeader?.title || 'Newsletter Semanal',
-            style: {},
-            props: {
-              title: newsletterHeader?.title || 'Newsletter Semanal',
-              subtitle: newsletterHeader?.subtitle || 'Las mejores noticias y actualizaciones',
-              backgroundColor: newsletterHeader?.backgroundColor || '#FFF9CE',
-              textColor: newsletterHeader?.textColor || '#333333',
-              alignment: newsletterHeader?.alignment || 'center',
-              useGradient: newsletterHeader?.useGradient || true,
-              gradientColors: newsletterHeader?.gradientColors || ['#FFF9CE', '#E2E5FA'],
-              gradientDirection: newsletterHeader?.gradientDirection || 224,
-              logo: newsletterHeader?.logo || '',
-              logoAlt: newsletterHeader?.logoAlt || 'Logo',
-              bannerImage: newsletterHeader?.bannerImage || '',
-              showLogo: newsletterHeader?.showLogo || true,
-              logoHeight: newsletterHeader?.logoHeight || 60,
-              padding: newsletterHeader?.padding || 32,
-              sponsor: newsletterHeader?.sponsor || {
-                enabled: false,
-                label: 'Juntos con',
-                image: '',
-                imageAlt: 'Sponsor',
-              },
-            },
-          },
-        ];
-      }
-
-      if (selectedComponentId === 'newsletter-footer') {
-        console.log('📤 Returning newsletter footer component');
-        return [
-          {
-            id: 'newsletter-footer',
-            type: 'newsletter-footer',
-            content: newsletterFooter?.companyName || 'Tu Empresa',
-            style: {},
-            props: {
-              companyName: newsletterFooter?.companyName || 'Tu Empresa',
-              address: newsletterFooter?.address || '123 Calle Principal, Ciudad, País',
-              contactEmail: newsletterFooter?.contactEmail || 'contacto@ejemplo.com',
-              socialLinks: newsletterFooter?.socialLinks || [
-                { platform: 'twitter', url: 'https://twitter.com', enabled: true },
-                { platform: 'facebook', url: 'https://facebook.com', enabled: true },
-                { platform: 'instagram', url: 'https://instagram.com', enabled: true },
-                { platform: 'linkedin', url: 'https://linkedin.com', enabled: false },
-              ],
-              unsubscribeLink: newsletterFooter?.unsubscribeLink || '#unsubscribe',
-              backgroundColor: newsletterFooter?.backgroundColor || '#f5f5f5',
-              textColor: newsletterFooter?.textColor || '#666666',
-              useGradient: newsletterFooter?.useGradient || false,
-              gradientColors: newsletterFooter?.gradientColors || ['#f5f5f5', '#e0e0e0'],
-              gradientDirection: newsletterFooter?.gradientDirection || 180,
-              showSocial: newsletterFooter?.showSocial || true,
-              showAddress: newsletterFooter?.showAddress || true,
-              padding: newsletterFooter?.padding || 24,
-              fontSize: newsletterFooter?.fontSize || 12,
-            },
-          },
-        ];
-      }
-
-      // Si hay un componente seleccionado de una nota
-      if (selectedComponentId.includes('-')) {
-        // Dividir correctamente: el noteId es la primera parte hasta el primer '-'
-        // y el componentId es todo lo que sigue después del primer '-'
-        const firstDashIndex = selectedComponentId.indexOf('-');
-        const noteId = selectedComponentId.substring(0, firstDashIndex);
-        const componentId = selectedComponentId.substring(firstDashIndex + 1);
-
-        console.log('🔄 Splitting selectedComponentId correctly:', {
-          fullId: selectedComponentId,
-          noteId,
-          componentId,
-        });
-
-        const component = getNewsletterNoteComponent(noteId, componentId);
-
-        // Retornar el componente seleccionado como si fuera una lista de componentes
-        const result = component ? [component] : [];
-        console.log('📤 Returning newsletter component:', result);
-        return result;
-      }
-    }
-
-    // Modo normal - usar la función original
-    const normalComponents = emailComponents.getActiveComponents(activeTemplate, activeVersion);
-    console.log('📤 Returning normal components:', normalComponents.length);
-    return normalComponents;
-  }, [
-    isNewsletterMode,
-    selectedComponentId,
-    getNewsletterNoteComponent,
-    emailComponents,
-    activeTemplate,
-    activeVersion,
-    newsletterHeader,
-    newsletterFooter,
-  ]);
+  const getActiveComponentsForPanel = useCallback(
+    () =>
+      // Siempre devolver la estructura completa de componentes activos
+      // para que findComponentById pueda buscar recursivamente
+      emailComponents.getActiveComponents(activeTemplate, activeVersion),
+    [emailComponents, activeTemplate, activeVersion]
+  );
 
   // NUEVA FUNCIÓN: Obtener el ID real del componente para el panel
   const getComponentIdForPanel = useCallback(() => {
     if (isNewsletterMode && selectedComponentId && selectedComponentId.includes('-')) {
-      // Dividir correctamente: el componentId es todo después del primer '-'
+      // Verificar si es un componente de nota del newsletter (formato: noteId-componentId)
+      const components = getActiveComponents();
+      const component = components.find((c) => c.id === selectedComponentId);
+
+      if (component && component.props?.isNoteContainer) {
+        // Es un contenedor de nota, usar el ID completo
+        return selectedComponentId;
+      }
+
+      // Es un componente dentro de una nota del newsletter (formato: noteId-componentId)
       const firstDashIndex = selectedComponentId.indexOf('-');
       const componentId = selectedComponentId.substring(firstDashIndex + 1);
-      console.log('🆔 Component ID for panel (newsletter):', componentId);
       return componentId;
     }
-    console.log('🆔 Component ID for panel (normal):', selectedComponentId);
     return selectedComponentId;
-  }, [isNewsletterMode, selectedComponentId]);
+  }, [isNewsletterMode, selectedComponentId, getActiveComponents]);
 
   // NUEVA FUNCIÓN: Función de actualización que funciona tanto para newsletter como modo normal
   const updateComponentForPanel = useCallback(
@@ -1577,7 +1574,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               console.warn('Unknown update type for newsletter header:', updateType);
           }
 
-          console.log('🎯 Updating newsletter header:', updatedHeader);
           onNewsletterConfigChange({
             header: updatedHeader,
             footer: newsletterFooter || defaultNewsletterFooter,
@@ -1604,7 +1600,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               console.warn('Unknown update type for newsletter footer:', updateType);
           }
 
-          console.log('🎯 Updating newsletter footer:', updatedFooter);
           onNewsletterConfigChange({
             header: newsletterHeader || defaultNewsletterHeader,
             footer: updatedFooter,
@@ -1612,7 +1607,29 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           return;
         }
 
-        // Si hay un componente seleccionado de una nota
+        // Verificar si es un contenedor de nota
+        const components = getActiveComponents();
+        const selectedComponent = components.find((c) => c.id === selectedComponentId);
+
+        if (selectedComponent && selectedComponent.props?.isNoteContainer) {
+          // Es un contenedor de nota, usar las funciones normales
+          switch (updateType) {
+            case 'content':
+              updateComponentContent(id, data);
+              break;
+            case 'props':
+              updateComponentProps(id, data);
+              break;
+            case 'style':
+              updateComponentStyle(id, data);
+              break;
+            default:
+              console.warn('Unknown update type for note container component:', updateType);
+          }
+          return;
+        }
+
+        // Si hay un componente seleccionado de una nota del newsletter
         if (selectedComponentId.includes('-')) {
           // Dividir correctamente: el noteId es la primera parte hasta el primer '-'
           // y el componentId es todo lo que sigue después del primer '-'
@@ -1666,6 +1683,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       updateComponentContent,
       updateComponentProps,
       updateComponentStyle,
+      getActiveComponents,
     ]
   );
 
@@ -1680,6 +1698,128 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       }
     },
     [getActiveComponents]
+  );
+
+  // Función para eliminar un contenedor de nota y todos sus componentes
+  const removeNoteContainer = useCallback(
+    (containerId: string) => {
+      const components = getActiveComponents();
+      const container = components.find((comp) => comp.id === containerId);
+
+      if (!container) {
+        console.warn('No se encontró el contenedor');
+        return;
+      }
+
+      // Si es un contenedor de nota
+      if (container.props?.isNoteContainer) {
+        // Solo eliminar el contenedor (los componentes están almacenados dentro)
+        const updatedComponents = components.filter((comp) => comp.id !== containerId);
+
+        updateActiveComponents(updatedComponents);
+        setSelectedComponentId(null);
+
+        // Notificar al auto-guardado
+        notifyChange('container-removed');
+
+        showNotification('Nota eliminada exitosamente', 'success');
+        return;
+      }
+
+      // Si es un contenedor de componente individual (legacy)
+      if (container.props?.isComponentContainer) {
+        const containedComponentId = container.props.containedComponentId;
+
+        // Filtrar el contenedor y su componente contenido
+        const updatedComponents = components.filter(
+          (comp) => comp.id !== containerId && comp.id !== containedComponentId
+        );
+
+        updateActiveComponents(updatedComponents);
+        setSelectedComponentId(null);
+
+        // Notificar al auto-guardado
+        notifyChange('container-removed');
+
+        showNotification('Componente eliminado exitosamente', 'success');
+        return;
+      }
+
+      console.warn('Tipo de contenedor no reconocido');
+    },
+    [getActiveComponents, updateActiveComponents, setSelectedComponentId, notifyChange]
+  );
+
+  // Estados para notas disponibles
+  const [availableNotes, setAvailableNotes] = useState<any[]>([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+
+  // Función para cargar notas disponibles
+  const loadAvailableNotes = useCallback(async () => {
+    if (activeTemplate !== 'newsletter') return;
+
+    setLoadingNotes(true);
+    try {
+      const response = await findAllPosts({
+        status: 'DRAFT',
+        perPage: 50,
+      });
+
+      if (response && response.data) {
+        setAvailableNotes(response.data);
+      }
+    } catch (error) {
+      console.error('Error al cargar notas disponibles:', error);
+    } finally {
+      setLoadingNotes(false);
+    }
+  }, [activeTemplate, findAllPosts]);
+
+  // Cargar notas cuando se selecciona el template newsletter
+  useEffect(() => {
+    if (activeTemplate === 'newsletter' && activeVersion === 'newsletter') {
+      loadAvailableNotes();
+    }
+  }, [activeTemplate, activeVersion, loadAvailableNotes]);
+
+  // Función para inyectar una nota en el template
+  const injectNoteIntoNewsletter = useCallback(
+    async (noteId: string) => {
+      try {
+        const fullNote = await findPostById(noteId);
+
+        if (!fullNote) {
+          console.error('No se pudo cargar la nota completa');
+          showNotification('Error al cargar la nota completa', 'error');
+          return;
+        }
+
+        // Parsear los componentes de la nota
+        let noteComponents = [];
+        try {
+          noteComponents = JSON.parse(fullNote.objData || '[]');
+        } catch (error) {
+          console.error('Error al parsear componentes de la nota:', error);
+          showNotification('Error al procesar los componentes de la nota', 'error');
+          return;
+        }
+
+        if (noteComponents.length === 0) {
+          console.warn('La nota no tiene componentes para inyectar');
+          showNotification('La nota no tiene componentes para inyectar', 'warning');
+          return;
+        }
+
+        // Usar la función de inyección existente
+        injectComponentsToNewsletter(noteComponents, fullNote.title);
+        showNotification(`✅ Nota "${fullNote.title}" inyectada exitosamente`, 'success');
+        console.log(`✅ Nota "${fullNote.title}" inyectada exitosamente`);
+      } catch (error) {
+        console.error('Error al inyectar la nota:', error);
+        showNotification('Error al inyectar la nota', 'error');
+      }
+    },
+    [findPostById, injectComponentsToNewsletter]
   );
 
   return (
@@ -1749,6 +1889,11 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             newsletterNotes={newsletterNotes}
             onAddNewsletterNote={handleAddNewsletterNote}
             onEditNote={handleEditNoteFromLibrary}
+            // Nuevas props para notas disponibles
+            availableNotes={availableNotes}
+            loadingNotes={loadingNotes}
+            onInjectNote={injectNoteIntoNewsletter}
+            onRefreshNotes={loadAvailableNotes}
           />
 
           {/* Barra de redimensionado izquierda */}
@@ -1779,9 +1924,8 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           <EmailContent
             getActiveComponents={getActiveComponents}
             selectedComponentId={selectedComponentId}
-            setSelectedComponentId={handleComponentSelect}
+            setSelectedComponentId={setSelectedComponentId}
             onComponentSelect={handleComponentSelect}
-            onColumnSelect={handleColumnSelect}
             updateComponentContent={updateComponentContent}
             updateComponentProps={updateComponentProps}
             updateComponentStyle={updateComponentStyle}
@@ -1838,6 +1982,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
                 footer,
               })
             }
+            removeNoteContainer={removeNoteContainer}
+            onColumnSelect={handleColumnSelect}
+            selectedColumn={selectedColumn}
           />
         </Box>
 
@@ -1938,7 +2085,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               updateListStyle={updateListStyle}
               listColor={listColor}
               updateListColor={updateListColor}
-              convertTextToList={convertTextToList}
+              convertTextToList={handleConvertTextToList}
               setShowIconPicker={setShowIconPicker}
               isContainerSelected={isContainerSelected}
               setIsContainerSelected={setIsContainerSelected}
@@ -1954,6 +2101,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               setContainerMaxWidth={setContainerMaxWidth}
               activeTemplate={activeTemplate}
               activeVersion={activeVersion}
+              currentNoteId={noteData.currentNoteId}
               noteTitle={noteData.noteTitle}
               setNoteTitle={noteData.setNoteTitle}
               noteDescription={noteData.noteDescription}
@@ -1962,9 +2110,10 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               setNoteCoverImageUrl={noteData.setNoteCoverImageUrl}
               noteStatus={noteData.noteStatus}
               setNoteStatus={noteData.setNoteStatus}
-              currentNoteId={noteData.currentNoteId}
               updateStatus={noteData.updateStatus}
               selectedColumn={selectedColumn}
+              injectComponentsToNewsletter={injectComponentsToNewsletter}
+              removeNoteContainer={removeNoteContainer}
             />
           )}
         </Box>

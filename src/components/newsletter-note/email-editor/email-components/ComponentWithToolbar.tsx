@@ -92,6 +92,11 @@ const ComponentWithToolbar = memo(
   }: ComponentWithToolbarProps) => {
     const showToolbar = isSelected;
 
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onClick(e);
+    };
+
     return (
       <Box
         sx={{
@@ -104,7 +109,7 @@ const ComponentWithToolbar = memo(
             borderColor: isSelected ? '#1976d2' : '#e0e0e0',
           },
         }}
-        onClick={onClick}
+        onClick={handleClick}
       >
         {showToolbar && (
           <ComponentToolbar

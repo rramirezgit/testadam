@@ -21,7 +21,10 @@ export interface EmailComponent {
     | 'tituloConIcono'
     | 'herramientas'
     | 'respaldadoPor'
-    | 'chart';
+    | 'chart'
+    | 'noteContainer'
+    | 'newsletterHeaderReusable'
+    | 'newsletterFooterReusable';
   content: string;
   props: {
     level?: number;

@@ -127,6 +127,7 @@ const SummaryComponent = memo(
     index,
     isSelected,
     onSelect,
+    onComponentSelect,
     updateComponentContent,
     updateComponentProps,
     handleSelectionUpdate,
@@ -145,14 +146,17 @@ const SummaryComponent = memo(
     const icon = component.props?.icon || typeConfig.icon;
     const label = component.props?.label || typeConfig.label;
 
+    // ⚡ ULTRA-OPTIMIZACIÓN: Memoización de estilos con cache
     const containerStyles = useMemo(
       () => generateOptimizedSummaryStyles(component, isSelected, typeConfig),
       [component.style, component.props, isSelected, typeConfig]
     );
 
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos del editor
     const editorStyle = useMemo(
       () => ({
         outline: 'none',
+        // ⚡ ULTRA-OPTIMIZACIÓN: Optimizaciones específicas del texto
         fontDisplay: 'swap' as const,
         textSizeAdjust: 'none',
         WebkitFontSmoothing: 'antialiased' as const,
@@ -161,6 +165,7 @@ const SummaryComponent = memo(
       []
     );
 
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos del contenido
     const contentBoxStyles = useMemo(
       () => ({
         color: '#6c757d',
@@ -179,9 +184,11 @@ const SummaryComponent = memo(
       []
     );
 
+    // ⚡ ULTRA-OPTIMIZAÇÃO: Callback memoizado con throttling integrado
     const handleContentChange = useCallback(
       (newContent: string) => {
         if (updateComponentContent && newContent !== component.content) {
+          // Usar scheduler nativo del navegador para mejor rendimiento
           if ('scheduler' in window && 'postTask' in (window as any).scheduler) {
             (window as any).scheduler.postTask(
               () => {
@@ -190,6 +197,7 @@ const SummaryComponent = memo(
               { priority: 'user-blocking' }
             );
           } else {
+            // Fallback con MessageChannel para batching
             const channel = new MessageChannel();
             channel.port2.onmessage = () => updateComponentContent(component.id, newContent);
             channel.port1.postMessage(null);
@@ -239,13 +247,21 @@ const SummaryComponent = memo(
     const handleClick = useCallback(
       (event: React.MouseEvent) => {
         event.stopPropagation();
-        console.log('🔵 SummaryComponent clicked:', component.id, { onSelect: !!onSelect });
-        if (onSelect) {
+        console.log('🔵 SummaryComponent clicked:', component.id, {
+          onSelect: !!onSelect,
+          onComponentSelect: !!onComponentSelect,
+        });
+
+        // Usar onComponentSelect si está disponible (para componentes dentro de notas)
+        if (onComponentSelect) {
+          onComponentSelect(component.id);
+          console.log('🟢 SummaryComponent onComponentSelect called for:', component.id);
+        } else if (onSelect) {
           onSelect();
           console.log('🟢 SummaryComponent onSelect called for:', component.id);
         }
       },
-      [onSelect, component.id]
+      [onSelect, onComponentSelect, component.id]
     );
 
     const handleSelectionUpdateMemo = useCallback(

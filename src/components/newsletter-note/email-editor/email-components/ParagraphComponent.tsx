@@ -108,6 +108,7 @@ const ParagraphComponent = memo(
     index,
     isSelected,
     onSelect,
+    onComponentSelect,
     updateComponentContent,
     handleSelectionUpdate,
     moveComponent,
@@ -162,14 +163,16 @@ const ParagraphComponent = memo(
     const handleClick = useCallback(
       (event: React.MouseEvent) => {
         event.stopPropagation();
-        console.log('🔵 ParagraphComponent clicked:', component.id, { onSelect: !!onSelect });
-        if (onSelect) {
-          // Llamar inmediatamente en lugar de defer para debugging
+
+        // Usar onComponentSelect si está disponible (para componentes dentro de notas)
+        if (onComponentSelect) {
+          onComponentSelect(component.id);
+        } else if (onSelect) {
+          // Usar onSelect para componentes normales
           onSelect();
-          console.log('🟢 ParagraphComponent onSelect called for:', component.id);
         }
       },
-      [onSelect, component.id]
+      [onSelect, onComponentSelect, component.id]
     );
 
     // ⚡ ULTRA-OPTIMIZAÇÃO: Manejo de selección optimizado

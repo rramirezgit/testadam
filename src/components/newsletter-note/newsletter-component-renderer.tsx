@@ -21,6 +21,7 @@ import ParagraphComponent from './email-editor/email-components/ParagraphCompone
 import BulletListComponent from './email-editor/email-components/BulletListComponent';
 import HerramientasComponent from './email-editor/email-components/HerramientasComponent';
 import RespaldadoPorComponent from './email-editor/email-components/RespaldadoPorComponent';
+import NoteContainerComponent from './email-editor/email-components/NoteContainerComponent';
 import TituloConIconoComponent from './email-editor/email-components/TituloConIconoComponent';
 
 interface NewsletterComponentRendererProps {
@@ -124,6 +125,8 @@ function renderComponent(props: any) {
       return <ButtonComponent {...props} />;
     case 'divider':
       return <DividerComponent {...props} />;
+    case 'noteContainer':
+      return <NoteContainerComponent {...props} />;
     case 'bulletList':
       return <BulletListComponent {...props} />;
     case 'image':

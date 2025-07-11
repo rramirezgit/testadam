@@ -30,7 +30,11 @@ export const createNewComponent = (
                       ? 'Título con Icono'
                       : type === 'respaldadoPor'
                         ? 'Respaldado por texto'
-                        : '',
+                        : type === 'newsletterHeaderReusable'
+                          ? 'Header Newsletter'
+                          : type === 'newsletterFooterReusable'
+                            ? 'Footer Newsletter'
+                            : '',
     props:
       type === 'heading'
         ? { level: 2 }
@@ -68,7 +72,48 @@ export const createNewComponent = (
                         propietarioNombre: 'Propietario',
                         propietarioAvatarUrl: '',
                       }
-                    : {},
+                    : type === 'newsletterHeaderReusable'
+                      ? {
+                          title: 'Newsletter Semanal',
+                          subtitle: 'Las mejores noticias y actualizaciones',
+                          logo: '',
+                          logoAlt: 'Logo',
+                          bannerImage: '',
+                          backgroundColor: '#FFF9CE',
+                          textColor: '#333333',
+                          alignment: 'center',
+                          useGradient: true,
+                          gradientColors: ['#FFF9CE', '#E2E5FA'],
+                          gradientDirection: 135,
+                          showLogo: true,
+                          showBanner: false,
+                          logoHeight: 60,
+                          padding: 32,
+                          sponsor: {
+                            enabled: false,
+                            label: 'Juntos con',
+                            image: '',
+                            imageAlt: 'Sponsor',
+                          },
+                        }
+                      : type === 'newsletterFooterReusable'
+                        ? {
+                            companyName: 'Tu Empresa',
+                            showAddress: true,
+                            address: 'Calle, Ciudad, País',
+                            contactEmail: 'contacto@tuempresa.com',
+                            unsubscribeLink: '#unsubscribe',
+                            textColor: '#666666',
+                            backgroundColor: '#f5f5f5',
+                            useGradient: false,
+                            gradientColors: ['#f5f5f5', '#e0e0e0'],
+                            gradientDirection: 180,
+                            padding: 24,
+                            fontSize: 14,
+                            showSocial: false,
+                            socialLinks: [],
+                          }
+                        : {},
     style:
       type === 'button'
         ? {
@@ -85,7 +130,23 @@ export const createNewComponent = (
               color: '#000000',
               marginLeft: '20px',
             }
-          : {},
+          : type === 'newsletterHeaderReusable'
+            ? {
+                padding: '32px',
+                textAlign: 'center',
+                background: 'linear-gradient(135deg, #FFF9CE 0%, #E2E5FA 100%)',
+                borderRadius: '8px',
+                marginBottom: '20px',
+              }
+            : type === 'newsletterFooterReusable'
+              ? {
+                  padding: '24px',
+                  textAlign: 'center',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '8px',
+                  marginTop: '20px',
+                }
+              : {},
   };
 
   return newComponent;
@@ -192,3 +253,55 @@ export const replaceComponentInArray = (
   updatedComponents.splice(index, 1, newComponent);
   return updatedComponents;
 };
+
+// Función recursiva para actualizar un componente en cualquier nivel de anidamiento
+export const updateComponentInArrayRecursive = (
+  components: EmailComponent[],
+  componentId: string,
+  updates: Partial<EmailComponent>
+): EmailComponent[] =>
+  components.map((component) => {
+    if (component.id === componentId) {
+      // Si es el componente objetivo, actualizarlo
+      return { ...component, ...updates };
+    }
+    // Si es un contenedor de nota con componentes anidados
+    if (
+      component.props &&
+      component.props.componentsData &&
+      Array.isArray(component.props.componentsData)
+    ) {
+      const updatedChildren = updateComponentInArrayRecursive(
+        component.props.componentsData,
+        componentId,
+        updates
+      );
+      // Solo crear nueva referencia si hubo cambios en los hijos
+      if (updatedChildren !== component.props.componentsData) {
+        return {
+          ...component,
+          props: {
+            ...component.props,
+            componentsData: updatedChildren,
+          },
+        };
+      }
+    }
+    // Si no es el objetivo ni tiene hijos a actualizar, devolver igual
+    return component;
+  });
+
+// Función recursiva para buscar un componente por id en toda la estructura
+export function findComponentById(
+  components: EmailComponent[],
+  id: string
+): EmailComponent | undefined {
+  for (const comp of components) {
+    if (comp.id === id) return comp;
+    if (comp.props?.componentsData && Array.isArray(comp.props.componentsData)) {
+      const found = findComponentById(comp.props.componentsData, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}

@@ -4,6 +4,8 @@ import { Box, Chip, Paper, Stack, Button, Divider, Typography } from '@mui/mater
 
 import GeneralColorPicker from 'src/components/newsletter-note/general-color-picker';
 
+import { findComponentById } from '../utils/componentHelpers';
+
 import type { SummaryOptionsProps } from './types';
 
 // Tipos de summary disponibles (igual que en SummaryComponent)
@@ -55,7 +57,7 @@ export default function SummaryOptions({
 }: SummaryOptionsProps) {
   if (!selectedComponentId) return null;
 
-  const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
+  const component = findComponentById(getActiveComponents(), selectedComponentId);
   if (!component || component.type !== 'summary') return null;
 
   // Opciones con valores por defecto

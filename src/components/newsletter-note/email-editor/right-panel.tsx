@@ -16,12 +16,15 @@ import {
   Toolbar,
   Divider,
   MenuItem,
+  Snackbar,
   TextField,
   Typography,
   InputLabel,
   FormControl,
   LinearProgress,
 } from '@mui/material';
+
+import usePostStore from 'src/store/PostStore';
 
 import { POST_STATUS, isStatusDisabled } from 'src/types/post';
 
@@ -41,13 +44,28 @@ import ChartOptions from './email-components/options/ChartOptions';
 import HerramientasOptions from './right-panel/HerramientasOptions';
 import TextWithIconOptions from './right-panel/TextWithIconOptions';
 import RespaldadoPorOptions from './right-panel/RespaldadoPorOptions';
+import NoteContainerOptions from './right-panel/NoteContainerOptions';
 import TituloConIconoOptions from './right-panel/TituloConIconoOptions';
-import NewsletterHeaderOptions from './right-panel/NewsletterHeaderOptions';
 import NewsletterFooterOptions from './right-panel/NewsletterFooterOptions';
+import NewsletterHeaderReusableOptions from './right-panel/NewsletterHeaderReusableOptions';
+import NewsletterFooterReusableOptions from './right-panel/NewsletterFooterReusableOptions';
 
 import type { RightPanelProps } from './right-panel/types';
 
 // ¡Todos los componentes han sido implementados!
+
+// Función recursiva para buscar un componente por ID en toda la estructura
+function findComponentById(components: any[], id: string): any | undefined {
+  for (const comp of components) {
+    if (comp.id === id) return comp;
+    // Buscar en hijos si existen (componentsData)
+    if (comp.props?.componentsData && Array.isArray(comp.props.componentsData)) {
+      const found = findComponentById(comp.props.componentsData, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
 
 export default function RightPanel({
   selectedComponentId,
@@ -114,6 +132,7 @@ export default function RightPanel({
   setNoteStatus,
   updateStatus,
   selectedColumn,
+  injectComponentsToNewsletter,
 }: RightPanelProps) {
   // Estado para los tabs del contenedor
   const [containerTab, setContainerTab] = useState(0);
@@ -123,6 +142,42 @@ export default function RightPanel({
 
   // Hook para subida de imágenes
   const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
+
+  // PostStore para cargar notas
+  const {
+    findAll: findAllPosts,
+    findById: findPostById,
+    loading: loadingPosts,
+    posts,
+  } = usePostStore();
+
+  // Estado para notificaciones
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  // Función para mostrar notificaciones
+  const showNotification = (
+    message: string,
+    severity: 'success' | 'error' | 'info' | 'warning'
+  ) => {
+    setNotification({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  // Función para cerrar notificaciones
+  const handleCloseNotification = () => {
+    setNotification((prev) => ({ ...prev, open: false }));
+  };
 
   // Función para determinar si un status está deshabilitado (usando la función centralizada)
   const checkStatusDisabled = (targetStatus: string): boolean =>
@@ -191,14 +246,23 @@ export default function RightPanel({
     </Box>
   );
 
-  // Obtener el componente seleccionado
+  // Obtener el componente seleccionado (ahora recursivo)
   const selectedComponent = selectedComponentId
-    ? getActiveComponents().find((comp) => comp.id === selectedComponentId)
+    ? findComponentById(getActiveComponents(), selectedComponentId)
     : null;
 
   // ⚡ DEBUG: Log de selección
   console.log('🎯 RightPanel selectedComponentId:', selectedComponentId);
   console.log('🎯 RightPanel selectedComponent:', selectedComponent?.type, selectedComponent?.id);
+  console.log('🎯 RightPanel componentType:', selectedComponent?.type);
+  console.log(
+    '🎯 RightPanel all components:',
+    getActiveComponents().map((c) => ({ id: c.id, type: c.type }))
+  );
+  console.log('🎯 RightPanel findComponentById result:', selectedComponent);
+  console.log('🎯 RightPanel componentType for rendering:', selectedComponent?.type);
+
+  // Panel configuración componente
 
   // Si el contenedor está seleccionado, mostrar las opciones del contenedor
   if (
@@ -471,6 +535,22 @@ export default function RightPanel({
             </Box>
           )}
         </Box>
+
+        {/* Snackbar para notificaciones */}
+        <Snackbar
+          open={notification.open}
+          autoHideDuration={4000}
+          onClose={handleCloseNotification}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={handleCloseNotification}
+            severity={notification.severity}
+            sx={{ width: '100%' }}
+          >
+            {notification.message}
+          </Alert>
+        </Snackbar>
       </Box>
     );
   }
@@ -575,11 +655,15 @@ export default function RightPanel({
                                 ? 'Herramientas'
                                 : componentType === 'divider'
                                   ? 'Separador'
-                                  : (componentType as string) === 'newsletter-header'
-                                    ? 'Header Newsletter'
-                                    : (componentType as string) === 'newsletter-footer'
-                                      ? 'Footer Newsletter'
-                                      : 'Tipografía'
+                                  : componentType === 'noteContainer'
+                                    ? 'Nota'
+                                    : componentType === 'newsletterHeaderReusable'
+                                      ? 'Header Newsletter'
+                                      : componentType === 'newsletterFooterReusable'
+                                        ? 'Footer Newsletter'
+                                        : (componentType as string) === 'newsletter-footer'
+                                          ? 'Footer Newsletter'
+                                          : 'Tipografía'
                 }
               />,
               ...(componentType === 'herramientas'
@@ -677,8 +761,19 @@ export default function RightPanel({
               />
             )}
 
-            {(componentType as string) === 'newsletter-header' && (
-              <NewsletterHeaderOptions
+            {/* ELIMINADO: Solo header global se configura automáticamente */}
+
+            {componentType === 'newsletterHeaderReusable' && (
+              <NewsletterHeaderReusableOptions
+                selectedComponentId={selectedComponentId}
+                selectedComponent={selectedComponent}
+                updateComponentProps={updateComponentProps}
+                updateComponentStyle={updateComponentStyle}
+              />
+            )}
+
+            {componentType === 'newsletterFooterReusable' && (
+              <NewsletterFooterReusableOptions
                 selectedComponentId={selectedComponentId}
                 selectedComponent={selectedComponent}
                 updateComponentProps={updateComponentProps}
@@ -779,6 +874,15 @@ export default function RightPanel({
                 getActiveComponents={getActiveComponents}
                 updateComponentProps={updateComponentProps}
                 setShowIconPicker={setShowIconPicker}
+              />
+            )}
+
+            {componentType === 'noteContainer' && (
+              <NoteContainerOptions
+                selectedComponentId={selectedComponentId}
+                getActiveComponents={getActiveComponents}
+                updateComponentProps={updateComponentProps}
+                updateComponentStyle={updateComponentStyle}
               />
             )}
 

@@ -13,6 +13,7 @@ const TituloConIconoComponent = ({
   index,
   isSelected,
   onSelect,
+  onComponentSelect,
   updateComponentContent,
   updateComponentProps,
   moveComponent,
@@ -23,7 +24,19 @@ const TituloConIconoComponent = ({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSelect();
+    console.log('🔵 TituloConIconoComponent clicked:', component.id, {
+      onSelect: !!onSelect,
+      onComponentSelect: !!onComponentSelect,
+    });
+
+    // Usar onComponentSelect si está disponible (para componentes dentro de notas)
+    if (onComponentSelect) {
+      onComponentSelect(component.id);
+      console.log('🟢 TituloConIconoComponent onComponentSelect called for:', component.id);
+    } else if (onSelect) {
+      onSelect();
+      console.log('🟢 TituloConIconoComponent onSelect called for:', component.id);
+    }
   };
 
   const handleTituloChange = (newContent: string) => {

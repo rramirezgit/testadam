@@ -16,7 +16,10 @@ export type ComponentType =
   | 'tituloConIcono'
   | 'herramientas'
   | 'respaldadoPor'
-  | 'chart';
+  | 'chart'
+  | 'noteContainer'
+  | 'newsletterHeaderReusable'
+  | 'newsletterFooterReusable';
 
 // Tipos para el newsletter
 export interface NewsletterNote {

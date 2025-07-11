@@ -16,6 +16,8 @@ import {
   stripeComponentsWeb,
   vercelComponentsWeb,
   marketComponentsWeb,
+  newsletterComponents,
+  newsletterComponentsWeb,
 } from '../data/template-components';
 
 // Crear una plantilla vacía
@@ -46,6 +48,10 @@ export const useEmailComponents = () => {
     useState<EmailComponent[]>(marketComponentsWeb);
   const [featureComponentsState, setFeatureComponents] =
     useState<EmailComponent[]>(featureComponents);
+  const [newsletterComponentsState, setNewsletterComponents] =
+    useState<EmailComponent[]>(newsletterComponents);
+  const [newsletterComponentsWebState, setNewsletterComponentsWeb] =
+    useState<EmailComponent[]>(newsletterComponentsWeb);
 
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = useCallback(
@@ -68,6 +74,8 @@ export const useEmailComponents = () => {
             return marketComponentsState;
           case 'feature':
             return featureComponentsState;
+          case 'newsletter':
+            return newsletterComponentsState;
           default:
             return blankComponentsState;
         }
@@ -89,6 +97,8 @@ export const useEmailComponents = () => {
             return marketComponentsWebState;
           case 'feature':
             return featureComponentsState; // Feature solo tiene versión newsletter
+          case 'newsletter':
+            return newsletterComponentsWebState;
           default:
             return blankComponentsWebState;
         }
@@ -110,6 +120,8 @@ export const useEmailComponents = () => {
       marketComponentsState,
       marketComponentsWebState,
       featureComponentsState,
+      newsletterComponentsState,
+      newsletterComponentsWebState,
     ]
   );
 
@@ -142,6 +154,9 @@ export const useEmailComponents = () => {
           case 'feature':
             setFeatureComponents(components); // Feature solo tiene versión newsletter, actualizar la misma
             break;
+          case 'newsletter':
+            setNewsletterComponentsWeb(components);
+            break;
           default:
             break;
         }
@@ -170,6 +185,9 @@ export const useEmailComponents = () => {
             break;
           case 'feature':
             setFeatureComponents(components);
+            break;
+          case 'newsletter':
+            setNewsletterComponents(components);
             break;
           default:
             break;
@@ -200,6 +218,8 @@ export const useEmailComponents = () => {
             return [...marketComponentsWebState];
           case 'feature':
             return [...featureComponentsState]; // Feature solo tiene versión newsletter
+          case 'newsletter':
+            return [...newsletterComponentsWebState];
           default:
             return [...blankComponentsWebState];
         }
@@ -221,6 +241,8 @@ export const useEmailComponents = () => {
             return [...marketComponentsState];
           case 'feature':
             return [...featureComponentsState];
+          case 'newsletter':
+            return [...newsletterComponentsState];
           default:
             return [...blankComponentsState];
         }
@@ -242,6 +264,8 @@ export const useEmailComponents = () => {
       marketComponentsState,
       marketComponentsWebState,
       featureComponentsState,
+      newsletterComponentsState,
+      newsletterComponentsWebState,
     ]
   );
 
@@ -279,6 +303,10 @@ export const useEmailComponents = () => {
       case 'feature':
         setFeatureComponents(objData);
         break;
+      case 'newsletter':
+        setNewsletterComponents(objData);
+        if (objDataWeb) setNewsletterComponentsWeb(objDataWeb);
+        break;
       default:
         setNotionComponents(objData);
         if (objDataWeb) setNotionComponentsWeb(objDataWeb);
@@ -302,6 +330,8 @@ export const useEmailComponents = () => {
     marketComponentsState,
     marketComponentsWebState,
     featureComponentsState,
+    newsletterComponentsState,
+    newsletterComponentsWebState,
 
     // Funciones
     getActiveComponents,
@@ -325,5 +355,7 @@ export const useEmailComponents = () => {
     setMarketComponents,
     setMarketComponentsWeb,
     setFeatureComponents,
+    setNewsletterComponents,
+    setNewsletterComponentsWeb,
   };
 };

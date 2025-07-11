@@ -7,17 +7,26 @@ import {
   Box,
   Grid,
   Chip,
+  Card,
+  Alert,
   Button,
+  Avatar,
+  Dialog,
   TextField,
   Accordion,
   Typography,
+  CardContent,
+  DialogTitle,
   ToggleButton,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
   AccordionSummary,
   AccordionDetails,
+  CircularProgress,
   ToggleButtonGroup,
 } from '@mui/material';
 
-import TemplateCard from './TemplateCard';
 import ContentLibrary from './content-library';
 
 import type { ComponentType, NewsletterNote } from './types';
@@ -49,6 +58,9 @@ interface EnabledComponents {
   tituloConIcono?: boolean;
   herramientas?: boolean;
   respaldadoPor?: boolean;
+  // newsletterHeader?: boolean; // ELIMINADO: Solo usaremos header global
+  newsletterHeaderReusable?: boolean;
+  newsletterFooterReusable?: boolean;
 }
 
 interface LeftPanelProps {
@@ -78,6 +90,11 @@ interface LeftPanelProps {
   onEditNote?: (note: any) => void;
   // Nueva prop para controlar componentes habilitados
   enabledComponents?: EnabledComponents;
+  // Nuevas props para notas disponibles
+  availableNotes?: any[];
+  loadingNotes?: boolean;
+  onInjectNote?: (noteId: string) => void;
+  onRefreshNotes?: () => void;
 }
 
 export default function LeftPanel({
@@ -119,18 +136,34 @@ export default function LeftPanel({
     tituloConIcono: true,
     herramientas: false,
     respaldadoPor: true,
+    // newsletterHeader: true, // ELIMINADO: Solo usaremos header global
+    newsletterHeaderReusable: true,
+    newsletterFooterReusable: true,
   },
+  // Nuevas props para notas disponibles
+  availableNotes = [],
+  loadingNotes = false,
+  onInjectNote = () => {},
+  onRefreshNotes = () => {},
 }: LeftPanelProps) {
-  const [activeTab, setActiveTab] = React.useState('templates');
+  const [activeTab, setActiveTab] = React.useState<'content' | 'library'>('content');
+  const [openNotesModal, setOpenNotesModal] = React.useState(false);
+  const [notesFilter, setNotesFilter] = React.useState('');
+  const [openTemplateModal, setOpenTemplateModal] = React.useState(true);
 
-  const handleTabChange = (event: React.MouseEvent<HTMLElement>, newValue: string) => {
+  const handleTabChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newValue: 'content' | 'library' | null
+  ) => {
     if (newValue !== null) {
       setActiveTab(newValue);
     }
   };
 
   // Función para verificar si al menos un componente de una categoría está habilitado
-  const hasCategoryComponents = (category: 'texto' | 'multimedia' | 'diseño' | 'noticias') => {
+  const hasCategoryComponents = (
+    category: 'texto' | 'multimedia' | 'diseño' | 'noticias' | 'newsletter'
+  ) => {
     switch (category) {
       case 'texto':
         return (
@@ -158,9 +191,31 @@ export default function LeftPanel({
           enabledComponents.herramientas ||
           enabledComponents.respaldadoPor
         );
+      case 'newsletter':
+        return (
+          enabledComponents.newsletterHeaderReusable || enabledComponents.newsletterFooterReusable
+        );
       default:
         return false;
     }
+  };
+
+  // Filtrar notas por título
+  const filteredNotes = availableNotes.filter((note) =>
+    note.title?.toLowerCase().includes(notesFilter.toLowerCase())
+  );
+
+  // Función para manejar la inyección de nota y cerrar el modal
+  const handleInjectNote = (noteId: string) => {
+    onInjectNote(noteId);
+    setOpenNotesModal(false);
+    setNotesFilter('');
+  };
+
+  // Función para manejar la selección de plantilla
+  const handleTemplateSelect = (templateId: string) => {
+    setActiveTemplate(templateId);
+    setOpenTemplateModal(false);
   };
 
   return (
@@ -192,9 +247,6 @@ export default function LeftPanel({
             },
           }}
         >
-          <ToggleButton value="templates" aria-label="templates">
-            Plantillas
-          </ToggleButton>
           <ToggleButton value="content" aria-label="content">
             Contenido
           </ToggleButton>
@@ -205,59 +257,6 @@ export default function LeftPanel({
           )}
         </ToggleButtonGroup>
       </Box>
-
-      {activeTab === 'templates' && (
-        <Box sx={{ flexGrow: 1, overflow: 'auto', px: 1 }}>
-          {/* Acordeón de Noticias */}
-          <Accordion>
-            <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
-              <Chip label="Noticias" variant="filled" size="small" />
-            </AccordionSummary>
-            <AccordionDetails sx={{ p: 1 }}>
-              <Grid container spacing={1}>
-                {emailTemplates
-                  .filter(
-                    (template) =>
-                      template.id === 'news' ||
-                      template.id === 'market' ||
-                      template.id === 'feature'
-                  )
-                  .map((template) => (
-                    <Grid size={12} key={template.id}>
-                      <TemplateCard
-                        template={template}
-                        activeTemplate={activeTemplate}
-                        setActiveTemplate={setActiveTemplate}
-                      />
-                    </Grid>
-                  ))}
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-
-          {/* Acordeón de Otras Plantillas */}
-          {/* <Accordion>
-            <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
-              <Chip label="Otras Plantillas" variant="filled" size="small" />
-            </AccordionSummary>
-            <AccordionDetails sx={{ p: 1 }}>
-              <Grid container spacing={1}>
-                {emailTemplates
-                  .filter((template) => template.id !== 'news' && template.id !== 'market' && template.id !== 'feature')
-                  .map((template) => (
-                    <Grid size={{ xs: 12, sm: 6 }} key={template.id}>
-                      <TemplateCard
-                        template={template}
-                        activeTemplate={activeTemplate}
-                        setActiveTemplate={setActiveTemplate}
-                      />
-                    </Grid>
-                  ))}
-              </Grid>
-            </AccordionDetails>
-          </Accordion> */}
-        </Box>
-      )}
 
       {activeTab === 'content' && (
         <>
@@ -634,6 +633,86 @@ export default function LeftPanel({
                 </AccordionDetails>
               </Accordion>
             )}
+
+            {/* Categoría de Newsletter - Solo mostrar si tiene componentes habilitados */}
+            {hasCategoryComponents('newsletter') && (
+              <Accordion
+                expanded={expandedCategories.newsletter}
+                onChange={() =>
+                  setExpandedCategories({
+                    ...expandedCategories,
+                    newsletter: !expandedCategories.newsletter,
+                  })
+                }
+              >
+                <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+                  <Chip label="Newsletter" variant="filled" size="small" />
+                </AccordionSummary>
+                <AccordionDetails sx={{ p: 1 }}>
+                  <Grid container spacing={1}>
+                    {enabledComponents.newsletterHeaderReusable && (
+                      <Grid size={4}>
+                        <Button
+                          onClick={() => addComponent('newsletterHeaderReusable')}
+                          fullWidth
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            p: 1,
+                            minHeight: '60px',
+                          }}
+                        >
+                          <Icon icon="mdi:header" style={{ fontSize: '1.5rem' }} />
+                          <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                            Header Reusable
+                          </Typography>
+                        </Button>
+                      </Grid>
+                    )}
+                    {enabledComponents.newsletterFooterReusable && (
+                      <Grid size={4}>
+                        <Button
+                          onClick={() => addComponent('newsletterFooterReusable')}
+                          fullWidth
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            p: 1,
+                            minHeight: '60px',
+                          }}
+                        >
+                          <Icon icon="mdi:footer" style={{ fontSize: '1.5rem' }} />
+                          <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                            Footer Reusable
+                          </Typography>
+                        </Button>
+                      </Grid>
+                    )}
+                  </Grid>
+                </AccordionDetails>
+              </Accordion>
+            )}
+
+            {/* BOTÓN PARA ABRIR MODAL DE NOTAS - Solo mostrar si es template newsletter */}
+            {activeTemplate === 'newsletter' && activeVersion === 'newsletter' && (
+              <Box sx={{ mt: 2, px: 1 }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<Icon icon="mdi:plus-circle" style={{ fontSize: '1.2rem' }} />}
+                  onClick={() => setOpenNotesModal(true)}
+                  sx={{
+                    py: 1.5,
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  Inyectar Notas Disponibles
+                </Button>
+              </Box>
+            )}
           </Box>
         </>
       )}
@@ -649,38 +728,263 @@ export default function LeftPanel({
         </Box>
       )}
 
-      {/* Botones de acción - Solo mostrar en modo normal o tabs de plantillas/contenido */}
-      {/* {(!isNewsletterMode || activeTab !== 'library') && (
-        <Box sx={{ p: 1, borderTop: '1px solid #e0e0e0', flexShrink: 0 }}>
-          <Button
-            variant="contained"
-            color="primary"
+      {/* MODAL DE SELECCIÓN DE PLANTILLAS */}
+      <Dialog
+        open={openTemplateModal}
+        onClose={() => setOpenTemplateModal(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            maxHeight: '90vh',
+          },
+        }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Icon icon="mdi:file-document-multiple" style={{ fontSize: '1.5rem' }} />
+            <Typography variant="h5">Selecciona una Plantilla</Typography>
+          </Box>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+            Elige la plantilla que mejor se adapte a tu contenido
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent>
+          <Grid container spacing={3}>
+            {emailTemplates.map((template) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={template.id}>
+                <Card
+                  onClick={() => handleTemplateSelect(template.id)}
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 4,
+                    },
+                    border:
+                      activeTemplate === template.id ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: 200,
+                      background: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {template.icon && (
+                      <Icon
+                        icon={template.icon}
+                        style={{
+                          fontSize: '3rem',
+                          color: 'white',
+                          opacity: 0.8,
+                        }}
+                      />
+                    )}
+                    {template.image && template.image.startsWith('/') && (
+                      <Box
+                        component="img"
+                        src={template.image}
+                        alt={template.name}
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          opacity: 0.3,
+                        }}
+                      />
+                    )}
+                  </Box>
+                  <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        mb: 1,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {template.name}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        fontSize: '0.875rem',
+                        textAlign: 'center',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {template.description}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setOpenTemplateModal(false)} variant="outlined">
+            Cancelar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* MODAL DE NOTAS DISPONIBLES */}
+      <Dialog
+        open={openNotesModal}
+        onClose={() => {
+          setOpenNotesModal(false);
+          setNotesFilter('');
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            maxHeight: '80vh',
+          },
+        }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Icon icon="mdi:file-document-multiple" style={{ fontSize: '1.5rem' }} />
+            <Typography variant="h6">Notas Disponibles</Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Selecciona notas para inyectar en el template de newsletter
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent>
+          {/* Filtro de búsqueda */}
+          <TextField
             fullWidth
-            onClick={handleGenerateEmailHtml}
-            disabled={generatingEmail}
-            startIcon={<Icon icon="mdi:email-outline" />}
-            sx={{
-              mb: 1,
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              py: { xs: 0.5, sm: 1 },
+            placeholder="Buscar por título..."
+            value={notesFilter}
+            onChange={(e) => setNotesFilter(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Icon icon="mdi:magnify" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ mb: 2 }}
+          />
+
+          {/* Lista de notas */}
+          {loadingNotes ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : availableNotes.length === 0 ? (
+            <Alert severity="info">No hay notas disponibles para inyectar</Alert>
+          ) : filteredNotes.length === 0 ? (
+            <Alert severity="warning">No se encontraron notas que coincidan con la búsqueda</Alert>
+          ) : (
+            <Box sx={{ maxHeight: '60vh', overflow: 'auto' }}>
+              <Grid container spacing={2}>
+                {filteredNotes.map((note) => (
+                  <Grid size={{ xs: 12, sm: 6 }} key={note.id}>
+                    <Card
+                      onClick={() => handleInjectNote(note.id)}
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        '&:hover': {
+                          boxShadow: 3,
+                        },
+                      }}
+                    >
+                      <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                          {note.coverImageUrl && (
+                            <Avatar
+                              src={note.coverImageUrl}
+                              variant="rounded"
+                              sx={{ width: 60, height: 60, flexShrink: 0 }}
+                            />
+                          )}
+                          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontSize: '1rem',
+                                fontWeight: 600,
+                                lineHeight: 1.3,
+                                mb: 1,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                              }}
+                            >
+                              {note.title}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                              <Chip
+                                label={note.status}
+                                size="small"
+                                color={note.status === 'DRAFT' ? 'default' : 'primary'}
+                              />
+                              {note.highlight && (
+                                <Chip label="Destacado" size="small" color="warning" />
+                              )}
+                            </Box>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ fontSize: '0.75rem' }}
+                            >
+                              {new Date(note.createdAt).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => {
+              setOpenNotesModal(false);
+              setNotesFilter('');
             }}
           >
-            {generatingEmail ? <CircularProgress size={16} color="inherit" /> : 'Generar HTML'}
+            Cerrar
           </Button>
           <Button
             variant="outlined"
-            fullWidth
-            onClick={() => setOpenSaveDialog(true)}
-            startIcon={<Icon icon="mdi:content-save" />}
-            sx={{
-              fontSize: { xs: '0.75rem', sm: '0.875rem' },
-              py: { xs: 0.5, sm: 1 },
-            }}
+            startIcon={<Icon icon="mdi:refresh" />}
+            onClick={onRefreshNotes}
+            disabled={loadingNotes}
           >
-            Guardar
+            Actualizar
           </Button>
-        </Box>
-      )} */}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

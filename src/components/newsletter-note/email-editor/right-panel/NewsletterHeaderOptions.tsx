@@ -53,7 +53,7 @@ export default function NewsletterHeaderOptions({
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
-        Configuración del Header
+        Configuración del Header de Newsletter
       </Typography>
 
       {/* Contenido Básico */}
@@ -264,14 +264,25 @@ export default function NewsletterHeaderOptions({
         </AccordionSummary>
         <AccordionDetails>
           <Stack spacing={2}>
-            <TextField
-              fullWidth
-              label="URL del Banner"
-              value={props.bannerImage || ''}
-              onChange={(e) => handlePropChange('bannerImage', e.target.value)}
-              size="small"
-              helperText="Imagen que aparecerá debajo del título"
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={props.showBanner || false}
+                  onChange={(e) => handlePropChange('showBanner', e.target.checked)}
+                />
+              }
+              label="Mostrar Banner"
             />
+            {props.showBanner && (
+              <TextField
+                fullWidth
+                label="URL del Banner"
+                value={props.bannerImage || ''}
+                onChange={(e) => handlePropChange('bannerImage', e.target.value)}
+                size="small"
+                helperText="Imagen que aparecerá debajo del título"
+              />
+            )}
           </Stack>
         </AccordionDetails>
       </Accordion>

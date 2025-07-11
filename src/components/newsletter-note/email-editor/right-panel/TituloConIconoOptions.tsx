@@ -16,6 +16,8 @@ import {
 
 import GeneralColorPicker from 'src/components/newsletter-note/general-color-picker';
 
+import { findComponentById } from '../utils/componentHelpers';
+
 import type { TituloConIconoOptionsProps } from './types';
 
 // Gradientes preestablecidos sutiles con iconos PNG
@@ -94,7 +96,7 @@ export default function TituloConIconoOptions({
 }: TituloConIconoOptionsProps) {
   if (!selectedComponentId) return null;
 
-  const component = getActiveComponents().find((comp) => comp.id === selectedComponentId);
+  const component = findComponentById(getActiveComponents(), selectedComponentId);
   if (!component || component.type !== 'tituloConIcono') return null;
 
   // Valores por defecto si no existen

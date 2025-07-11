@@ -72,6 +72,12 @@ export interface RightPanelProps {
 
   // Prop para columna seleccionada en TwoColumns
   selectedColumn?: 'left' | 'right';
+
+  // Nueva prop para inyectar componentes al newsletter
+  injectComponentsToNewsletter?: (components: EmailComponent[], noteTitle?: string) => void;
+
+  // Nueva prop para eliminar contenedores de nota
+  removeNoteContainer?: (containerId: string) => void;
 }
 
 export interface ListStyleOptionsProps {

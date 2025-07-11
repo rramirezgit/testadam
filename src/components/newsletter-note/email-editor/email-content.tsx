@@ -11,6 +11,7 @@ import { Box, Stack, Paper, Button, Typography, IconButton } from '@mui/material
 
 import EmailList from './email-list';
 import EmailComponentRenderer from './email-component-renderer';
+import ComponentWithToolbar from './email-components/ComponentWithToolbar';
 
 import type { NewsletterNote, NewsletterHeader, NewsletterFooter } from './types';
 
@@ -83,6 +84,10 @@ interface EmailContentProps {
   newsletterFooter?: NewsletterFooter;
   onNewsletterHeaderUpdate?: (header: NewsletterHeader) => void;
   onNewsletterFooterUpdate?: (footer: NewsletterFooter) => void;
+  // Nueva prop para eliminar contenedores de nota
+  removeNoteContainer?: (containerId: string) => void;
+  // Prop para la columna seleccionada
+  selectedColumn?: 'left' | 'right';
 }
 
 // Componente para el header del newsletter
@@ -604,6 +609,10 @@ const EmailContent = memo(
     newsletterFooter,
     onNewsletterHeaderUpdate = () => {},
     onNewsletterFooterUpdate = () => {},
+    // Nueva prop para eliminar contenedores de nota
+    removeNoteContainer = () => {},
+    // Prop para la columna seleccionada
+    selectedColumn = 'left',
   }: EmailContentProps) => {
     // Memoizar los componentes para evitar recálculos innecesarios
     const components = useMemo(() => getActiveComponents(), [getActiveComponents]);
@@ -855,8 +864,19 @@ const EmailContent = memo(
               maxWidth: `${containerMaxWidth}px`,
               margin: '0 auto',
               padding: `${containerPadding}px`,
-              borderRadius: `${containerBorderRadius}px`,
-              border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+              // Para newsletter, no aplicar bordes al contenedor principal
+              ...(activeTemplate === 'newsletter' && activeVersion === 'newsletter'
+                ? {
+                    // Sin bordes para newsletter
+                    borderRadius: 0,
+                    border: 'none',
+                    maxWidth: '100%',
+                  }
+                : {
+                    // Bordes normales para otros casos
+                    borderRadius: `${containerBorderRadius}px`,
+                    border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+                  }),
             }}
           >
             {/* NEWSLETTER HEADER - Componente fijo superior */}
@@ -1059,6 +1079,11 @@ const EmailContent = memo(
                                 // Llamar también onComponentSelect para manejar el estado del panel
                                 onComponentSelect(componentId);
                               }}
+                              onComponentSelect={(selectedId) => {
+                                // Manejar selección de componentes dentro de contenedores de nota
+                                setSelectedComponentId(selectedId);
+                                onComponentSelect(selectedId);
+                              }}
                               onColumnSelect={onColumnSelect}
                               updateComponentContent={(id, content) => {
                                 // Actualizar contenido del componente en newsletter
@@ -1206,19 +1231,27 @@ const EmailContent = memo(
               maxWidth: `${containerMaxWidth}px`,
               margin: '0 auto',
               padding: `${containerPadding}px`,
-              ...((activeTemplate === 'news' || activeTemplate === 'market') &&
-              activeVersion === 'web'
+              // Para newsletter, no aplicar bordes al contenedor principal
+              ...(activeTemplate === 'newsletter' && activeVersion === 'newsletter'
                 ? {
-                    // Sin bordes para la versión web del template de noticias/mercado
+                    // Sin bordes para newsletter
                     borderRadius: 0,
                     border: 'none',
                     maxWidth: '100%',
                   }
-                : {
-                    // Bordes normales para otros casos
-                    borderRadius: `${containerBorderRadius}px`,
-                    border: `${containerBorderWidth}px solid ${containerBorderColor}`,
-                  }),
+                : (activeTemplate === 'news' || activeTemplate === 'market') &&
+                    activeVersion === 'web'
+                  ? {
+                      // Sin bordes para la versión web del template de noticias/mercado
+                      borderRadius: 0,
+                      border: 'none',
+                      maxWidth: '100%',
+                    }
+                  : {
+                      // Bordes normales para otros casos
+                      borderRadius: `${containerBorderRadius}px`,
+                      border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+                    }),
               textAlign: 'center',
               py: 8,
               display: 'flex',
@@ -1278,43 +1311,84 @@ const EmailContent = memo(
           sx={{
             margin: '0 auto',
             padding: `${containerPadding}px`,
-            ...((activeTemplate === 'news' || activeTemplate === 'market') &&
-            activeVersion === 'web'
+            // Para newsletter, no aplicar bordes al contenedor principal
+            ...(activeTemplate === 'newsletter' && activeVersion === 'newsletter'
               ? {
-                  // Sin bordes para la versión web del template de noticias/mercado
+                  // Sin bordes para newsletter
                   borderRadius: 0,
                   border: 'none',
+                  maxWidth: '100%',
                 }
-              : {
-                  // Bordes normales para otros casos
-                  borderRadius: `${containerBorderRadius}px`,
-                  border: `${containerBorderWidth}px solid ${containerBorderColor}`,
-                  maxWidth: `${containerMaxWidth}px`,
-                }),
+              : (activeTemplate === 'news' || activeTemplate === 'market') &&
+                  activeVersion === 'web'
+                ? {
+                    // Sin bordes para la versión web del template de noticias/mercado
+                    borderRadius: 0,
+                    border: 'none',
+                  }
+                : {
+                    // Bordes normales para otros casos
+                    borderRadius: `${containerBorderRadius}px`,
+                    border: `${containerBorderWidth}px solid ${containerBorderColor}`,
+                    maxWidth: `${containerMaxWidth}px`,
+                  }),
           }}
         >
-          {components.map((component: any, index) => {
-            if (component.type === 'bulletList') {
-              return renderBulletList(component);
+          {components.map((component, index) => {
+            if (component.type === 'noteContainer') {
+              return (
+                <ComponentWithToolbar
+                  key={component.id}
+                  isSelected={selectedComponentId === component.id}
+                  index={index}
+                  totalComponents={components.length}
+                  componentId={component.id}
+                  moveComponent={moveComponent}
+                  removeComponent={removeComponent}
+                  onClick={() => {
+                    setSelectedComponentId(component.id);
+                    onComponentSelect(component.id);
+                  }}
+                >
+                  <EmailComponentRenderer
+                    component={component}
+                    index={index}
+                    isSelected={selectedComponentId === component.id}
+                    onSelect={() => {
+                      setSelectedComponentId(component.id);
+                      onComponentSelect(component.id);
+                    }}
+                    updateComponentContent={updateComponentContent}
+                    updateComponentProps={updateComponentProps}
+                    handleSelectionUpdate={handleSelectionUpdate}
+                    moveComponent={moveComponent}
+                    removeComponent={removeComponent}
+                    totalComponents={components.length}
+                    getActiveComponents={getActiveComponents}
+                    onComponentSelect={onComponentSelect}
+                  />
+                </ComponentWithToolbar>
+              );
             }
-
+            // Renderizado normal para otros componentes
             return (
               <EmailComponentRenderer
                 key={component.id}
                 component={component}
                 index={index}
                 isSelected={selectedComponentId === component.id}
-                onSelect={() => setSelectedComponentId(component.id)}
-                onColumnSelect={onColumnSelect}
+                onSelect={() => {
+                  setSelectedComponentId(component.id);
+                  onComponentSelect(component.id);
+                }}
                 updateComponentContent={updateComponentContent}
                 updateComponentProps={updateComponentProps}
                 handleSelectionUpdate={handleSelectionUpdate}
                 moveComponent={moveComponent}
                 removeComponent={removeComponent}
                 totalComponents={components.length}
-                renderCustomContent={
-                  component.type === 'bulletList' ? () => renderBulletList(component) : undefined
-                }
+                getActiveComponents={getActiveComponents}
+                onComponentSelect={onComponentSelect}
               />
             );
           })}
