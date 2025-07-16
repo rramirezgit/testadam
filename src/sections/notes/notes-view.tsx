@@ -11,6 +11,7 @@ import {
   Box,
   Tab,
   Tabs,
+  Chip,
   Modal,
   Paper,
   Button,
@@ -38,6 +39,8 @@ import { Iconify } from 'src/components/iconify';
 import NotesGrid from 'src/components/newsletter-note/notes-grid';
 import EmailEditor from 'src/components/newsletter-note/email-editor';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+// Importar templates disponibles
+import { emailTemplates } from 'src/components/newsletter-note/email-editor/data/email-templates';
 
 type Tab = {
   label: string;
@@ -71,6 +74,10 @@ export default function NotesView() {
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [openFiltersModal, setOpenFiltersModal] = useState(false);
 
+  // Nuevo estado para filtro de templates
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('all');
+  const [showTemplateFilter, setShowTemplateFilter] = useState(false);
+
   // Estados para filtros avanzados
   const [filters, setFilters] = useState({
     origin: '',
@@ -81,7 +88,7 @@ export default function NotesView() {
     page: 1,
   });
 
-  // Configurar filtros basados en el tab actual
+  // Configurar filtros basados en el tab actual y template seleccionado
   const currentFilters: PostFilters = {
     status: tab.toUpperCase() as PostStatus,
     page: filters.page,
@@ -91,6 +98,7 @@ export default function NotesView() {
     ...(filters.startDate && { startDate: filters.startDate }),
     ...(filters.endDate && { endDate: filters.endDate }),
     ...(filters.highlight && { highlight: filters.highlight }),
+    ...(selectedTemplate !== 'all' && { templateType: selectedTemplate }),
   };
 
   // Use PostStore
@@ -157,6 +165,12 @@ export default function NotesView() {
     setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on tab change
   };
 
+  const handleTemplateChange = (templateId: string) => {
+    console.log('🔄 Cambiando template a:', templateId);
+    setSelectedTemplate(templateId);
+    setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on template change
+  };
+
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     setFilters((prev) => ({ ...prev, page }));
   };
@@ -175,6 +189,7 @@ export default function NotesView() {
       page: 1,
     });
     setSearchTerm('');
+    setSelectedTemplate('all');
   };
 
   // Agregar useEffect para debug de filtros
@@ -262,11 +277,56 @@ export default function NotesView() {
           </Box>
         </Box>
 
-        <Tabs value={tab} onChange={handleChangeTab} sx={{ mb: { xs: 3, md: 5 } }}>
-          {TABS.map((tabItem: Tab) => (
-            <Tab key={tabItem.value} label={tabItem.label} value={tabItem.value} />
-          ))}
-        </Tabs>
+        {/* Filtro de Templates - Nueva sección prominente */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Filtrar por Template
+          </Typography>
+
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+            <Chip
+              label="Todos los templates"
+              onClick={() => handleTemplateChange('all')}
+              color={selectedTemplate === 'all' ? 'primary' : 'default'}
+              variant={selectedTemplate === 'all' ? 'filled' : 'outlined'}
+              sx={{ cursor: 'pointer' }}
+            />
+
+            {emailTemplates.map((template) => (
+              <Chip
+                key={template.id}
+                label={template.name}
+                onClick={() => handleTemplateChange(template.id)}
+                color={selectedTemplate === template.id ? 'primary' : 'default'}
+                variant={selectedTemplate === template.id ? 'filled' : 'outlined'}
+                sx={{ cursor: 'pointer' }}
+                icon={<Iconify icon={template.icon as any} />}
+              />
+            ))}
+          </Box>
+        </Box>
+
+        {/* Filtro de Estado - Ahora secundario */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
+            Estado de las notas
+          </Typography>
+          <Tabs
+            value={tab}
+            onChange={handleChangeTab}
+            sx={{
+              '& .MuiTab-root': {
+                minHeight: '40px',
+                fontSize: '0.875rem',
+                textTransform: 'none',
+              },
+            }}
+          >
+            {TABS.map((tabItem: Tab) => (
+              <Tab key={tabItem.value} label={tabItem.label} value={tabItem.value} />
+            ))}
+          </Tabs>
+        </Box>
 
         {error && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -302,6 +362,13 @@ export default function NotesView() {
               />
               <Typography variant="body2" color="text.secondary">
                 Mostrando {notes.length} de {meta.total} notas
+                {selectedTemplate !== 'all' && (
+                  <span>
+                    {' '}
+                    del template &quot;{emailTemplates.find((t) => t.id === selectedTemplate)?.name}
+                    &quot;
+                  </span>
+                )}
               </Typography>
             </Box>
           </Box>
@@ -335,8 +402,24 @@ export default function NotesView() {
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {/* Origen y Elementos por página */}
+              {/* Template y Origen */}
               <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <FormControl fullWidth>
+                  <InputLabel>Template</InputLabel>
+                  <Select
+                    value={selectedTemplate}
+                    label="Template"
+                    onChange={(e) => handleTemplateChange(e.target.value)}
+                  >
+                    <MenuItem value="all">Todos los templates</MenuItem>
+                    {emailTemplates.map((template) => (
+                      <MenuItem key={template.id} value={template.id}>
+                        {template.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
                 <FormControl fullWidth>
                   <InputLabel>Origen</InputLabel>
                   <Select
@@ -349,21 +432,22 @@ export default function NotesView() {
                     <MenuItem value="ADAC">ADAC</MenuItem>
                   </Select>
                 </FormControl>
-
-                <FormControl fullWidth>
-                  <InputLabel>Elementos por página</InputLabel>
-                  <Select
-                    value={filters.perPage}
-                    label="Elementos por página"
-                    onChange={(e) => handleFilterChange('perPage', e.target.value)}
-                  >
-                    <MenuItem value={10}>10</MenuItem>
-                    <MenuItem value={20}>20</MenuItem>
-                    <MenuItem value={50}>50</MenuItem>
-                    <MenuItem value={100}>100</MenuItem>
-                  </Select>
-                </FormControl>
               </Box>
+
+              {/* Elementos por página */}
+              <FormControl fullWidth>
+                <InputLabel>Elementos por página</InputLabel>
+                <Select
+                  value={filters.perPage}
+                  label="Elementos por página"
+                  onChange={(e) => handleFilterChange('perPage', e.target.value)}
+                >
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={20}>20</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                  <MenuItem value={100}>100</MenuItem>
+                </Select>
+              </FormControl>
 
               {/* Fechas */}
               <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
