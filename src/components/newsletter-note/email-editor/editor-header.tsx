@@ -140,10 +140,6 @@ export default function EditorHeader({
     [currentNewsletterId, newsletterList, saving]
   );
 
-  // Debug: Log del activeTemplate
-  console.log('🔍 EditorHeader - activeTemplate:', activeTemplate);
-  console.log('🔍 EditorHeader - activeTemplate === "news":', activeTemplate === 'news');
-
   // Abrir el menú de transferencia
   const handleTransferMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setTransferMenuAnchor(event.currentTarget);

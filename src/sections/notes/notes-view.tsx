@@ -300,7 +300,7 @@ export default function NotesView() {
                 color={selectedTemplate === template.id ? 'primary' : 'default'}
                 variant={selectedTemplate === template.id ? 'filled' : 'outlined'}
                 sx={{ cursor: 'pointer' }}
-                icon={<Iconify icon={template.icon as any} />}
+                // icon={}
               />
             ))}
           </Box>

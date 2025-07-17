@@ -104,7 +104,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
   const [activeTemplate, setActiveTemplate] = useState<string>(initialTemplate);
-  const [activeVersion, setActiveVersion] = useState<'newsletter' | 'web'>('newsletter');
+  const [activeVersion, setActiveVersion] = useState<'newsletter' | 'web'>('web');
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<'left' | 'right'>('left');
 
