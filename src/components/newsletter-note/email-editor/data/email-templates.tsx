@@ -29,13 +29,13 @@ export const emailTemplates = [
     icon: <ZapCircle width={40} height={40} />,
     image: '',
   },
-  // {
-  //   id: 'newsletter',
-  //   name: 'Newsletter',
-  //   description: 'Plantilla de prueba para newsletter',
-  //   icon: 'mdi:email-outline',
-  //   image: '',
-  // },
+  {
+    id: 'newsletter',
+    name: 'Newsletter',
+    description: 'Plantilla de prueba para newsletter',
+    icon: 'mdi:email-outline',
+    image: '',
+  },
   // {
   //   id: 'notion',
   //   name: 'Notion Magic Link',

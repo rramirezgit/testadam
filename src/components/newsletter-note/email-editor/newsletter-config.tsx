@@ -304,6 +304,11 @@ export default function NewsletterConfig({
               value={newsletterTitle}
               onChange={(e) => onTitleChange(e.target.value)}
               sx={{ mb: 2 }}
+              required
+              error={!newsletterTitle || !newsletterTitle.trim()}
+              helperText={
+                !newsletterTitle || !newsletterTitle.trim() ? 'El título es obligatorio' : ''
+              }
             />
             <TextField
               fullWidth

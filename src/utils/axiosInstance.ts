@@ -65,6 +65,9 @@ export const endpoints = {
     updateStatus: (id: string, status: string) => `/posts/status/${id}/${status}`,
   },
   newsletter: {
+    create: '/newsletters',
+    findAll: '/newsletters',
+    update: (id: string) => `/newsletters/${id}`,
     send: (id: string) => `/newsletters/${id}/send`,
     sendForReview: (id: string) => `/newsletters/${id}/send-for-review`,
     requestApproval: (id: string) => `/newsletters/${id}/request-approval`,

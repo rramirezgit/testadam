@@ -188,7 +188,7 @@ export interface SendTestData {
   subject: string;
   content: string;
   approverEmails?: string[];
-  emails?: string[];
+  reviewerEmails?: string[];
 }
 
 // Datos para envío de newsletter

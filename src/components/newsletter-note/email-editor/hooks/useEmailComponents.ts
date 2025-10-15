@@ -2,6 +2,7 @@ import type { EmailComponent } from 'src/types/saved-note';
 
 import { useState, useCallback } from 'react';
 
+import { debugComponents, findComponentById } from '../utils/componentHelpers';
 import {
   newsComponents,
   plaidComponents,
@@ -56,53 +57,82 @@ export const useEmailComponents = () => {
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = useCallback(
     (activeTemplate: string, activeVersion: 'newsletter' | 'web') => {
+      let components: EmailComponent[] = [];
+
       if (activeVersion === 'newsletter') {
         switch (activeTemplate) {
           case 'blank':
-            return blankComponentsState;
+            components = blankComponentsState;
+            break;
           case 'notion':
-            return notionComponentsState;
+            components = notionComponentsState;
+            break;
           case 'plaid':
-            return plaidComponentsState;
+            components = plaidComponentsState;
+            break;
           case 'stripe':
-            return stripeComponentsState;
+            components = stripeComponentsState;
+            break;
           case 'vercel':
-            return vercelComponentsState;
+            components = vercelComponentsState;
+            break;
           case 'news':
-            return newsComponentsState;
+            components = newsComponentsState;
+            break;
           case 'market':
-            return marketComponentsState;
+            components = marketComponentsState;
+            break;
           case 'feature':
-            return featureComponentsState;
+            components = featureComponentsState;
+            break;
           case 'newsletter':
-            return newsletterComponentsState;
+            components = newsletterComponentsState;
+            break;
           default:
-            return blankComponentsState;
+            components = blankComponentsState;
+            break;
         }
       } else {
         switch (activeTemplate) {
           case 'blank':
-            return blankComponentsWebState;
+            components = blankComponentsWebState;
+            break;
           case 'notion':
-            return notionComponentsWebState;
+            components = notionComponentsWebState;
+            break;
           case 'plaid':
-            return plaidComponentsWebState;
+            components = plaidComponentsWebState;
+            break;
           case 'stripe':
-            return stripeComponentsWebState;
+            components = stripeComponentsWebState;
+            break;
           case 'vercel':
-            return vercelComponentsWebState;
+            components = vercelComponentsWebState;
+            break;
           case 'news':
-            return newsComponentsWebState;
+            components = newsComponentsWebState;
+            break;
           case 'market':
-            return marketComponentsWebState;
+            components = marketComponentsWebState;
+            break;
           case 'feature':
-            return featureComponentsState; // Feature solo tiene versión newsletter
+            components = featureComponentsState; // Feature solo tiene versión newsletter
+            break;
           case 'newsletter':
-            return newsletterComponentsWebState;
+            components = newsletterComponentsWebState;
+            break;
           default:
-            return blankComponentsWebState;
+            components = blankComponentsWebState;
+            break;
         }
       }
+
+      // Debug de componentes activos
+      if (process.env.NODE_ENV === 'development') {
+        debugComponents(components, `getActiveComponents(${activeTemplate}, ${activeVersion})`);
+      }
+
+      return components;
     },
     [
       blankComponentsState,
@@ -124,6 +154,146 @@ export const useEmailComponents = () => {
       newsletterComponentsWebState,
     ]
   );
+
+  // Nueva función para filtrar componentes inyectados
+  const getFilteredActiveComponents = useCallback(
+    (
+      activeTemplate: string,
+      activeVersion: 'newsletter' | 'web',
+      filterInjected: boolean = false
+    ) => {
+      const components = getActiveComponents(activeTemplate, activeVersion);
+
+      if (!filterInjected) {
+        return components;
+      }
+
+      // Filtrar componentes inyectados (que tienen IDs con el patrón -injected-)
+      return components.filter((component) => {
+        // Si es un contenedor de nota, verificar si contiene componentes inyectados
+        if (component.type === 'noteContainer' && component.props?.componentsData) {
+          const hasInjectedComponents = component.props.componentsData.some(
+            (comp: any) => comp.id && comp.id.includes('-injected-')
+          );
+          return !hasInjectedComponents;
+        }
+
+        // Para componentes individuales, verificar si tienen el patrón -injected-
+        return !(component.id && component.id.includes('-injected-'));
+      });
+    },
+    [getActiveComponents]
+  );
+
+  // Nueva función para obtener solo componentes inyectados
+  const getInjectedComponents = useCallback(
+    (activeTemplate: string, activeVersion: 'newsletter' | 'web') => {
+      const components = getActiveComponents(activeTemplate, activeVersion);
+      const injectedComponents: EmailComponent[] = [];
+
+      components.forEach((component) => {
+        // Si es un contenedor de nota, extraer los componentes inyectados
+        if (component.type === 'noteContainer' && component.props?.componentsData) {
+          const injectedInContainer = component.props.componentsData.filter(
+            (comp: any) => comp.id && comp.id.includes('-injected-')
+          );
+          injectedComponents.push(...injectedInContainer);
+        }
+
+        // Para componentes individuales inyectados
+        if (component.id && component.id.includes('-injected-')) {
+          injectedComponents.push(component);
+        }
+      });
+
+      return injectedComponents;
+    },
+    [getActiveComponents]
+  );
+
+  // Nueva función para resolver el problema específico de componentes inyectados
+  const resolveInjectedComponentIssue = useCallback(
+    (activeTemplate: string, activeVersion: 'newsletter' | 'web', targetComponentId?: string) => {
+      const components = getActiveComponents(activeTemplate, activeVersion);
+
+      console.log('🔧 Resolviendo problema de componentes inyectados:', {
+        activeTemplate,
+        activeVersion,
+        targetComponentId,
+        totalComponents: components.length,
+      });
+
+      // Buscar componentes inyectados específicos
+      if (targetComponentId) {
+        const foundComponent = findComponentById(components, targetComponentId);
+        console.log('🎯 Componente buscado:', {
+          targetId: targetComponentId,
+          found: !!foundComponent,
+          component: foundComponent ? { id: foundComponent.id, type: foundComponent.type } : null,
+        });
+
+        if (foundComponent) {
+          return foundComponent;
+        }
+      }
+
+      // Listar todos los componentes inyectados
+      const injectedComponents = getInjectedComponents(activeTemplate, activeVersion);
+      console.log(
+        '📋 Componentes inyectados encontrados:',
+        injectedComponents.map((c) => ({ id: c.id, type: c.type }))
+      );
+
+      // Listar contenedores de nota
+      const noteContainers = components.filter((c) => c.type === 'noteContainer');
+      console.log(
+        '📦 Contenedores de nota:',
+        noteContainers.map((c) => ({
+          id: c.id,
+          containedComponents: c.props?.componentsData?.length || 0,
+          componentIds: c.props?.componentsData?.map((comp: any) => comp.id) || [],
+        }))
+      );
+
+      return {
+        components,
+        injectedComponents,
+        noteContainers,
+        targetComponent: targetComponentId
+          ? findComponentById(components, targetComponentId)
+          : null,
+      };
+    },
+    [getActiveComponents, getInjectedComponents]
+  );
+
+  /*
+   * EJEMPLO DE USO PARA RESOLVER EL PROBLEMA DE COMPONENTES INYECTADOS:
+   *
+   * Si tienes un problema con un componente como "tituloConIcono-1-injected-1752787453909-0",
+   * puedes usar estas funciones para debuggear y resolver el problema:
+   *
+   * // 1. Obtener todos los componentes activos
+   * const allComponents = getActiveComponents('newsletter', 'newsletter');
+   *
+   * // 2. Obtener solo componentes inyectados
+   * const injectedComponents = getInjectedComponents('newsletter', 'newsletter');
+   *
+   * // 3. Filtrar componentes inyectados (excluir componentes con -injected-)
+   * const filteredComponents = getFilteredActiveComponents('newsletter', 'newsletter', true);
+   *
+   * // 4. Resolver problema específico con un componente
+   * const issueResolution = resolveInjectedComponentIssue('newsletter', 'newsletter', 'tituloConIcono-1-injected-1752787453909-0');
+   *
+   * // 5. Buscar un componente específico
+   * const specificComponent = findComponentById(allComponents, 'tituloConIcono-1-injected-1752787453909-0');
+   *
+   * Estas funciones te ayudarán a:
+   * - Identificar dónde están los componentes inyectados
+   * - Verificar si se están filtrando correctamente
+   * - Debuggear problemas específicos con componentes inyectados
+   * - Obtener información detallada sobre la estructura de componentes
+   */
 
   // Actualizar los componentes activos según la versión
   const updateActiveComponents = useCallback(
@@ -335,6 +505,9 @@ export const useEmailComponents = () => {
 
     // Funciones
     getActiveComponents,
+    getFilteredActiveComponents,
+    getInjectedComponents,
+    resolveInjectedComponentIssue,
     updateActiveComponents,
     getOtherVersionComponents,
     loadPostComponents,

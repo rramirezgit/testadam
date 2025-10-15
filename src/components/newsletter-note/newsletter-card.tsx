@@ -47,6 +47,56 @@ export default function NewsletterCard({ newsletter, onOpen, onDelete }: Newslet
     handleMenuClose();
   };
 
+  // Get a preview of the newsletter content
+  const getContentPreview = () => {
+    try {
+      // Try to get content from newsletter.content or newsletter.objData
+      const content = newsletter.content || newsletter.objData;
+      if (!content) return 'Empty newsletter';
+
+      // If it's a string, try to parse it
+      const objData = typeof content === 'string' ? JSON.parse(content) : content;
+      if (!objData || objData.length === 0) return 'Empty newsletter';
+
+      // Find the first paragraph or heading
+      const firstTextItem = objData.find(
+        (item: any) => item.type === 'paragraph' || item.type === 'heading'
+      );
+
+      if (firstTextItem) {
+        const text = String(firstTextItem.content || '');
+        return text.length > 100 ? `${text.substring(0, 100)}...` : text;
+      }
+
+      return 'No text content';
+    } catch (error) {
+      return 'Error parsing newsletter content';
+    }
+  };
+
+  // Count components by type
+  const getComponentCounts = () => {
+    try {
+      const content = newsletter.content || newsletter.objData;
+      if (!content) return {};
+
+      const objData = typeof content === 'string' ? JSON.parse(content) : content;
+      if (!objData) return {};
+
+      return objData.reduce(
+        (acc: any, item: any) => {
+          acc[item.type] = (acc[item.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+    } catch (error) {
+      return {};
+    }
+  };
+
+  const componentCounts = getComponentCounts();
+
   return (
     <Card
       sx={{
@@ -77,14 +127,12 @@ export default function NewsletterCard({ newsletter, onOpen, onDelete }: Newslet
             justifyContent: 'space-between',
             alignItems: 'center',
             borderBottom: '1px solid rgba(0,0,0,0.08)',
-            backgroundColor: '#3f51b5',
-            color: 'white',
           }}
         >
           <Typography variant="h6" component="div" noWrap sx={{ maxWidth: '80%' }}>
-            {newsletter.title || 'Untitled Newsletter'}
+            {newsletter.subject || 'Untitled Newsletter'}
           </Typography>
-          <IconButton size="small" onClick={handleMenuClick} sx={{ ml: 'auto', color: 'white' }}>
+          <IconButton size="small" onClick={handleMenuClick} sx={{ ml: 'auto' }}>
             <Icon icon="mdi:dots-vertical" />
           </IconButton>
         </Box>
@@ -103,82 +151,53 @@ export default function NewsletterCard({ newsletter, onOpen, onDelete }: Newslet
               height: '4.5em',
             }}
           >
-            {newsletter.description || 'No description provided.'}
+            {getContentPreview()}
           </Typography>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            <Chip
-              size="small"
-              label={`${newsletter.notes.length} note${newsletter.notes.length !== 1 ? 's' : ''}`}
-              icon={<Icon icon="mdi:note-multiple" width={16} />}
-            />
-            <Chip
-              size="small"
-              label="Newsletter"
-              icon={<Icon icon="mdi:email-newsletter" width={16} />}
-              color="primary"
-            />
+            {Object.entries(componentCounts).map(([type, count]) => (
+              <Chip
+                key={type}
+                size="small"
+                label={`${count} ${type}${Number(count) > 1 ? 's' : ''}`}
+                icon={
+                  <Icon
+                    icon={
+                      type === 'heading'
+                        ? 'mdi:format-header-1'
+                        : type === 'paragraph'
+                          ? 'mdi:format-paragraph'
+                          : type === 'button'
+                            ? 'mdi:button-cursor'
+                            : type === 'image'
+                              ? 'mdi:image'
+                              : type === 'divider'
+                                ? 'mdi:minus'
+                                : type === 'newsletter'
+                                  ? 'mdi:email-newsletter'
+                                  : 'mdi:code-tags'
+                    }
+                    width={16}
+                  />
+                }
+              />
+            ))}
+            {Object.keys(componentCounts).length === 0 && (
+              <Chip
+                size="small"
+                label="Newsletter"
+                icon={<Icon icon="mdi:email-newsletter" width={16} />}
+                color="primary"
+              />
+            )}
           </Box>
-
-          {newsletter.notes.length > 0 && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                Included notes:
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {newsletter.notes.slice(0, 3).map((note, index) => (
-                  <Box
-                    key={note.noteId}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      p: 1,
-                      borderRadius: 1,
-                      backgroundColor: 'rgba(0,0,0,0.03)',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: '50%',
-                        backgroundColor: 'primary.main',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.75rem',
-                        mr: 1,
-                      }}
-                    >
-                      {index + 1}
-                    </Box>
-                    <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                      {note.noteData.title || 'Untitled Note'}
-                    </Typography>
-                  </Box>
-                ))}
-                {newsletter.notes.length > 3 && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                    +{newsletter.notes.length - 3} more notes
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          )}
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 'auto', pt: 1 }}>
             <Typography variant="caption" color="text.secondary">
-              Created:{' '}
-              {newsletter.dateCreated
-                ? format(new Date(newsletter.dateCreated), 'MMM d, yyyy')
-                : ''}
+              Status: {newsletter.status || 'DRAFT'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Modified:{' '}
-              {newsletter.dateModified
-                ? format(new Date(newsletter.dateModified), 'MMM d, yyyy')
-                : ''}
+              {newsletter.createdAt ? format(new Date(newsletter.createdAt), 'MMM d, yyyy') : ''}
             </Typography>
           </Box>
         </CardContent>

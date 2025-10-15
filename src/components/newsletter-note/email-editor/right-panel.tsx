@@ -36,6 +36,7 @@ import GalleryOptions from './right-panel/GalleryOptions';
 import DividerOptions from './right-panel/DividerOptions';
 import SummaryOptions from './right-panel/SummaryOptions';
 import CategoryOptions from './right-panel/CategoryOptions';
+import { findComponentById } from './utils/componentHelpers';
 import { useImageUpload } from './right-panel/useImageUpload';
 import ContainerOptions from './right-panel/ContainerOptions';
 import ImageTextOptions from './right-panel/ImageTextOptions';
@@ -53,19 +54,6 @@ import NewsletterFooterReusableOptions from './right-panel/NewsletterFooterReusa
 import type { RightPanelProps } from './right-panel/types';
 
 // ¡Todos los componentes han sido implementados!
-
-// Función recursiva para buscar un componente por ID en toda la estructura
-function findComponentById(components: any[], id: string): any | undefined {
-  for (const comp of components) {
-    if (comp.id === id) return comp;
-    // Buscar en hijos si existen (componentsData)
-    if (comp.props?.componentsData && Array.isArray(comp.props.componentsData)) {
-      const found = findComponentById(comp.props.componentsData, id);
-      if (found) return found;
-    }
-  }
-  return undefined;
-}
 
 export default function RightPanel({
   selectedComponentId,
@@ -246,25 +234,76 @@ export default function RightPanel({
     </Box>
   );
 
-  // Obtener el componente seleccionado (ahora recursivo)
+  // Obtener todos los componentes activos
+  const allComponents = getActiveComponents();
+
+  // Debug de componentes activos si hay un componente seleccionado
+  if (process.env.NODE_ENV === 'development' && selectedComponentId) {
+    console.log('🎯 RightPanel - All Components Debug:', {
+      totalComponents: allComponents.length,
+      componentTypes: allComponents.map((c) => ({ id: c.id, type: c.type })),
+      selectedComponentId,
+      isInjected: selectedComponentId ? selectedComponentId.includes('-injected-') : false,
+    });
+  }
+
+  // ⚡ DEBUG: Log de selección mejorado
+  console.log('🎯 RightPanel selectedComponentId:', selectedComponentId);
+  console.log(
+    '🎯 RightPanel isInjectedComponent:',
+    selectedComponentId ? selectedComponentId.includes('-injected-') : false
+  );
+
+  // Nueva función para manejar componentes inyectados específicamente
+  const handleInjectedComponentSelection = (componentId: string) => {
+    console.log('🔧 Handling injected component selection:', componentId);
+
+    // Verificar si es un componente inyectado
+    const isInjected = componentId.includes('-injected-');
+
+    if (isInjected) {
+      console.log('📋 Componente inyectado detectado:', {
+        componentId,
+        baseId: componentId.split('-injected-')[0],
+        timestamp: componentId.split('-injected-')[1]?.split('-')[0],
+        index: componentId.split('-injected-')[1]?.split('-')[1],
+      });
+    }
+    // Buscar el componente en toda la estructura
+    const foundComponent = findComponentById(allComponents, componentId);
+
+    if (foundComponent) {
+      console.log('✅ Componente encontrado:', {
+        id: foundComponent.id,
+        type: foundComponent.type,
+        isInjected,
+      });
+    } else {
+      console.log('❌ Componente NO encontrado:', componentId);
+
+      // Debug adicional para componentes inyectados
+      if (isInjected) {
+        const noteContainers = allComponents.filter((c) => c.type === 'noteContainer');
+        console.log(
+          '🔍 Buscando en contenedores de nota:',
+          noteContainers.map((c) => ({
+            id: c.id,
+            containedComponents: c.props?.componentsData?.length || 0,
+            componentIds: c.props?.componentsData?.map((comp: any) => comp.id) || [],
+          }))
+        );
+      }
+    }
+
+    return foundComponent;
+  };
+
+  // Usar la nueva función para obtener el componente seleccionado
   const selectedComponent = selectedComponentId
-    ? findComponentById(getActiveComponents(), selectedComponentId)
+    ? handleInjectedComponentSelection(selectedComponentId)
     : null;
 
-  // ⚡ DEBUG: Log de selección
-  console.log('🎯 RightPanel selectedComponentId:', selectedComponentId);
-  console.log('🎯 RightPanel selectedComponent:', selectedComponent?.type, selectedComponent?.id);
-  console.log('🎯 RightPanel componentType:', selectedComponent?.type);
-  console.log(
-    '🎯 RightPanel all components:',
-    getActiveComponents().map((c) => ({ id: c.id, type: c.type }))
-  );
-  console.log('🎯 RightPanel findComponentById result:', selectedComponent);
-  console.log('🎯 RightPanel componentType for rendering:', selectedComponent?.type);
-
-  // Panel configuración componente
-
-  // Si el contenedor está seleccionado, mostrar las opciones del contenedor
+  const componentType = selectedComponent?.type;
   if (
     isContainerSelected &&
     ((activeTemplate !== 'news' && activeTemplate !== 'market') || activeVersion === 'newsletter')
@@ -587,7 +626,7 @@ export default function RightPanel({
   }
 
   // Determinar el tipo de componente
-  const componentType = selectedComponent.type;
+  // const componentType = selectedComponent.type; // This line is now redundant
 
   return (
     <Box
@@ -907,18 +946,6 @@ export default function RightPanel({
             setShowIconPicker={setShowIconPicker}
           />
         )}
-
-        {/* Tab Smart: Última tab para todos los componentes excepto Summary y RespaldadoPor */}
-        {/* {componentType !== 'summary' &&
-          componentType !== 'respaldadoPor' &&
-          rightPanelTab === (componentType === 'herramientas' ? 2 : 1) && (
-            <SmartDesignOptions
-              selectedComponentId={selectedComponentId}
-              selectedComponent={selectedComponent}
-              updateComponentStyle={updateComponentStyle}
-              updateComponentProps={updateComponentProps}
-            />
-          )} */}
       </Box>
     </Box>
   );

@@ -13,6 +13,7 @@ interface NoteContainerComponentProps extends EmailComponentProps {
   removeNoteContainer?: (containerId: string) => void;
   getActiveComponents?: () => any[];
   onComponentSelect?: (componentId: string) => void; // Nueva prop para selección de componentes
+  selectedComponentId?: string | null; // Nueva prop para saber qué componente está seleccionado
 }
 
 export default function NoteContainerComponent({
@@ -29,6 +30,7 @@ export default function NoteContainerComponent({
   moveComponent,
   onColumnSelect,
   onComponentSelect,
+  selectedComponentId, // Nueva prop
 }: NoteContainerComponentProps) {
   const noteTitle = component.props?.noteTitle || 'Nota Inyectada';
   const containedComponents = component.props?.containedComponents || [];
@@ -52,6 +54,8 @@ export default function NoteContainerComponent({
     noteTitle,
     componentsDataLength: componentsData.length,
     containedComponentObjects: containedComponentObjects.map((c) => ({ id: c.id, type: c.type })),
+    selectedComponentId,
+    isSelected,
   });
 
   return (
@@ -91,106 +95,166 @@ export default function NoteContainerComponent({
       <Box data-note-content>
         {containedComponentObjects.length > 0 ? (
           containedComponentObjects.map((containedComponent, index) => (
-            <Box key={containedComponent.id} sx={{ mb: 2 }}>
-              <EmailComponentRenderer
-                component={containedComponent}
-                index={index}
-                isSelected={false}
-                onSelect={() => {
-                  // Permitir selección de componentes individuales dentro de la nota
-                  if (onComponentSelect) {
-                    onComponentSelect(containedComponent.id);
-                  }
-                }}
-                updateComponentContent={(id: string, content: string) => {
-                  // Actualizar contenido de un componente dentro de la nota
-                  const updatedComponents = containedComponentObjects.map((comp) =>
-                    comp.id === id ? { ...comp, content } : comp
+            // <ComponentWithToolbar
+            //   key={containedComponent.id}
+            //   isSelected={containedComponent.id === selectedComponentId} // Los componentes internos se seleccionan individualmente
+            //   index={index}
+            //   totalComponents={containedComponentObjects.length}
+            //   componentId={containedComponent.id}
+            //   moveComponent={(id: string, direction: 'up' | 'down') => {
+            //     // Mover componentes dentro del contenedor de la nota
+            //     const currentIndex = containedComponentObjects.findIndex((comp) => comp.id === id);
+            //     if (currentIndex === -1) return;
+
+            //     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+            //     if (newIndex < 0 || newIndex >= containedComponentObjects.length) return;
+
+            //     const updatedComponents = [...containedComponentObjects];
+            //     const [movedComponent] = updatedComponents.splice(currentIndex, 1);
+            //     updatedComponents.splice(newIndex, 0, movedComponent);
+
+            //     // Actualizar los componentes en el contenedor
+            //     const updatedComponent = {
+            //       ...component,
+            //       props: {
+            //         ...component.props,
+            //         componentsData: updatedComponents,
+            //       },
+            //     };
+
+            //     if (updateComponentProps) {
+            //       updateComponentProps(component.id, updatedComponent.props);
+            //     }
+            //   }}
+            //   removeComponent={(componentId: string) => {
+            //     // Eliminar componente del contenedor de la nota
+            //     const updatedComponents = containedComponentObjects.filter(
+            //       (comp) => comp.id !== componentId
+            //     );
+
+            //     const updatedComponent = {
+            //       ...component,
+            //       props: {
+            //         ...component.props,
+            //         componentsData: updatedComponents,
+            //       },
+            //     };
+
+            //     if (updateComponentProps) {
+            //       updateComponentProps(component.id, updatedComponent.props);
+            //     }
+            //   }}
+            //   onClick={() => {
+            //     // Permitir selección de componentes individuales dentro de la nota
+            //     if (onComponentSelect) {
+            //       console.log(
+            //         '🎯 NoteContainerComponent: Seleccionando componente interno:',
+            //         containedComponent.id
+            //       );
+            //       onComponentSelect(containedComponent.id);
+            //     }
+            //   }}
+            // >
+            <EmailComponentRenderer
+              component={containedComponent}
+              index={index}
+              isSelected={containedComponent.id === selectedComponentId}
+              onSelect={() => {
+                // Permitir selección de componentes individuales dentro de la nota
+                if (onComponentSelect) {
+                  console.log(
+                    '🎯 NoteContainerComponent EmailComponentRenderer: Seleccionando componente interno:',
+                    containedComponent.id
                   );
+                  onComponentSelect(containedComponent.id);
+                }
+              }}
+              updateComponentContent={(id: string, content: string) => {
+                // Actualizar contenido de un componente dentro de la nota
+                const updatedComponents = containedComponentObjects.map((comp) =>
+                  comp.id === id ? { ...comp, content } : comp
+                );
 
-                  const updatedComponent = {
-                    ...component,
-                    props: {
-                      ...component.props,
-                      componentsData: updatedComponents,
-                    },
-                  };
+                const updatedComponent = {
+                  ...component,
+                  props: {
+                    ...component.props,
+                    componentsData: updatedComponents,
+                  },
+                };
 
-                  if (updateComponentProps) {
-                    updateComponentProps(component.id, updatedComponent.props);
-                  }
-                }}
-                updateComponentProps={(id: string, props: Record<string, any>) => {
-                  // Actualizar props de un componente dentro de la nota
-                  const updatedComponents = containedComponentObjects.map((comp) =>
-                    comp.id === id ? { ...comp, props: { ...comp.props, ...props } } : comp
-                  );
+                if (updateComponentProps) {
+                  updateComponentProps(component.id, updatedComponent.props);
+                }
+              }}
+              updateComponentProps={(id: string, props: Record<string, any>) => {
+                // Actualizar props de un componente dentro de la nota
+                const updatedComponents = containedComponentObjects.map((comp) =>
+                  comp.id === id ? { ...comp, props: { ...comp.props, ...props } } : comp
+                );
 
-                  const updatedComponent = {
-                    ...component,
-                    props: {
-                      ...component.props,
-                      componentsData: updatedComponents,
-                    },
-                  };
+                const updatedComponent = {
+                  ...component,
+                  props: {
+                    ...component.props,
+                    componentsData: updatedComponents,
+                  },
+                };
 
-                  if (updateComponentProps) {
-                    updateComponentProps(component.id, updatedComponent.props);
-                  }
-                }}
-                handleSelectionUpdate={handleSelectionUpdate || (() => {})}
-                moveComponent={(id: string, direction: 'up' | 'down') => {
-                  // Mover componentes dentro del contenedor de la nota
-                  if (moveComponent) {
-                    const currentIndex = containedComponentObjects.findIndex(
-                      (comp) => comp.id === id
-                    );
-                    if (currentIndex === -1) return;
+                if (updateComponentProps) {
+                  updateComponentProps(component.id, updatedComponent.props);
+                }
+              }}
+              handleSelectionUpdate={handleSelectionUpdate || (() => {})}
+              moveComponent={(id: string, direction: 'up' | 'down') => {
+                // Mover componentes dentro del contenedor de la nota
+                const currentIndex = containedComponentObjects.findIndex((comp) => comp.id === id);
+                if (currentIndex === -1) return;
 
-                    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-                    if (newIndex < 0 || newIndex >= containedComponentObjects.length) return;
+                const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+                if (newIndex < 0 || newIndex >= containedComponentObjects.length) return;
 
-                    const updatedComponents = [...containedComponentObjects];
-                    const [movedComponent] = updatedComponents.splice(currentIndex, 1);
-                    updatedComponents.splice(newIndex, 0, movedComponent);
+                const updatedComponents = [...containedComponentObjects];
+                const [movedComponent] = updatedComponents.splice(currentIndex, 1);
+                updatedComponents.splice(newIndex, 0, movedComponent);
 
-                    // Actualizar los componentes en el contenedor
-                    const updatedComponent = {
-                      ...component,
-                      props: {
-                        ...component.props,
-                        componentsData: updatedComponents,
-                      },
-                    };
+                // Actualizar los componentes en el contenedor
+                const updatedComponent = {
+                  ...component,
+                  props: {
+                    ...component.props,
+                    componentsData: updatedComponents,
+                  },
+                };
 
-                    if (updateComponentProps) {
-                      updateComponentProps(component.id, updatedComponent.props);
-                    }
-                  }
-                }}
-                removeComponent={(componentId: string) => {
-                  // Eliminar componente del contenedor de la nota
-                  const updatedComponents = containedComponentObjects.filter(
-                    (comp) => comp.id !== componentId
-                  );
+                if (updateComponentProps) {
+                  updateComponentProps(component.id, updatedComponent.props);
+                }
+              }}
+              removeComponent={(componentId: string) => {
+                // Eliminar componente del contenedor de la nota
+                const updatedComponents = containedComponentObjects.filter(
+                  (comp) => comp.id !== componentId
+                );
 
-                  const updatedComponent = {
-                    ...component,
-                    props: {
-                      ...component.props,
-                      componentsData: updatedComponents,
-                    },
-                  };
+                const updatedComponent = {
+                  ...component,
+                  props: {
+                    ...component.props,
+                    componentsData: updatedComponents,
+                  },
+                };
 
-                  if (updateComponentProps) {
-                    updateComponentProps(component.id, updatedComponent.props);
-                  }
-                }}
-                totalComponents={containedComponentObjects.length}
-                onColumnSelect={onColumnSelect || (() => {})}
-                onComponentSelect={onComponentSelect}
-              />
-            </Box>
+                if (updateComponentProps) {
+                  updateComponentProps(component.id, updatedComponent.props);
+                }
+              }}
+              totalComponents={containedComponentObjects.length}
+              onColumnSelect={onColumnSelect || (() => {})}
+              onComponentSelect={onComponentSelect}
+              selectedComponentId={selectedComponentId}
+            />
+            // </ComponentWithToolbar>
           ))
         ) : (
           <Box

@@ -41,7 +41,7 @@ const ComponentToolbar = memo(
           display: 'flex',
           gap: '4px',
           background: 'white',
-          border: '1px solid #e0e0e0',
+          // border: '1px solid #e0e0e0',
           borderRadius: '8px',
           padding: '4px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
@@ -101,7 +101,7 @@ const ComponentWithToolbar = memo(
       <Box
         sx={{
           position: 'relative',
-          border: isSelected ? '2px solid #1976d2' : '2px solid transparent',
+          border: isSelected ? '2px dashed #1976d2' : '2px dashed transparent',
           borderRadius: '8px',
           transition: 'border-color 0.2s ease',
           cursor: 'pointer',

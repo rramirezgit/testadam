@@ -39,6 +39,7 @@ import {
   updateComponentInArray,
   removeComponentFromArray,
   updateComponentInArrayRecursive, // <-- importar la nueva función recursiva
+  findComponentById as findComponentByIdUtil,
   convertTextToList as convertParagraphToList,
 } from './utils/componentHelpers';
 
@@ -744,11 +745,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   // Nueva función para inyectar componentes al newsletter
   const injectComponentsToNewsletter = useCallback(
     (components: EmailComponent[], noteTitle?: string) => {
-      if (activeTemplate !== 'newsletter' || activeVersion !== 'newsletter') {
-        console.warn('Solo se pueden inyectar componentes en template newsletter');
-        return;
-      }
-
       const currentComponents = getActiveComponents();
       const timestamp = Date.now();
 
@@ -878,12 +874,23 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   // Función para generar HTML sin mostrar preview (para envío de pruebas)
   const generateHtmlForSending = useCallback(async (): Promise<string> => {
     try {
+      console.log('🔄 generateHtmlForSending called:', {
+        isNewsletterMode,
+        newsletterTitle,
+        newsletterDescription,
+        newsletterNotesCount: newsletterNotes.length,
+        newsletterHeader: !!newsletterHeader,
+        newsletterFooter: !!newsletterFooter,
+      });
+
       if (isNewsletterMode) {
         // Para newsletters, usar el generador de newsletter
+        console.log('📝 Generando HTML para newsletter...');
         const { generateNewsletterHtml: generateNewsletterHtmlFn } = await import(
           '../newsletter-html-generator'
         );
-        return generateNewsletterHtmlFn(
+
+        const generatedNewsletterHtml = generateNewsletterHtmlFn(
           newsletterTitle || 'Newsletter',
           newsletterDescription || '',
           newsletterNotes,
@@ -906,8 +913,16 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             textColor: '#666666',
           }
         );
+
+        console.log('✅ HTML de newsletter generado:', {
+          htmlLength: generatedNewsletterHtml.length,
+          htmlPreview: generatedNewsletterHtml.substring(0, 200) + '...',
+        });
+
+        return generatedNewsletterHtml;
       } else {
         // ✅ NUEVO: Para notas individuales, usar generateSingleNoteHtml (sin header y footer)
+        console.log('📝 Generando HTML para nota individual...');
         const components = getActiveComponents();
         const postData = currentPost; // Usar la variable ya existente del scope superior
 
@@ -920,15 +935,22 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           maxWidth: containerMaxWidth,
         };
 
-        return generateSingleNoteHtml(
+        const singleNoteHtml = generateSingleNoteHtml(
           postData?.title || noteData.noteTitle || 'Nota',
           postData?.description || noteData.noteDescription || '',
           components,
           containerConfig
         );
+
+        console.log('✅ HTML de nota individual generado:', {
+          htmlLength: singleNoteHtml.length,
+          htmlPreview: singleNoteHtml.substring(0, 200) + '...',
+        });
+
+        return singleNoteHtml;
       }
     } catch (error) {
-      console.error('Error generating HTML for sending:', error);
+      console.error('❌ Error generating HTML for sending:', error);
       throw new Error('No se pudo generar el contenido HTML');
     }
   }, [
@@ -965,7 +987,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 
   // Función para manejar la selección de componentes
   const handleComponentSelect = useCallback((componentId: string | null) => {
-    console.log('🎯 Component selected:', componentId);
     setSelectedComponentId(componentId);
 
     // Si se selecciona un componente, resetear la selección del contenedor
@@ -1529,29 +1550,198 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     [emailComponents, activeTemplate, activeVersion]
   );
 
+  // NUEVA FUNCIÓN: Debugging específico para componentes inyectados
+  const debugInjectedComponentSelection = useCallback(
+    (componentId: string) => {
+      console.log('🔍 Debugging injected component selection:', {
+        componentId,
+        isNewsletterMode,
+        hasInjectedPattern: componentId.includes('-injected-'),
+        hasDashPattern: componentId.includes('-'),
+        components: getActiveComponents().map((c) => ({ id: c.id, type: c.type })),
+      });
+
+      // Buscar el componente en toda la estructura
+      const foundComponent = findComponentByIdUtil(getActiveComponents(), componentId);
+
+      if (foundComponent) {
+        console.log('✅ Componente encontrado:', {
+          id: foundComponent.id,
+          type: foundComponent.type,
+          isInjected: componentId.includes('-injected-'),
+        });
+      } else {
+        console.log('❌ Componente NO encontrado:', componentId);
+
+        // Debug adicional para componentes inyectados
+        if (componentId.includes('-injected-')) {
+          const noteContainers = getActiveComponents().filter((c) => c.type === 'noteContainer');
+          console.log(
+            '🔍 Buscando en contenedores de nota:',
+            noteContainers.map((c) => ({
+              id: c.id,
+              containedComponents: c.props?.componentsData?.length || 0,
+              componentIds: c.props?.componentsData?.map((comp: any) => comp.id) || [],
+            }))
+          );
+        }
+      }
+
+      return foundComponent;
+    },
+    [isNewsletterMode, getActiveComponents]
+  );
+
+  // NUEVA FUNCIÓN: Manejo mejorado de selección de componentes inyectados
+  const handleInjectedComponentSelection = useCallback(
+    (componentId: string) => {
+      console.log('🎯 handleInjectedComponentSelection called with:', componentId);
+
+      // Debug del componente
+      const debugResult = debugInjectedComponentSelection(componentId);
+
+      if (debugResult) {
+        console.log('✅ Componente encontrado y listo para edición:', {
+          id: debugResult.id,
+          type: debugResult.type,
+          isInjected: componentId.includes('-injected-'),
+        });
+        return debugResult;
+      } else {
+        console.log('❌ Componente no encontrado, intentando búsqueda alternativa');
+
+        // Búsqueda alternativa: buscar en contenedores de nota
+        const components = getActiveComponents();
+        const noteContainers = components.filter((c) => c.type === 'noteContainer');
+
+        for (const container of noteContainers) {
+          if (container.props?.componentsData) {
+            const foundInContainer = container.props.componentsData.find(
+              (comp: any) => comp.id === componentId
+            );
+            if (foundInContainer) {
+              console.log('✅ Componente encontrado en contenedor:', {
+                containerId: container.id,
+                componentId: foundInContainer.id,
+                componentType: foundInContainer.type,
+              });
+              return foundInContainer;
+            }
+          }
+        }
+
+        console.log('❌ Componente no encontrado en ninguna ubicación');
+        return null;
+      }
+    },
+    [debugInjectedComponentSelection, getActiveComponents]
+  );
+
   // NUEVA FUNCIÓN: Obtener el ID real del componente para el panel
   const getComponentIdForPanel = useCallback(() => {
     if (isNewsletterMode && selectedComponentId && selectedComponentId.includes('-')) {
+      console.log('🔧 getComponentIdForPanel - Processing:', selectedComponentId);
+
       // Verificar si es un componente de nota del newsletter (formato: noteId-componentId)
       const components = getActiveComponents();
       const component = components.find((c) => c.id === selectedComponentId);
 
       if (component && component.props?.isNoteContainer) {
         // Es un contenedor de nota, usar el ID completo
+        console.log('✅ Es un contenedor de nota, usando ID completo:', selectedComponentId);
+        return selectedComponentId;
+      }
+
+      // Verificar si es un componente inyectado (tiene el patrón -injected-)
+      if (selectedComponentId.includes('-injected-')) {
+        console.log('✅ Es un componente inyectado, usando ID completo:', selectedComponentId);
         return selectedComponentId;
       }
 
       // Es un componente dentro de una nota del newsletter (formato: noteId-componentId)
+      // Solo procesar si NO es un componente inyectado
       const firstDashIndex = selectedComponentId.indexOf('-');
       const componentId = selectedComponentId.substring(firstDashIndex + 1);
+      console.log('🔄 Componente de newsletter, extrayendo ID:', componentId);
       return componentId;
     }
     return selectedComponentId;
   }, [isNewsletterMode, selectedComponentId, getActiveComponents]);
 
+  // NUEVA FUNCIÓN: Verificar que las actualizaciones se aplican correctamente
+  const verifyComponentUpdate = useCallback(
+    (componentId: string, updateType: string, data: any) => {
+      console.log('🔍 Verificando actualización del componente:', {
+        componentId,
+        updateType,
+        data,
+        timestamp: new Date().toISOString(),
+      });
+
+      // Buscar el componente después de la actualización
+      const components = getActiveComponents();
+      const foundComponent = findComponentByIdUtil(components, componentId);
+
+      if (foundComponent) {
+        console.log('✅ Componente encontrado después de actualización:', {
+          id: foundComponent.id,
+          type: foundComponent.type,
+          content: foundComponent.content?.substring(0, 50) + '...',
+          hasProps: !!foundComponent.props,
+          hasStyle: !!foundComponent.style,
+        });
+
+        // Verificar que los datos se aplicaron correctamente
+        let updateVerified = false;
+
+        switch (updateType) {
+          case 'content':
+            updateVerified = foundComponent.content === data;
+            break;
+          case 'props':
+            // Verificar que al menos una prop se aplicó
+            updateVerified = Object.keys(data).some(
+              (key) => foundComponent.props && foundComponent.props[key] === data[key]
+            );
+            break;
+          case 'style':
+            // Verificar que al menos un estilo se aplicó
+            updateVerified = Object.keys(data).some(
+              (key) => foundComponent.style && foundComponent.style[key] === data[key]
+            );
+            break;
+          default:
+            updateVerified = false;
+            break;
+        }
+
+        if (updateVerified) {
+          console.log('✅ Actualización verificada correctamente');
+        } else {
+          console.warn('⚠️ Actualización no verificada, posible problema');
+        }
+
+        return updateVerified;
+      } else {
+        console.error('❌ Componente no encontrado después de actualización');
+        return false;
+      }
+    },
+    [getActiveComponents]
+  );
+
   // NUEVA FUNCIÓN: Función de actualización que funciona tanto para newsletter como modo normal
   const updateComponentForPanel = useCallback(
     (updateType: 'content' | 'props' | 'style', id: string, data: any) => {
+      console.log('🔄 updateComponentForPanel called:', {
+        updateType,
+        id,
+        data,
+        isNewsletterMode,
+        selectedComponentId,
+        isInjected: selectedComponentId?.includes('-injected-'),
+      });
+
       // Si está en modo newsletter
       if (isNewsletterMode && selectedComponentId) {
         // Manejar componentes especiales de newsletter (header y footer)
@@ -1612,6 +1802,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         const selectedComponent = components.find((c) => c.id === selectedComponentId);
 
         if (selectedComponent && selectedComponent.props?.isNoteContainer) {
+          console.log('✅ Es un contenedor de nota, usando funciones normales');
           // Es un contenedor de nota, usar las funciones normales
           switch (updateType) {
             case 'content':
@@ -1629,8 +1820,86 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           return;
         }
 
-        // Si hay un componente seleccionado de una nota del newsletter
-        if (selectedComponentId.includes('-')) {
+        // NUEVA LÓGICA: Manejar componentes inyectados específicamente
+        if (selectedComponentId.includes('-injected-')) {
+          console.log('🎯 Componente inyectado detectado, actualizando directamente');
+
+          // Buscar el componente inyectado en los contenedores de nota
+          const noteContainers = components.filter((c) => c.type === 'noteContainer');
+          let componentUpdated = false;
+
+          for (const container of noteContainers) {
+            if (container.props?.componentsData) {
+              const componentIndex = container.props.componentsData.findIndex(
+                (comp: any) => comp.id === selectedComponentId
+              );
+
+              if (componentIndex !== -1) {
+                console.log('✅ Componente inyectado encontrado en contenedor:', {
+                  containerId: container.id,
+                  componentId: selectedComponentId,
+                  componentIndex,
+                });
+
+                // Crear una copia del contenedor con el componente actualizado
+                const updatedContainer = {
+                  ...container,
+                  props: {
+                    ...container.props,
+                    componentsData: [...container.props.componentsData],
+                  },
+                };
+
+                // Actualizar el componente específico
+                const updatedComponent = {
+                  ...updatedContainer.props.componentsData[componentIndex],
+                };
+
+                switch (updateType) {
+                  case 'content':
+                    updatedComponent.content = data;
+                    break;
+                  case 'props':
+                    updatedComponent.props = { ...updatedComponent.props, ...data };
+                    break;
+                  case 'style':
+                    updatedComponent.style = { ...updatedComponent.style, ...data };
+                    break;
+                  default:
+                    console.warn('Unknown update type for injected component:', updateType);
+                }
+
+                updatedContainer.props.componentsData[componentIndex] = updatedComponent;
+
+                // Actualizar el contenedor en la lista de componentes
+                const updatedComponents = components.map((c) =>
+                  c.id === container.id ? updatedContainer : c
+                );
+
+                updateActiveComponents(updatedComponents);
+                componentUpdated = true;
+                console.log('✅ Componente inyectado actualizado exitosamente');
+
+                // Verificar que la actualización se aplicó correctamente
+                setTimeout(() => {
+                  verifyComponentUpdate(selectedComponentId, updateType, data);
+                }, 100);
+
+                break;
+              }
+            }
+          }
+
+          if (!componentUpdated) {
+            console.warn('❌ No se pudo actualizar el componente inyectado:', selectedComponentId);
+          }
+
+          return;
+        }
+
+        // Si hay un componente seleccionado de una nota del newsletter (formato: noteId-componentId)
+        if (selectedComponentId.includes('-') && !selectedComponentId.includes('-injected-')) {
+          console.log('🔄 Componente de newsletter normal, procesando con funciones específicas');
           // Dividir correctamente: el noteId es la primera parte hasta el primer '-'
           // y el componentId es todo lo que sigue después del primer '-'
           const firstDashIndex = selectedComponentId.indexOf('-');
@@ -1655,6 +1924,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       }
 
       // Modo normal - usar las funciones originales
+      console.log('🔄 Modo normal, usando funciones originales');
       switch (updateType) {
         case 'content':
           updateComponentContent(id, data);
@@ -1756,8 +2026,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 
   // Función para cargar notas disponibles
   const loadAvailableNotes = useCallback(async () => {
-    if (activeTemplate !== 'newsletter') return;
-
     setLoadingNotes(true);
     try {
       const response = await findAllPosts({
@@ -1773,14 +2041,14 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     } finally {
       setLoadingNotes(false);
     }
-  }, [activeTemplate, findAllPosts]);
+  }, [findAllPosts]);
 
   // Cargar notas cuando se selecciona el template newsletter
   useEffect(() => {
-    if (activeTemplate === 'newsletter' && activeVersion === 'newsletter') {
+    if (isNewsletterMode) {
       loadAvailableNotes();
     }
-  }, [activeTemplate, activeVersion, loadAvailableNotes]);
+  }, [isNewsletterMode, loadAvailableNotes]);
 
   // Función para inyectar una nota en el template
   const injectNoteIntoNewsletter = useCallback(
@@ -1855,6 +2123,10 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         setOpenSendSubs={setOpenSendSubs}
         // Nueva prop para generar HTML para envío
         onGenerateHtml={generateHtmlForSending}
+        // Nueva prop para el título del newsletter
+        newsletterTitle={newsletterTitle}
+        // Nueva prop para obtener componentes activos
+        getActiveComponents={getActiveComponents}
       />
 
       {/* Contenedor principal */}

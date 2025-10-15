@@ -18,6 +18,7 @@ import type { ComponentType } from '../../types';
 import type { EnabledComponents } from '../types';
 
 interface ComponentCategoriesProps {
+  isNewsletterMode: boolean;
   expandedCategories: Record<string, boolean>;
   setExpandedCategories: (categories: Record<string, boolean>) => void;
   addComponent: (type: ComponentType) => void;
@@ -66,6 +67,7 @@ const hasCategoryComponents = (
 };
 
 export default function ComponentCategories({
+  isNewsletterMode,
   expandedCategories,
   setExpandedCategories,
   addComponent,
@@ -434,7 +436,7 @@ export default function ComponentCategories({
       )}
 
       {/* Categoría de Newsletter - Solo mostrar si tiene componentes habilitados */}
-      {hasCategoryComponents('newsletter', enabledComponents) && (
+      {isNewsletterMode && (
         <Accordion
           expanded={expandedCategories.newsletter}
           onChange={() =>

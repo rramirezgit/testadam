@@ -66,22 +66,22 @@ export const useStore = create<StoreState>()((set, get) => ({
     console.log('🗑️ Nota eliminada de memoria:', noteId);
   },
 
-  // ⚡ Funciones para newsletters (solo en memoria)
+  // ⚡ Funciones para newsletters (solo en memoria - el backend se maneja directamente desde PostStore)
   loadNewsletters: () => {
-    // No hacer nada - los newsletters solo existen en memoria durante la sesión
-    console.log('📰 Newsletters cargados desde memoria');
+    // No hacer nada - los newsletters se cargan directamente desde PostStore
+    console.log('📰 Newsletters cargados desde PostStore');
   },
 
   addNewsletter: (newsletter: Newsletter) => {
     set((state) => ({ newsletters: [...state.newsletters, newsletter] }));
-    console.log('✅ Newsletter agregado a memoria:', newsletter.title);
+    console.log('✅ Newsletter agregado a memoria:', newsletter.subject);
   },
 
   updateNewsletter: (newsletter: Newsletter) => {
     set((state) => ({
       newsletters: state.newsletters.map((n) => (n.id === newsletter.id ? newsletter : n)),
     }));
-    console.log('🔄 Newsletter actualizado en memoria:', newsletter.title);
+    console.log('🔄 Newsletter actualizado en memoria:', newsletter.subject);
   },
 
   deleteNewsletter: (newsletterId: string) => {

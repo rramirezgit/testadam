@@ -137,6 +137,7 @@ export default function LeftPanel({
           {/* Lista de componentes */}
           <Box sx={{ flexGrow: 1, overflow: 'auto', px: 1 }}>
             <ComponentCategories
+              isNewsletterMode={isNewsletterMode}
               expandedCategories={expandedCategories}
               setExpandedCategories={setExpandedCategories}
               addComponent={addComponent}
@@ -144,23 +145,23 @@ export default function LeftPanel({
             />
 
             {/* BOTÓN PARA ABRIR MODAL DE NOTAS - Solo mostrar si es template newsletter */}
-            {activeTemplate === 'newsletter' && activeVersion === 'newsletter' && (
-              <Box sx={{ mt: 2, px: 1 }}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:plus-circle" style={{ fontSize: '1.2rem' }} />}
-                  onClick={() => setOpenNotesModal(true)}
-                  sx={{
-                    py: 1.5,
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  Inyectar Notas Disponibles
-                </Button>
-              </Box>
-            )}
+            {/* {isNewsletterMode && ( */}
+            <Box sx={{ mt: 2, px: 1 }}>
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<Icon icon="mdi:plus-circle" style={{ fontSize: '1.2rem' }} />}
+                onClick={() => setOpenNotesModal(true)}
+                sx={{
+                  py: 1.5,
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                }}
+              >
+                Inyectar Notas Disponibles
+              </Button>
+            </Box>
+            {/* )} */}
           </Box>
         </>
       )}

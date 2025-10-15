@@ -47,6 +47,11 @@ interface PostState {
   sendNewsletter: (newsletterId: string, htmlContent: string) => Promise<boolean>;
   requestNewsletterApproval: (newsletterId: string, htmlContent: string) => Promise<boolean>;
 
+  // Newsletter operations
+  createNewsletter: (subject: string, newsletterData: any) => Promise<any>;
+  updateNewsletter: (id: string, newsletterData: any) => Promise<any>;
+  findAllNewsletters: () => Promise<any[]>;
+
   // Utility functions
   clearCurrentPost: () => void;
   clearPosts: () => void;
@@ -305,7 +310,7 @@ const usePostStore = create<PostState>()(
             const sendData: SendTestData = {
               subject,
               content,
-              emails,
+              reviewerEmails: emails,
             };
 
             await axiosInstance.post(endpoints.post.sendForReview, sendData);
@@ -328,6 +333,13 @@ const usePostStore = create<PostState>()(
           htmlContent: string
         ) => {
           try {
+            console.log('🔄 sendNewsletterForReview called:', {
+              newsletterId,
+              emails,
+              htmlContentLength: htmlContent.length,
+              htmlContentPreview: htmlContent.substring(0, 200) + '...',
+            });
+
             set({ loading: true, error: null });
             const axiosInstance = createAxiosInstance();
 
@@ -336,14 +348,28 @@ const usePostStore = create<PostState>()(
             const sendData: SendTestData = {
               subject: `Newsletter ${newsletterId} - Prueba`,
               content,
-              emails,
+              reviewerEmails: emails,
             };
 
-            await axiosInstance.post(endpoints.newsletter.sendForReview(newsletterId), sendData);
+            const response = await axiosInstance.post(
+              endpoints.newsletter.sendForReview(newsletterId),
+              sendData
+            );
+
+            console.log('✅ Newsletter enviado exitosamente:', {
+              responseStatus: response.status,
+              responseData: response.data,
+            });
+
             set({ loading: false });
             return true;
           } catch (error: any) {
-            console.error('Error enviando newsletter para revisión:', error);
+            console.error('❌ Error enviando newsletter para revisión:', {
+              error,
+              errorMessage: error.response?.data?.message,
+              errorStatus: error.response?.status,
+              errorData: error.response?.data,
+            });
             const errorMessage = error.response?.data?.message || 'Error al enviar el newsletter';
             set({
               loading: false,
@@ -400,6 +426,122 @@ const usePostStore = create<PostState>()(
               error: errorMessage,
             });
             return false;
+          }
+        },
+
+        createNewsletter: async (subject: string, newsletterData: any) => {
+          try {
+            console.log('🔄 createNewsletter called:', {
+              subject,
+              newsletterData,
+            });
+
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const sendData = {
+              subject,
+              content: newsletterData.content,
+              // ...newsletterData,
+            };
+
+            const response = await axiosInstance.post(endpoints.newsletter.create, sendData);
+
+            console.log('✅ Newsletter creado exitosamente:', {
+              responseStatus: response.status,
+              responseData: response.data,
+            });
+
+            set({ loading: false });
+            return response.data;
+          } catch (error: any) {
+            console.error('❌ Error creando newsletter:', {
+              error,
+              errorMessage: error.response?.data?.message,
+              errorStatus: error.response?.status,
+              errorData: error.response?.data,
+            });
+            const errorMessage = error.response?.data?.message || 'Error al crear el newsletter';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return null;
+          }
+        },
+
+        updateNewsletter: async (id: string, newsletterData: any) => {
+          try {
+            console.log('🔄 updateNewsletter called:', {
+              id,
+              newsletterData,
+            });
+
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const response = await axiosInstance.patch(
+              endpoints.newsletter.update(id),
+              newsletterData
+            );
+
+            console.log('✅ Newsletter actualizado exitosamente:', {
+              responseStatus: response.status,
+              responseData: response.data,
+            });
+
+            set({ loading: false });
+            return response.data;
+          } catch (error: any) {
+            console.error('❌ Error actualizando newsletter:', {
+              error,
+              errorMessage: error.response?.data?.message,
+              errorStatus: error.response?.status,
+              errorData: error.response?.data,
+            });
+            const errorMessage =
+              error.response?.data?.message || 'Error al actualizar el newsletter';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return null;
+          }
+        },
+
+        findAllNewsletters: async () => {
+          try {
+            console.log('🔄 findAllNewsletters called');
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const response = await axiosInstance.get(endpoints.newsletter.findAll);
+
+            // Manejar la estructura { data: [...] }
+            const newsletters = response.data?.data || response.data || [];
+
+            console.log('✅ Newsletters obtenidos exitosamente:', {
+              responseStatus: response.status,
+              newslettersCount: newsletters.length,
+              responseData: response.data,
+              newsletters,
+            });
+
+            set({ loading: false });
+            return newsletters;
+          } catch (error: any) {
+            console.error('❌ Error obteniendo newsletters:', {
+              error,
+              errorMessage: error.response?.data?.message,
+              errorStatus: error.response?.status,
+              errorData: error.response?.data,
+            });
+            const errorMessage = error.response?.data?.message || 'Error al obtener newsletters';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return [];
           }
         },
       }),

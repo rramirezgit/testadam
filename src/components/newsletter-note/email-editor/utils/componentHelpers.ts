@@ -305,3 +305,62 @@ export function findComponentById(
   }
   return undefined;
 }
+
+// Nueva función para verificar si un componente es inyectado
+export function isInjectedComponent(componentId: string): boolean {
+  return componentId.includes('-injected-');
+}
+
+// Nueva función para obtener el ID base de un componente inyectado
+export function getBaseComponentId(injectedId: string): string {
+  if (!isInjectedComponent(injectedId)) {
+    return injectedId;
+  }
+
+  // Extraer el ID base antes del patrón -injected-
+  const parts = injectedId.split('-injected-');
+  return parts[0];
+}
+
+// Nueva función para filtrar componentes inyectados
+export function filterInjectedComponents(components: EmailComponent[]): EmailComponent[] {
+  return components.filter((component) => !isInjectedComponent(component.id));
+}
+
+// Nueva función para obtener solo componentes inyectados
+export function getInjectedComponents(components: EmailComponent[]): EmailComponent[] {
+  const injectedComponents: EmailComponent[] = [];
+
+  components.forEach((component) => {
+    // Si es un contenedor de nota, extraer los componentes inyectados
+    if (component.type === 'noteContainer' && component.props?.componentsData) {
+      const injectedInContainer = component.props.componentsData.filter((comp: any) =>
+        isInjectedComponent(comp.id)
+      );
+      injectedComponents.push(...injectedInContainer);
+    }
+
+    // Para componentes individuales inyectados
+    if (isInjectedComponent(component.id)) {
+      injectedComponents.push(component);
+    }
+  });
+
+  return injectedComponents;
+}
+
+// Nueva función para debugging de componentes
+export function debugComponents(components: EmailComponent[], label: string = 'Components'): void {
+  console.log(`🔍 ${label} Debug:`, {
+    totalComponents: components.length,
+    componentTypes: components.map((c) => ({ id: c.id, type: c.type })),
+    injectedComponents: getInjectedComponents(components).map((c) => ({ id: c.id, type: c.type })),
+    noteContainers: components
+      .filter((c) => c.type === 'noteContainer')
+      .map((c) => ({
+        id: c.id,
+        containedComponents: c.props?.componentsData?.length || 0,
+        containedComponentIds: c.props?.componentsData?.map((comp: any) => comp.id) || [],
+      })),
+  });
+}

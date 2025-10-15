@@ -18,6 +18,7 @@ export interface EmailComponentProps {
   removeNoteContainer?: (containerId: string) => void;
   getActiveComponents?: () => any[];
   onComponentSelect?: (componentId: string) => void; // Nueva prop para selección de componentes
+  selectedComponentId?: string | null; // Nueva prop para saber qué componente está seleccionado
 }
 
 export interface ComponentWithToolbarProps {
