@@ -215,4 +215,9 @@ export interface LoadNoteData {
   description?: string;
   coverImageUrl?: string;
   status?: PostStatus;
+  contentTypeId?: string;
+  audienceId?: string;
+  categoryId?: string;
+  subcategoryId?: string;
+  highlight?: boolean;
 }

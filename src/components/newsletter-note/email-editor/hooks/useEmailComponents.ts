@@ -18,7 +18,9 @@ import {
   vercelComponentsWeb,
   marketComponentsWeb,
   newsletterComponents,
+  storyboardComponents,
   newsletterComponentsWeb,
+  storyboardComponentsWeb,
 } from '../data/template-components';
 
 // Crear una plantilla vacía
@@ -53,6 +55,10 @@ export const useEmailComponents = () => {
     useState<EmailComponent[]>(newsletterComponents);
   const [newsletterComponentsWebState, setNewsletterComponentsWeb] =
     useState<EmailComponent[]>(newsletterComponentsWeb);
+  const [storyboardComponentsState, setStoryboardComponents] =
+    useState<EmailComponent[]>(storyboardComponents);
+  const [storyboardComponentsWebState, setStoryboardComponentsWeb] =
+    useState<EmailComponent[]>(storyboardComponentsWeb);
 
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = useCallback(
@@ -88,6 +94,9 @@ export const useEmailComponents = () => {
           case 'newsletter':
             components = newsletterComponentsState;
             break;
+          case 'storyboard':
+            components = storyboardComponentsState;
+            break;
           default:
             components = blankComponentsState;
             break;
@@ -120,6 +129,9 @@ export const useEmailComponents = () => {
             break;
           case 'newsletter':
             components = newsletterComponentsWebState;
+            break;
+          case 'storyboard':
+            components = storyboardComponentsWebState;
             break;
           default:
             components = blankComponentsWebState;
@@ -327,6 +339,9 @@ export const useEmailComponents = () => {
           case 'newsletter':
             setNewsletterComponentsWeb(components);
             break;
+          case 'storyboard':
+            setStoryboardComponentsWeb(components);
+            break;
           default:
             break;
         }
@@ -359,6 +374,9 @@ export const useEmailComponents = () => {
           case 'newsletter':
             setNewsletterComponents(components);
             break;
+          case 'storyboard':
+            setStoryboardComponents(components);
+            break;
           default:
             break;
         }
@@ -390,6 +408,8 @@ export const useEmailComponents = () => {
             return [...featureComponentsState]; // Feature solo tiene versión newsletter
           case 'newsletter':
             return [...newsletterComponentsWebState];
+          case 'storyboard':
+            return [...storyboardComponentsWebState];
           default:
             return [...blankComponentsWebState];
         }
@@ -413,6 +433,8 @@ export const useEmailComponents = () => {
             return [...featureComponentsState];
           case 'newsletter':
             return [...newsletterComponentsState];
+          case 'storyboard':
+            return [...storyboardComponentsState];
           default:
             return [...blankComponentsState];
         }
@@ -530,5 +552,7 @@ export const useEmailComponents = () => {
     setFeatureComponents,
     setNewsletterComponents,
     setNewsletterComponentsWeb,
+    setStoryboardComponents,
+    setStoryboardComponentsWeb,
   };
 };

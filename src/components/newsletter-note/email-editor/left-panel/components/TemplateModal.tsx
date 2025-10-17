@@ -10,7 +10,6 @@ import {
   Dialog,
   Typography,
   CardContent,
-  DialogTitle,
   DialogContent,
   DialogActions,
 } from '@mui/material';
@@ -27,6 +26,7 @@ interface TemplateModalProps {
   }[];
   activeTemplate: string;
   onTemplateSelect: (templateId: string) => void;
+  excludeTemplates?: string[]; // Templates a excluir del modal
 }
 
 export default function TemplateModal({
@@ -35,8 +35,14 @@ export default function TemplateModal({
   emailTemplates,
   activeTemplate,
   onTemplateSelect,
+  excludeTemplates = [],
 }: TemplateModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+
+  // Filtrar templates excluidos
+  const filteredTemplates = emailTemplates.filter(
+    (template) => !excludeTemplates.includes(template.id)
+  );
 
   const handleTemplateClick = (templateId: string) => {
     setSelectedTemplate(templateId);
@@ -67,7 +73,7 @@ export default function TemplateModal({
         },
       }}
     >
-      <DialogTitle sx={{ pb: 1 }}>
+      <Box sx={{ pt: 3, px: 3, pb: 1 }}>
         <Typography
           variant="h5"
           sx={{
@@ -89,11 +95,11 @@ export default function TemplateModal({
         >
           Encuentra el diseño que mejor se adapta al contenido de tu web o newsletter.
         </Typography>
-      </DialogTitle>
+      </Box>
 
       <DialogContent sx={{ pt: 2, pb: 2 }}>
         <Grid container spacing={3}>
-          {emailTemplates.map((template) => (
+          {filteredTemplates.map((template) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={template.id}>
               <Card
                 onClick={() => handleTemplateClick(template.id)}

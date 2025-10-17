@@ -1,10 +1,12 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+
 'use client';
 
 import type React from 'react';
 import type { PostStatus } from 'src/store/PostStore';
 import type { SavedNote, EmailComponent } from 'src/types/saved-note';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { Box, Button } from '@mui/material';
 
@@ -25,7 +27,6 @@ import { bannerOptions } from './data/banner-options';
 import { emailTemplates } from './data/email-templates';
 import { useVersionSync } from './hooks/useVersionSync';
 import { type AutoSaveData } from './hooks/useAutoSave';
-import { SaveNoteDialog } from './components/SaveNoteDialog';
 import { useTextFormatting } from './hooks/useTextFormatting';
 import { useEmailComponents } from './hooks/useEmailComponents';
 import { useResizablePanels } from './hooks/useResizablePanels';
@@ -46,8 +47,10 @@ import {
 import type { ComponentType, NewsletterNote, NewsletterHeader, NewsletterFooter } from './types';
 
 // Update the interface to include newsletter props
-interface EmailEditorProps {
+interface EmailEditorMainProps {
   initialTemplate?: string;
+  defaultTemplate?: string; // Template predeterminado para saltar el modal de selección
+  excludeTemplates?: string[]; // Templates a excluir del modal de selección
   savedNotes?: any[];
   onSaveNote?: (noteData: any) => void;
   onClose: () => void;
@@ -76,8 +79,10 @@ interface EmailEditorProps {
   setOpenSendSubs?: (open: boolean) => void;
 }
 
-export const EmailEditorMain: React.FC<EmailEditorProps> = ({
+export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   initialTemplate = 'blank',
+  defaultTemplate,
+  excludeTemplates = [],
   onSave,
   savedNotes = [],
   onSaveNote,
@@ -104,7 +109,8 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
-  const [activeTemplate, setActiveTemplate] = useState<string>(initialTemplate);
+  // Si hay defaultTemplate, usarlo; sino usar initialTemplate
+  const [activeTemplate, setActiveTemplate] = useState<string>(defaultTemplate || initialTemplate);
   const [activeVersion, setActiveVersion] = useState<'newsletter' | 'web'>('web');
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<'left' | 'right'>('left');
@@ -114,6 +120,10 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     (templateId: string) => {
       console.log('🔄 Cambiando plantilla de', activeTemplate, 'a', templateId);
       setActiveTemplate(templateId);
+      // Storyboard solo soporta versión web
+      if (templateId === 'storyboard') {
+        setActiveVersion('web');
+      }
       setSelectedComponentId(null); // Resetear componente seleccionado
       setRightPanelTab(0); // Resetear tab del panel derecho
       setIsContainerSelected(false); // Resetear selección del contenedor
@@ -124,11 +134,19 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    basic: true,
+    texto: true,
+    multimedia: true,
+    diseño: true,
+    noticias: true,
+    newsletter: true,
+    produccion: true,
   });
   const [generatingEmail, setGeneratingEmail] = useState<boolean>(false);
   const [editMode, setEditMode] = useState<boolean>(false);
   const [isContainerSelected, setIsContainerSelected] = useState<boolean>(false);
+
+  // Estado para controlar cuándo mostrar errores de validación
+  const [showValidationErrors, setShowValidationErrors] = useState<boolean>(false);
 
   // NUEVOS ESTADOS PARA NEWSLETTER
   const [isNewsletterContainerSelected, setIsNewsletterContainerSelected] =
@@ -148,6 +166,72 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   const [containerBorderRadius, setContainerBorderRadius] = useState<number>(12);
   const [containerPadding, setContainerPadding] = useState<number>(10);
   const [containerMaxWidth, setContainerMaxWidth] = useState<number>(560);
+
+  // Configurar componentes habilitados según el template activo
+  const enabledComponents = useMemo(() => {
+    // Configuración para Storyboard
+    if (activeTemplate === 'storyboard') {
+      return {
+        // Componentes de Texto - Esenciales para guiones
+        heading: true,
+        paragraph: true,
+        bulletList: true,
+        textWithIcon: false,
+
+        // Componentes de Multimedia - Para referencias visuales
+        image: true,
+        gallery: true,
+        imageText: true,
+        twoColumns: false,
+        chart: false,
+
+        // Componentes de Diseño - Separadores útiles
+        button: false,
+        divider: true,
+        spacer: true,
+
+        // Componentes de Noticias - Deshabilitados
+        category: false,
+        author: false,
+        summary: false,
+        tituloConIcono: false,
+        herramientas: false,
+        respaldadoPor: false,
+
+        // Newsletter - Deshabilitados
+        newsletterHeaderReusable: false,
+        newsletterFooterReusable: false,
+
+        // Componentes de Producción - ⭐ Clave para storyboards
+        fileAttachment: true,
+      };
+    }
+
+    // Configuración por defecto para otros templates
+    return {
+      heading: true,
+      paragraph: true,
+      bulletList: true,
+      textWithIcon: true,
+      image: true,
+      gallery: true,
+      imageText: true,
+      twoColumns: true,
+      chart: true,
+      button: false,
+      divider: true,
+      spacer: false,
+      category: true,
+      author: false,
+      summary: true,
+      tituloConIcono: true,
+      herramientas: false,
+      respaldadoPor: true,
+      newsletterHeaderReusable: isNewsletterMode,
+      newsletterFooterReusable: isNewsletterMode,
+      fileAttachment: false,
+    };
+  }, [activeTemplate, isNewsletterMode]);
 
   // Estados para newsletter por defecto si no se proporcionan
   const [defaultNewsletterHeader] = useState<NewsletterHeader>({
@@ -216,6 +300,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 
   // Estado para el diálogo de cambios sin guardar
   const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+
+  // Estado para el guardado de la nota
+  const [savingNote, setSavingNote] = useState(false);
 
   // Estado para el panel derecho
   const [rightPanelTab, setRightPanelTab] = useState(0);
@@ -488,7 +575,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         objDataWeb: objDataWebString,
         configPost: JSON.stringify(configPostObject),
         origin: 'ADAC',
-        highlight: false,
+        highlight: noteData.highlight,
       };
 
       console.log('�� Calling updatePost with noteId:', noteData.currentNoteId);
@@ -824,11 +911,16 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   // Función para cambiar entre versiones (newsletter y web)
   const handleVersionChange = useCallback(
     (newVersion: 'newsletter' | 'web') => {
+      // Storyboard solo soporta versión web
+      if (activeTemplate === 'storyboard' && newVersion === 'newsletter') {
+        console.warn('Storyboard solo soporta versión web');
+        return;
+      }
       versionSync.handleVersionChange(newVersion);
       setActiveVersion(newVersion);
       setSelectedComponentId(null); // Deseleccionar componente al cambiar de versión
     },
-    [versionSync]
+    [versionSync, activeTemplate]
   );
 
   // Función para generar el HTML del email
@@ -996,6 +1088,64 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     }
   }, []);
 
+  // 🔄 NUEVO: Sincronizar estados del panel derecho cuando cambia el componente seleccionado
+  useEffect(() => {
+    if (selectedComponentId) {
+      const components = getActiveComponents();
+      const selectedComponent = findComponentByIdUtil(components, selectedComponentId);
+
+      if (selectedComponent) {
+        const style = selectedComponent.style || {};
+
+        // Actualizar alineación - solo si está definida
+        if (style.textAlign !== undefined) {
+          textFormatting.setSelectedAlignment(style.textAlign as string);
+        } else {
+          textFormatting.setSelectedAlignment('left');
+        }
+
+        // Actualizar color - solo si está definido
+        if (style.color !== undefined) {
+          textFormatting.setSelectedColor(style.color as string);
+        } else {
+          textFormatting.setSelectedColor('#000000');
+        }
+
+        // Actualizar fuente - solo si está definida
+        if (style.fontFamily !== undefined) {
+          textFormatting.setSelectedFont(style.fontFamily as string);
+        } else {
+          textFormatting.setSelectedFont('Public Sans');
+        }
+
+        // Actualizar tamaño de fuente - solo si está definido
+        if (style.fontSize !== undefined) {
+          const fontSizeValue = String(style.fontSize).replace('px', '');
+          textFormatting.setSelectedFontSize(fontSizeValue);
+        } else {
+          textFormatting.setSelectedFontSize('16');
+        }
+
+        // Actualizar peso de fuente - solo si está definido
+        if (style.fontWeight !== undefined) {
+          textFormatting.setSelectedFontWeight(style.fontWeight as string);
+        } else {
+          textFormatting.setSelectedFontWeight('normal');
+        }
+
+        console.log('🔄 Estados del panel derecho sincronizados:', {
+          componentId: selectedComponentId,
+          componentType: selectedComponent.type,
+          alignment: style.textAlign || 'left',
+          color: style.color || '#000000',
+          font: style.fontFamily || 'Public Sans',
+          fontSize: style.fontSize || '16px',
+          fontWeight: style.fontWeight || 'normal',
+        });
+      }
+    }
+  }, [selectedComponentId]);
+
   // Función para convertir texto a lista
   const convertTextToList = useCallback(
     (componentId: string | null, listType: 'ordered' | 'unordered') => {
@@ -1033,10 +1183,57 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 
   // Función para manejar el guardado de notas
   const handleSaveNote = useCallback(async () => {
+    setSavingNote(true);
+
+    // Activar validaciones visuales
+    setShowValidationErrors(true);
+
     try {
       // Validaciones
       if (!noteData.noteTitle.trim()) {
         showNotification('El título es obligatorio', 'error');
+        setSavingNote(false);
+        // Asegurar que el panel derecho esté en la configuración de la nota
+        setIsContainerSelected(true);
+        return;
+      }
+
+      // Validar campos de metadata obligatorios
+      if (!noteData.contentTypeId) {
+        showNotification('El tipo de contenido es obligatorio', 'error');
+        setSavingNote(false);
+        setIsContainerSelected(true);
+        return;
+      }
+
+      if (!noteData.audienceId) {
+        showNotification('La audiencia es obligatoria', 'error');
+        setSavingNote(false);
+        setIsContainerSelected(true);
+        return;
+      }
+
+      if (!noteData.categoryId) {
+        showNotification('La categoría es obligatoria', 'error');
+        setSavingNote(false);
+        setIsContainerSelected(true);
+        return;
+      }
+
+      if (!noteData.subcategoryId) {
+        showNotification('La subcategoría es obligatoria', 'error');
+        setSavingNote(false);
+        setIsContainerSelected(true);
+        return;
+      }
+
+      // Verificar que la imagen de portada esté en S3 si existe
+      if (noteData.noteCoverImageUrl && noteData.noteCoverImageUrl.startsWith('data:image/')) {
+        showNotification(
+          '⚠️ La imagen de portada debe estar subida a S3 antes de guardar',
+          'warning'
+        );
+        setSavingNote(false);
         return;
       }
 
@@ -1085,7 +1282,12 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         objDataWeb: objDataWebString,
         configPost: JSON.stringify(configPostObject),
         origin: 'ADAC',
-        highlight: false,
+        highlight: noteData.highlight,
+        contentTypeId: noteData.contentTypeId,
+        audienceId: noteData.audienceId || null,
+        // El backend espera valores singulares, no arrays
+        categoryId: noteData.categoryId || null,
+        subcategoryId: noteData.subcategoryId || null,
       };
 
       let result;
@@ -1111,7 +1313,9 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             : `Nota ${noteData.isEditingExistingNote ? 'actualizada' : 'guardada'} correctamente`;
 
         showNotification(successMessage, 'success');
-        noteData.setOpenSaveDialog(false);
+
+        // Resetear validaciones visuales después de guardar exitosamente
+        setShowValidationErrors(false);
 
         // 🔄 NUEVO: Resetear detección de cambios después de guardar exitosamente
         resetChangeDetection();
@@ -1121,6 +1325,8 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
     } catch (error) {
       console.error('Error saving note:', error);
       showNotification('Error al guardar la nota', 'error');
+    } finally {
+      setSavingNote(false);
     }
   }, [
     noteData,
@@ -1290,11 +1496,29 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   // Cargar datos del post cuando se edite una nota existente
   useEffect(() => {
     if (currentPost && noteData.isEditingExistingNote) {
+      // Extraer metadata - todos los campos son singulares
+      const categoryId = (currentPost as any).categoryId || '';
+      const subcategoryId = (currentPost as any).subcategoryId || '';
+      const contentTypeId = (currentPost as any).contentTypeId || '';
+      const audienceId = (currentPost as any).audienceId || '';
+
+      console.log('📝 Cargando metadata de nota existente:', {
+        contentTypeId,
+        audienceId,
+        categoryId,
+        subcategoryId,
+      });
+
       noteData.loadNoteData({
         title: currentPost.title,
         description: currentPost.description,
         coverImageUrl: currentPost.coverImageUrl,
         status: (currentPost.status as PostStatus) || 'DRAFT',
+        contentTypeId,
+        audienceId,
+        categoryId,
+        subcategoryId,
+        highlight: (currentPost as any).highlight || false,
       });
 
       // También cargar los datos del editor si existen
@@ -1316,7 +1540,12 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           // Set template and other settings
           handleTemplateChange(configPost.templateType || 'blank');
           if (configPost.activeVersion) {
-            setActiveVersion(configPost.activeVersion);
+            // Storyboard solo soporta versión web
+            if (configPost.templateType === 'storyboard') {
+              setActiveVersion('web');
+            } else {
+              setActiveVersion(configPost.activeVersion);
+            }
           }
           setEmailBackground(configPost.emailBackground || '#ffffff');
           setSelectedBanner(configPost.selectedBanner || null);
@@ -2091,7 +2320,15 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
   );
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        height: '100vh',
+        flexDirection: 'column',
+        background:
+          'linear-gradient(180deg, rgba(83, 130, 186, 0.05) 0%, rgba(83, 132, 188, 0.03) 121.05%), #FFF;',
+      }}
+    >
       {/* Barra de navegación superior */}
       <EditorHeader
         onClose={handleCloseWithConfirmation}
@@ -2100,7 +2337,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         activeVersion={activeVersion}
         activeTemplate={activeTemplate}
         handleVersionChange={handleVersionChange}
-        openSaveDialog={() => noteData.setOpenSaveDialog(true)}
+        onSave={handleSaveNote}
         syncEnabled={versionSync.syncEnabled}
         toggleSync={versionSync.toggleSync}
         transferToWeb={versionSync.transferToWeb}
@@ -2133,14 +2370,16 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
         {/* Panel izquierdo - Componentes */}
         <Box
-          sx={{
+          sx={(theme) => ({
             width: `${resizablePanels.leftPanelWidth}px`,
             minWidth: `${resizablePanels.MIN_PANEL_WIDTH}px`,
             maxWidth: `${resizablePanels.MAX_PANEL_WIDTH}px`,
             flexShrink: 0,
-            borderRight: '1px solid #e0e0e0',
+            padding: '16px',
+            paddingTop: '0px',
+            background: 'transparent',
             position: 'relative',
-          }}
+          })}
         >
           <LeftPanel
             searchQuery={searchQuery}
@@ -2151,11 +2390,13 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             emailTemplates={emailTemplates}
             activeTemplate={activeTemplate}
             setActiveTemplate={handleTemplateChange}
+            defaultTemplate={defaultTemplate}
+            excludeTemplates={excludeTemplates}
             generatingEmail={generatingEmail}
             handleGenerateEmailHtml={handleGenerateEmailHtml}
-            setOpenSaveDialog={() => noteData.setOpenSaveDialog(true)}
             activeVersion={activeVersion}
             setActiveVersion={handleVersionChange}
+            enabledComponents={enabledComponents}
             // Nuevas props para newsletter
             isNewsletterMode={isNewsletterMode}
             newsletterNotes={newsletterNotes}
@@ -2174,7 +2415,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             sx={{
               position: 'absolute',
               top: 0,
-              right: -2,
+              right: 12,
               width: '4px',
               height: '100%',
               cursor: 'col-resize',
@@ -2188,10 +2429,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         </Box>
 
         {/* Área central - Editor de email */}
-        <Box
-          sx={{ flexGrow: 1, p: 3, overflow: 'auto', backgroundColor: '#f5f7fa' }}
-          ref={editorRef}
-        >
+        <Box sx={{ flexGrow: 1, overflow: 'auto', backgroundColor: 'transparent' }} ref={editorRef}>
           {/* Visualización de los componentes del email */}
           <EmailContent
             getActiveComponents={getActiveComponents}
@@ -2262,14 +2500,16 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
 
         {/* Panel derecho - Formato y estilo */}
         <Box
-          sx={{
+          sx={(theme) => ({
             width: `${resizablePanels.rightPanelWidth}px`,
             minWidth: `${resizablePanels.MIN_PANEL_WIDTH}px`,
             maxWidth: `${resizablePanels.MAX_PANEL_WIDTH}px`,
             flexShrink: 0,
-            borderLeft: '1px solid #e0e0e0',
+            padding: '16px',
+            paddingTop: '0px',
+            background: 'transparent',
             position: 'relative',
-          }}
+          })}
         >
           {/* Barra de redimensionado derecha */}
           <Box
@@ -2277,7 +2517,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
             sx={{
               position: 'absolute',
               top: 0,
-              left: -2,
               width: '4px',
               height: '100%',
               cursor: 'col-resize',
@@ -2313,6 +2552,7 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
           ) : (
             <RightPanel
               selectedComponentId={getComponentIdForPanel()}
+              setSelectedComponentId={setSelectedComponentId}
               rightPanelTab={rightPanelTab}
               setRightPanelTab={setRightPanelTab}
               getActiveComponents={
@@ -2334,8 +2574,16 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               selectedAlignment={textFormatting.selectedAlignment}
               textFormat={textFormatting.textFormat}
               applyTextFormat={textFormatting.applyTextFormat}
-              applyTextAlignment={textFormatting.applyTextAlignment}
-              applyTextColor={textFormatting.applyTextColor}
+              applyTextAlignment={(alignment) =>
+                textFormatting.applyTextAlignment(
+                  alignment,
+                  selectedComponentId,
+                  updateComponentStyle
+                )
+              }
+              applyTextColor={(color) =>
+                textFormatting.applyTextColor(color, selectedComponentId, updateComponentStyle)
+              }
               applyFontSize={(size) =>
                 textFormatting.applyFontSize(size, selectedComponentId, updateComponentStyle)
               }
@@ -2383,9 +2631,20 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
               noteStatus={noteData.noteStatus}
               setNoteStatus={noteData.setNoteStatus}
               updateStatus={noteData.updateStatus}
+              contentTypeId={noteData.contentTypeId}
+              setContentTypeId={noteData.setContentTypeId}
+              audienceId={noteData.audienceId}
+              setAudienceId={noteData.setAudienceId}
+              categoryId={noteData.categoryId}
+              setCategoryId={noteData.setCategoryId}
+              subcategoryId={noteData.subcategoryId}
+              setSubcategoryId={noteData.setSubcategoryId}
               selectedColumn={selectedColumn}
               injectComponentsToNewsletter={injectComponentsToNewsletter}
               removeNoteContainer={removeNoteContainer}
+              showValidationErrors={showValidationErrors}
+              highlight={noteData.highlight}
+              setHighlight={noteData.setHighlight}
             />
           )}
         </Box>
@@ -2452,25 +2711,6 @@ export const EmailEditorMain: React.FC<EmailEditorProps> = ({
         message={snackbarMessage}
         severity={snackbarSeverity}
         onClose={() => setOpenSnackbar(false)}
-      />
-
-      {/* Save note dialog */}
-      <SaveNoteDialog
-        open={noteData.openSaveDialog}
-        onClose={() => noteData.setOpenSaveDialog(false)}
-        onSave={handleSaveNote}
-        noteTitle={noteData.noteTitle}
-        noteDescription={noteData.noteDescription}
-        noteCoverImageUrl={noteData.noteCoverImageUrl}
-        imageStats={getImageStats(
-          JSON.stringify(getActiveComponents()),
-          JSON.stringify(
-            emailComponents.getOtherVersionComponents(
-              activeTemplate,
-              activeVersion === 'newsletter' ? 'web' : 'newsletter'
-            )
-          )
-        )}
       />
 
       {/* IconPicker dialog */}

@@ -82,6 +82,7 @@ const CustomSnackbar = ({
 interface NewsletterEditorProps {
   onClose: () => void;
   initialNewsletter?: Newsletter | null;
+  defaultTemplate?: string;
 }
 
 // Interfaz para tracking de ediciones de notas
@@ -92,7 +93,11 @@ interface NoteEditTracker {
   lastModified: Date;
 }
 
-export default function NewsletterEditor({ onClose, initialNewsletter }: NewsletterEditorProps) {
+export default function NewsletterEditor({
+  onClose,
+  initialNewsletter,
+  defaultTemplate,
+}: NewsletterEditorProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedNotes, setSelectedNotes] = useState<NewsletterNote[]>([]);
@@ -495,6 +500,7 @@ export default function NewsletterEditor({ onClose, initialNewsletter }: Newslet
       <EmailEditor
         onClose={onClose}
         isNewsletterMode
+        defaultTemplate={defaultTemplate}
         newsletterNotes={selectedNotes}
         onNewsletterNotesChange={setSelectedNotes}
         newsletterHeader={header}

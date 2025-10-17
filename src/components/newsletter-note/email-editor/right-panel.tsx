@@ -3,53 +3,66 @@
 import type { PostStatus } from 'src/types/post';
 
 import { Icon } from '@iconify/react';
-import { useRef, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import {
   Box,
   Tab,
   Tabs,
+  Chip,
   Alert,
   AppBar,
-  Select,
   Button,
+  Dialog,
+  Select,
   Toolbar,
-  Divider,
   MenuItem,
   Snackbar,
+  Checkbox,
   TextField,
   Typography,
   InputLabel,
+  IconButton,
   FormControl,
+  DialogTitle,
+  ToggleButton,
+  DialogActions,
+  DialogContent,
   LinearProgress,
+  FormControlLabel,
+  DialogContentText,
+  ToggleButtonGroup,
 } from '@mui/material';
 
 import usePostStore from 'src/store/PostStore';
 
+import { UploadCover } from 'src/components/upload';
+
 import { POST_STATUS, isStatusDisabled } from 'src/types/post';
 
-// Importaciones de los componentes individuales
 import TextOptions from './right-panel/TextOptions';
 import ImageOptions from './right-panel/ImageOptions';
 import ButtonOptions from './right-panel/ButtonOptions';
-import GalleryOptions from './right-panel/GalleryOptions';
+import { useNoteMetadata } from './hooks/useNoteMetadata';
 import DividerOptions from './right-panel/DividerOptions';
+import GalleryOptions from './right-panel/GalleryOptions';
 import SummaryOptions from './right-panel/SummaryOptions';
 import CategoryOptions from './right-panel/CategoryOptions';
 import { findComponentById } from './utils/componentHelpers';
-import { useImageUpload } from './right-panel/useImageUpload';
 import ContainerOptions from './right-panel/ContainerOptions';
 import ImageTextOptions from './right-panel/ImageTextOptions';
+import { useImageUpload } from './right-panel/useImageUpload';
 import TwoColumnsOptions from './right-panel/TwoColumnsOptions';
+// Importaciones de hooks y utilidades
 import ChartOptions from './email-components/options/ChartOptions';
 import HerramientasOptions from './right-panel/HerramientasOptions';
 import TextWithIconOptions from './right-panel/TextWithIconOptions';
-import RespaldadoPorOptions from './right-panel/RespaldadoPorOptions';
 import NoteContainerOptions from './right-panel/NoteContainerOptions';
+import RespaldadoPorOptions from './right-panel/RespaldadoPorOptions';
 import TituloConIconoOptions from './right-panel/TituloConIconoOptions';
 import NewsletterFooterOptions from './right-panel/NewsletterFooterOptions';
-import NewsletterHeaderReusableOptions from './right-panel/NewsletterHeaderReusableOptions';
 import NewsletterFooterReusableOptions from './right-panel/NewsletterFooterReusableOptions';
+import NewsletterHeaderReusableOptions from './right-panel/NewsletterHeaderReusableOptions';
 
 import type { RightPanelProps } from './right-panel/types';
 
@@ -57,6 +70,7 @@ import type { RightPanelProps } from './right-panel/types';
 
 export default function RightPanel({
   selectedComponentId,
+  setSelectedComponentId,
   rightPanelTab,
   setRightPanelTab,
   getActiveComponents,
@@ -119,17 +133,67 @@ export default function RightPanel({
   noteStatus,
   setNoteStatus,
   updateStatus,
+  contentTypeId,
+  setContentTypeId,
+  audienceId,
+  setAudienceId,
+  categoryId,
+  setCategoryId,
+  subcategoryId,
+  setSubcategoryId,
   selectedColumn,
   injectComponentsToNewsletter,
+  showValidationErrors = false,
+  highlight,
+  setHighlight,
 }: RightPanelProps) {
   // Estado para los tabs del contenedor
   const [containerTab, setContainerTab] = useState(0);
 
-  // Referencias para input de archivo de portada
-  const coverImageFileInputRef = useRef<HTMLInputElement>(null);
+  // Estado para el diálogo de confirmación de eliminación
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   // Hook para subida de imágenes
   const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
+
+  // Hook para metadata de la nota
+  const {
+    contentTypes,
+    audiences,
+    categories,
+    loading: loadingMetadata,
+    loadCategories,
+  } = useNoteMetadata();
+
+  // Cargar categorías cuando cambie el content type
+  useEffect(() => {
+    if (contentTypeId) {
+      console.log('🔄 Content type cambió, cargando categorías para:', contentTypeId);
+      loadCategories(contentTypeId);
+      // Resetear categoría y subcategoría cuando cambie el content type
+      setCategoryId('');
+      setSubcategoryId('');
+    } else {
+      // Si no hay content type, limpiar categorías
+      console.log('🧹 Content type vacío, limpiando categorías');
+      setCategoryId('');
+      setSubcategoryId('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentTypeId]); // Solo depender de contentTypeId
+
+  // Resetear subcategoría cuando cambie la categoría
+  useEffect(() => {
+    if (categoryId) {
+      console.log('🔄 Categoría cambió a:', categoryId);
+    }
+    setSubcategoryId('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId]); // Solo depender de categoryId
+
+  // Obtener subcategorías de la categoría seleccionada
+  const selectedCategory = categories.find((cat) => cat.id === categoryId);
+  const subcategories = selectedCategory?.subcategories || [];
 
   // PostStore para cargar notas
   const {
@@ -137,6 +201,7 @@ export default function RightPanel({
     findById: findPostById,
     loading: loadingPosts,
     posts,
+    delete: deletePost,
   } = usePostStore();
 
   // Estado para notificaciones
@@ -187,52 +252,31 @@ export default function RightPanel({
     }
   };
 
-  // Función para manejar selección de archivo de portada
-  const handleSelectCoverImage = () => {
-    coverImageFileInputRef.current?.click();
-  };
-
-  // Función para manejar cambio de archivo de portada
-  const handleCoverImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        setNoteCoverImageUrl(base64);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Función para subir imagen de portada a S3
-  const handleUploadCoverImageToS3 = async () => {
-    if (!noteCoverImageUrl || !noteCoverImageUrl.startsWith('data:image/')) {
-      alert('No hay imagen de portada para subir o ya está subida');
+  // Función para eliminar la nota
+  const handleDeleteNote = async () => {
+    if (!currentNoteId) {
+      showNotification('No hay nota para eliminar', 'error');
       return;
     }
 
     try {
-      const s3Url = await uploadImageToS3(noteCoverImageUrl, `note_cover_${Date.now()}`);
-      setNoteCoverImageUrl(s3Url);
+      const success = await deletePost(currentNoteId);
+      if (success) {
+        showNotification('Nota eliminada correctamente', 'success');
+        setOpenDeleteDialog(false);
+
+        // Recargar la página después de un breve delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        showNotification('Error al eliminar la nota', 'error');
+      }
     } catch (error) {
-      alert('Error al subir la imagen de portada a S3');
-      console.error(error);
+      console.error('Error al eliminar la nota:', error);
+      showNotification('Error al eliminar la nota', 'error');
     }
   };
-
-  // Si no hay componente seleccionado, mostrar un mensaje
-  const renderEmptyState = () => (
-    <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
-      <Icon icon="mdi:cursor-text" style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }} />
-      <Typography variant="h6" gutterBottom>
-        Selecciona un componente
-      </Typography>
-      <Typography variant="body2">
-        Haz clic en cualquier elemento del email para editar su formato y estilo.
-      </Typography>
-    </Box>
-  );
 
   // Obtener todos los componentes activos
   const allComponents = getActiveComponents();
@@ -304,255 +348,387 @@ export default function RightPanel({
     : null;
 
   const componentType = selectedComponent?.type;
-  if (
-    isContainerSelected &&
-    ((activeTemplate !== 'news' && activeTemplate !== 'market') || activeVersion === 'newsletter')
-  ) {
+
+  // Determinar si debemos mostrar la configuración de la nota
+  const shouldShowNoteConfiguration =
+    !selectedComponent ||
+    (isContainerSelected &&
+      ((activeTemplate !== 'news' &&
+        activeTemplate !== 'market' &&
+        activeTemplate !== 'storyboard') ||
+        activeVersion === 'newsletter'));
+
+  // Renderizar configuración de la nota (consolidado)
+  if (shouldShowNoteConfiguration) {
     return (
       <Box
-        sx={{
+        sx={(theme) => ({
           width: '100%',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: '#fff',
           overflow: 'hidden',
-        }}
+          position: 'relative',
+          background: 'transparent',
+          borderRadius: 2,
+          '&::before': {
+            ...theme.mixins.borderGradient({
+              padding: '2px',
+              color: `linear-gradient(to bottom left, #FFFFFF, #C6C6FF61)`,
+            }),
+            pointerEvents: 'none', // Permitir eventos de scroll a través del pseudo-elemento
+          },
+        })}
       >
-        <AppBar position="static" color="default" elevation={0}>
-          <Toolbar sx={{ minHeight: { xs: 48, sm: 56 } }}>
-            <Typography
-              variant="subtitle1"
-              component="div"
-              sx={{
-                flexGrow: 1,
-                fontSize: { xs: '0.875rem', sm: '1rem' },
-              }}
-            >
-              Configuración de la Nota
-            </Typography>
-          </Toolbar>
-
-          {/* Tabs dentro del AppBar */}
-          <Tabs
-            value={containerTab}
-            onChange={(event, newValue) => setContainerTab(newValue)}
-            variant="fullWidth"
+        <AppBar position="static" color="default" elevation={0} sx={{ flexShrink: 0 }}>
+          {/* ToggleButtonGroup para tabs */}
+          <Box
             sx={{
+              p: 1,
               borderTop: '1px solid',
               borderColor: 'divider',
-              backgroundColor: 'background.paper',
             }}
           >
-            <Tab label="Información Básica" />
-            <Tab label="Diseño del Contenedor" />
-          </Tabs>
+            <ToggleButtonGroup
+              value={containerTab}
+              exclusive
+              onChange={(event, newValue) => {
+                if (newValue !== null) {
+                  setContainerTab(newValue);
+                }
+              }}
+              aria-label="Configuración de nota"
+              size="small"
+              color="primary"
+              sx={{
+                width: '100%',
+                border: 'none',
+                '& .MuiToggleButton-root': {
+                  flex: 1,
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                  padding: { xs: '4px 6px', sm: '6px 8px' },
+                  border: 'none',
+                },
+              }}
+            >
+              <ToggleButton value={1} aria-label="diseno-contenedor">
+                Diseño
+              </ToggleButton>
+              <ToggleButton value={0} aria-label="informacion-basica">
+                Configuración
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
         </AppBar>
 
-        <Box sx={{ overflow: 'auto', flexGrow: 1 }}>
+        <Box sx={{ overflowY: 'auto', overflowX: 'hidden', flexGrow: 1, height: 0 }}>
           {/* Tab 0: Información Básica */}
           {containerTab === 0 && (
             <Box sx={{ p: 2 }}>
+              <Chip label="General" variant="filled" sx={{ mb: 2 }} size="small" />
               {/* Título */}
               <TextField
                 fullWidth
+                variant="filled"
                 label="Título de la nota"
                 value={noteTitle}
                 onChange={(e) => setNoteTitle(e.target.value)}
                 sx={{ mb: 2 }}
                 required
-                helperText="Este título aparecerá en la lista de notas"
+                multiline
+                rows={3}
+                error={showValidationErrors && !noteTitle.trim()}
+                helperText={
+                  showValidationErrors && !noteTitle.trim()
+                    ? '⚠️ El título es obligatorio para guardar la nota'
+                    : ''
+                }
               />
 
               {/* Descripción */}
               <TextField
                 fullWidth
+                variant="filled"
                 label="Descripción"
                 value={noteDescription}
                 onChange={(e) => setNoteDescription(e.target.value)}
                 multiline
                 rows={3}
                 sx={{ mb: 2 }}
-                helperText="Descripción opcional para identificar el contenido"
               />
 
-              {/* Estado */}
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Estado</InputLabel>
+              {/* Checkbox Destacar */}
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={highlight}
+                    onChange={(e) => setHighlight(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Destacar"
+                sx={{ mb: 2 }}
+              />
+
+              {/* Portada de nota */}
+
+              {/* Componente de upload de imagen de portada */}
+              <Box sx={{ mb: 2 }}>
+                <Chip label="Portada de nota" variant="filled" sx={{ mb: 2 }} size="small" />
+                <UploadCover
+                  value={noteCoverImageUrl}
+                  disabled={uploading}
+                  onDrop={async (acceptedFiles: File[]) => {
+                    const file = acceptedFiles[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = async () => {
+                        const base64String = reader.result as string;
+                        // Mostrar preview temporalmente
+                        setNoteCoverImageUrl(base64String);
+
+                        try {
+                          // Subir automáticamente a S3
+                          const s3Url = await uploadImageToS3(base64String, `cover-${Date.now()}`);
+                          // Actualizar con la URL de S3
+                          setNoteCoverImageUrl(s3Url);
+                        } catch (error) {
+                          console.error('Error al subir imagen de portada:', error);
+                          // Mantener el base64 en caso de error para que el usuario pueda intentar de nuevo
+                          showNotification(
+                            'Error al subir la imagen. Por favor, intenta de nuevo.',
+                            'error'
+                          );
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  onRemove={(file: File | string) => setNoteCoverImageUrl('')}
+                />
+                {uploading && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Subiendo imagen: {uploadProgress}%
+                    </Typography>
+                    <LinearProgress variant="determinate" value={uploadProgress} />
+                  </Box>
+                )}
+              </Box>
+
+              {/* Estado - Solo mostrar si la nota ya está guardada */}
+              {currentNoteId && (
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel>Estado</InputLabel>
+                  <Select
+                    variant="filled"
+                    value={noteStatus}
+                    label="Estado"
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                  >
+                    <MenuItem
+                      value={POST_STATUS.DRAFT}
+                      disabled={checkStatusDisabled(POST_STATUS.DRAFT)}
+                    >
+                      Borrador
+                    </MenuItem>
+                    <MenuItem
+                      value={POST_STATUS.REVIEW}
+                      disabled={checkStatusDisabled(POST_STATUS.REVIEW)}
+                    >
+                      En Revisión
+                    </MenuItem>
+                    <MenuItem
+                      value={POST_STATUS.APPROVED}
+                      disabled={checkStatusDisabled(POST_STATUS.APPROVED)}
+                    >
+                      Aprobado
+                    </MenuItem>
+                    <MenuItem
+                      value={POST_STATUS.PUBLISHED}
+                      disabled={checkStatusDisabled(POST_STATUS.PUBLISHED)}
+                    >
+                      Publicado
+                    </MenuItem>
+                    <MenuItem
+                      value={POST_STATUS.REJECTED}
+                      disabled={checkStatusDisabled(POST_STATUS.REJECTED)}
+                    >
+                      Rechazado
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+
+              {/* Configuración específica */}
+              <Chip label="Configuración específica" variant="filled" sx={{ mb: 2 }} size="small" />
+
+              {/* Tipo de contenido */}
+              <FormControl fullWidth sx={{ mb: 2 }} error={showValidationErrors && !contentTypeId}>
+                <InputLabel>Tipo de contenido *</InputLabel>
                 <Select
-                  value={noteStatus}
-                  label="Estado"
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  disabled={!currentNoteId}
+                  variant="filled"
+                  value={contentTypeId}
+                  label="Tipo de contenido *"
+                  sx={{
+                    '& .Mui-disabled': {
+                      backgroundColor: 'background.neutral',
+                    },
+                  }}
+                  onChange={(e) => setContentTypeId(e.target.value)}
+                  disabled={loadingMetadata}
                 >
-                  <MenuItem
-                    value={POST_STATUS.DRAFT}
-                    disabled={checkStatusDisabled(POST_STATUS.DRAFT)}
-                  >
-                    Borrador
+                  <MenuItem value="">
+                    <em>Seleccionar</em>
                   </MenuItem>
-                  <MenuItem
-                    value={POST_STATUS.REVIEW}
-                    disabled={checkStatusDisabled(POST_STATUS.REVIEW)}
-                  >
-                    En Revisión
-                  </MenuItem>
-                  <MenuItem
-                    value={POST_STATUS.APPROVED}
-                    disabled={checkStatusDisabled(POST_STATUS.APPROVED)}
-                  >
-                    Aprobado
-                  </MenuItem>
-                  <MenuItem
-                    value={POST_STATUS.PUBLISHED}
-                    disabled={checkStatusDisabled(POST_STATUS.PUBLISHED)}
-                  >
-                    Publicado
-                  </MenuItem>
-                  <MenuItem
-                    value={POST_STATUS.REJECTED}
-                    disabled={checkStatusDisabled(POST_STATUS.REJECTED)}
-                  >
-                    Rechazado
-                  </MenuItem>
+                  {contentTypes.map((type) => (
+                    <MenuItem key={type.id} value={type.id}>
+                      {type.name}
+                    </MenuItem>
+                  ))}
                 </Select>
-                {!currentNoteId && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                    💡 Guarda la nota primero para cambiar su estado
+                {showValidationErrors && !contentTypeId && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    ⚠️ El tipo de contenido es obligatorio
                   </Typography>
                 )}
               </FormControl>
 
-              <Divider sx={{ my: 2 }} />
-
-              {/* Imagen de portada */}
-              <Typography variant="h6" gutterBottom>
-                Imagen de Portada
-              </Typography>
-
-              {/* Vista previa de la imagen */}
-              {noteCoverImageUrl && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" gutterBottom>
-                    Vista previa:
+              {/* Audiencia */}
+              <FormControl fullWidth sx={{ mb: 2 }} error={showValidationErrors && !audienceId}>
+                <InputLabel>Audiencia *</InputLabel>
+                <Select
+                  variant="filled"
+                  value={audienceId}
+                  label="Audiencia *"
+                  sx={{
+                    '& .Mui-disabled': {
+                      backgroundColor: 'background.neutral',
+                    },
+                  }}
+                  onChange={(e) => setAudienceId(e.target.value)}
+                  disabled={loadingMetadata}
+                >
+                  <MenuItem value="">
+                    <em>Seleccionar</em>
+                  </MenuItem>
+                  {audiences.map((audience) => (
+                    <MenuItem key={audience.id} value={audience.id}>
+                      {audience.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {showValidationErrors && !audienceId && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    ⚠️ La audiencia es obligatoria
                   </Typography>
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      display: 'inline-block',
-                      maxWidth: '100%',
-                    }}
-                  >
-                    <img
-                      src={noteCoverImageUrl}
-                      alt="Cover preview"
-                      style={{
-                        width: '100%',
-                        maxHeight: '120px',
-                        objectFit: 'cover',
-                        borderRadius: '4px',
-                        border: '1px solid #e0e0e0',
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                    {noteCoverImageUrl.startsWith('data:image/') && (
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: 4,
-                          right: 4,
-                          backgroundColor: 'rgba(255, 152, 0, 0.9)',
-                          color: 'white',
-                          borderRadius: '4px',
-                          padding: '2px 6px',
-                          fontSize: '0.75rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                        }}
-                      >
-                        <Icon icon="mdi:cloud-upload-outline" fontSize="12px" />
-                        Subir a S3
-                      </Box>
-                    )}
-                  </Box>
-                </Box>
-              )}
-
-              {/* Alertas de estado */}
-              {noteCoverImageUrl && noteCoverImageUrl.startsWith('data:image/') && (
-                <Alert severity="warning" sx={{ mb: 2, fontSize: '0.875rem' }}>
-                  ⚠️ Esta imagen debe subirse a S3 antes de guardar
-                </Alert>
-              )}
-
-              {noteCoverImageUrl &&
-                !noteCoverImageUrl.startsWith('data:image/') &&
-                noteCoverImageUrl.startsWith('http') && (
-                  <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
-                    ✅ Imagen guardada correctamente
-                  </Alert>
                 )}
+              </FormControl>
 
-              {/* Botón para seleccionar imagen */}
-              <Button
-                variant="contained"
-                color="primary"
+              {/* Categoría */}
+              <FormControl
                 fullWidth
-                startIcon={<Icon icon="mdi:image-plus" />}
-                onClick={handleSelectCoverImage}
                 sx={{ mb: 2 }}
+                disabled={!contentTypeId}
+                error={showValidationErrors && contentTypeId && !categoryId}
               >
-                {noteCoverImageUrl ? 'Cambiar Imagen de Portada' : 'Seleccionar Imagen de Portada'}
-              </Button>
+                <InputLabel>Categoría *</InputLabel>
+                <Select
+                  variant="filled"
+                  value={categoryId}
+                  label="Categoría *"
+                  sx={{
+                    '& .Mui-disabled': {
+                      backgroundColor: 'background.neutral',
+                    },
+                  }}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  disabled={!contentTypeId || loadingMetadata}
+                >
+                  <MenuItem value="">
+                    <em>Seleccionar</em>
+                  </MenuItem>
+                  {categories.map((category) => (
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {showValidationErrors && contentTypeId && !categoryId && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    ⚠️ La categoría es obligatoria
+                  </Typography>
+                )}
+                {!contentTypeId && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Selecciona un tipo de contenido primero
+                  </Typography>
+                )}
+              </FormControl>
 
-              {/* Campo URL manual */}
-              <TextField
+              {/* Subcategoría */}
+              <FormControl
                 fullWidth
-                label="URL de la imagen (opcional)"
-                value={noteCoverImageUrl}
-                onChange={(e) => setNoteCoverImageUrl(e.target.value)}
                 sx={{ mb: 2 }}
-                helperText="URL de la imagen que aparecerá como portada"
-                placeholder="https://ejemplo.com/imagen.jpg"
-                size="small"
-              />
+                disabled={!categoryId}
+                error={showValidationErrors && categoryId && !subcategoryId}
+              >
+                <InputLabel>Subcategoría *</InputLabel>
+                <Select
+                  variant="filled"
+                  value={subcategoryId}
+                  label="Subcategoría *"
+                  sx={{
+                    '& .Mui-disabled': {
+                      backgroundColor: 'background.neutral',
+                    },
+                  }}
+                  onChange={(e) => setSubcategoryId(e.target.value)}
+                  disabled={!categoryId || loadingMetadata}
+                >
+                  <MenuItem value="">
+                    <em>Seleccionar</em>
+                  </MenuItem>
+                  {subcategories.map((subcategory) => (
+                    <MenuItem key={subcategory.id} value={subcategory.id}>
+                      {subcategory.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {showValidationErrors && categoryId && !subcategoryId && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    ⚠️ La subcategoría es obligatoria
+                  </Typography>
+                )}
+                {!categoryId && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Selecciona una categoría primero
+                  </Typography>
+                )}
+              </FormControl>
 
-              {/* Botón de subida a S3 */}
-              {noteCoverImageUrl && noteCoverImageUrl.startsWith('data:image/') && (
-                <>
-                  {uploading && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" gutterBottom>
-                        Subiendo: {uploadProgress}%
-                      </Typography>
-                      <LinearProgress variant="determinate" value={uploadProgress} />
-                    </Box>
-                  )}
-                  <Button
-                    variant="contained"
-                    color="warning"
-                    fullWidth
-                    startIcon={<Icon icon="mdi:cloud-upload" />}
-                    onClick={handleUploadCoverImageToS3}
-                    loading={uploading}
-                    sx={{ mb: 2 }}
-                  >
-                    ⚠️ Subir Imagen a S3 (Requerido)
-                  </Button>
-                </>
+              {/* Botón para eliminar la nota (solo si está guardada) */}
+              {currentNoteId && (
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Icon icon="mdi:delete-outline" />}
+                  onClick={() => setOpenDeleteDialog(true)}
+                  sx={{
+                    backgroundColor: 'rgba(255, 72, 66, 0.08)',
+                    color: 'error.main',
+                    border: 'none',
+                    height: 48,
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 72, 66, 0.16)',
+                      borderColor: 'error.main',
+                    },
+                  }}
+                >
+                  Eliminar nota
+                </Button>
               )}
-
-              {/* Input de archivo oculto para imagen de portada */}
-              <input
-                type="file"
-                ref={coverImageFileInputRef}
-                style={{ display: 'none' }}
-                accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-                onChange={handleCoverImageFileChange}
-              />
             </Box>
           )}
 
@@ -575,6 +751,30 @@ export default function RightPanel({
           )}
         </Box>
 
+        {/* Diálogo de confirmación para eliminar nota */}
+        <Dialog
+          open={openDeleteDialog}
+          onClose={() => setOpenDeleteDialog(false)}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">¿Eliminar nota?</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar esta nota
+              permanentemente?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenDeleteDialog(false)} color="primary">
+              Cancelar
+            </Button>
+            <Button onClick={handleDeleteNote} color="error" variant="contained" autoFocus>
+              Eliminar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         {/* Snackbar para notificaciones */}
         <Snackbar
           open={notification.open}
@@ -594,53 +794,29 @@ export default function RightPanel({
     );
   }
 
-  if (!selectedComponent) {
-    return (
-      <Box
-        sx={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: '#fff',
-          overflow: 'hidden',
-        }}
-      >
-        <AppBar position="static" color="default" elevation={0}>
-          <Toolbar sx={{ minHeight: { xs: 48, sm: 56 } }}>
-            <Typography
-              variant="subtitle1"
-              component="div"
-              sx={{
-                flexGrow: 1,
-                fontSize: { xs: '0.875rem', sm: '1rem' },
-              }}
-            >
-              Diseño
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        {renderEmptyState()}
-      </Box>
-    );
-  }
-
-  // Determinar el tipo de componente
-  // const componentType = selectedComponent.type; // This line is now redundant
-
+  // Renderizar opciones de componente específico
   return (
     <Box
-      sx={{
+      sx={(theme) => ({
         width: '100%',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#fff',
         overflow: 'hidden',
-      }}
+        position: 'relative',
+        background: theme.palette.background.paper,
+      })}
     >
-      <AppBar position="static" color="default" elevation={0}>
+      <AppBar position="static" color="default" elevation={0} sx={{ flexShrink: 0 }}>
         <Toolbar sx={{ minHeight: { xs: 48, sm: 56 } }}>
+          <IconButton
+            edge="start"
+            onClick={() => setSelectedComponentId(null)}
+            sx={{ mr: 1 }}
+            size="small"
+          >
+            <Icon icon="mdi:arrow-left" />
+          </IconButton>
           <Typography
             variant="subtitle1"
             component="div"
@@ -712,7 +888,9 @@ export default function RightPanel({
             ]}
       </Tabs>
 
-      <Box sx={{ overflow: 'auto', flexGrow: 1, p: { xs: 1, sm: 2 } }}>
+      <Box
+        sx={{ overflowY: 'auto', overflowX: 'hidden', flexGrow: 1, height: 0, p: { xs: 1, sm: 2 } }}
+      >
         {rightPanelTab === 0 && (
           <>
             {/* Para Summary, mostrar directamente las opciones de configuración */}
@@ -836,6 +1014,7 @@ export default function RightPanel({
                 componentType={componentType}
                 selectedComponent={selectedComponent}
                 selectedComponentId={selectedComponentId}
+                setSelectedComponentId={setSelectedComponentId}
                 getActiveComponents={getActiveComponents}
                 updateComponentProps={updateComponentProps}
                 updateComponentStyle={updateComponentStyle}
@@ -896,6 +1075,18 @@ export default function RightPanel({
                 noteStatus={noteStatus}
                 setNoteStatus={setNoteStatus}
                 updateStatus={updateStatus}
+                contentTypeId={contentTypeId}
+                setContentTypeId={setContentTypeId}
+                audienceId={audienceId}
+                setAudienceId={setAudienceId}
+                categoryId={categoryId}
+                setCategoryId={setCategoryId}
+                subcategoryId={subcategoryId}
+                setSubcategoryId={setSubcategoryId}
+                highlight={highlight}
+                setHighlight={setHighlight}
+                selectedColumn={selectedColumn}
+                injectComponentsToNewsletter={injectComponentsToNewsletter}
               />
             )}
 
@@ -947,6 +1138,46 @@ export default function RightPanel({
           />
         )}
       </Box>
+
+      {/* Diálogo de confirmación para eliminar nota */}
+      <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">¿Eliminar nota?</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Esta acción no se puede deshacer. ¿Estás seguro de que deseas eliminar esta nota
+            permanentemente?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={handleDeleteNote} color="error" variant="contained" autoFocus>
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={4000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

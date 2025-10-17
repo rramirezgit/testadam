@@ -103,7 +103,7 @@ const TextOptions = ({
           onChange={(event, newAlignment) => {
             if (newAlignment !== null) {
               setSelectedAlignment(newAlignment);
-              applyTextAlignment(newAlignment);
+              applyTextAlignment(newAlignment, selectedComponentId, updateComponentStyle);
             }
           }}
           aria-label="text alignment"
@@ -148,7 +148,7 @@ const TextOptions = ({
           label="Fuente"
           onChange={(e) => {
             setSelectedFont(e.target.value);
-            applyFontFamily(e.target.value);
+            applyFontFamily(e.target.value, selectedComponentId, updateComponentStyle);
           }}
         >
           <MenuItem value="Public Sans">Public Sans</MenuItem>
@@ -193,7 +193,7 @@ const TextOptions = ({
           label="Tamaño de fuente"
           onChange={(e) => {
             setSelectedFontSize(e.target.value);
-            applyFontSize(e.target.value);
+            applyFontSize(e.target.value, selectedComponentId, updateComponentStyle);
           }}
         >
           <MenuItem value="12">12px</MenuItem>

@@ -21,9 +21,10 @@ export default function LeftPanel({
   emailTemplates,
   activeTemplate,
   setActiveTemplate,
+  defaultTemplate,
+  excludeTemplates = [],
   generatingEmail,
   handleGenerateEmailHtml,
-  setOpenSaveDialog,
   activeVersion,
   setActiveVersion,
   // Nuevas props para newsletter
@@ -63,7 +64,8 @@ export default function LeftPanel({
   const [activeTab, setActiveTab] = React.useState<'content' | 'library'>('content');
   const [openNotesModal, setOpenNotesModal] = React.useState(false);
   const [notesFilter, setNotesFilter] = React.useState('');
-  const [openTemplateModal, setOpenTemplateModal] = React.useState(true);
+  // Si hay defaultTemplate, no mostrar el modal; si no hay, mostrarlo
+  const [openTemplateModal, setOpenTemplateModal] = React.useState(!defaultTemplate);
 
   const handleTabChange = (
     event: React.MouseEvent<HTMLElement>,
@@ -80,15 +82,30 @@ export default function LeftPanel({
     setOpenTemplateModal(false);
   };
 
+  // Si hay defaultTemplate y el modal está cerrado, establecer el template automáticamente
+  React.useEffect(() => {
+    if (defaultTemplate && !openTemplateModal) {
+      setActiveTemplate(defaultTemplate);
+    }
+  }, [defaultTemplate, openTemplateModal, setActiveTemplate]);
+
   return (
     <Box
-      sx={{
+      sx={(theme) => ({
         width: '100%',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-      }}
+        position: 'relative',
+        // Borde con gradiente estático
+        background: theme.palette.background.paper,
+        borderRadius: '16px',
+        '&::before': theme.mixins.borderGradient({
+          padding: '2px',
+          color: `linear-gradient(to bottom right, #FFFFFF, #C6C6FF61)`,
+        }),
+      })}
     >
       <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', p: 1, flexShrink: 0 }}>
         <ToggleButtonGroup
@@ -145,23 +162,23 @@ export default function LeftPanel({
             />
 
             {/* BOTÓN PARA ABRIR MODAL DE NOTAS - Solo mostrar si es template newsletter */}
-            {/* {isNewsletterMode && ( */}
-            <Box sx={{ mt: 2, px: 1 }}>
-              <Button
-                variant="outlined"
-                fullWidth
-                startIcon={<Icon icon="mdi:plus-circle" style={{ fontSize: '1.2rem' }} />}
-                onClick={() => setOpenNotesModal(true)}
-                sx={{
-                  py: 1.5,
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                }}
-              >
-                Inyectar Notas Disponibles
-              </Button>
-            </Box>
-            {/* )} */}
+            {(activeTemplate === 'newsletter' || activeVersion === 'newsletter') && (
+              <Box sx={{ mt: 2, px: 1 }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<Icon icon="mdi:plus-circle" style={{ fontSize: '1.2rem' }} />}
+                  onClick={() => setOpenNotesModal(true)}
+                  sx={{
+                    py: 1.5,
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  Inyectar Notas Disponibles
+                </Button>
+              </Box>
+            )}
           </Box>
         </>
       )}
@@ -184,6 +201,7 @@ export default function LeftPanel({
         emailTemplates={emailTemplates}
         activeTemplate={activeTemplate}
         onTemplateSelect={handleTemplateSelect}
+        excludeTemplates={excludeTemplates}
       />
 
       {/* MODAL DE NOTAS DISPONIBLES */}

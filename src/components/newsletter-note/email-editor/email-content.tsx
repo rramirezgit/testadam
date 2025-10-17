@@ -538,10 +538,12 @@ const EmailContent = memo(
                   border: 'none',
                   maxWidth: '100%',
                 }
-              : (activeTemplate === 'news' || activeTemplate === 'market') &&
+              : (activeTemplate === 'news' ||
+                    activeTemplate === 'market' ||
+                    activeTemplate === 'storyboard') &&
                   activeVersion === 'web'
                 ? {
-                    // Sin bordes para la versión web del template de noticias/mercado
+                    // Sin bordes para la versión web del template de noticias/mercado/storyboard
                     borderRadius: 0,
                     border: 'none',
                   }
@@ -866,10 +868,12 @@ const EmailContent = memo(
                     border: 'none',
                     maxWidth: '100%',
                   }
-                : (activeTemplate === 'news' || activeTemplate === 'market') &&
+                : (activeTemplate === 'news' ||
+                      activeTemplate === 'market' ||
+                      activeTemplate === 'storyboard') &&
                     activeVersion === 'web'
                   ? {
-                      // Sin bordes para la versión web del template de noticias/mercado
+                      // Sin bordes para la versión web del template de noticias/mercado/storyboard
                       borderRadius: 0,
                       border: 'none',
                       maxWidth: '100%',

@@ -5,6 +5,7 @@ import type { BannerOption } from 'src/components/newsletter-note/banner-selecto
 
 export interface RightPanelProps {
   selectedComponentId: string | null;
+  setSelectedComponentId: (id: string | null) => void;
   rightPanelTab: number;
   setRightPanelTab: (tab: number) => void;
   getActiveComponents: () => EmailComponent[];
@@ -69,6 +70,23 @@ export interface RightPanelProps {
   noteStatus: PostStatus;
   setNoteStatus: (status: PostStatus) => void;
   updateStatus: (status: PostStatus) => Promise<void>;
+
+  // Nuevos campos de metadata
+  contentTypeId: string;
+  setContentTypeId: (id: string) => void;
+  audienceId: string;
+  setAudienceId: (id: string) => void;
+  categoryId: string;
+  setCategoryId: (id: string) => void;
+  subcategoryId: string;
+  setSubcategoryId: (id: string) => void;
+
+  // Campo highlight
+  highlight: boolean;
+  setHighlight: (highlight: boolean) => void;
+
+  // Control de validaciones
+  showValidationErrors?: boolean;
 
   // Prop para columna seleccionada en TwoColumns
   selectedColumn?: 'left' | 'right';

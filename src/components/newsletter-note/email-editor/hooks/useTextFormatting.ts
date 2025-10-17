@@ -142,7 +142,19 @@ export const useTextFormatting = () => {
 
   // Aplicar alineación al texto seleccionado
   const applyTextAlignment = useCallback(
-    (alignment: string) => {
+    (
+      alignment: string,
+      selectedComponentId?: string | null,
+      updateComponentStyle?: (id: string, style: React.CSSProperties) => void
+    ) => {
+      // Si hay un componente seleccionado y función de actualización, actualizar directamente
+      if (selectedComponentId && updateComponentStyle) {
+        updateComponentStyle(selectedComponentId, { textAlign: alignment });
+        setSelectedAlignment(alignment);
+        return;
+      }
+
+      // Fallback: usar el editor activo si está disponible
       if (!activeEditor) return;
       activeEditor.chain().focus().setTextAlign(alignment).run();
       setSelectedAlignment(alignment);
@@ -152,7 +164,19 @@ export const useTextFormatting = () => {
 
   // Aplicar color al texto seleccionado
   const applyTextColor = useCallback(
-    (color: string) => {
+    (
+      color: string,
+      selectedComponentId?: string | null,
+      updateComponentStyle?: (id: string, style: React.CSSProperties) => void
+    ) => {
+      // Si hay un componente seleccionado y función de actualización, actualizar directamente
+      if (selectedComponentId && updateComponentStyle) {
+        updateComponentStyle(selectedComponentId, { color });
+        setSelectedColor(color);
+        return;
+      }
+
+      // Fallback: usar el editor activo si está disponible
       if (!activeEditor) return;
       activeEditor.chain().focus().setColor(color).run();
       setSelectedColor(color);
@@ -167,10 +191,11 @@ export const useTextFormatting = () => {
       selectedComponentId: string | null,
       updateComponentStyle: (id: string, style: React.CSSProperties) => void
     ) => {
-      if (!activeEditor || !selectedComponentId) return;
-      // Actualizar el estilo del componente
-      updateComponentStyle(selectedComponentId, { fontSize: `${size}px` });
-      setSelectedFontSize(size);
+      // Siempre actualizar el estilo del componente si hay ID válido
+      if (selectedComponentId && updateComponentStyle) {
+        updateComponentStyle(selectedComponentId, { fontSize: `${size}px` });
+        setSelectedFontSize(size);
+      }
     },
     [activeEditor]
   );
@@ -182,10 +207,11 @@ export const useTextFormatting = () => {
       selectedComponentId: string | null,
       updateComponentStyle: (id: string, style: React.CSSProperties) => void
     ) => {
-      if (!activeEditor || !selectedComponentId) return;
-      // Actualizar el estilo del componente
-      updateComponentStyle(selectedComponentId, { fontFamily: font });
-      setSelectedFont(font);
+      // Siempre actualizar el estilo del componente si hay ID válido
+      if (selectedComponentId && updateComponentStyle) {
+        updateComponentStyle(selectedComponentId, { fontFamily: font });
+        setSelectedFont(font);
+      }
     },
     [activeEditor]
   );

@@ -920,3 +920,70 @@ export const newsletterComponentsWeb: EmailComponent[] = [
     props: { level: 1 },
   },
 ];
+
+// Storyboard template components (solo web)
+export const storyboardComponents: EmailComponent[] = [
+  {
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Título del Storyboard',
+    props: { level: 1 },
+  },
+  {
+    id: 'paragraph-1',
+    type: 'paragraph',
+    content:
+      'Descripción general del proyecto audiovisual. Usa este espacio para definir el concepto, objetivo y contexto del contenido.',
+    props: {},
+  },
+  {
+    id: 'divider-1',
+    type: 'divider',
+    content: '',
+    props: {},
+  },
+  {
+    id: 'heading-2',
+    type: 'heading',
+    content: 'Escena 1',
+    props: { level: 2 },
+  },
+  {
+    id: 'paragraph-2',
+    type: 'paragraph',
+    content: 'Descripción de la escena: qué sucede, quién aparece, dónde se desarrolla...',
+    props: {},
+  },
+  {
+    id: 'image-1',
+    type: 'image',
+    content: '',
+    data: {
+      src: 'https://via.placeholder.com/800x450?text=Referencia+Visual+Escena+1',
+      alt: 'Referencia visual de la escena 1',
+    },
+    props: {},
+  },
+  {
+    id: 'file-1',
+    type: 'fileAttachment',
+    content: '',
+    data: {
+      fileName: 'Audio_Escena1.mp3',
+      fileType: 'audio',
+      fileSize: '2.5 MB',
+      description: 'Audio de referencia para la escena',
+    },
+    props: {},
+  },
+  {
+    id: 'bulletlist-1',
+    type: 'bulletList',
+    content:
+      '<ul><li>Duración: 10 segundos</li><li>Transición: Fade in</li><li>Audio: Música de fondo suave</li></ul>',
+    props: {},
+  },
+];
+
+// Storyboard template components (versión web - igual que la normal)
+export const storyboardComponentsWeb: EmailComponent[] = storyboardComponents;

@@ -17,6 +17,7 @@ import {
   Toolbar,
   Tooltip,
   MenuItem,
+  useTheme,
   Typography,
   IconButton,
   DialogTitle,
@@ -40,7 +41,7 @@ interface EditorHeaderProps {
   activeVersion: 'newsletter' | 'web';
   activeTemplate: string;
   handleVersionChange: (newVersion: 'newsletter' | 'web') => void;
-  openSaveDialog: () => void;
+  onSave: () => void;
   syncEnabled?: boolean;
   toggleSync?: () => void;
   transferToWeb?: () => void;
@@ -74,7 +75,7 @@ export default function EditorHeader({
   activeVersion,
   activeTemplate,
   handleVersionChange,
-  openSaveDialog,
+  onSave,
   syncEnabled = false,
   toggleSync = () => {},
   transferToWeb = () => {},
@@ -111,6 +112,8 @@ export default function EditorHeader({
 
   // Estado para el modal de error del título
   const [openTitleErrorDialog, setOpenTitleErrorDialog] = useState(false);
+
+  const theme = useTheme();
 
   // Hook del store
   const { sendPostForReview, sendNewsletterForReview, createNewsletter, updateNewsletter } =
@@ -364,8 +367,8 @@ export default function EditorHeader({
       });
 
       if (!isNewsletterMode) {
-        console.log('❌ No es modo newsletter, usando openSaveDialog');
-        openSaveDialog();
+        console.log('❌ No es modo newsletter, usando onSave');
+        onSave();
         return;
       }
 
@@ -470,8 +473,27 @@ export default function EditorHeader({
 
   return (
     <>
-      <AppBar position="static" color="default" elevation={1}>
-        <Toolbar sx={{ minHeight: '56px' }}>
+      <AppBar
+        position="static"
+        color="default"
+        elevation={1}
+        sx={{
+          p: 1,
+          pl: 2,
+          pr: 2,
+          minHeight: '56px',
+          background: `linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.40) 53.15%, rgba(255, 255, 255, 0.60) 107.22%)`,
+        }}
+      >
+        <Toolbar
+          sx={{
+            borderRadius: '16px',
+            '&::before': theme.mixins.borderGradient({
+              padding: '1.5px',
+              color: `linear-gradient(to bottom, #FFFFFF, #C6C6FF61)`,
+            }),
+          }}
+        >
           <Button
             startIcon={<Icon icon="mingcute:left-line" />}
             onClick={onClose}
@@ -500,7 +522,7 @@ export default function EditorHeader({
                 : 'Nuevo Email'}
           </Typography>
 
-          {/* Selector de versión Web/Newsletter - Solo para template 'news' y 'market' */}
+          {/* Selector de versión Web/Newsletter - Solo para template 'news' y 'market' (storyboard solo web) */}
           {activeTemplate === 'news' || activeTemplate === 'market' ? (
             <Box
               sx={{
@@ -824,7 +846,7 @@ export default function EditorHeader({
                 color="primary"
                 sx={{ height: '42px' }}
                 startIcon={<Icon icon="material-symbols:save" />}
-                onClick={openSaveDialog}
+                onClick={onSave}
               >
                 Guardar
               </Button>
@@ -945,17 +967,19 @@ export default function EditorHeader({
         <DialogContent>
           <DialogContentText id="title-error-dialog-description">
             El título del newsletter es obligatorio para poder guardarlo. Por favor, ingresa un
-            título en la sección de "Configuración del Newsletter" antes de intentar guardar.
+            título en la sección de &quot;Configuración del Newsletter&quot; antes de intentar
+            guardar.
           </DialogContentText>
           <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
               📝 Para agregar el título:
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              1. Haz clic en el panel derecho "Configuración del Newsletter"
+              1. Haz clic en el panel derecho &quot;Configuración del Newsletter&quot;
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              2. En la pestaña "General", completa el campo "Título del Newsletter"
+              2. En la pestaña &quot;General&quot;, completa el campo &quot;Título del
+              Newsletter&quot;
             </Typography>
             <Typography variant="body2" color="text.secondary">
               3. Intenta guardar nuevamente

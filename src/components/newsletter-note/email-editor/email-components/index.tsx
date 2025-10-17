@@ -17,6 +17,7 @@ import HerramientasComponent from './HerramientasComponent';
 import RespaldadoPorComponent from './RespaldadoPorComponent';
 import NoteContainerComponent from './NoteContainerComponent';
 import TituloConIconoComponent from './TituloConIconoComponent';
+import FileAttachmentComponent from './FileAttachmentComponent';
 import ComponentContainerComponent from './ComponentContainerComponent';
 import NewsletterHeaderReusableComponent from './NewsletterHeaderReusableComponent';
 import NewsletterFooterReusableComponent from './NewsletterFooterReusableComponent';
@@ -74,6 +75,8 @@ const EmailComponentRenderer = (props: EmailComponentProps) => {
       return <NewsletterHeaderReusableComponent {...props} />;
     case 'newsletterFooterReusable':
       return <NewsletterFooterReusableComponent {...props} />;
+    case 'fileAttachment':
+      return <FileAttachmentComponent {...props} />;
     // case 'newsletterHeader': // ELIMINADO: Solo header global
     //   return <NewsletterHeaderComponent {...props} />;
     default:

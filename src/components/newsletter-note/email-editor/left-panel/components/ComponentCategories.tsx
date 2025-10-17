@@ -27,7 +27,7 @@ interface ComponentCategoriesProps {
 
 // Función para verificar si al menos un componente de una categoría está habilitado
 const hasCategoryComponents = (
-  category: 'texto' | 'multimedia' | 'diseño' | 'noticias' | 'newsletter',
+  category: 'texto' | 'multimedia' | 'diseño' | 'noticias' | 'newsletter' | 'produccion',
   enabledComponents: EnabledComponents
 ) => {
   switch (category) {
@@ -61,6 +61,8 @@ const hasCategoryComponents = (
       return (
         enabledComponents.newsletterHeaderReusable || enabledComponents.newsletterFooterReusable
       );
+    case 'produccion':
+      return enabledComponents.fileAttachment;
     default:
       return false;
   }
@@ -487,6 +489,47 @@ export default function ComponentCategories({
                     <Icon icon="mdi:footer" style={{ fontSize: '1.5rem' }} />
                     <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
                       Footer Reusable
+                    </Typography>
+                  </Button>
+                </Grid>
+              )}
+            </Grid>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+      {/* Categoría de Producción - Solo mostrar si tiene componentes habilitados */}
+      {hasCategoryComponents('produccion', enabledComponents) && (
+        <Accordion
+          expanded={expandedCategories.produccion}
+          onChange={() =>
+            setExpandedCategories({
+              ...expandedCategories,
+              produccion: !expandedCategories.produccion,
+            })
+          }
+        >
+          <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+            <Chip label="Producción" variant="filled" size="small" color="secondary" />
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 1 }}>
+            <Grid container spacing={1}>
+              {enabledComponents.fileAttachment && (
+                <Grid size={6}>
+                  <Button
+                    onClick={() => addComponent('fileAttachment')}
+                    fullWidth
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      p: 1,
+                      minHeight: '60px',
+                    }}
+                  >
+                    <Icon icon="mdi:file-plus" style={{ fontSize: '1.5rem' }} />
+                    <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
+                      Adjuntar Archivo
                     </Typography>
                   </Button>
                 </Grid>

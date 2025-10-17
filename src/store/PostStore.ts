@@ -18,12 +18,51 @@ import { endpoints, createAxiosInstance } from 'src/utils/axiosInstance';
 
 import { generateEscapedHtml } from 'src/components/newsletter-note/newsletter-html-generator';
 
+// Interfaces para metadata
+interface ContentType {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Audience {
+  id: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  imageUrl: string;
+  contentType: {
+    id: string;
+    name: string;
+  };
+  subcategories: Subcategory[];
+}
+
 interface PostState {
   loading: boolean;
   posts: Article[];
   currentPost: Post | null;
   meta: Meta | null;
   error: string | null;
+
+  // Metadata states
+  contentTypes: ContentType[];
+  audiences: Audience[];
+  categories: Category[];
+  loadingMetadata: boolean;
 
   // Actions
   setLoading: (loading: boolean) => void;
@@ -52,6 +91,11 @@ interface PostState {
   updateNewsletter: (id: string, newsletterData: any) => Promise<any>;
   findAllNewsletters: () => Promise<any[]>;
 
+  // Metadata operations
+  loadContentTypes: () => Promise<ContentType[]>;
+  loadAudiences: () => Promise<Audience[]>;
+  loadCategories: (contentTypeId: string) => Promise<Category[]>;
+
   // Utility functions
   clearCurrentPost: () => void;
   clearPosts: () => void;
@@ -67,6 +111,12 @@ const usePostStore = create<PostState>()(
         currentPost: null,
         meta: null,
         error: null,
+
+        // Metadata states
+        contentTypes: [],
+        audiences: [],
+        categories: [],
+        loadingMetadata: false,
 
         setLoading: (loading: boolean) => set({ loading }),
 
@@ -275,7 +325,6 @@ const usePostStore = create<PostState>()(
               currentPost: updatedCurrentPost,
               loading: false,
             });
-
             return true;
           } catch (error: any) {
             console.error('Error al eliminar post:', error);
@@ -544,6 +593,100 @@ const usePostStore = create<PostState>()(
             return [];
           }
         },
+
+        // Metadata operations
+        loadContentTypes: async () => {
+          try {
+            set({ loadingMetadata: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const response = await axiosInstance.get<ContentType[]>(endpoints.contentType.findAll);
+
+            if (response.data) {
+              set({
+                contentTypes: response.data,
+                loadingMetadata: false,
+              });
+              return response.data;
+            }
+
+            set({ loadingMetadata: false });
+            return [];
+          } catch (error: any) {
+            console.error('Error cargando tipos de contenido:', error);
+            const errorMessage =
+              error.response?.data?.message || 'Error al cargar tipos de contenido';
+            set({
+              loadingMetadata: false,
+              error: errorMessage,
+            });
+            return [];
+          }
+        },
+
+        loadAudiences: async () => {
+          try {
+            set({ loadingMetadata: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const response = await axiosInstance.get<Audience[]>(endpoints.audience.findAll);
+
+            if (response.data) {
+              set({
+                audiences: response.data,
+                loadingMetadata: false,
+              });
+              return response.data;
+            }
+
+            set({ loadingMetadata: false });
+            return [];
+          } catch (error: any) {
+            console.error('Error cargando audiencias:', error);
+            const errorMessage = error.response?.data?.message || 'Error al cargar audiencias';
+            set({
+              loadingMetadata: false,
+              error: errorMessage,
+            });
+            return [];
+          }
+        },
+
+        loadCategories: async (contentTypeId: string) => {
+          try {
+            if (!contentTypeId) {
+              set({ categories: [] });
+              return [];
+            }
+
+            set({ loadingMetadata: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const response = await axiosInstance.get<Category[]>(
+              `${endpoints.category.findAll}?contentTypeId=${contentTypeId}`
+            );
+
+            if (response.data) {
+              set({
+                categories: response.data,
+                loadingMetadata: false,
+              });
+              return response.data;
+            }
+
+            set({ loadingMetadata: false, categories: [] });
+            return [];
+          } catch (error: any) {
+            console.error('Error cargando categorías:', error);
+            const errorMessage = error.response?.data?.message || 'Error al cargar categorías';
+            set({
+              loadingMetadata: false,
+              error: errorMessage,
+              categories: [],
+            });
+            return [];
+          }
+        },
       }),
       {
         name: 'post-storage',
@@ -563,6 +706,14 @@ const usePostStore = create<PostState>()(
 );
 
 export default usePostStore;
+
+// Exportar tipos de metadata
+export type {
+  Audience,
+  ContentType,
+  Category as MetadataCategory,
+  Subcategory as MetadataSubcategory,
+};
 
 // Exportar tipos para uso externo (manteniendo compatibilidad)
 export type {

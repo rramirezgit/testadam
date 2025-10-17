@@ -5,7 +5,7 @@ import { Controller, useFormContext } from 'react-hook-form';
 import Box from '@mui/material/Box';
 
 import { HelperText } from './help-text';
-import { Upload, UploadBox, UploadAvatar } from '../upload';
+import { Upload, UploadBox, UploadCover, UploadAvatar } from '../upload';
 
 import type { UploadProps } from '../upload';
 
@@ -56,6 +56,44 @@ export function RHFUploadBox({ name, ...other }: RHFUploadProps) {
       render={({ field, fieldState: { error } }) => (
         <UploadBox value={field.value} error={!!error} {...other} />
       )}
+    />
+  );
+}
+
+// ----------------------------------------------------------------------
+
+export function RHFUploadCover({ name, slotProps, ...other }: RHFUploadProps) {
+  const { control, setValue } = useFormContext();
+
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState: { error } }) => {
+        const onDrop = (acceptedFiles: File[]) => {
+          const value = acceptedFiles[0];
+
+          setValue(name, value, { shouldValidate: true });
+        };
+
+        const onRemove = (file: File | string) => {
+          setValue(name, null, { shouldValidate: true });
+        };
+
+        return (
+          <Box {...slotProps?.wrapper}>
+            <UploadCover
+              value={field.value}
+              error={!!error}
+              onDrop={onDrop}
+              onRemove={onRemove}
+              {...other}
+            />
+
+            <HelperText errorMessage={error?.message} />
+          </Box>
+        );
+      }}
     />
   );
 }

@@ -29,6 +29,9 @@ export interface EnabledComponents {
   respaldadoPor?: boolean;
   newsletterHeaderReusable?: boolean;
   newsletterFooterReusable?: boolean;
+
+  // Componentes de Producción
+  fileAttachment?: boolean; // Para adjuntar archivos en storyboards
 }
 
 export interface LeftPanelProps {
@@ -46,9 +49,10 @@ export interface LeftPanelProps {
   }[];
   activeTemplate: string;
   setActiveTemplate: (template: string) => void;
+  defaultTemplate?: string; // Template predeterminado para saltar el modal de selección
+  excludeTemplates?: string[]; // Templates a excluir del modal de selección
   generatingEmail: boolean;
   handleGenerateEmailHtml: () => void;
-  setOpenSaveDialog: (open: boolean) => void;
   activeVersion: string;
   setActiveVersion: (version: 'web' | 'newsletter') => void;
   // Nuevas props para newsletter

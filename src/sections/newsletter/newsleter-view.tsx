@@ -571,6 +571,7 @@ export default function NewsletterView() {
           <NewsletterEditor
             onClose={handleCloseNewsletterEditor}
             initialNewsletter={currentNewsletter}
+            defaultTemplate="newsletter"
           />
         </Dialog>
       </Box>

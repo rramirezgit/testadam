@@ -497,7 +497,11 @@ export default function NotesView() {
 
         {/* Email Editor Dialog */}
         <Dialog fullScreen open={openEditor} onClose={handleCloseEditor}>
-          <EmailEditor onClose={handleCloseEditor} initialNote={currentNote} />
+          <EmailEditor
+            onClose={handleCloseEditor}
+            initialNote={currentNote}
+            excludeTemplates={['newsletter']}
+          />
         </Dialog>
       </Box>
     </DashboardContent>

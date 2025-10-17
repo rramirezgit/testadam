@@ -19,7 +19,8 @@ export type ComponentType =
   | 'chart'
   | 'noteContainer'
   | 'newsletterHeaderReusable'
-  | 'newsletterFooterReusable';
+  | 'newsletterFooterReusable'
+  | 'fileAttachment'; // Nuevo componente para adjuntar archivos en storyboards
 
 // Tipos para el newsletter
 export interface NewsletterNote {
@@ -75,6 +76,8 @@ export interface NewsletterFooter {
 
 export interface EmailEditorProps {
   initialTemplate?: string;
+  defaultTemplate?: string; // Template predeterminado para saltar el modal de selección
+  excludeTemplates?: string[]; // Templates a excluir del modal de selección
   savedNotes?: any[];
   onSaveNote?: (noteData: any) => void;
   onClose: () => void;

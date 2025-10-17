@@ -30,6 +30,13 @@ export const emailTemplates = [
     image: '',
   },
   {
+    id: 'storyboard',
+    name: 'Storyboard',
+    description: 'Crea guiones audiovisuales con texto, imágenes y adjuntos para producción',
+    icon: 'mdi:movie-open-outline',
+    image: '',
+  },
+  {
     id: 'newsletter',
     name: 'Newsletter',
     description: 'Plantilla de prueba para newsletter',
