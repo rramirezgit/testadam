@@ -126,6 +126,9 @@ export default function NewsletterEditor({
   const [openSchedule, setOpenSchedule] = useState(false);
   const [openSendSubs, setOpenSendSubs] = useState(false);
 
+  // Estado para los componentes iniciales del newsletter
+  const [initialComponents, setInitialComponents] = useState<any[] | null>(null);
+
   // Estados para configuración del newsletter
   const [header, setHeader] = useState<NewsletterHeader>({
     title: '',
@@ -185,7 +188,12 @@ export default function NewsletterEditor({
   } = useStore();
 
   // PostStore for backend notes
-  const { findAll: findAllPosts, findById: findPostById, loading: loadingPosts } = usePostStore();
+  const {
+    findAll: findAllPosts,
+    findById: findPostById,
+    loading: loadingPosts,
+    findNewsletterById,
+  } = usePostStore();
 
   // State for backend notes
   const [backendNotes, setBackendNotes] = useState<any[]>([]);
@@ -257,37 +265,94 @@ export default function NewsletterEditor({
   useEffect(() => {
     loadNotes();
     loadBackendNotes();
-  }, [loadNotes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load initial newsletter if provided
   useEffect(() => {
-    if (initialNewsletter) {
-      setTitle(initialNewsletter.title);
-      setDescription(initialNewsletter.description || '');
-      setSelectedNotes(initialNewsletter.notes);
-      setIsEditingExisting(true);
-      setNewsletterId(initialNewsletter.id);
+    const loadNewsletterData = async () => {
+      if (initialNewsletter && initialNewsletter.id) {
+        try {
+          console.log('🔄 Cargando newsletter existente:', initialNewsletter.id);
 
-      if (initialNewsletter.header) {
-        setHeader({ ...header, ...initialNewsletter.header });
-      }
+          // Consultar el newsletter completo desde el backend
+          const fullNewsletter = await findNewsletterById(initialNewsletter.id);
 
-      if (initialNewsletter.footer) {
-        const convertedFooter = {
-          ...initialNewsletter.footer,
-          socialLinks: initialNewsletter.footer.socialLinks.map((link) => ({
-            ...link,
-            enabled: true,
-          })),
-        };
-        setFooter({ ...footer, ...convertedFooter });
+          if (fullNewsletter) {
+            console.log('✅ Newsletter completo cargado:', fullNewsletter);
+
+            // Setear el título y descripción
+            setTitle(fullNewsletter.subject || '');
+            setDescription(fullNewsletter.description || '');
+            setIsEditingExisting(true);
+            setNewsletterId(fullNewsletter.id);
+            setCurrentNewsletterId(fullNewsletter.id);
+
+            // Parsear objData si existe
+            if (fullNewsletter.objData) {
+              try {
+                const parsedComponents = JSON.parse(fullNewsletter.objData);
+
+                // Filtrar noteContainers para ver cuántos hay
+                const noteContainers = parsedComponents.filter(
+                  (c: any) => c.type === 'noteContainer'
+                );
+
+                console.log('📦 Componentes parseados del newsletter:', {
+                  totalComponents: parsedComponents.length,
+                  noteContainersCount: noteContainers.length,
+                  allComponents: parsedComponents.map((c: any) => ({ id: c.id, type: c.type })),
+                  noteContainers: noteContainers.map((n: any) => ({
+                    id: n.id,
+                    title: n.props?.noteTitle,
+                    componentsCount: n.props?.componentsData?.length || 0,
+                  })),
+                });
+
+                // Setear los componentes para pasarlos al EmailEditor
+                setInitialComponents(parsedComponents);
+              } catch (parseError) {
+                console.error('❌ Error parseando objData:', parseError);
+                setInitialComponents(null);
+              }
+            } else {
+              console.warn('⚠️ El newsletter no tiene objData');
+              setInitialComponents(null);
+            }
+
+            // Si tiene configuración de header/footer, cargarla
+            if (fullNewsletter.configuration) {
+              if (fullNewsletter.configuration.header) {
+                setHeader({ ...header, ...fullNewsletter.configuration.header });
+              }
+              if (fullNewsletter.configuration.footer) {
+                const convertedFooter = {
+                  ...fullNewsletter.configuration.footer,
+                  socialLinks: fullNewsletter.configuration.footer.socialLinks.map((link: any) => ({
+                    ...link,
+                    enabled: true,
+                  })),
+                };
+                setFooter({ ...footer, ...convertedFooter });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error cargando newsletter:', error);
+          showSnackbar('Error al cargar el newsletter', 'error');
+        }
+      } else {
+        // Newsletter nuevo
+        if (storeSelectedNotes.length > 0) {
+          setSelectedNotes(storeSelectedNotes);
+        }
+        const newId = uuidv4();
+        setNewsletterId(newId);
       }
-    } else {
-      if (storeSelectedNotes.length > 0) {
-        setSelectedNotes(storeSelectedNotes);
-      }
-      setNewsletterId(uuidv4());
-    }
+    };
+
+    loadNewsletterData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNewsletter, storeSelectedNotes]);
 
   const handleSaveNote = (updatedNote: SavedNote) => {
@@ -377,12 +442,13 @@ export default function NewsletterEditor({
 
       const newsletter: Newsletter = {
         id: newsletterId,
-        title,
+        subject: title,
         description,
         notes: selectedNotes,
-        dateCreated: isEditingExisting
-          ? initialNewsletter?.dateCreated || new Date().toISOString()
+        createdAt: isEditingExisting
+          ? initialNewsletter?.createdAt || new Date().toISOString()
           : new Date().toISOString(),
+        dateCreated: initialNewsletter?.dateCreated,
         dateModified: new Date().toISOString(),
         header,
         footer: {
@@ -509,19 +575,17 @@ export default function NewsletterEditor({
           console.log('📥 onNewsletterConfigChange ejecutado con:', { newHeader, newFooter });
           if (newHeader) {
             console.log('🔄 Actualizando header...');
-            setHeader((prev) => {
-              const updatedHeader = {
-                ...prev,
-                ...newHeader,
-                sponsor: newHeader.sponsor || prev.sponsor,
-              };
-              console.log('✅ Header actualizado a:', updatedHeader);
-              return updatedHeader;
-            });
+            console.log('🔍 Header anterior:', header);
+            console.log('🔍 Nuevo header recibido:', newHeader);
+            // Forzar una nueva referencia de objeto para que React detecte el cambio
+            setHeader({ ...newHeader });
+            console.log('✅ Header actualizado con nueva referencia');
           }
           if (newFooter) {
             console.log('🔄 Actualizando footer...');
-            setFooter((prev) => ({ ...prev, ...newFooter }));
+            // Forzar una nueva referencia de objeto para que React detecte el cambio
+            setFooter({ ...newFooter });
+            console.log('✅ Footer actualizado con nueva referencia');
           }
         }}
         newsletterTitle={title}
@@ -542,6 +606,12 @@ export default function NewsletterEditor({
         setOpenAprob={setOpenAprob}
         setOpenSchedule={setOpenSchedule}
         setOpenSendSubs={setOpenSendSubs}
+        initialComponents={initialComponents}
+        onNewsletterIdChange={(newId: string) => {
+          console.log('🆔 Newsletter ID actualizado:', newId);
+          setCurrentNewsletterId(newId);
+          setNewsletterId(newId);
+        }}
       />
 
       {/* Note Editor Dialog */}

@@ -100,30 +100,16 @@ const NewsletterHeaderComponent = ({
   onSelect: () => void;
   header?: NewsletterHeader;
 }) => {
-  console.log('🔍 NewsletterHeaderComponent render:', {
-    useGradient: header?.useGradient,
-    gradientColors: header?.gradientColors,
-    gradientDirection: header?.gradientDirection,
-    textColor: header?.textColor,
-    backgroundColor: header?.backgroundColor,
-  });
-
-  const backgroundStyle = (() => {
-    if (header?.useGradient && header?.gradientColors && header.gradientColors.length >= 2) {
-      const gradient = `linear-gradient(${header.gradientDirection || 135}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]})`;
-      console.log('🎨 Aplicando gradiente al header:', gradient);
-      return {
-        background: gradient,
-      };
-    }
-    console.log('🎨 Aplicando color sólido al header:', header?.backgroundColor);
-    return {
-      backgroundColor: header?.backgroundColor || '#f5f5f5',
-    };
-  })();
+  // Extraer valores para aplicar directamente en el sx prop
+  const useGradient = header?.useGradient;
+  const gradientColor1 = header?.gradientColors?.[0];
+  const gradientColor2 = header?.gradientColors?.[1];
+  const gradientDirection = header?.gradientDirection;
+  const backgroundColor = header?.backgroundColor;
 
   return (
     <Paper
+      key={`header-${useGradient}-${gradientColor1}-${gradientColor2}-${backgroundColor}`}
       elevation={isSelected ? 3 : 1}
       sx={{
         mb: 3,
@@ -132,15 +118,27 @@ const NewsletterHeaderComponent = ({
         borderRadius: 2,
         cursor: 'pointer',
         transition: 'all 0.2s',
-        ...backgroundStyle,
         textAlign: header?.alignment || 'center',
         position: 'relative',
+        // Aplicar el backgroundStyle
+        ...(useGradient && gradientColor1 && gradientColor2
+          ? {
+              backgroundImage: `linear-gradient(${gradientDirection || 135}deg, ${gradientColor1}, ${gradientColor2})`,
+              backgroundColor: 'transparent',
+            }
+          : {
+              backgroundColor: backgroundColor || '#f5f5f5',
+              backgroundImage: 'none',
+            }),
         '&:hover': {
           elevation: 2,
           borderColor: '#1976d2',
         },
       }}
-      onClick={onSelect}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
     >
       <Box sx={{ position: 'relative' }}>
         {/* Logo si está habilitado */}
@@ -243,146 +241,152 @@ const NewsletterHeaderComponent = ({
 };
 
 // Componente para el footer del newsletter
-const NewsletterFooterComponent = memo(
-  ({
-    isSelected,
-    onSelect,
-    footer,
-  }: {
-    isSelected: boolean;
-    onSelect: () => void;
-    footer?: NewsletterFooter;
-  }) => {
-    // Crear el estilo de fondo basado en la configuración del footer
-    const backgroundStyle = useMemo(() => {
-      if (!footer) return { backgroundColor: '#f5f5f5' };
+const NewsletterFooterComponent = ({
+  isSelected,
+  onSelect,
+  footer,
+}: {
+  isSelected: boolean;
+  onSelect: () => void;
+  footer?: NewsletterFooter;
+}) => {
+  // Extraer valores para aplicar directamente en el sx prop
+  const useGradient = footer?.useGradient;
+  const gradientColor1 = footer?.gradientColors?.[0];
+  const gradientColor2 = footer?.gradientColors?.[1];
+  const gradientDirection = footer?.gradientDirection;
+  const backgroundColor = footer?.backgroundColor;
 
-      if (footer.useGradient && footer.gradientColors && footer.gradientColors.length >= 2) {
-        return {
-          backgroundImage: `linear-gradient(${footer.gradientDirection || 180}deg, ${footer.gradientColors[0]} 0%, ${footer.gradientColors[1]} 100%)`,
-        };
-      }
-      return { backgroundColor: footer.backgroundColor || '#f5f5f5' };
-    }, [footer]);
+  // Filtrar redes sociales habilitadas
+  const enabledSocialLinks = useMemo(
+    () => footer?.socialLinks?.filter((link) => link.enabled) || [],
+    [footer?.socialLinks]
+  );
 
-    // Filtrar redes sociales habilitadas
-    const enabledSocialLinks = useMemo(
-      () => footer?.socialLinks?.filter((link) => link.enabled) || [],
-      [footer?.socialLinks]
-    );
+  return (
+    <Paper
+      key={`footer-${useGradient}-${gradientColor1}-${gradientColor2}-${backgroundColor}`}
+      elevation={isSelected ? 3 : 1}
+      sx={{
+        mt: 4,
+        p: footer?.padding ? footer.padding / 8 : 3,
+        border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
+        borderRadius: 2,
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        textAlign: 'center',
+        position: 'relative',
+        // Aplicar el backgroundStyle
+        ...(useGradient && gradientColor1 && gradientColor2
+          ? {
+              backgroundImage: `linear-gradient(${gradientDirection || 180}deg, ${gradientColor1} 0%, ${gradientColor2} 100%)`,
+              backgroundColor: 'transparent',
+            }
+          : {
+              backgroundColor: backgroundColor || '#f5f5f5',
+              backgroundImage: 'none',
+            }),
+        '&:hover': {
+          elevation: 2,
+          borderColor: '#1976d2',
+        },
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+    >
+      <Box sx={{ position: 'relative' }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            color: footer?.textColor || '#333',
+            mb: 1,
+            fontSize: footer?.fontSize ? `${footer.fontSize + 4}px` : '1.125rem',
+          }}
+        >
+          {footer?.companyName || 'Tu Empresa'}
+        </Typography>
 
-    return (
-      <Paper
-        elevation={isSelected ? 3 : 1}
-        sx={{
-          mt: 4,
-          p: footer?.padding ? footer.padding / 8 : 3,
-          border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
-          borderRadius: 2,
-          cursor: 'pointer',
-          transition: 'all 0.2s',
-          ...backgroundStyle,
-          textAlign: 'center',
-          position: 'relative',
-          '&:hover': {
-            elevation: 2,
-            borderColor: '#1976d2',
-          },
-        }}
-        onClick={onSelect}
-      >
-        <Box sx={{ position: 'relative' }}>
+        {footer?.showAddress && footer?.address && (
           <Typography
-            variant="h6"
+            variant="body2"
             sx={{
-              fontWeight: 600,
-              color: footer?.textColor || '#333',
+              color: footer?.textColor || '#666',
               mb: 1,
-              fontSize: footer?.fontSize ? `${footer.fontSize + 4}px` : '1.125rem',
+              fontSize: footer?.fontSize ? `${footer.fontSize}px` : '0.875rem',
             }}
           >
-            {footer?.companyName || 'Tu Empresa'}
+            {footer.address}
           </Typography>
+        )}
 
-          {footer?.showAddress && footer?.address && (
-            <Typography
-              variant="body2"
-              sx={{
-                color: footer?.textColor || '#666',
-                mb: 1,
-                fontSize: footer?.fontSize ? `${footer.fontSize}px` : '0.875rem',
-              }}
-            >
-              {footer.address}
-            </Typography>
-          )}
-
-          {footer?.contactEmail && (
-            <Typography
-              variant="body2"
-              sx={{
-                color: footer?.textColor || '#666',
-                mb: 2,
-                fontSize: footer?.fontSize ? `${footer.fontSize}px` : '0.875rem',
-              }}
-            >
-              Contacto: {footer.contactEmail}
-            </Typography>
-          )}
-
-          {footer?.showSocial && enabledSocialLinks.length > 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: footer?.textColor || '#666',
-                  fontSize: footer?.fontSize ? `${footer.fontSize - 2}px` : '0.75rem',
-                }}
-              >
-                {enabledSocialLinks
-                  .map((link) => link.platform.charAt(0).toUpperCase() + link.platform.slice(1))
-                  .join(' • ')}
-              </Typography>
-            </Box>
-          )}
-
+        {footer?.contactEmail && (
           <Typography
-            variant="caption"
+            variant="body2"
             sx={{
-              color: footer?.textColor || '#999',
-              fontSize: footer?.fontSize ? `${footer.fontSize - 2}px` : '0.75rem',
+              color: footer?.textColor || '#666',
+              mb: 2,
+              fontSize: footer?.fontSize ? `${footer.fontSize}px` : '0.875rem',
             }}
           >
-            © {new Date().getFullYear()} {footer?.companyName || 'Tu Empresa'}. Todos los derechos
-            reservados.
+            Contacto: {footer.contactEmail}
           </Typography>
+        )}
 
-          {/* Indicador de edición */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: -8,
-              right: -8,
-              backgroundColor: '#1976d2',
-              color: 'white',
-              borderRadius: '50%',
-              width: 24,
-              height: 24,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              opacity: isSelected ? 1 : 0,
-              transition: 'opacity 0.2s',
-            }}
-          >
-            <Icon icon="mdi:pencil" width={12} height={12} />
+        {footer?.showSocial && enabledSocialLinks.length > 0 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: footer?.textColor || '#666',
+                fontSize: footer?.fontSize ? `${footer.fontSize - 2}px` : '0.75rem',
+              }}
+            >
+              {enabledSocialLinks
+                .map((link) => link.platform.charAt(0).toUpperCase() + link.platform.slice(1))
+                .join(' • ')}
+            </Typography>
           </Box>
+        )}
+
+        <Typography
+          variant="caption"
+          sx={{
+            color: footer?.textColor || '#999',
+            fontSize: footer?.fontSize ? `${footer.fontSize - 2}px` : '0.75rem',
+          }}
+        >
+          © {new Date().getFullYear()} {footer?.companyName || 'Tu Empresa'}. Todos los derechos
+          reservados.
+        </Typography>
+
+        {/* Indicador de edición */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: -8,
+            right: -8,
+            backgroundColor: '#1976d2',
+            color: 'white',
+            borderRadius: '50%',
+            width: 24,
+            height: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            opacity: isSelected ? 1 : 0,
+            transition: 'opacity 0.2s',
+          }}
+        >
+          <Icon icon="mdi:pencil" width={12} height={12} />
         </Box>
-      </Paper>
-    );
-  }
-);
+      </Box>
+    </Paper>
+  );
+};
 
 const EmailContent = memo(
   ({
@@ -829,7 +833,6 @@ const EmailContent = memo(
             <NewsletterFooterComponent
               isSelected={selectedComponentId === 'newsletter-footer'}
               onSelect={() => {
-                console.log('🎯 Newsletter footer selected');
                 setSelectedComponentId('newsletter-footer');
                 onComponentSelect('newsletter-footer');
               }}

@@ -51,6 +51,7 @@ export interface LeftPanelProps {
   setActiveTemplate: (template: string) => void;
   defaultTemplate?: string; // Template predeterminado para saltar el modal de selección
   excludeTemplates?: string[]; // Templates a excluir del modal de selección
+  initialNote?: any; // Nota inicial para detectar si es una edición
   generatingEmail: boolean;
   handleGenerateEmailHtml: () => void;
   activeVersion: string;

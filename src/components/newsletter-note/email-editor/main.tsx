@@ -21,7 +21,6 @@ import EditorHeader from './editor-header';
 import EmailContent from './email-content';
 import { CustomDialog } from './ui/custom-dialog';
 import { useNoteData } from './hooks/useNoteData';
-import NewsletterConfig from './newsletter-config';
 import { CustomSnackbar } from './ui/custom-snackbar';
 import { bannerOptions } from './data/banner-options';
 import { emailTemplates } from './data/email-templates';
@@ -77,6 +76,9 @@ interface EmailEditorMainProps {
   setOpenAprob?: (open: boolean) => void;
   setOpenSchedule?: (open: boolean) => void;
   setOpenSendSubs?: (open: boolean) => void;
+  // Nuevas props para carga de newsletter existente
+  initialComponents?: any[] | null;
+  onNewsletterIdChange?: (id: string) => void;
 }
 
 export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
@@ -106,12 +108,18 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   setOpenAprob,
   setOpenSchedule,
   setOpenSendSubs,
+  // Nuevas props para carga de newsletter existente
+  initialComponents = null,
+  onNewsletterIdChange = () => {},
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
   // Si hay defaultTemplate, usarlo; sino usar initialTemplate
   const [activeTemplate, setActiveTemplate] = useState<string>(defaultTemplate || initialTemplate);
-  const [activeVersion, setActiveVersion] = useState<'newsletter' | 'web'>('web');
+  // ⚡ CRÍTICO: Si es modo newsletter, inicializar en 'newsletter', sino 'web'
+  const [activeVersion, setActiveVersion] = useState<'newsletter' | 'web'>(
+    isNewsletterMode ? 'newsletter' : 'web'
+  );
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<'left' | 'right'>('left');
 
@@ -127,7 +135,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       setSelectedComponentId(null); // Resetear componente seleccionado
       setRightPanelTab(0); // Resetear tab del panel derecho
       setIsContainerSelected(false); // Resetear selección del contenedor
-      setIsNewsletterContainerSelected(false); // Resetear selección del contenedor newsletter
       console.log('✅ Componente seleccionado reseteado al cambiar plantilla');
     },
     [activeTemplate]
@@ -149,8 +156,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   const [showValidationErrors, setShowValidationErrors] = useState<boolean>(false);
 
   // NUEVOS ESTADOS PARA NEWSLETTER
-  const [isNewsletterContainerSelected, setIsNewsletterContainerSelected] =
-    useState<boolean>(false);
   const [editingNoteFromLibrary, setEditingNoteFromLibrary] = useState<SavedNote | null>(null);
   const [showNewsletterPreview, setShowNewsletterPreview] = useState<boolean>(false);
   const [newsletterHtml, setNewsletterHtml] = useState<string>('');
@@ -327,6 +332,38 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   // Hook para cargar post específico si es edición
   const { loading: loadingPost, post: currentPost } = usePost(noteData.currentNoteId);
 
+  // ⚡ Forzar activeVersion a 'newsletter' cuando está en modo newsletter
+  useEffect(() => {
+    if (isNewsletterMode && activeVersion !== 'newsletter') {
+      console.log('🔧 Forzando activeVersion a "newsletter" (estaba en:', activeVersion, ')');
+      setActiveVersion('newsletter');
+    }
+  }, [isNewsletterMode, activeVersion]);
+
+  // Cargar componentes iniciales cuando se abre un newsletter existente
+  useEffect(() => {
+    if (initialComponents && isNewsletterMode) {
+      console.log('📦 Cargando componentes iniciales del newsletter:', {
+        componentsCount: initialComponents.length,
+        components: initialComponents,
+        activeTemplate,
+        activeVersion,
+        componentTypes: initialComponents.map((c) => ({ id: c.id, type: c.type })),
+      });
+
+      emailComponents.updateActiveComponents(activeTemplate, 'newsletter', initialComponents);
+
+      // Verificar que se cargaron correctamente
+      setTimeout(() => {
+        const loadedComponents = emailComponents.getActiveComponents(activeTemplate, 'newsletter');
+        console.log('✅ Componentes cargados verificación:', {
+          loadedCount: loadedComponents.length,
+          loadedTypes: loadedComponents.map((c) => ({ id: c.id, type: c.type })),
+        });
+      }, 100);
+    }
+  }, [initialComponents, isNewsletterMode, activeTemplate]);
+
   // FUNCIONES PARA NEWSLETTER
   const handleAddNewsletterNote = useCallback(
     (note: NewsletterNote) => {
@@ -423,53 +460,21 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     setShowNewsletterPreview(!showNewsletterPreview);
   }, [showNewsletterPreview]);
 
-  const handleNewsletterContainerClick = useCallback(() => {
-    console.log('🏠 Newsletter container clicked');
-    setIsNewsletterContainerSelected(true);
-    setIsContainerSelected(false);
-    setSelectedComponentId(null);
-  }, []);
+  const handleHeaderChange = (newHeader: NewsletterHeader) => {
+    const currentHeader = newsletterHeader || defaultNewsletterHeader;
+    const currentFooter = newsletterFooter || defaultNewsletterFooter;
+    console.log('📤 onNewsletterConfigChange ejecutado con:', {
+      header: newHeader,
+      footer: currentFooter,
+    });
+    onNewsletterConfigChange({ header: newHeader, footer: currentFooter });
+    console.log('✅ onNewsletterConfigChange llamado');
+  };
 
-  // Log cuando newsletterHeader cambie
-  useEffect(() => {
-    console.log('🔄 newsletterHeader cambió a:', newsletterHeader);
-  }, [newsletterHeader]);
-
-  // Log cuando newsletterFooter cambie
-  useEffect(() => {
-    console.log('🔄 newsletterFooter cambió a:', newsletterFooter);
-  }, [newsletterFooter]);
-
-  const handleHeaderChange = useCallback(
-    (newHeader: NewsletterHeader) => {
-      console.log('🔄 handleHeaderChange ejecutado con:', newHeader);
-      console.log('📊 newsletterHeader actual:', newsletterHeader);
-      console.log('📊 defaultNewsletterHeader:', defaultNewsletterHeader);
-      const currentHeader = newsletterHeader || defaultNewsletterHeader;
-      const currentFooter = newsletterFooter || defaultNewsletterFooter;
-      console.log('📤 Llamando onNewsletterConfigChange con:', {
-        header: newHeader,
-        footer: currentFooter,
-      });
-      onNewsletterConfigChange({ header: newHeader, footer: currentFooter });
-      console.log('✅ onNewsletterConfigChange llamado');
-    },
-    [
-      newsletterHeader,
-      newsletterFooter,
-      defaultNewsletterHeader,
-      defaultNewsletterFooter,
-      onNewsletterConfigChange,
-    ]
-  );
-
-  const handleFooterChange = useCallback(
-    (newFooter: NewsletterFooter) => {
-      const currentHeader = newsletterHeader || defaultNewsletterHeader;
-      onNewsletterConfigChange({ header: currentHeader, footer: newFooter });
-    },
-    [newsletterHeader, newsletterFooter, defaultNewsletterHeader, onNewsletterConfigChange]
-  );
+  const handleFooterChange = (newFooter: NewsletterFooter) => {
+    const currentHeader = newsletterHeader || defaultNewsletterHeader;
+    onNewsletterConfigChange({ header: currentHeader, footer: newFooter });
+  };
 
   // Función para mostrar notificaciones
   const showNotification = useCallback(
@@ -847,7 +852,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         type: 'noteContainer', // Cambiar de 'divider' a 'noteContainer'
         content: '',
         props: {
-          noteTitle: noteTitle || 'Nota Inyectada',
+          noteTitle: noteTitle || 'Nota Agregada',
           containerStyle: {
             border: '2px solid #e0e0e0',
             borderRadius: '12px',
@@ -976,8 +981,37 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       });
 
       if (isNewsletterMode) {
-        // Para newsletters, usar el generador de newsletter
-        console.log('📝 Generando HTML para newsletter...');
+        // Para newsletters, usar los componentes activos que incluyen noteContainer
+        console.log('📝 Generando HTML para newsletter con componentes activos...');
+        const activeComponents = getActiveComponents();
+
+        // Filtrar solo los noteContainer para convertirlos a NewsletterNote[]
+        const noteContainers = activeComponents.filter((comp) => comp.type === 'noteContainer');
+
+        console.log('📦 Note containers found:', {
+          totalComponents: activeComponents.length,
+          noteContainersCount: noteContainers.length,
+          noteContainerIds: noteContainers.map((n) => ({ id: n.id, title: n.props?.noteTitle })),
+        });
+
+        // Convertir noteContainers a NewsletterNote[] para el generador
+        const convertedNotes: any[] = noteContainers.map((container, index) => ({
+          noteId: container.id,
+          order: index,
+          noteData: {
+            id: container.id,
+            title: container.props?.noteTitle || 'Nota sin título',
+            objData: JSON.stringify(container.props?.componentsData || []),
+            objDataWeb: '[]',
+            configNote: '{}',
+          },
+        }));
+
+        console.log('🔄 Converted notes for generator:', {
+          convertedNotesCount: convertedNotes.length,
+          notesTitles: convertedNotes.map((n) => n.noteData.title),
+        });
+
         const { generateNewsletterHtml: generateNewsletterHtmlFn } = await import(
           '../newsletter-html-generator'
         );
@@ -985,7 +1019,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         const generatedNewsletterHtml = generateNewsletterHtmlFn(
           newsletterTitle || 'Newsletter',
           newsletterDescription || '',
-          newsletterNotes,
+          convertedNotes,
           newsletterHeader || {
             title: 'Newsletter',
             subtitle: '',
@@ -1070,12 +1104,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     setIsContainerSelected(true);
     setSelectedComponentId(null);
     setRightPanelTab(0);
-
-    // Si estamos en modo newsletter, también establecer el estado del newsletter container
-    if (isNewsletterMode) {
-      setIsNewsletterContainerSelected(true);
-    }
-  }, [isNewsletterMode]);
+  }, []);
 
   // Función para manejar la selección de componentes
   const handleComponentSelect = useCallback((componentId: string | null) => {
@@ -1084,7 +1113,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     // Si se selecciona un componente, resetear la selección del contenedor
     if (componentId) {
       setIsContainerSelected(false);
-      setIsNewsletterContainerSelected(false);
     }
   }, []);
 
@@ -1871,6 +1899,15 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     if (isNewsletterMode && selectedComponentId && selectedComponentId.includes('-')) {
       console.log('🔧 getComponentIdForPanel - Processing:', selectedComponentId);
 
+      // NO procesar los IDs especiales de newsletter header y footer
+      if (
+        selectedComponentId === 'newsletter-header' ||
+        selectedComponentId === 'newsletter-footer'
+      ) {
+        console.log('✅ Es header/footer del newsletter, usando ID completo:', selectedComponentId);
+        return selectedComponentId;
+      }
+
       // Verificar si es un componente de nota del newsletter (formato: noteId-componentId)
       const components = getActiveComponents();
       const component = components.find((c) => c.id === selectedComponentId);
@@ -2309,8 +2346,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
 
         // Usar la función de inyección existente
         injectComponentsToNewsletter(noteComponents, fullNote.title);
-        showNotification(`✅ Nota "${fullNote.title}" inyectada exitosamente`, 'success');
-        console.log(`✅ Nota "${fullNote.title}" inyectada exitosamente`);
+        showNotification(`✅ Nota "${fullNote.title}" Agregada exitosamente`, 'success');
+        console.log(`✅ Nota "${fullNote.title}" Agregada exitosamente`);
       } catch (error) {
         console.error('Error al inyectar la nota:', error);
         showNotification('Error al inyectar la nota', 'error');
@@ -2364,6 +2401,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         newsletterTitle={newsletterTitle}
         // Nueva prop para obtener componentes activos
         getActiveComponents={getActiveComponents}
+        // Nueva prop para actualizar el ID del newsletter
+        onNewsletterIdChange={onNewsletterIdChange}
       />
 
       {/* Contenedor principal */}
@@ -2392,6 +2431,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
             setActiveTemplate={handleTemplateChange}
             defaultTemplate={defaultTemplate}
             excludeTemplates={excludeTemplates}
+            initialNote={initialNote}
             generatingEmail={generatingEmail}
             handleGenerateEmailHtml={handleGenerateEmailHtml}
             activeVersion={activeVersion}
@@ -2476,7 +2516,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
             updateNewsletterNoteComponentStyle={updateNewsletterNoteComponentStyle}
             moveNewsletterNoteComponent={moveNewsletterNoteComponent}
             removeNewsletterNoteComponent={removeNewsletterNoteComponent}
-            onNewsletterContainerClick={handleNewsletterContainerClick}
             // Props para componentes de newsletter (header y footer)
             newsletterHeader={newsletterHeader || defaultNewsletterHeader}
             newsletterFooter={newsletterFooter || defaultNewsletterFooter}
@@ -2528,125 +2567,117 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
             }}
           />
 
-          {/* Renderizar NewsletterConfig si está en modo newsletter y el contenedor está seleccionado */}
-          {isNewsletterMode && isNewsletterContainerSelected ? (
-            <NewsletterConfig
-              newsletterTitle={newsletterTitle}
-              newsletterDescription={newsletterDescription}
-              onTitleChange={(title) =>
-                onNewsletterInfoChange({ title, description: newsletterDescription })
-              }
-              onDescriptionChange={(description) =>
-                onNewsletterInfoChange({ title: newsletterTitle, description })
-              }
-              selectedNotes={newsletterNotes}
-              onMoveNote={handleMoveNewsletterNote}
-              onRemoveNote={handleRemoveNewsletterNote}
-              header={newsletterHeader || defaultNewsletterHeader}
-              footer={newsletterFooter || defaultNewsletterFooter}
-              onHeaderChange={handleHeaderChange}
-              onFooterChange={handleFooterChange}
-              onUndoChanges={() => {}}
-              onResetConfiguration={() => {}}
-            />
-          ) : (
-            <RightPanel
-              selectedComponentId={getComponentIdForPanel()}
-              setSelectedComponentId={setSelectedComponentId}
-              rightPanelTab={rightPanelTab}
-              setRightPanelTab={setRightPanelTab}
-              getActiveComponents={
-                isNewsletterMode ? getActiveComponentsForPanel : getActiveComponents
-              }
-              updateComponentProps={(id, props) => updateComponentForPanel('props', id, props)}
-              updateComponentStyle={(id, style) => updateComponentForPanel('style', id, style)}
-              updateComponentContent={(id, content) =>
-                updateComponentForPanel('content', id, content)
-              }
-              selectedColor={textFormatting.selectedColor}
-              setSelectedColor={textFormatting.setSelectedColor}
-              selectedFont={textFormatting.selectedFont}
-              setSelectedFont={textFormatting.setSelectedFont}
-              selectedFontSize={textFormatting.selectedFontSize}
-              setSelectedFontSize={textFormatting.setSelectedFontSize}
-              selectedFontWeight={textFormatting.selectedFontWeight}
-              setSelectedFontWeight={textFormatting.setSelectedFontWeight}
-              selectedAlignment={textFormatting.selectedAlignment}
-              textFormat={textFormatting.textFormat}
-              applyTextFormat={textFormatting.applyTextFormat}
-              applyTextAlignment={(alignment) =>
-                textFormatting.applyTextAlignment(
-                  alignment,
-                  selectedComponentId,
-                  updateComponentStyle
-                )
-              }
-              applyTextColor={(color) =>
-                textFormatting.applyTextColor(color, selectedComponentId, updateComponentStyle)
-              }
-              applyFontSize={(size) =>
-                textFormatting.applyFontSize(size, selectedComponentId, updateComponentStyle)
-              }
-              applyFontFamily={(font) =>
-                textFormatting.applyFontFamily(font, selectedComponentId, updateComponentStyle)
-              }
-              emailBackground={emailBackground}
-              setEmailBackground={setEmailBackground}
-              selectedBanner={selectedBanner}
-              setSelectedBanner={setSelectedBanner}
-              showGradient={showGradient}
-              setShowGradient={setShowGradient}
-              gradientColors={gradientColors}
-              setGradientColors={setGradientColors}
-              bannerOptions={bannerOptions}
-              setSelectedAlignment={textFormatting.setSelectedAlignment}
-              hasTextSelection={textFormatting.hasTextSelection}
-              listStyle={listStyle}
-              updateListStyle={updateListStyle}
-              listColor={listColor}
-              updateListColor={updateListColor}
-              convertTextToList={handleConvertTextToList}
-              setShowIconPicker={setShowIconPicker}
-              isContainerSelected={isContainerSelected}
-              setIsContainerSelected={setIsContainerSelected}
-              containerBorderWidth={containerBorderWidth}
-              setContainerBorderWidth={setContainerBorderWidth}
-              containerBorderColor={containerBorderColor}
-              setContainerBorderColor={setContainerBorderColor}
-              containerBorderRadius={containerBorderRadius}
-              setContainerBorderRadius={setContainerBorderRadius}
-              containerPadding={containerPadding}
-              setContainerPadding={setContainerPadding}
-              containerMaxWidth={containerMaxWidth}
-              setContainerMaxWidth={setContainerMaxWidth}
-              activeTemplate={activeTemplate}
-              activeVersion={activeVersion}
-              currentNoteId={noteData.currentNoteId}
-              noteTitle={noteData.noteTitle}
-              setNoteTitle={noteData.setNoteTitle}
-              noteDescription={noteData.noteDescription}
-              setNoteDescription={noteData.setNoteDescription}
-              noteCoverImageUrl={noteData.noteCoverImageUrl}
-              setNoteCoverImageUrl={noteData.setNoteCoverImageUrl}
-              noteStatus={noteData.noteStatus}
-              setNoteStatus={noteData.setNoteStatus}
-              updateStatus={noteData.updateStatus}
-              contentTypeId={noteData.contentTypeId}
-              setContentTypeId={noteData.setContentTypeId}
-              audienceId={noteData.audienceId}
-              setAudienceId={noteData.setAudienceId}
-              categoryId={noteData.categoryId}
-              setCategoryId={noteData.setCategoryId}
-              subcategoryId={noteData.subcategoryId}
-              setSubcategoryId={noteData.setSubcategoryId}
-              selectedColumn={selectedColumn}
-              injectComponentsToNewsletter={injectComponentsToNewsletter}
-              removeNoteContainer={removeNoteContainer}
-              showValidationErrors={showValidationErrors}
-              highlight={noteData.highlight}
-              setHighlight={noteData.setHighlight}
-            />
-          )}
+          <RightPanel
+            selectedComponentId={getComponentIdForPanel()}
+            setSelectedComponentId={setSelectedComponentId}
+            rightPanelTab={rightPanelTab}
+            setRightPanelTab={setRightPanelTab}
+            getActiveComponents={
+              isNewsletterMode ? getActiveComponentsForPanel : getActiveComponents
+            }
+            updateComponentProps={(id, props) => updateComponentForPanel('props', id, props)}
+            updateComponentStyle={(id, style) => updateComponentForPanel('style', id, style)}
+            updateComponentContent={(id, content) =>
+              updateComponentForPanel('content', id, content)
+            }
+            selectedColor={textFormatting.selectedColor}
+            setSelectedColor={textFormatting.setSelectedColor}
+            selectedFont={textFormatting.selectedFont}
+            setSelectedFont={textFormatting.setSelectedFont}
+            selectedFontSize={textFormatting.selectedFontSize}
+            setSelectedFontSize={textFormatting.setSelectedFontSize}
+            selectedFontWeight={textFormatting.selectedFontWeight}
+            setSelectedFontWeight={textFormatting.setSelectedFontWeight}
+            selectedAlignment={textFormatting.selectedAlignment}
+            textFormat={textFormatting.textFormat}
+            applyTextFormat={textFormatting.applyTextFormat}
+            applyTextAlignment={(alignment) =>
+              textFormatting.applyTextAlignment(
+                alignment,
+                selectedComponentId,
+                updateComponentStyle
+              )
+            }
+            applyTextColor={(color) =>
+              textFormatting.applyTextColor(color, selectedComponentId, updateComponentStyle)
+            }
+            applyFontSize={(size) =>
+              textFormatting.applyFontSize(size, selectedComponentId, updateComponentStyle)
+            }
+            applyFontFamily={(font) =>
+              textFormatting.applyFontFamily(font, selectedComponentId, updateComponentStyle)
+            }
+            emailBackground={emailBackground}
+            setEmailBackground={setEmailBackground}
+            selectedBanner={selectedBanner}
+            setSelectedBanner={setSelectedBanner}
+            showGradient={showGradient}
+            setShowGradient={setShowGradient}
+            gradientColors={gradientColors}
+            setGradientColors={setGradientColors}
+            bannerOptions={bannerOptions}
+            setSelectedAlignment={textFormatting.setSelectedAlignment}
+            hasTextSelection={textFormatting.hasTextSelection}
+            listStyle={listStyle}
+            updateListStyle={updateListStyle}
+            listColor={listColor}
+            updateListColor={updateListColor}
+            convertTextToList={handleConvertTextToList}
+            setShowIconPicker={setShowIconPicker}
+            isContainerSelected={isContainerSelected}
+            setIsContainerSelected={setIsContainerSelected}
+            containerBorderWidth={containerBorderWidth}
+            setContainerBorderWidth={setContainerBorderWidth}
+            containerBorderColor={containerBorderColor}
+            setContainerBorderColor={setContainerBorderColor}
+            containerBorderRadius={containerBorderRadius}
+            setContainerBorderRadius={setContainerBorderRadius}
+            containerPadding={containerPadding}
+            setContainerPadding={setContainerPadding}
+            containerMaxWidth={containerMaxWidth}
+            setContainerMaxWidth={setContainerMaxWidth}
+            activeTemplate={activeTemplate}
+            activeVersion={activeVersion}
+            currentNoteId={noteData.currentNoteId}
+            noteTitle={noteData.noteTitle}
+            setNoteTitle={noteData.setNoteTitle}
+            noteDescription={noteData.noteDescription}
+            setNoteDescription={noteData.setNoteDescription}
+            noteCoverImageUrl={noteData.noteCoverImageUrl}
+            setNoteCoverImageUrl={noteData.setNoteCoverImageUrl}
+            noteStatus={noteData.noteStatus}
+            setNoteStatus={noteData.setNoteStatus}
+            updateStatus={noteData.updateStatus}
+            contentTypeId={noteData.contentTypeId}
+            setContentTypeId={noteData.setContentTypeId}
+            audienceId={noteData.audienceId}
+            setAudienceId={noteData.setAudienceId}
+            categoryId={noteData.categoryId}
+            setCategoryId={noteData.setCategoryId}
+            subcategoryId={noteData.subcategoryId}
+            setSubcategoryId={noteData.setSubcategoryId}
+            selectedColumn={selectedColumn}
+            injectComponentsToNewsletter={injectComponentsToNewsletter}
+            removeNoteContainer={removeNoteContainer}
+            showValidationErrors={showValidationErrors}
+            highlight={noteData.highlight}
+            setHighlight={noteData.setHighlight}
+            // Props para newsletter
+            isNewsletterMode={isNewsletterMode}
+            newsletterTitle={newsletterTitle}
+            onNewsletterTitleChange={(title) =>
+              onNewsletterInfoChange({ title, description: newsletterDescription })
+            }
+            newsletterDescription={newsletterDescription}
+            onNewsletterDescriptionChange={(description) =>
+              onNewsletterInfoChange({ title: newsletterTitle, description })
+            }
+            newsletterHeader={newsletterHeader || defaultNewsletterHeader}
+            newsletterFooter={newsletterFooter || defaultNewsletterFooter}
+            onHeaderChange={handleHeaderChange}
+            onFooterChange={handleFooterChange}
+            onNewsletterConfigChange={onNewsletterConfigChange}
+          />
         </Box>
       </Box>
 

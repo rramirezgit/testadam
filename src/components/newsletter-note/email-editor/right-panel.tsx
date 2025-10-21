@@ -5,20 +5,21 @@ import type { PostStatus } from 'src/types/post';
 import { Icon } from '@iconify/react';
 import { useState, useEffect } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
-  Tab,
-  Tabs,
   Chip,
   Alert,
   AppBar,
   Button,
   Dialog,
   Select,
+  Switch,
   Toolbar,
   MenuItem,
   Snackbar,
   Checkbox,
+  Accordion,
   TextField,
   Typography,
   InputLabel,
@@ -29,6 +30,8 @@ import {
   DialogActions,
   DialogContent,
   LinearProgress,
+  AccordionSummary,
+  AccordionDetails,
   FormControlLabel,
   DialogContentText,
   ToggleButtonGroup,
@@ -43,6 +46,7 @@ import { POST_STATUS, isStatusDisabled } from 'src/types/post';
 import TextOptions from './right-panel/TextOptions';
 import ImageOptions from './right-panel/ImageOptions';
 import ButtonOptions from './right-panel/ButtonOptions';
+import { isBase64Image } from './utils/imageValidation';
 import { useNoteMetadata } from './hooks/useNoteMetadata';
 import DividerOptions from './right-panel/DividerOptions';
 import GalleryOptions from './right-panel/GalleryOptions';
@@ -65,6 +69,66 @@ import NewsletterFooterReusableOptions from './right-panel/NewsletterFooterReusa
 import NewsletterHeaderReusableOptions from './right-panel/NewsletterHeaderReusableOptions';
 
 import type { RightPanelProps } from './right-panel/types';
+
+// Definición de temas predefinidos para newsletter
+const NEWSLETTER_THEMES = [
+  {
+    id: 'default',
+    name: 'Default Adac',
+    gradientColors: ['#FFF9CE', '#E2E5FA'],
+    gradientDirection: 135,
+    textColor: '#1e293b', // Texto oscuro para fondos claros
+  },
+  {
+    id: 'warm',
+    name: 'Calidez Sutil',
+    gradientColors: ['#fef7ed', '#fed7aa'],
+    gradientDirection: 135,
+    textColor: '#7c2d12', // Texto marrón oscuro
+  },
+  {
+    id: 'ocean',
+    name: 'Brisa Marina',
+    gradientColors: ['#f0f9ff', '#bae6fd'],
+    gradientDirection: 135,
+    textColor: '#0c4a6e', // Texto azul oscuro
+  },
+  {
+    id: 'forest',
+    name: 'Verde Sereno',
+    gradientColors: ['#f0fdf4', '#bbf7d0'],
+    gradientDirection: 135,
+    textColor: '#14532d', // Texto verde oscuro
+  },
+  {
+    id: 'lavender',
+    name: 'Lavanda Suave',
+    gradientColors: ['#faf5ff', '#e9d5ff'],
+    gradientDirection: 135,
+    textColor: '#581c87', // Texto púrpura oscuro
+  },
+  {
+    id: 'rose',
+    name: 'Rosa Delicado',
+    gradientColors: ['#fff1f2', '#fecdd3'],
+    gradientDirection: 135,
+    textColor: '#881337', // Texto rosa oscuro
+  },
+  {
+    id: 'golden',
+    name: 'Dorado Refinado',
+    gradientColors: ['#fffbeb', '#fde68a'],
+    gradientDirection: 135,
+    textColor: '#92400e', // Texto ámbar oscuro
+  },
+  {
+    id: 'slate',
+    name: 'Gris Sofisticado',
+    gradientColors: ['#f8fafc', '#cbd5e1'],
+    gradientDirection: 135,
+    textColor: '#0f172a', // Texto muy oscuro
+  },
+];
 
 // ¡Todos los componentes han sido implementados!
 
@@ -146,7 +210,27 @@ export default function RightPanel({
   showValidationErrors = false,
   highlight,
   setHighlight,
+  // Props para newsletter
+  isNewsletterMode = false,
+  newsletterTitle = '',
+  onNewsletterTitleChange = () => {},
+  newsletterDescription = '',
+  onNewsletterDescriptionChange = () => {},
+  newsletterHeader,
+  newsletterFooter,
+  onHeaderChange = () => {},
+  onFooterChange = () => {},
+  onNewsletterConfigChange,
 }: RightPanelProps) {
+  // Estados locales para input inmediato (sin lag)
+  const [localTitle, setLocalTitle] = useState(noteTitle);
+  const [localDescription, setLocalDescription] = useState(noteDescription);
+
+  // Estados locales para newsletter (debouncing)
+  const [localNewsletterTitle, setLocalNewsletterTitle] = useState(newsletterTitle);
+  const [localNewsletterDescription, setLocalNewsletterDescription] =
+    useState(newsletterDescription);
+
   // Estado para los tabs del contenedor
   const [containerTab, setContainerTab] = useState(0);
 
@@ -164,6 +248,71 @@ export default function RightPanel({
     loading: loadingMetadata,
     loadCategories,
   } = useNoteMetadata();
+
+  // Sincronizar estados locales cuando cambien las props externas
+  useEffect(() => {
+    setLocalTitle(noteTitle);
+  }, [noteTitle]);
+
+  useEffect(() => {
+    setLocalDescription(noteDescription);
+  }, [noteDescription]);
+
+  useEffect(() => {
+    setLocalNewsletterTitle(newsletterTitle);
+  }, [newsletterTitle]);
+
+  useEffect(() => {
+    setLocalNewsletterDescription(newsletterDescription);
+  }, [newsletterDescription]);
+
+  // Debouncing para título - actualizar estado global después de 300ms sin cambios
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localTitle !== noteTitle) {
+        setNoteTitle(localTitle);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localTitle]);
+
+  // Debouncing para descripción - actualizar estado global después de 300ms sin cambios
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localDescription !== noteDescription) {
+        setNoteDescription(localDescription);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localDescription]);
+
+  // Debouncing para título de newsletter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localNewsletterTitle !== newsletterTitle) {
+        onNewsletterTitleChange(localNewsletterTitle);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localNewsletterTitle]);
+
+  // Debouncing para descripción de newsletter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localNewsletterDescription !== newsletterDescription) {
+        onNewsletterDescriptionChange(localNewsletterDescription);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localNewsletterDescription]);
 
   // Cargar categorías cuando cambie el content type
   useEffect(() => {
@@ -196,13 +345,7 @@ export default function RightPanel({
   const subcategories = selectedCategory?.subcategories || [];
 
   // PostStore para cargar notas
-  const {
-    findAll: findAllPosts,
-    findById: findPostById,
-    loading: loadingPosts,
-    posts,
-    delete: deletePost,
-  } = usePostStore();
+  const { delete: deletePost } = usePostStore();
 
   // Estado para notificaciones
   const [notification, setNotification] = useState<{
@@ -278,6 +421,83 @@ export default function RightPanel({
     }
   };
 
+  // ======================
+  // NEWSLETTER FUNCTIONS
+  // ======================
+
+  // Función para manejar selección de archivo de logo
+  const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && newsletterHeader) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        onHeaderChange({ ...newsletterHeader, logo: base64 });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Función para manejar selección de archivo de sponsor
+  const handleSponsorFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && newsletterHeader?.sponsor) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target?.result as string;
+        onHeaderChange({
+          ...newsletterHeader,
+          sponsor: {
+            ...newsletterHeader.sponsor,
+            image: base64,
+          },
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Función para subir logo a S3
+  const handleUploadLogoToS3 = async () => {
+    if (!newsletterHeader?.logo || !isBase64Image(newsletterHeader.logo)) {
+      alert('No hay imagen de logo para subir o ya está subida');
+      return;
+    }
+
+    try {
+      const s3Url = await uploadImageToS3(newsletterHeader.logo, `newsletter_logo_${Date.now()}`);
+      onHeaderChange({ ...newsletterHeader, logo: s3Url });
+    } catch (error) {
+      alert('Error al subir la imagen del logo a S3');
+      console.error(error);
+    }
+  };
+
+  // Función para subir imagen de sponsor a S3
+  const handleUploadSponsorToS3 = async () => {
+    if (!newsletterHeader?.sponsor?.image || !isBase64Image(newsletterHeader.sponsor.image)) {
+      alert('No hay imagen de sponsor para subir o ya está subida');
+      return;
+    }
+
+    try {
+      const s3Url = await uploadImageToS3(
+        newsletterHeader.sponsor.image,
+        `newsletter_sponsor_${Date.now()}`
+      );
+      onHeaderChange({
+        ...newsletterHeader,
+        sponsor: {
+          ...newsletterHeader.sponsor,
+          image: s3Url,
+        },
+      });
+    } catch (error) {
+      alert('Error al subir la imagen del sponsor a S3');
+      console.error(error);
+    }
+  };
+
   // Obtener todos los componentes activos
   const allComponents = getActiveComponents();
 
@@ -348,6 +568,538 @@ export default function RightPanel({
     : null;
 
   const componentType = selectedComponent?.type;
+
+  // Debug para newsletter header/footer
+  console.log('🔍 RightPanel Debug:', {
+    selectedComponentId,
+    isNewsletterMode,
+    hasNewsletterHeader: !!newsletterHeader,
+    hasNewsletterFooter: !!newsletterFooter,
+  });
+
+  // ======================
+  // NEWSLETTER HEADER EDIT
+  // ======================
+  if (selectedComponentId === 'newsletter-header' && isNewsletterMode && newsletterHeader) {
+    console.log('✅ Renderizando opciones del HEADER');
+
+    return (
+      <Box
+        sx={(theme) => ({
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: 'relative',
+          background: 'transparent',
+          borderRadius: 2,
+          '&::before': {
+            ...theme.mixins.borderGradient({
+              padding: '2px',
+              color: `linear-gradient(to bottom left, #FFFFFF, #C6C6FF61)`,
+            }),
+            pointerEvents: 'none',
+          },
+        })}
+      >
+        <AppBar position="static" color="default" elevation={0} sx={{ flexShrink: 0 }}>
+          <Toolbar>
+            <IconButton edge="start" onClick={() => setSelectedComponentId(null)}>
+              <Icon icon="mdi:arrow-left" />
+            </IconButton>
+            <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
+              Configuración del Header
+            </Typography>
+          </Toolbar>
+        </AppBar>
+
+        <Box sx={{ overflowY: 'auto', overflowX: 'hidden', flexGrow: 1, height: 0, p: 2 }}>
+          {/* Datos básicos del header */}
+          <Accordion defaultExpanded disableGutters sx={{ mb: 1 }}>
+            <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>Datos</AccordionSummary>
+            <AccordionDetails>
+              <TextField
+                fullWidth
+                label="Título del Header"
+                value={newsletterHeader.title}
+                onChange={(e) => onHeaderChange({ ...newsletterHeader, title: e.target.value })}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Subtítulo"
+                value={newsletterHeader.subtitle}
+                onChange={(e) => onHeaderChange({ ...newsletterHeader, subtitle: e.target.value })}
+              />
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Logo */}
+          <Accordion disableGutters sx={{ mb: 1 }}>
+            <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>Logo</AccordionSummary>
+            <AccordionDetails>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={newsletterHeader.showLogo}
+                    onChange={(e) => {
+                      const newShowLogo = e.target.checked;
+                      const defaultLogo =
+                        'https://s3.amazonaws.com/s3.condoor.ai/adam/d5a5c0e8d1.png';
+                      onHeaderChange({
+                        ...newsletterHeader,
+                        showLogo: newShowLogo,
+                        logo:
+                          newShowLogo && !newsletterHeader.logo
+                            ? defaultLogo
+                            : newsletterHeader.logo,
+                      });
+                    }}
+                    color="primary"
+                  />
+                }
+                label="Mostrar Logo"
+              />
+
+              {newsletterHeader.showLogo && (
+                <>
+                  {/* Vista previa del logo */}
+                  {newsletterHeader.logo && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" gutterBottom>
+                        Vista previa:
+                      </Typography>
+                      <Box
+                        sx={{ position: 'relative', display: 'inline-block', maxWidth: '200px' }}
+                      >
+                        <img
+                          src={newsletterHeader.logo}
+                          alt="Logo preview"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '80px',
+                            borderRadius: '4px',
+                            border: '1px solid #e0e0e0',
+                          }}
+                        />
+                        {isBase64Image(newsletterHeader.logo) && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              backgroundColor: 'rgba(255, 152, 0, 0.9)',
+                              color: 'white',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                            }}
+                          >
+                            <Icon icon="mdi:cloud-upload-outline" fontSize="12px" />
+                            Subir a S3
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Alertas de estado */}
+                  {newsletterHeader.logo && isBase64Image(newsletterHeader.logo) && (
+                    <Alert severity="warning" sx={{ mb: 2, fontSize: '0.875rem' }}>
+                      ⚠️ Esta imagen debe subirse a S3 antes de guardar
+                    </Alert>
+                  )}
+
+                  {newsletterHeader.logo && !isBase64Image(newsletterHeader.logo) && (
+                    <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
+                      ✅ Imagen guardada correctamente
+                    </Alert>
+                  )}
+
+                  {/* Botón para seleccionar imagen */}
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    startIcon={<Icon icon="mdi:image-plus" />}
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/png,image/jpeg,image/jpg,image/webp,image/gif';
+                      input.onchange = (e) => handleLogoFileChange(e as any);
+                      input.click();
+                    }}
+                    sx={{ mb: 2 }}
+                  >
+                    {newsletterHeader.logo ? 'Cambiar Logo' : 'Seleccionar Logo'}
+                  </Button>
+
+                  {/* Campo URL manual */}
+                  <TextField
+                    fullWidth
+                    label="URL del Logo (opcional)"
+                    value={newsletterHeader.logo || ''}
+                    onChange={(e) => onHeaderChange({ ...newsletterHeader, logo: e.target.value })}
+                    placeholder="https://ejemplo.com/logo.png"
+                    size="small"
+                    sx={{ mb: 2 }}
+                  />
+
+                  {/* Altura del logo */}
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Altura del Logo (px)"
+                    value={newsletterHeader.logoHeight || 40}
+                    onChange={(e) =>
+                      onHeaderChange({
+                        ...newsletterHeader,
+                        logoHeight: parseInt(e.target.value) || 40,
+                      })
+                    }
+                    inputProps={{ min: 20, max: 200 }}
+                    size="small"
+                  />
+
+                  {/* Botón de subida a S3 */}
+                  {newsletterHeader.logo && isBase64Image(newsletterHeader.logo) && (
+                    <>
+                      {uploading && (
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" gutterBottom>
+                            Subiendo: {uploadProgress}%
+                          </Typography>
+                          <LinearProgress variant="determinate" value={uploadProgress} />
+                        </Box>
+                      )}
+                      <LoadingButton
+                        variant="contained"
+                        color="warning"
+                        fullWidth
+                        startIcon={<Icon icon="mdi:cloud-upload" />}
+                        onClick={handleUploadLogoToS3}
+                        loading={uploading}
+                        sx={{ mb: 2 }}
+                      >
+                        ⚠️ Subir Logo a S3 (Requerido)
+                      </LoadingButton>
+                    </>
+                  )}
+                </>
+              )}
+            </AccordionDetails>
+          </Accordion>
+
+          {/* Sponsor */}
+          <Accordion disableGutters>
+            <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+              Sponsor
+            </AccordionSummary>
+            <AccordionDetails>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={newsletterHeader.sponsor?.enabled || false}
+                    onChange={(e) =>
+                      onHeaderChange({
+                        ...newsletterHeader,
+                        sponsor: { ...newsletterHeader.sponsor, enabled: e.target.checked },
+                      })
+                    }
+                    color="primary"
+                  />
+                }
+                label="Mostrar Sponsor"
+              />
+              {newsletterHeader.sponsor?.enabled && (
+                <>
+                  <TextField
+                    fullWidth
+                    label="Texto del Sponsor"
+                    value={newsletterHeader.sponsor?.label || ''}
+                    onChange={(e) =>
+                      onHeaderChange({
+                        ...newsletterHeader,
+                        sponsor: { ...newsletterHeader.sponsor, label: e.target.value },
+                      })
+                    }
+                    sx={{ mb: 2, mt: 2 }}
+                  />
+
+                  {/* Vista previa de la imagen del sponsor */}
+                  {newsletterHeader.sponsor?.image && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" gutterBottom>
+                        Vista previa:
+                      </Typography>
+                      <Box
+                        sx={{ position: 'relative', display: 'inline-block', maxWidth: '200px' }}
+                      >
+                        <img
+                          src={newsletterHeader.sponsor.image}
+                          alt="Sponsor preview"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '60px',
+                            borderRadius: '4px',
+                            border: '1px solid #e0e0e0',
+                          }}
+                        />
+                        {isBase64Image(newsletterHeader.sponsor.image) && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              backgroundColor: 'rgba(255, 152, 0, 0.9)',
+                              color: 'white',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              fontSize: '0.75rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                            }}
+                          >
+                            <Icon icon="mdi:cloud-upload-outline" fontSize="12px" />
+                            Subir a S3
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Alertas de estado */}
+                  {newsletterHeader.sponsor?.image &&
+                    isBase64Image(newsletterHeader.sponsor.image) && (
+                      <Alert severity="warning" sx={{ mb: 2, fontSize: '0.875rem' }}>
+                        ⚠️ Esta imagen debe subirse a S3 antes de guardar
+                      </Alert>
+                    )}
+
+                  {newsletterHeader.sponsor?.image &&
+                    !isBase64Image(newsletterHeader.sponsor.image) && (
+                      <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
+                        ✅ Imagen guardada correctamente
+                      </Alert>
+                    )}
+
+                  {/* Botón para seleccionar imagen */}
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    startIcon={<Icon icon="mdi:image-plus" />}
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/png,image/jpeg,image/jpg,image/webp,image/gif';
+                      input.onchange = (e) => handleSponsorFileChange(e as any);
+                      input.click();
+                    }}
+                    sx={{ mb: 2 }}
+                  >
+                    {newsletterHeader.sponsor?.image
+                      ? 'Cambiar Imagen Sponsor'
+                      : 'Seleccionar Imagen Sponsor'}
+                  </Button>
+
+                  {/* Campo URL manual */}
+                  <TextField
+                    fullWidth
+                    label="URL de la imagen (opcional)"
+                    value={newsletterHeader.sponsor?.image || ''}
+                    onChange={(e) =>
+                      onHeaderChange({
+                        ...newsletterHeader,
+                        sponsor: { ...newsletterHeader.sponsor, image: e.target.value },
+                      })
+                    }
+                    placeholder="https://ejemplo.com/sponsor.png"
+                    size="small"
+                    sx={{ mb: 2 }}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Alt de la imagen"
+                    value={newsletterHeader.sponsor?.imageAlt || ''}
+                    onChange={(e) =>
+                      onHeaderChange({
+                        ...newsletterHeader,
+                        sponsor: { ...newsletterHeader.sponsor, imageAlt: e.target.value },
+                      })
+                    }
+                    size="small"
+                  />
+
+                  {/* Botón de subida a S3 */}
+                  {newsletterHeader.sponsor?.image &&
+                    isBase64Image(newsletterHeader.sponsor.image) && (
+                      <>
+                        {uploading && (
+                          <Box sx={{ mb: 2 }}>
+                            <Typography variant="body2" gutterBottom>
+                              Subiendo: {uploadProgress}%
+                            </Typography>
+                            <LinearProgress variant="determinate" value={uploadProgress} />
+                          </Box>
+                        )}
+                        <LoadingButton
+                          variant="contained"
+                          color="warning"
+                          fullWidth
+                          startIcon={<Icon icon="mdi:cloud-upload" />}
+                          onClick={handleUploadSponsorToS3}
+                          loading={uploading}
+                          sx={{ mb: 2 }}
+                        >
+                          ⚠️ Subir Imagen Sponsor a S3 (Requerido)
+                        </LoadingButton>
+                      </>
+                    )}
+                </>
+              )}
+            </AccordionDetails>
+          </Accordion>
+        </Box>
+      </Box>
+    );
+  }
+
+  // ======================
+  // NEWSLETTER FOOTER EDIT
+  // ======================
+  if (selectedComponentId === 'newsletter-footer' && isNewsletterMode && newsletterFooter) {
+    console.log('✅ Renderizando opciones del FOOTER');
+    return (
+      <Box
+        sx={(theme) => ({
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: 'relative',
+          background: 'transparent',
+          borderRadius: 2,
+          '&::before': {
+            ...theme.mixins.borderGradient({
+              padding: '2px',
+              color: `linear-gradient(to bottom left, #FFFFFF, #C6C6FF61)`,
+            }),
+            pointerEvents: 'none',
+          },
+        })}
+      >
+        <AppBar position="static" color="default" elevation={0} sx={{ flexShrink: 0 }}>
+          <Toolbar>
+            <IconButton edge="start" onClick={() => setSelectedComponentId(null)}>
+              <Icon icon="mdi:arrow-left" />
+            </IconButton>
+            <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
+              Configuración del Footer
+            </Typography>
+          </Toolbar>
+        </AppBar>
+
+        <Box sx={{ overflowY: 'auto', overflowX: 'hidden', flexGrow: 1, height: 0, p: 2 }}>
+          <TextField
+            fullWidth
+            label="Nombre de la Empresa"
+            value={newsletterFooter.companyName}
+            onChange={(e) => onFooterChange({ ...newsletterFooter, companyName: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Dirección"
+            value={newsletterFooter.address}
+            onChange={(e) => onFooterChange({ ...newsletterFooter, address: e.target.value })}
+            multiline
+            rows={2}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Email de Contacto"
+            type="email"
+            value={newsletterFooter.contactEmail}
+            onChange={(e) => onFooterChange({ ...newsletterFooter, contactEmail: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Color de Fondo"
+            type="color"
+            value={newsletterFooter.backgroundColor}
+            onChange={(e) =>
+              onFooterChange({ ...newsletterFooter, backgroundColor: e.target.value })
+            }
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Color del Texto"
+            type="color"
+            value={newsletterFooter.textColor}
+            onChange={(e) => onFooterChange({ ...newsletterFooter, textColor: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+
+          <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
+            Redes Sociales
+          </Typography>
+          {newsletterFooter.socialLinks.map((link, index) => (
+            <Box
+              key={index}
+              sx={{ mb: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  mb: 1,
+                }}
+              >
+                <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
+                  {link.platform}
+                </Typography>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    const newSocialLinks = [...newsletterFooter.socialLinks];
+                    newSocialLinks[index].enabled = !newSocialLinks[index].enabled;
+                    onFooterChange({ ...newsletterFooter, socialLinks: newSocialLinks });
+                  }}
+                  color={link.enabled ? 'primary' : 'default'}
+                >
+                  <Icon icon={link.enabled ? 'mdi:eye' : 'mdi:eye-off'} />
+                </IconButton>
+              </Box>
+              <TextField
+                fullWidth
+                label={`URL de ${link.platform}`}
+                value={link.url}
+                onChange={(e) => {
+                  const newSocialLinks = [...newsletterFooter.socialLinks];
+                  newSocialLinks[index].url = e.target.value;
+                  onFooterChange({ ...newsletterFooter, socialLinks: newSocialLinks });
+                }}
+                disabled={!link.enabled}
+                size="small"
+              />
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    );
+  }
 
   // Determinar si debemos mostrar la configuración de la nota
   const shouldShowNoteConfiguration =
@@ -426,55 +1178,94 @@ export default function RightPanel({
           {containerTab === 0 && (
             <Box sx={{ p: 2 }}>
               <Chip label="General" variant="filled" sx={{ mb: 2 }} size="small" />
-              {/* Título */}
-              <TextField
-                fullWidth
-                variant="filled"
-                label="Título de la nota"
-                value={noteTitle}
-                onChange={(e) => setNoteTitle(e.target.value)}
-                sx={{ mb: 2 }}
-                required
-                multiline
-                rows={3}
-                error={showValidationErrors && !noteTitle.trim()}
-                helperText={
-                  showValidationErrors && !noteTitle.trim()
-                    ? '⚠️ El título es obligatorio para guardar la nota'
-                    : ''
-                }
-              />
 
-              {/* Descripción */}
-              <TextField
-                fullWidth
-                variant="filled"
-                label="Descripción"
-                value={noteDescription}
-                onChange={(e) => setNoteDescription(e.target.value)}
-                multiline
-                rows={3}
-                sx={{ mb: 2 }}
-              />
-
-              {/* Checkbox Destacar */}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={highlight}
-                    onChange={(e) => setHighlight(e.target.checked)}
-                    color="primary"
+              {/* Modo Newsletter: mostrar campos de newsletter */}
+              {isNewsletterMode ? (
+                <>
+                  {/* Título del Newsletter */}
+                  <TextField
+                    fullWidth
+                    variant="filled"
+                    label="Título del Newsletter"
+                    value={localNewsletterTitle}
+                    onChange={(e) => setLocalNewsletterTitle(e.target.value)}
+                    sx={{ mb: 2 }}
+                    required
+                    multiline
+                    rows={3}
                   />
-                }
-                label="Destacar"
-                sx={{ mb: 2 }}
-              />
 
-              {/* Portada de nota */}
+                  {/* Descripción del Newsletter */}
+                  <TextField
+                    fullWidth
+                    variant="filled"
+                    label="Descripción"
+                    value={localNewsletterDescription}
+                    onChange={(e) => setLocalNewsletterDescription(e.target.value)}
+                    multiline
+                    rows={3}
+                    sx={{ mb: 2 }}
+                  />
+                </>
+              ) : (
+                <>
+                  {/* Modo Normal: mostrar campos de nota */}
+                  {/* Título */}
+                  <TextField
+                    fullWidth
+                    variant="filled"
+                    label="Título de la nota"
+                    value={localTitle}
+                    onChange={(e) => setLocalTitle(e.target.value)}
+                    sx={{ mb: 2 }}
+                    required
+                    multiline
+                    rows={3}
+                    error={showValidationErrors && !localTitle.trim()}
+                    helperText={
+                      showValidationErrors && !localTitle.trim()
+                        ? '⚠️ El título es obligatorio para guardar la nota'
+                        : ''
+                    }
+                  />
+
+                  {/* Descripción */}
+                  <TextField
+                    fullWidth
+                    variant="filled"
+                    label="Descripción"
+                    value={localDescription}
+                    onChange={(e) => setLocalDescription(e.target.value)}
+                    multiline
+                    rows={3}
+                    sx={{ mb: 2 }}
+                  />
+
+                  {/* Checkbox Destacar - Solo en modo normal */}
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={highlight}
+                        onChange={(e) => setHighlight(e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Destacar"
+                    sx={{ mb: 2 }}
+                  />
+                </>
+              )}
+
+              {/* Portada de nota / newsletter */}
 
               {/* Componente de upload de imagen de portada */}
               <Box sx={{ mb: 2 }}>
-                <Chip label="Portada de nota" variant="filled" sx={{ mb: 2 }} size="small" />
+                <Chip
+                  label={isNewsletterMode ? 'Portada del Newsletter' : 'Portada de nota'}
+                  variant="filled"
+                  sx={{ mb: 2 }}
+                  size="small"
+                />
                 <UploadCover
                   value={noteCoverImageUrl}
                   disabled={uploading}
@@ -516,8 +1307,8 @@ export default function RightPanel({
                 )}
               </Box>
 
-              {/* Estado - Solo mostrar si la nota ya está guardada */}
-              {currentNoteId && (
+              {/* Estado - Solo mostrar si la nota ya está guardada Y NO está en modo newsletter */}
+              {currentNoteId && !isNewsletterMode && (
                 <FormControl fullWidth sx={{ mb: 2 }}>
                   <InputLabel>Estado</InputLabel>
                   <Select
@@ -560,193 +1351,290 @@ export default function RightPanel({
                 </FormControl>
               )}
 
-              {/* Configuración específica */}
-              <Chip label="Configuración específica" variant="filled" sx={{ mb: 2 }} size="small" />
+              {/* Configuración específica - Solo en modo normal, NO en newsletter */}
+              {!isNewsletterMode && (
+                <>
+                  <Chip
+                    label="Configuración específica"
+                    variant="filled"
+                    sx={{ mb: 2 }}
+                    size="small"
+                  />
 
-              {/* Tipo de contenido */}
-              <FormControl fullWidth sx={{ mb: 2 }} error={showValidationErrors && !contentTypeId}>
-                <InputLabel>Tipo de contenido *</InputLabel>
-                <Select
-                  variant="filled"
-                  value={contentTypeId}
-                  label="Tipo de contenido *"
-                  sx={{
-                    '& .Mui-disabled': {
-                      backgroundColor: 'background.neutral',
-                    },
-                  }}
-                  onChange={(e) => setContentTypeId(e.target.value)}
-                  disabled={loadingMetadata}
-                >
-                  <MenuItem value="">
-                    <em>Seleccionar</em>
-                  </MenuItem>
-                  {contentTypes.map((type) => (
-                    <MenuItem key={type.id} value={type.id}>
-                      {type.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {showValidationErrors && !contentTypeId && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                    ⚠️ El tipo de contenido es obligatorio
-                  </Typography>
-                )}
-              </FormControl>
+                  {/* Tipo de contenido */}
+                  <FormControl
+                    fullWidth
+                    sx={{ mb: 2 }}
+                    error={showValidationErrors && !contentTypeId}
+                  >
+                    <InputLabel>Tipo de contenido *</InputLabel>
+                    <Select
+                      variant="filled"
+                      value={contentTypeId}
+                      label="Tipo de contenido *"
+                      sx={{
+                        '& .Mui-disabled': {
+                          backgroundColor: 'background.neutral',
+                        },
+                      }}
+                      onChange={(e) => setContentTypeId(e.target.value)}
+                      disabled={loadingMetadata}
+                    >
+                      <MenuItem value="">
+                        <em>Seleccionar</em>
+                      </MenuItem>
+                      {contentTypes.map((type) => (
+                        <MenuItem key={type.id} value={type.id}>
+                          {type.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {showValidationErrors && !contentTypeId && (
+                      <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                        ⚠️ El tipo de contenido es obligatorio
+                      </Typography>
+                    )}
+                  </FormControl>
 
-              {/* Audiencia */}
-              <FormControl fullWidth sx={{ mb: 2 }} error={showValidationErrors && !audienceId}>
-                <InputLabel>Audiencia *</InputLabel>
-                <Select
-                  variant="filled"
-                  value={audienceId}
-                  label="Audiencia *"
-                  sx={{
-                    '& .Mui-disabled': {
-                      backgroundColor: 'background.neutral',
-                    },
-                  }}
-                  onChange={(e) => setAudienceId(e.target.value)}
-                  disabled={loadingMetadata}
-                >
-                  <MenuItem value="">
-                    <em>Seleccionar</em>
-                  </MenuItem>
-                  {audiences.map((audience) => (
-                    <MenuItem key={audience.id} value={audience.id}>
-                      {audience.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {showValidationErrors && !audienceId && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                    ⚠️ La audiencia es obligatoria
-                  </Typography>
-                )}
-              </FormControl>
+                  {/* Audiencia */}
+                  <FormControl fullWidth sx={{ mb: 2 }} error={showValidationErrors && !audienceId}>
+                    <InputLabel>Audiencia *</InputLabel>
+                    <Select
+                      variant="filled"
+                      value={audienceId}
+                      label="Audiencia *"
+                      sx={{
+                        '& .Mui-disabled': {
+                          backgroundColor: 'background.neutral',
+                        },
+                      }}
+                      onChange={(e) => setAudienceId(e.target.value)}
+                      disabled={loadingMetadata}
+                    >
+                      <MenuItem value="">
+                        <em>Seleccionar</em>
+                      </MenuItem>
+                      {audiences.map((audience) => (
+                        <MenuItem key={audience.id} value={audience.id}>
+                          {audience.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {showValidationErrors && !audienceId && (
+                      <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                        ⚠️ La audiencia es obligatoria
+                      </Typography>
+                    )}
+                  </FormControl>
 
-              {/* Categoría */}
-              <FormControl
-                fullWidth
-                sx={{ mb: 2 }}
-                disabled={!contentTypeId}
-                error={showValidationErrors && contentTypeId && !categoryId}
-              >
-                <InputLabel>Categoría *</InputLabel>
-                <Select
-                  variant="filled"
-                  value={categoryId}
-                  label="Categoría *"
-                  sx={{
-                    '& .Mui-disabled': {
-                      backgroundColor: 'background.neutral',
-                    },
-                  }}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  disabled={!contentTypeId || loadingMetadata}
-                >
-                  <MenuItem value="">
-                    <em>Seleccionar</em>
-                  </MenuItem>
-                  {categories.map((category) => (
-                    <MenuItem key={category.id} value={category.id}>
-                      {category.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {showValidationErrors && contentTypeId && !categoryId && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                    ⚠️ La categoría es obligatoria
-                  </Typography>
-                )}
-                {!contentTypeId && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                    Selecciona un tipo de contenido primero
-                  </Typography>
-                )}
-              </FormControl>
+                  {/* Categoría */}
+                  <FormControl
+                    fullWidth
+                    sx={{ mb: 2 }}
+                    disabled={!contentTypeId}
+                    error={showValidationErrors && contentTypeId && !categoryId}
+                  >
+                    <InputLabel>Categoría *</InputLabel>
+                    <Select
+                      variant="filled"
+                      value={categoryId}
+                      label="Categoría *"
+                      sx={{
+                        '& .Mui-disabled': {
+                          backgroundColor: 'background.neutral',
+                        },
+                      }}
+                      onChange={(e) => setCategoryId(e.target.value)}
+                      disabled={!contentTypeId || loadingMetadata}
+                    >
+                      <MenuItem value="">
+                        <em>Seleccionar</em>
+                      </MenuItem>
+                      {categories.map((category) => (
+                        <MenuItem key={category.id} value={category.id}>
+                          {category.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {showValidationErrors && contentTypeId && !categoryId && (
+                      <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                        ⚠️ La categoría es obligatoria
+                      </Typography>
+                    )}
+                    {!contentTypeId && (
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Selecciona un tipo de contenido primero
+                      </Typography>
+                    )}
+                  </FormControl>
 
-              {/* Subcategoría */}
-              <FormControl
-                fullWidth
-                sx={{ mb: 2 }}
-                disabled={!categoryId}
-                error={showValidationErrors && categoryId && !subcategoryId}
-              >
-                <InputLabel>Subcategoría *</InputLabel>
-                <Select
-                  variant="filled"
-                  value={subcategoryId}
-                  label="Subcategoría *"
-                  sx={{
-                    '& .Mui-disabled': {
-                      backgroundColor: 'background.neutral',
-                    },
-                  }}
-                  onChange={(e) => setSubcategoryId(e.target.value)}
-                  disabled={!categoryId || loadingMetadata}
-                >
-                  <MenuItem value="">
-                    <em>Seleccionar</em>
-                  </MenuItem>
-                  {subcategories.map((subcategory) => (
-                    <MenuItem key={subcategory.id} value={subcategory.id}>
-                      {subcategory.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {showValidationErrors && categoryId && !subcategoryId && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                    ⚠️ La subcategoría es obligatoria
-                  </Typography>
-                )}
-                {!categoryId && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-                    Selecciona una categoría primero
-                  </Typography>
-                )}
-              </FormControl>
+                  {/* Subcategoría */}
+                  <FormControl
+                    fullWidth
+                    sx={{ mb: 2 }}
+                    disabled={!categoryId}
+                    error={showValidationErrors && categoryId && !subcategoryId}
+                  >
+                    <InputLabel>Subcategoría *</InputLabel>
+                    <Select
+                      variant="filled"
+                      value={subcategoryId}
+                      label="Subcategoría *"
+                      sx={{
+                        '& .Mui-disabled': {
+                          backgroundColor: 'background.neutral',
+                        },
+                      }}
+                      onChange={(e) => setSubcategoryId(e.target.value)}
+                      disabled={!categoryId || loadingMetadata}
+                    >
+                      <MenuItem value="">
+                        <em>Seleccionar</em>
+                      </MenuItem>
+                      {subcategories.map((subcategory) => (
+                        <MenuItem key={subcategory.id} value={subcategory.id}>
+                          {subcategory.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {showValidationErrors && categoryId && !subcategoryId && (
+                      <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                        ⚠️ La subcategoría es obligatoria
+                      </Typography>
+                    )}
+                    {!categoryId && (
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Selecciona una categoría primero
+                      </Typography>
+                    )}
+                  </FormControl>
 
-              {/* Botón para eliminar la nota (solo si está guardada) */}
-              {currentNoteId && (
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  color="error"
-                  startIcon={<Icon icon="mdi:delete-outline" />}
-                  onClick={() => setOpenDeleteDialog(true)}
-                  sx={{
-                    backgroundColor: 'rgba(255, 72, 66, 0.08)',
-                    color: 'error.main',
-                    border: 'none',
-                    height: 48,
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 72, 66, 0.16)',
-                      borderColor: 'error.main',
-                    },
-                  }}
-                >
-                  Eliminar nota
-                </Button>
+                  {/* Botón para eliminar la nota (solo si está guardada) */}
+                  {currentNoteId && (
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Icon icon="mdi:delete-outline" />}
+                      onClick={() => setOpenDeleteDialog(true)}
+                      sx={{
+                        backgroundColor: 'rgba(255, 72, 66, 0.08)',
+                        color: 'error.main',
+                        border: 'none',
+                        height: 48,
+                        '&:hover': {
+                          backgroundColor: 'rgba(255, 72, 66, 0.16)',
+                          borderColor: 'error.main',
+                        },
+                      }}
+                    >
+                      Eliminar nota
+                    </Button>
+                  )}
+                </>
               )}
             </Box>
           )}
 
-          {/* Tab 1: Diseño del Contenedor */}
+          {/* Tab 1: Diseño del Contenedor / Temas de Color (Newsletter) */}
           {containerTab === 1 && (
             <Box sx={{ p: 2 }}>
-              <ContainerOptions
-                containerBorderWidth={containerBorderWidth}
-                setContainerBorderWidth={setContainerBorderWidth}
-                containerBorderColor={containerBorderColor}
-                setContainerBorderColor={setContainerBorderColor}
-                containerBorderRadius={containerBorderRadius}
-                setContainerBorderRadius={setContainerBorderRadius}
-                containerPadding={containerPadding}
-                setContainerPadding={setContainerPadding}
-                containerMaxWidth={containerMaxWidth}
-                setContainerMaxWidth={setContainerMaxWidth}
-              />
+              {/* Si está en modo Newsletter, mostrar Temas de Color */}
+              {isNewsletterMode && newsletterHeader && newsletterFooter ? (
+                <Box>
+                  <Chip label="🎨 Temas de Color" variant="filled" sx={{ mb: 2 }} size="small" />
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Selecciona un tema para aplicar al header y footer del newsletter
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                      gap: 2,
+                      mb: 3,
+                    }}
+                  >
+                    {NEWSLETTER_THEMES.map((theme) => (
+                      <Box
+                        key={theme.id}
+                        sx={{
+                          border: '1px solid #e0e0e0',
+                          borderRadius: 2,
+                          p: 2,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            borderColor: '#1976d2',
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          },
+                        }}
+                        onClick={() => {
+                          // Aplicar tema a header y footer
+                          const newHeader = {
+                            ...newsletterHeader,
+                            useGradient: true,
+                            gradientColors: theme.gradientColors,
+                            gradientDirection: theme.gradientDirection,
+                            textColor: theme.textColor,
+                          };
+
+                          const newFooter = {
+                            ...newsletterFooter,
+                            useGradient: true,
+                            gradientColors: theme.gradientColors,
+                            gradientDirection: theme.gradientDirection,
+                            textColor: theme.textColor,
+                          };
+
+                          // Usar onNewsletterConfigChange para actualizar header y footer en una sola operación
+                          if (onNewsletterConfigChange) {
+                            onNewsletterConfigChange({ header: newHeader, footer: newFooter });
+                          } else {
+                            // Fallback a las funciones individuales si no está disponible
+                            onHeaderChange(newHeader);
+                            onFooterChange(newFooter);
+                          }
+                        }}
+                      >
+                        {/* Vista previa del gradiente */}
+                        <Box
+                          sx={{
+                            height: 50,
+                            borderRadius: 1,
+                            mb: 1,
+                            backgroundImage: `linear-gradient(${theme.gradientDirection}deg, ${theme.gradientColors[0]} 0%, ${theme.gradientColors[1]} 100%)`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: theme.textColor,
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            border: '1px solid rgba(0,0,0,0.1)',
+                          }}
+                        >
+                          {theme.name}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              ) : (
+                /* Modo normal: Opciones de diseño del contenedor */
+                <ContainerOptions
+                  containerBorderWidth={containerBorderWidth}
+                  setContainerBorderWidth={setContainerBorderWidth}
+                  containerBorderColor={containerBorderColor}
+                  setContainerBorderColor={setContainerBorderColor}
+                  containerBorderRadius={containerBorderRadius}
+                  setContainerBorderRadius={setContainerBorderRadius}
+                  containerPadding={containerPadding}
+                  setContainerPadding={setContainerPadding}
+                  containerMaxWidth={containerMaxWidth}
+                  setContainerMaxWidth={setContainerMaxWidth}
+                />
+              )}
             </Box>
           )}
         </Box>
@@ -830,63 +1718,83 @@ export default function RightPanel({
         </Toolbar>
       </AppBar>
 
-      <Tabs
-        value={rightPanelTab}
-        onChange={(e, newValue) => setRightPanelTab(newValue)}
-        variant="scrollable"
-        scrollButtons="auto"
-        allowScrollButtonsMobile
+      <Box
         sx={{
+          p: 1,
           borderBottom: 1,
           borderColor: 'divider',
           flexShrink: 0,
-          '& .MuiTab-root': {
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            minWidth: { xs: 'auto', sm: 72 },
-            padding: { xs: '6px 8px', sm: '12px 16px' },
-          },
         }}
       >
-        {/* Para Summary y RespaldadoPor, solo mostrar la tab de configuración */}
-        {componentType === 'summary' || componentType === 'respaldadoPor'
-          ? [<Tab key="config" label="📝 Configuración" />]
-          : [
-              <Tab
-                key="main"
-                label={
-                  componentType === 'image'
-                    ? 'Imagen'
-                    : componentType === 'button'
-                      ? 'Botón'
-                      : componentType === 'gallery'
-                        ? 'Galería'
-                        : componentType === 'chart'
-                          ? 'Gráfica'
-                          : componentType === 'category'
-                            ? 'Categorías'
-                            : componentType === 'tituloConIcono'
-                              ? 'Título'
-                              : componentType === 'herramientas'
-                                ? 'Herramientas'
-                                : componentType === 'divider'
-                                  ? 'Separador'
-                                  : componentType === 'noteContainer'
-                                    ? 'Nota'
-                                    : componentType === 'newsletterHeaderReusable'
-                                      ? 'Header Newsletter'
-                                      : componentType === 'newsletterFooterReusable'
-                                        ? 'Footer Newsletter'
-                                        : (componentType as string) === 'newsletter-footer'
-                                          ? 'Footer Newsletter'
-                                          : 'Tipografía'
-                }
-              />,
-              ...(componentType === 'herramientas'
-                ? [<Tab key="herramientas-config" label="Configuración" />]
-                : []),
-              // <Tab key="smart" label="🎨 Smart" />,
-            ]}
-      </Tabs>
+        <ToggleButtonGroup
+          value={rightPanelTab}
+          exclusive
+          onChange={(e, newValue) => {
+            if (newValue !== null) {
+              setRightPanelTab(newValue);
+            }
+          }}
+          aria-label="Opciones de componente"
+          size="small"
+          color="primary"
+          sx={{
+            width: '100%',
+            border: 'none',
+            '& .MuiToggleButton-root': {
+              flex: 1,
+              fontSize: { xs: '0.65rem', sm: '0.75rem' },
+              padding: { xs: '4px 6px', sm: '6px 8px' },
+              border: 'none',
+            },
+          }}
+        >
+          <ToggleButton value={0} aria-label="principal">
+            {componentType === 'summary' || componentType === 'respaldadoPor'
+              ? '📝 Configuración'
+              : componentType === 'image'
+                ? 'Imagen'
+                : componentType === 'button'
+                  ? 'Botón'
+                  : componentType === 'gallery'
+                    ? 'Galería'
+                    : componentType === 'chart'
+                      ? 'Gráfica'
+                      : componentType === 'category'
+                        ? 'Categorías'
+                        : componentType === 'tituloConIcono'
+                          ? 'Título'
+                          : componentType === 'herramientas'
+                            ? 'Herramientas'
+                            : componentType === 'divider'
+                              ? 'Separador'
+                              : componentType === 'noteContainer'
+                                ? 'Nota'
+                                : componentType === 'newsletterHeaderReusable'
+                                  ? 'Header Newsletter'
+                                  : componentType === 'newsletterFooterReusable'
+                                    ? 'Footer Newsletter'
+                                    : (componentType as string) === 'newsletter-footer'
+                                      ? 'Footer Newsletter'
+                                      : 'Tipografía'}
+          </ToggleButton>
+
+          {/* Segundo tab solo para herramientas */}
+          {componentType === 'herramientas' && (
+            <ToggleButton value={1} aria-label="configuracion">
+              Configuración
+            </ToggleButton>
+          )}
+
+          {/* Tab IA para todos los componentes (excepto algunos específicos) */}
+          {componentType !== 'divider' &&
+            componentType !== 'spacer' &&
+            componentType !== 'noteContainer' && (
+              <ToggleButton value={componentType === 'herramientas' ? 2 : 1} aria-label="ia">
+                🤖 IA
+              </ToggleButton>
+            )}
+        </ToggleButtonGroup>
+      </Box>
 
       <Box
         sx={{ overflowY: 'auto', overflowX: 'hidden', flexGrow: 1, height: 0, p: { xs: 1, sm: 2 } }}
@@ -1136,6 +2044,192 @@ export default function RightPanel({
             updateComponentProps={updateComponentProps}
             setShowIconPicker={setShowIconPicker}
           />
+        )}
+
+        {/* Tab IA: Para todos los componentes (valor 1 para la mayoría, 2 para herramientas) */}
+        {((rightPanelTab === 1 && componentType !== 'herramientas') ||
+          (rightPanelTab === 2 && componentType === 'herramientas')) && (
+          <Box>
+            <Chip label="🤖 Asistente IA" variant="filled" sx={{ mb: 2 }} size="small" />
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Próximamente: Herramientas de IA para mejorar tu contenido
+            </Typography>
+
+            {/* Opciones de IA según tipo de componente */}
+            {(componentType === 'heading' ||
+              componentType === 'paragraph' ||
+              componentType === 'bulletList') && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, mb: 1 }}>
+                  Opciones para texto:
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:magic-staff" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Reescribir con IA
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:text-box-plus-outline" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Expandir contenido
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:text-box-minus-outline" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Resumir texto
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:translate" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Traducir
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:spellcheck" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Corregir ortografía
+                </Button>
+              </Box>
+            )}
+
+            {componentType === 'image' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, mb: 1 }}>
+                  Opciones para imagen:
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:image-auto-adjust" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Generar descripción ALT
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:image-search" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Sugerir imágenes similares
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:palette" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Generar con IA (DALL-E)
+                </Button>
+              </Box>
+            )}
+
+            {componentType === 'button' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, mb: 1 }}>
+                  Opciones para botón:
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:target" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Optimizar CTA
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:ab-testing" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Generar variaciones A/B
+                </Button>
+              </Box>
+            )}
+
+            {componentType === 'gallery' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, mb: 1 }}>
+                  Opciones para galería:
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:image-multiple" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Generar captions automáticos
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:palette-swatch" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Sugerir tema visual coherente
+                </Button>
+              </Box>
+            )}
+
+            {componentType === 'chart' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, mb: 1 }}>
+                  Opciones para gráfica:
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:chart-line" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Generar insights automáticos
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled
+                  startIcon={<Icon icon="mdi:text-box" />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Crear descripción textual
+                </Button>
+              </Box>
+            )}
+
+            <Alert severity="info" sx={{ mt: 2, fontSize: '0.75rem' }}>
+              💡 Las funcionalidades de IA estarán disponibles próximamente. Podrás mejorar tu
+              contenido con un solo clic.
+            </Alert>
+          </Box>
         )}
       </Box>
 

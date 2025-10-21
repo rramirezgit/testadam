@@ -96,6 +96,18 @@ export interface RightPanelProps {
 
   // Nueva prop para eliminar contenedores de nota
   removeNoteContainer?: (containerId: string) => void;
+
+  // Props para newsletter
+  isNewsletterMode?: boolean;
+  newsletterTitle?: string;
+  onNewsletterTitleChange?: (title: string) => void;
+  newsletterDescription?: string;
+  onNewsletterDescriptionChange?: (description: string) => void;
+  newsletterHeader?: any; // NewsletterHeader type
+  newsletterFooter?: any; // NewsletterFooter type
+  onHeaderChange?: (header: any) => void;
+  onFooterChange?: (footer: any) => void;
+  onNewsletterConfigChange?: (config: { header?: any; footer?: any }) => void;
 }
 
 export interface ListStyleOptionsProps {

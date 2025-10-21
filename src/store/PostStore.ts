@@ -90,6 +90,7 @@ interface PostState {
   createNewsletter: (subject: string, newsletterData: any) => Promise<any>;
   updateNewsletter: (id: string, newsletterData: any) => Promise<any>;
   findAllNewsletters: () => Promise<any[]>;
+  findNewsletterById: (id: string) => Promise<any>;
 
   // Metadata operations
   loadContentTypes: () => Promise<ContentType[]>;
@@ -591,6 +592,37 @@ const usePostStore = create<PostState>()(
               error: errorMessage,
             });
             return [];
+          }
+        },
+
+        findNewsletterById: async (id: string) => {
+          try {
+            console.log('🔄 findNewsletterById called:', { id });
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const response = await axiosInstance.get(endpoints.newsletter.findById(id));
+
+            console.log('✅ Newsletter obtenido exitosamente:', {
+              responseStatus: response.status,
+              responseData: response.data,
+            });
+
+            set({ loading: false });
+            return response.data;
+          } catch (error: any) {
+            console.error('❌ Error obteniendo newsletter:', {
+              error,
+              errorMessage: error.response?.data?.message,
+              errorStatus: error.response?.status,
+              errorData: error.response?.data,
+            });
+            const errorMessage = error.response?.data?.message || 'Error al obtener el newsletter';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return null;
           }
         },
 

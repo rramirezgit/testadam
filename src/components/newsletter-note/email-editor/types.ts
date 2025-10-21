@@ -104,4 +104,7 @@ export interface EmailEditorProps {
   setOpenAprob?: (open: boolean) => void;
   setOpenSchedule?: (open: boolean) => void;
   setOpenSendSubs?: (open: boolean) => void;
+  // Nuevas props para carga de newsletter existente
+  initialComponents?: any[] | null;
+  onNewsletterIdChange?: (id: string) => void;
 }

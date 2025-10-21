@@ -1,12 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Icon } from '@iconify/react';
 
-import { Box, Button, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
 
-import ContentLibrary from '../content-library';
-import NotesModal from './components/NotesModal';
+import NotesLibrary from './components/NotesLibrary';
 import TemplateModal from './components/TemplateModal';
 import ComponentCategories from './components/ComponentCategories';
 
@@ -23,6 +21,7 @@ export default function LeftPanel({
   setActiveTemplate,
   defaultTemplate,
   excludeTemplates = [],
+  initialNote,
   generatingEmail,
   handleGenerateEmailHtml,
   activeVersion,
@@ -61,15 +60,15 @@ export default function LeftPanel({
   onInjectNote = () => {},
   onRefreshNotes = () => {},
 }: LeftPanelProps) {
-  const [activeTab, setActiveTab] = React.useState<'content' | 'library'>('content');
-  const [openNotesModal, setOpenNotesModal] = React.useState(false);
-  const [notesFilter, setNotesFilter] = React.useState('');
-  // Si hay defaultTemplate, no mostrar el modal; si no hay, mostrarlo
-  const [openTemplateModal, setOpenTemplateModal] = React.useState(!defaultTemplate);
+  const [activeTab, setActiveTab] = React.useState<'content' | 'notes'>('content');
+  // Si hay defaultTemplate o initialNote, no mostrar el modal; si no hay ninguno, mostrarlo
+  const [openTemplateModal, setOpenTemplateModal] = React.useState(
+    !defaultTemplate && !initialNote
+  );
 
   const handleTabChange = (
     event: React.MouseEvent<HTMLElement>,
-    newValue: 'content' | 'library' | null
+    newValue: 'content' | 'notes' | null
   ) => {
     if (newValue !== null) {
       setActiveTab(newValue);
@@ -127,11 +126,11 @@ export default function LeftPanel({
           }}
         >
           <ToggleButton value="content" aria-label="content">
-            Contenido
+            Elementos
           </ToggleButton>
           {isNewsletterMode && (
-            <ToggleButton value="library" aria-label="library">
-              Biblioteca
+            <ToggleButton value="notes" aria-label="notes">
+              Notas
             </ToggleButton>
           )}
         </ToggleButtonGroup>
@@ -160,37 +159,14 @@ export default function LeftPanel({
               addComponent={addComponent}
               enabledComponents={enabledComponents}
             />
-
-            {/* BOTÓN PARA ABRIR MODAL DE NOTAS - Solo mostrar si es template newsletter */}
-            {(activeTemplate === 'newsletter' || activeVersion === 'newsletter') && (
-              <Box sx={{ mt: 2, px: 1 }}>
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Icon icon="mdi:plus-circle" style={{ fontSize: '1.2rem' }} />}
-                  onClick={() => setOpenNotesModal(true)}
-                  sx={{
-                    py: 1.5,
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  Inyectar Notas Disponibles
-                </Button>
-              </Box>
-            )}
           </Box>
         </>
       )}
 
-      {/* Tab de Biblioteca para Newsletter */}
-      {activeTab === 'library' && isNewsletterMode && (
+      {/* Tab de Notas para Newsletter */}
+      {activeTab === 'notes' && isNewsletterMode && (
         <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-          <ContentLibrary
-            selectedNotes={newsletterNotes}
-            onAddNote={onAddNewsletterNote}
-            onEditNote={onEditNote}
-          />
+          <NotesLibrary onInjectNote={onInjectNote} />
         </Box>
       )}
 
@@ -202,18 +178,6 @@ export default function LeftPanel({
         activeTemplate={activeTemplate}
         onTemplateSelect={handleTemplateSelect}
         excludeTemplates={excludeTemplates}
-      />
-
-      {/* MODAL DE NOTAS DISPONIBLES */}
-      <NotesModal
-        open={openNotesModal}
-        onClose={() => setOpenNotesModal(false)}
-        notesFilter={notesFilter}
-        setNotesFilter={setNotesFilter}
-        availableNotes={availableNotes}
-        loadingNotes={loadingNotes}
-        onInjectNote={onInjectNote}
-        onRefreshNotes={onRefreshNotes}
       />
     </Box>
   );
