@@ -933,19 +933,31 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     setGeneratingEmail(true);
     try {
       const components = getActiveComponents();
+      // En versión web: sin bordes ni ancho máximo
+      // En versión newsletter: con bordes y ancho máximo
+      const containerConfig =
+        activeVersion === 'web'
+          ? {
+              borderWidth: 0,
+              borderColor: 'transparent',
+              borderRadius: 0,
+              padding: 0,
+              maxWidth: undefined,
+            }
+          : {
+              borderWidth: containerBorderWidth,
+              borderColor: containerBorderColor,
+              borderRadius: containerBorderRadius,
+              padding: containerPadding,
+              maxWidth: containerMaxWidth,
+            };
 
       // Usar generateSingleNoteHtml para generar HTML de la nota individual
       const html = generateSingleNoteHtml(
         noteData.noteTitle || 'Nota',
         noteData.noteDescription || '',
         components,
-        {
-          borderWidth: containerBorderWidth,
-          borderColor: containerBorderColor,
-          borderRadius: containerBorderRadius,
-          padding: containerPadding,
-          maxWidth: containerMaxWidth,
-        }
+        containerConfig
       );
 
       setEmailHtml(html);
@@ -960,6 +972,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     getActiveComponents,
     noteData.noteTitle,
     noteData.noteDescription,
+    activeVersion,
     containerBorderWidth,
     containerBorderColor,
     containerBorderRadius,
@@ -1053,13 +1066,24 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         const postData = currentPost; // Usar la variable ya existente del scope superior
 
         // Configuración del contenedor desde el panel derecho
-        const containerConfig = {
-          borderWidth: containerBorderWidth,
-          borderColor: containerBorderColor,
-          borderRadius: containerBorderRadius,
-          padding: containerPadding,
-          maxWidth: containerMaxWidth,
-        };
+        // En versión web: sin bordes ni ancho máximo
+        // En versión newsletter: con bordes y ancho máximo
+        const containerConfig =
+          activeVersion === 'web'
+            ? {
+                borderWidth: 0,
+                borderColor: 'transparent',
+                borderRadius: 0,
+                padding: 0,
+                maxWidth: undefined,
+              }
+            : {
+                borderWidth: containerBorderWidth,
+                borderColor: containerBorderColor,
+                borderRadius: containerBorderRadius,
+                padding: containerPadding,
+                maxWidth: containerMaxWidth,
+              };
 
         const singleNoteHtml = generateSingleNoteHtml(
           postData?.title || noteData.noteTitle || 'Nota',
@@ -1071,6 +1095,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         console.log('✅ HTML de nota individual generado:', {
           htmlLength: singleNoteHtml.length,
           htmlPreview: singleNoteHtml.substring(0, 200) + '...',
+          activeVersion,
+          containerConfig,
         });
 
         return singleNoteHtml;
@@ -1090,6 +1116,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     noteData.noteTitle,
     noteData.noteDescription,
     currentPost,
+    activeVersion,
     // Agregar las configuraciones del contenedor
     containerBorderWidth,
     containerBorderColor,
@@ -1301,31 +1328,50 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         containerMaxWidth,
       };
 
-      // Preparar datos para el POST/PATCH
-      const postData = {
-        title: noteData.noteTitle.trim(),
-        description: noteData.noteDescription || '',
-        coverImageUrl: noteData.noteCoverImageUrl || '',
-        objData: objDataString,
-        objDataWeb: objDataWebString,
-        configPost: JSON.stringify(configPostObject),
-        origin: 'ADAC',
-        highlight: noteData.highlight,
-        contentTypeId: noteData.contentTypeId,
-        audienceId: noteData.audienceId || null,
-        // El backend espera valores singulares, no arrays
-        categoryId: noteData.categoryId || null,
-        subcategoryId: noteData.subcategoryId || null,
-      };
-
       let result;
 
       if (noteData.isEditingExistingNote && noteData.currentNoteId) {
-        // Actualizar post existente
-        result = await updatePost(noteData.currentNoteId, postData);
+        // Actualizar post existente - solo enviar campos de UpdatePostData
+        const updateData = {
+          title: noteData.noteTitle.trim(),
+          description: noteData.noteDescription || '',
+          coverImageUrl: noteData.noteCoverImageUrl || '',
+          objData: objDataString,
+          objDataWeb: objDataWebString,
+          configPost: JSON.stringify(configPostObject),
+          content: '', // Campo requerido por el backend (puede estar vacío)
+          highlight: noteData.highlight,
+        };
+
+        console.log('📝 Actualizando post existente:', {
+          postId: noteData.currentNoteId,
+          fields: Object.keys(updateData),
+        });
+
+        result = await updatePost(noteData.currentNoteId, updateData);
       } else {
-        // Crear nuevo post
-        result = await createPost(postData);
+        // Crear nuevo post - enviar campos de CreatePostData
+        const createData = {
+          title: noteData.noteTitle.trim(),
+          description: noteData.noteDescription || '',
+          coverImageUrl: noteData.noteCoverImageUrl || '',
+          objData: objDataString,
+          objDataWeb: objDataWebString,
+          configPost: JSON.stringify(configPostObject),
+          origin: 'ADAC',
+          highlight: noteData.highlight,
+          contentTypeId: noteData.contentTypeId,
+          audienceId: noteData.audienceId || null,
+          // El backend espera valores singulares, no arrays
+          categoryId: noteData.categoryId || null,
+          subcategoryId: noteData.subcategoryId || null,
+        };
+
+        console.log('📝 Creando post nuevo:', {
+          fields: Object.keys(createData),
+        });
+
+        result = await createPost(createData);
         if (result) {
           noteData.setCurrentNoteId(result.id);
           noteData.setIsEditingExistingNote(true);
@@ -1524,19 +1570,17 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   // Cargar datos del post cuando se edite una nota existente
   useEffect(() => {
     if (currentPost && noteData.isEditingExistingNote) {
-      // Extraer metadata - todos los campos son singulares
-      const categoryId = (currentPost as any).categoryId || '';
-      const subcategoryId = (currentPost as any).subcategoryId || '';
+      // Extraer metadata usando categoryIDs y subcategoryIDs (arrays de strings)
       const contentTypeId = (currentPost as any).contentTypeId || '';
       const audienceId = (currentPost as any).audienceId || '';
 
-      console.log('📝 Cargando metadata de nota existente:', {
+      console.log('📝 Cargando metadata de nota existente (paso 1 - básicos):', {
         contentTypeId,
         audienceId,
-        categoryId,
-        subcategoryId,
       });
 
+      // Solo cargar datos básicos primero (sin categoryId/subcategoryId)
+      // Estos se setearán después cuando se carguen las categorías
       noteData.loadNoteData({
         title: currentPost.title,
         description: currentPost.description,
@@ -1544,8 +1588,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         status: (currentPost.status as PostStatus) || 'DRAFT',
         contentTypeId,
         audienceId,
-        categoryId,
-        subcategoryId,
         highlight: (currentPost as any).highlight || false,
       });
 
@@ -1590,6 +1632,43 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       }
     }
   }, [currentPost]);
+
+  // Setear categoryId y subcategoryId después de que se carguen las categorías
+  useEffect(() => {
+    // Solo ejecutar cuando:
+    // 1. Se está editando una nota existente
+    // 2. Ya se tiene contentTypeId
+    // 3. Hay un currentPost con categoryIDs/subcategoryIDs
+    if (noteData.isEditingExistingNote && noteData.contentTypeId && currentPost) {
+      const categoryIDs = (currentPost as any).categoryIDs || [];
+      const subcategoryIDs = (currentPost as any).subcategoryIDs || [];
+
+      console.log('📝 Verificando categorías para cargar (paso 2):', {
+        categoryIDs,
+        subcategoryIDs,
+        currentCategoryId: noteData.categoryId,
+        currentSubcategoryId: noteData.subcategoryId,
+      });
+
+      // Setear categoryId solo si aún no está seteado y hay datos
+      if (!noteData.categoryId && categoryIDs.length > 0) {
+        console.log('✅ Seteando categoryId:', categoryIDs[0]);
+        noteData.setCategoryId(categoryIDs[0]);
+      }
+
+      // Setear subcategoryId solo si aún no está seteado y hay datos
+      if (!noteData.subcategoryId && subcategoryIDs.length > 0) {
+        console.log('✅ Seteando subcategoryId:', subcategoryIDs[0]);
+        noteData.setSubcategoryId(subcategoryIDs[0]);
+      }
+    }
+  }, [
+    noteData.contentTypeId,
+    currentPost,
+    noteData.isEditingExistingNote,
+    noteData.categoryId,
+    noteData.subcategoryId,
+  ]);
 
   // NUEVA FUNCIÓN: Actualizar contenido de componente en nota del newsletter
   const updateNewsletterNoteComponentContent = useCallback(
@@ -2494,11 +2573,11 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
             gradientColors={gradientColors}
             onContainerClick={handleContainerSelect}
             isContainerSelected={isContainerSelected}
-            containerBorderWidth={containerBorderWidth}
-            containerBorderColor={containerBorderColor}
-            containerBorderRadius={containerBorderRadius}
-            containerPadding={containerPadding}
-            containerMaxWidth={containerMaxWidth}
+            containerBorderWidth={activeVersion === 'web' ? 0 : containerBorderWidth}
+            containerBorderColor={activeVersion === 'web' ? 'transparent' : containerBorderColor}
+            containerBorderRadius={activeVersion === 'web' ? 0 : containerBorderRadius}
+            containerPadding={activeVersion === 'web' ? 0 : containerPadding}
+            containerMaxWidth={activeVersion === 'web' ? undefined : containerMaxWidth}
             activeTemplate={activeTemplate}
             activeVersion={activeVersion}
             // Nuevas props para newsletter

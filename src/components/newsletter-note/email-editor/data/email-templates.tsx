@@ -1,5 +1,7 @@
 import { File04, ZapCircle, BarChart01, Attachment02 } from '@untitledui/icons';
 
+import { HowToIcon, SkillUpIcon } from './template-icons';
+
 export const emailTemplates = [
   {
     id: 'blank',
@@ -34,6 +36,20 @@ export const emailTemplates = [
     name: 'Storyboard',
     description: 'Crea guiones audiovisuales con texto, imágenes y adjuntos para producción',
     icon: 'mdi:movie-open-outline',
+    image: '',
+  },
+  {
+    id: 'skillup',
+    name: 'SkillUp',
+    description: 'Template para contenido educativo y desarrollo de habilidades',
+    icon: <SkillUpIcon width={40} height={41} />,
+    image: '',
+  },
+  {
+    id: 'howto',
+    name: 'How To',
+    description: 'Guías paso a paso y tutoriales prácticos',
+    icon: <HowToIcon width={32} height={27} />,
     image: '',
   },
   {

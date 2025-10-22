@@ -149,7 +149,9 @@ export const useTextFormatting = () => {
     ) => {
       // Si hay un componente seleccionado y función de actualización, actualizar directamente
       if (selectedComponentId && updateComponentStyle) {
-        updateComponentStyle(selectedComponentId, { textAlign: alignment });
+        updateComponentStyle(selectedComponentId, {
+          textAlign: alignment as React.CSSProperties['textAlign'],
+        });
         setSelectedAlignment(alignment);
         return;
       }

@@ -1,5 +1,7 @@
 import type { EmailComponent } from 'src/types/saved-note';
 
+import { CONFIG } from 'src/global-config';
+
 // Notion components
 export const notionComponents: EmailComponent[] = [
   { id: 'heading-1', type: 'heading', content: 'Login', props: { level: 1 } },
@@ -460,8 +462,8 @@ export const newsComponentsWeb: EmailComponent[] = [
     type: 'image',
     content: '',
     props: {
-      src: '/interconnected-network.png',
-      alt: 'Imagen secundaria relacionada con la noticia',
+      src: CONFIG.emptyImageUrl,
+      alt: 'Imagen de la noticia',
     },
   },
   {
@@ -536,10 +538,10 @@ export const marketComponents: EmailComponent[] = [
     content: '',
     props: {
       images: [
-        { src: '', alt: 'Imagen 1' },
-        { src: '', alt: 'Imagen 2' },
-        { src: '', alt: 'Imagen 3' },
-        { src: '', alt: 'Imagen 4' },
+        { src: CONFIG.emptyImageUrl, alt: 'Imagen 1' },
+        { src: CONFIG.emptyImageUrl, alt: 'Imagen 2' },
+        { src: CONFIG.emptyImageUrl, alt: 'Imagen 3' },
+        { src: CONFIG.emptyImageUrl, alt: 'Imagen 4' },
       ],
       spacing: 8,
       borderRadius: 8,
@@ -614,10 +616,10 @@ export const marketComponentsWeb: EmailComponent[] = [
     content: '',
     props: {
       images: [
-        { src: '', alt: 'Gráfico de tendencias' },
-        { src: '', alt: 'Análisis sectorial' },
-        { src: '', alt: 'Datos comparativos' },
-        { src: '', alt: 'Proyecciones futuras' },
+        { src: CONFIG.emptyImageUrl, alt: 'Gráfico de tendencias' },
+        { src: CONFIG.emptyImageUrl, alt: 'Análisis sectorial' },
+        { src: CONFIG.emptyImageUrl, alt: 'Datos comparativos' },
+        { src: CONFIG.emptyImageUrl, alt: 'Proyecciones futuras' },
       ],
       spacing: 8,
       borderRadius: 8,
@@ -678,10 +680,10 @@ export const marketComponentsWeb: EmailComponent[] = [
     content: '',
     props: {
       images: [
-        { src: '', alt: 'Datos demográficos' },
-        { src: '', alt: 'Segmentación de mercado' },
-        { src: '', alt: 'Comportamiento del consumidor' },
-        { src: '', alt: 'Canales de distribución' },
+        { src: CONFIG.emptyImageUrl, alt: 'Datos demográficos' },
+        { src: CONFIG.emptyImageUrl, alt: 'Segmentación de mercado' },
+        { src: CONFIG.emptyImageUrl, alt: 'Comportamiento del consumidor' },
+        { src: CONFIG.emptyImageUrl, alt: 'Canales de distribución' },
       ],
       spacing: 8,
       borderRadius: 8,
@@ -759,7 +761,7 @@ export const featureComponents: EmailComponent[] = [
     type: 'imageText',
     content: '',
     props: {
-      imageUrl: '',
+      imageUrl: CONFIG.emptyImageUrl,
       imageAlt: 'Característica 1',
       title: 'Fácil de usar',
       description:
@@ -779,7 +781,7 @@ export const featureComponents: EmailComponent[] = [
     type: 'imageText',
     content: '',
     props: {
-      imageUrl: '',
+      imageUrl: CONFIG.emptyImageUrl,
       imageAlt: 'Característica 2',
       title: 'Altamente seguro',
       description:
@@ -799,7 +801,7 @@ export const featureComponents: EmailComponent[] = [
     type: 'imageText',
     content: '',
     props: {
-      imageUrl: '',
+      imageUrl: CONFIG.emptyImageUrl,
       imageAlt: 'Característica 3',
       title: 'Soporte 24/7',
       description:
@@ -958,23 +960,10 @@ export const storyboardComponents: EmailComponent[] = [
     id: 'image-1',
     type: 'image',
     content: '',
-    data: {
+    props: {
       src: 'https://via.placeholder.com/800x450?text=Referencia+Visual+Escena+1',
       alt: 'Referencia visual de la escena 1',
     },
-    props: {},
-  },
-  {
-    id: 'file-1',
-    type: 'fileAttachment',
-    content: '',
-    data: {
-      fileName: 'Audio_Escena1.mp3',
-      fileType: 'audio',
-      fileSize: '2.5 MB',
-      description: 'Audio de referencia para la escena',
-    },
-    props: {},
   },
   {
     id: 'bulletlist-1',
@@ -987,3 +976,243 @@ export const storyboardComponents: EmailComponent[] = [
 
 // Storyboard template components (versión web - igual que la normal)
 export const storyboardComponentsWeb: EmailComponent[] = storyboardComponents;
+
+// SkillUp template components (versión newsletter)
+export const skillupComponents: EmailComponent[] = [
+  {
+    id: 'tituloConIcono-1',
+    type: 'tituloConIcono',
+    content: 'Título del SkillUp',
+    props: {
+      icon: 'https://img.icons8.com/color/48/graph.png',
+      gradientColor1: 'rgba(33, 150, 243, 0.08)',
+      gradientColor2: 'rgba(21, 101, 192, 0.00)',
+      gradientType: 'linear',
+      gradientAngle: 180,
+      colorDistribution: 0,
+      textColor: '#1565c0',
+    },
+  },
+  {
+    id: 'respaldadoPor-1',
+    type: 'respaldadoPor',
+    content: 'Respaldado por texto',
+    props: {
+      texto: 'Respaldado por',
+      nombre: 'Redacción',
+      avatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
+      avatarTamano: 21,
+      mostrarEscritorPropietario: false,
+      escritorNombre: 'Escritor',
+      escritorAvatarUrl: '',
+      propietarioNombre: 'Propietario',
+      propietarioAvatarUrl: '',
+    },
+  },
+  {
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Subtítulo',
+    props: { level: 2 },
+  },
+  {
+    id: 'paragraph-1',
+    type: 'paragraph',
+    content: 'contenido',
+    props: {},
+  },
+  {
+    id: 'summary-1',
+    type: 'summary',
+    content: 'Información importante sobre el tema',
+    props: {
+      summaryType: 'dato',
+      label: 'Dato clave',
+      icon: 'https://img.icons8.com/color/48/graph.png',
+      backgroundColor: '#e3f2fd',
+      textColor: '#1565c0',
+    },
+  },
+];
+
+// SkillUp template components (versión web)
+export const skillupComponentsWeb: EmailComponent[] = [
+  {
+    id: 'heading-1-web',
+    type: 'heading',
+    content: 'Título completo del SkillUp con más detalles',
+    props: { level: 1 },
+  },
+  {
+    id: 'respaldadoPor-1-web',
+    type: 'respaldadoPor',
+    content: 'Respaldado por texto',
+    props: {
+      texto: 'Respaldado por',
+      nombre: 'Redacción',
+      avatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
+      avatarTamano: 21,
+      mostrarEscritorPropietario: false,
+      escritorNombre: 'Escritor',
+      escritorAvatarUrl: '',
+      propietarioNombre: 'Propietario',
+      propietarioAvatarUrl: '',
+    },
+  },
+  {
+    id: 'summary-1-web',
+    type: 'summary',
+    content:
+      'Resumen detallado que proporciona una visión general del contenido completo que se desarrollará a continuación.',
+    props: {
+      summaryType: 'dato',
+      label: 'Dato clave',
+      icon: 'https://img.icons8.com/color/48/graph.png',
+      backgroundColor: '#e3f2fd',
+      textColor: '#1565c0',
+    },
+  },
+  {
+    id: 'heading-2-web',
+    type: 'heading',
+    content: 'Subtítulo para una nueva sección',
+    props: { level: 2 },
+  },
+  {
+    id: 'paragraph-1-web',
+    type: 'paragraph',
+    content:
+      'Este es el contenido principal del SkillUp en su versión web. Aquí se desarrolla con mayor profundidad el tema, incluyendo más contexto y detalles.',
+    props: {},
+  },
+  {
+    id: 'paragraph-2-web',
+    type: 'paragraph',
+    content:
+      'En el segundo párrafo podemos expandir sobre los aspectos más técnicos o específicos del tema. La versión web permite un desarrollo más extenso y detallado de la información.',
+    props: {},
+  },
+];
+
+// HowTo template components (versión newsletter)
+export const howtoComponents: EmailComponent[] = [
+  {
+    id: 'tituloConIcono-1',
+    type: 'tituloConIcono',
+    content: 'Título del How To',
+    props: {
+      icon: 'https://img.icons8.com/color/48/list.png',
+      gradientColor1: 'rgba(156, 39, 176, 0.08)',
+      gradientColor2: 'rgba(106, 27, 154, 0.00)',
+      gradientType: 'linear',
+      gradientAngle: 180,
+      colorDistribution: 0,
+      textColor: '#6a1b9a',
+    },
+  },
+  {
+    id: 'respaldadoPor-1',
+    type: 'respaldadoPor',
+    content: 'Respaldado por texto',
+    props: {
+      texto: 'Respaldado por',
+      nombre: 'Redacción',
+      avatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
+      avatarTamano: 21,
+      mostrarEscritorPropietario: false,
+      escritorNombre: 'Escritor',
+      escritorAvatarUrl: '',
+      propietarioNombre: 'Propietario',
+      propietarioAvatarUrl: '',
+    },
+  },
+  {
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Subtítulo',
+    props: { level: 2 },
+  },
+  {
+    id: 'paragraph-1',
+    type: 'paragraph',
+    content: 'contenido',
+    props: {},
+  },
+  {
+    id: 'summary-1',
+    type: 'summary',
+    content: 'Información importante sobre el tema',
+    props: {
+      summaryType: 'dato',
+      label: 'Dato clave',
+      icon: 'https://img.icons8.com/color/48/list.png',
+      backgroundColor: '#f3e5f5',
+      textColor: '#6a1b9a',
+    },
+  },
+];
+
+// HowTo template components (versión web)
+export const howtoComponentsWeb: EmailComponent[] = [
+  {
+    id: 'heading-1-web',
+    type: 'heading',
+    content: 'Título completo del How To con instrucciones detalladas',
+    props: { level: 1 },
+  },
+  {
+    id: 'respaldadoPor-1-web',
+    type: 'respaldadoPor',
+    content: 'Respaldado por texto',
+    props: {
+      texto: 'Respaldado por',
+      nombre: 'Redacción',
+      avatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
+      avatarTamano: 21,
+      mostrarEscritorPropietario: false,
+      escritorNombre: 'Escritor',
+      escritorAvatarUrl: '',
+      propietarioNombre: 'Propietario',
+      propietarioAvatarUrl: '',
+    },
+  },
+  {
+    id: 'summary-1-web',
+    type: 'summary',
+    content:
+      'Guía paso a paso que te ayudará a completar esta tarea de manera efectiva. Este tutorial está diseñado para todos los niveles.',
+    props: {
+      summaryType: 'dato',
+      label: 'Guía práctica',
+      icon: 'https://img.icons8.com/color/48/list.png',
+      backgroundColor: '#f3e5f5',
+      textColor: '#6a1b9a',
+    },
+  },
+  {
+    id: 'heading-2-web',
+    type: 'heading',
+    content: 'Paso 1: Preparación inicial',
+    props: { level: 2 },
+  },
+  {
+    id: 'paragraph-1-web',
+    type: 'paragraph',
+    content:
+      'Comienza preparando todas las herramientas y materiales necesarios. Esta sección explica en detalle cada elemento que necesitarás para completar el proceso.',
+    props: {},
+  },
+  {
+    id: 'heading-3-web',
+    type: 'heading',
+    content: 'Paso 2: Ejecución',
+    props: { level: 2 },
+  },
+  {
+    id: 'paragraph-2-web',
+    type: 'paragraph',
+    content:
+      'Ahora que tienes todo listo, sigue estas instrucciones paso a paso para completar la tarea. Asegúrate de seguir cada paso en orden para obtener los mejores resultados.',
+    props: {},
+  },
+];

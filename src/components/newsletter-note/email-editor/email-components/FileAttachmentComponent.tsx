@@ -204,17 +204,32 @@ const FileDisplay = ({ data, onUpdate, componentId }: FileDisplayProps) => (
   </Box>
 );
 
-const FileAttachmentComponent = ({ component, ...props }: EmailComponentProps) => {
-  const data = (component.data as FileAttachmentData) || {};
+const FileAttachmentComponent = ({
+  component,
+  isSelected,
+  index,
+  totalComponents,
+  moveComponent,
+  removeComponent,
+  updateComponentProps,
+}: EmailComponentProps) => {
+  const data = (component.props as FileAttachmentData) || {};
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
 
   return (
     <ComponentWithToolbar
-      component={component}
-      componentType="fileAttachment"
-      data={data}
-      {...props}
+      isSelected={isSelected}
+      index={index}
+      totalComponents={totalComponents}
+      componentId={component.id}
+      moveComponent={moveComponent}
+      removeComponent={removeComponent}
+      onClick={handleClick}
     >
-      <FileDisplay data={data} onUpdate={props.onUpdate} componentId={component.id} />
+      <FileDisplay data={data} onUpdate={updateComponentProps} componentId={component.id} />
     </ComponentWithToolbar>
   );
 };

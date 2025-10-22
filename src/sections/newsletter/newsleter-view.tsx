@@ -13,7 +13,6 @@ import {
   Tab,
   Grid,
   Tabs,
-  Chip,
   Modal,
   Paper,
   Button,
@@ -38,9 +37,8 @@ import { DashboardContent } from 'src/layouts/dashboard/content';
 
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
-import NewsletterCard from 'src/components/newsletter-note/newsletter-card';
+import ContentCard from 'src/components/newsletter-note/content-card';
 import NewsletterEditor from 'src/components/newsletter-note/newsletter-editor';
-import { emailTemplates } from 'src/components/newsletter-note/email-editor/data/email-templates';
 
 type Tab = {
   label: string;
@@ -74,9 +72,6 @@ export default function NewsletterView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [openFiltersModal, setOpenFiltersModal] = useState(false);
-
-  // Nuevo estado para filtro de templates
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('all');
 
   // Estados para filtros avanzados
   const [filters, setFilters] = useState({
@@ -194,12 +189,6 @@ export default function NewsletterView() {
     setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on tab change
   };
 
-  const handleTemplateChange = (templateId: string) => {
-    console.log('🔄 Cambiando template a:', templateId);
-    setSelectedTemplate(templateId);
-    setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on template change
-  };
-
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
     setFilters((prev) => ({ ...prev, page }));
   };
@@ -218,7 +207,6 @@ export default function NewsletterView() {
       page: 1,
     });
     setSearchTerm('');
-    setSelectedTemplate('all');
   };
 
   return (
@@ -304,35 +292,7 @@ export default function NewsletterView() {
           </Box>
         </Box>
 
-        {/* Filtro de Templates - Nueva sección prominente */}
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Filtrar por Template
-          </Typography>
-
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-            <Chip
-              label="Todos los templates"
-              onClick={() => handleTemplateChange('all')}
-              color={selectedTemplate === 'all' ? 'primary' : 'default'}
-              variant={selectedTemplate === 'all' ? 'filled' : 'outlined'}
-              sx={{ cursor: 'pointer' }}
-            />
-
-            {emailTemplates.map((template) => (
-              <Chip
-                key={template.id}
-                label={template.name}
-                onClick={() => handleTemplateChange(template.id)}
-                color={selectedTemplate === template.id ? 'primary' : 'default'}
-                variant={selectedTemplate === template.id ? 'filled' : 'outlined'}
-                sx={{ cursor: 'pointer' }}
-              />
-            ))}
-          </Box>
-        </Box>
-
-        {/* Filtro de Estado - Ahora secundario */}
+        {/* Filtro de Estado */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
             Estado de los newsletters
@@ -407,9 +367,10 @@ export default function NewsletterView() {
                 }
               })
               .map((newsletter) => (
-                <Grid key={newsletter.id} component="div">
-                  <NewsletterCard
-                    newsletter={newsletter}
+                <Grid key={newsletter.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                  <ContentCard
+                    content={newsletter}
+                    type="newsletter"
                     onOpen={handleOpenNewsletterEditor}
                     onDelete={handleDeleteNewsletter}
                   />
@@ -433,13 +394,6 @@ export default function NewsletterView() {
               <Typography variant="body2" color="text.secondary">
                 Mostrando {Math.min(filters.perPage, newsletters.length)} de {newsletters.length}{' '}
                 newsletters
-                {selectedTemplate !== 'all' && (
-                  <span>
-                    {' '}
-                    del template &quot;{emailTemplates.find((t) => t.id === selectedTemplate)?.name}
-                    &quot;
-                  </span>
-                )}
               </Typography>
             </Box>
           </Box>
@@ -473,37 +427,19 @@ export default function NewsletterView() {
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {/* Template y Origen */}
-              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <FormControl fullWidth>
-                  <InputLabel>Template</InputLabel>
-                  <Select
-                    value={selectedTemplate}
-                    label="Template"
-                    onChange={(e) => handleTemplateChange(e.target.value)}
-                  >
-                    <MenuItem value="all">Todos los templates</MenuItem>
-                    {emailTemplates.map((template) => (
-                      <MenuItem key={template.id} value={template.id}>
-                        {template.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <FormControl fullWidth>
-                  <InputLabel>Origen</InputLabel>
-                  <Select
-                    value={filters.origin}
-                    label="Origen"
-                    onChange={(e) => handleFilterChange('origin', e.target.value)}
-                  >
-                    <MenuItem value="">Todos</MenuItem>
-                    <MenuItem value="IA">IA</MenuItem>
-                    <MenuItem value="ADAC">ADAC</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
+              {/* Origen */}
+              <FormControl fullWidth>
+                <InputLabel>Origen</InputLabel>
+                <Select
+                  value={filters.origin}
+                  label="Origen"
+                  onChange={(e) => handleFilterChange('origin', e.target.value)}
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  <MenuItem value="IA">IA</MenuItem>
+                  <MenuItem value="ADAC">ADAC</MenuItem>
+                </Select>
+              </FormControl>
 
               {/* Elementos por página */}
               <FormControl fullWidth>

@@ -24,7 +24,8 @@ export interface EmailComponent {
     | 'chart'
     | 'noteContainer'
     | 'newsletterHeaderReusable'
-    | 'newsletterFooterReusable';
+    | 'newsletterFooterReusable'
+    | 'fileAttachment';
   content: string;
   props: {
     level?: number;

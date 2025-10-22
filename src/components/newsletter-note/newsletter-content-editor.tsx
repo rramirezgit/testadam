@@ -176,7 +176,7 @@ export default function NewsletterContentEditor({
 }: NewsletterContentEditorProps) {
   // Basic newsletter info
   const [newsletterId, setNewsletterId] = useState<string>(initialNewsletter?.id || uuidv4());
-  const [title, setTitle] = useState<string>(initialNewsletter?.title || '');
+  const [title, setTitle] = useState<string>(initialNewsletter?.subject || '');
   const [description, setDescription] = useState<string>(initialNewsletter?.description || '');
 
   // Editor state
@@ -196,7 +196,7 @@ export default function NewsletterContentEditor({
 
   // Header and footer
   const [header, setHeader] = useState<NewsletterHeader>({
-    title: initialNewsletter?.title || 'Newsletter Title',
+    title: initialNewsletter?.subject || 'Newsletter Title',
     subtitle: 'Your weekly newsletter',
     alignment: 'center',
     backgroundColor: '#3f51b5',
@@ -246,7 +246,7 @@ export default function NewsletterContentEditor({
   // Load initial newsletter if provided
   useEffect(() => {
     if (initialNewsletter) {
-      setTitle(initialNewsletter.title);
+      setTitle(initialNewsletter.subject);
       setDescription(initialNewsletter.description || '');
 
       // If the newsletter has content components, load them
@@ -510,7 +510,7 @@ export default function NewsletterContentEditor({
     try {
       const newsletter: Newsletter = {
         id: newsletterId,
-        title: title.trim(),
+        subject: title.trim(),
         description: description.trim(),
         dateCreated: initialNewsletter?.dateCreated || new Date().toISOString(),
         dateModified: new Date().toISOString(),
@@ -524,6 +524,7 @@ export default function NewsletterContentEditor({
           gradientColors,
         },
         notes: initialNewsletter?.notes || [],
+        createdAt: initialNewsletter?.createdAt || new Date().toISOString(),
       };
 
       onSave(newsletter);

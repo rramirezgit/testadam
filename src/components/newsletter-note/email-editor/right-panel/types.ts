@@ -23,10 +23,26 @@ export interface RightPanelProps {
   selectedAlignment: string;
   textFormat: string[];
   applyTextFormat: (format: string) => void;
-  applyTextAlignment: (alignment: string) => void;
-  applyTextColor: (color: string) => void;
-  applyFontSize: (size: string) => void;
-  applyFontFamily: (font: string) => void;
+  applyTextAlignment: (
+    alignment: string,
+    selectedComponentId?: string | null,
+    updateComponentStyle?: (id: string, style: React.CSSProperties) => void
+  ) => void;
+  applyTextColor: (
+    color: string,
+    selectedComponentId?: string | null,
+    updateComponentStyle?: (id: string, style: React.CSSProperties) => void
+  ) => void;
+  applyFontSize: (
+    size: string,
+    selectedComponentId: string | null,
+    updateComponentStyle: (id: string, style: React.CSSProperties) => void
+  ) => void;
+  applyFontFamily: (
+    font: string,
+    selectedComponentId: string | null,
+    updateComponentStyle: (id: string, style: React.CSSProperties) => void
+  ) => void;
   emailBackground: string;
   setEmailBackground: (color: string) => void;
   selectedBanner: string | null;
@@ -177,4 +193,18 @@ export interface DividerOptionsProps {
   selectedComponent: EmailComponent | null;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
   updateComponentProps: (id: string, props: Record<string, any>) => void;
+}
+
+export interface ImageCropDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSave: (croppedImage: string) => void;
+  initialImage: string;
+  currentAspectRatio?: number;
+}
+
+export interface CropRatio {
+  label: string;
+  value: number | undefined;
+  icon: string;
 }

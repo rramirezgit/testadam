@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { Icon } from '@iconify/react';
 
-import { Box, Typography } from '@mui/material';
+import { Box, Chip, Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
 
@@ -28,8 +27,6 @@ const GalleryComponent = ({
   removeComponent,
   totalComponents,
 }: EmailComponentProps) => {
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
-
   // Inicializar con 4 imágenes vacías si no existen
   const images = component.props?.images || [
     { src: '', alt: 'Imagen 1' },
@@ -46,6 +43,7 @@ const GalleryComponent = ({
 
   const spacing = component.props?.spacing || 8;
   const borderRadius = component.props?.borderRadius || 8;
+  const selectedImageIndex = component.props?.selectedImageIndex;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,9 +58,7 @@ const GalleryComponent = ({
       onSelect();
     }
 
-    // Seleccionar la imagen específica para editar
-    setSelectedImageIndex(imageIndex);
-    // Actualizar el componente para indicar qué imagen está seleccionada
+    // Seleccionar la imagen específica para editar en el panel derecho
     updateComponentProps(component.id, { selectedImageIndex: imageIndex });
   };
 
@@ -105,18 +101,17 @@ const GalleryComponent = ({
                 borderRadius: `${borderRadius}px`,
                 overflow: 'hidden',
                 cursor: 'pointer',
-                border:
-                  isSelected && selectedImageIndex === idx
-                    ? '3px solid #2196f3'
-                    : '1px solid #e0e0e0',
+                border: isSelected && selectedImageIndex === idx ? '3px solid' : '1px solid',
+                borderColor: isSelected && selectedImageIndex === idx ? 'primary.main' : 'divider',
                 transition: 'all 0.2s ease',
-                backgroundColor: '#f5f5f5',
+                backgroundColor: image.src ? 'transparent' : 'grey.100',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 '&:hover': {
-                  border: isSelected ? '2px solid #2196f3' : '2px solid #bdbdbd',
+                  borderColor: isSelected ? 'primary.light' : 'grey.400',
                   transform: 'scale(1.02)',
+                  boxShadow: isSelected ? 2 : 1,
                 },
               }}
             >
@@ -138,36 +133,51 @@ const GalleryComponent = ({
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#9e9e9e',
+                    color: 'grey.500',
                     gap: 1,
+                    p: 2,
                   }}
                 >
-                  <Icon icon={getPlaceholderIcon(idx)} width="32" height="32" />
-                  <Typography variant="caption" sx={{ textAlign: 'center' }}>
-                    {image.alt}
+                  <Icon icon={getPlaceholderIcon(idx)} width="40" height="40" />
+                  <Typography variant="caption" sx={{ textAlign: 'center', fontWeight: 500 }}>
+                    Click para subir
                   </Typography>
                 </Box>
               )}
 
-              {isSelected && (
+              {/* Badge con número de posición */}
+              <Chip
+                size="small"
+                label={idx + 1}
+                color={isSelected && selectedImageIndex === idx ? 'primary' : 'default'}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  fontWeight: 'bold',
+                  boxShadow: 1,
+                }}
+              />
+
+              {/* Indicador de selección */}
+              {isSelected && selectedImageIndex === idx && (
                 <Box
                   sx={{
                     position: 'absolute',
-                    top: 4,
-                    right: 4,
-                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    top: 8,
+                    right: 8,
+                    backgroundColor: 'primary.main',
                     borderRadius: '50%',
-                    width: 24,
-                    height: 24,
+                    width: 28,
+                    height: 28,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'white',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
+                    boxShadow: 2,
                   }}
                 >
-                  {idx + 1}
+                  <Icon icon="mdi:check" fontSize={20} />
                 </Box>
               )}
             </Box>

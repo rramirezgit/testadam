@@ -151,6 +151,11 @@ export interface UpdatePostData {
   description?: string;
   status?: PostStatus;
   publishOnAdac?: boolean;
+  // Campos de metadata (opcionales en update)
+  contentTypeId?: string;
+  audienceId?: string;
+  categoryId?: string;
+  subcategoryId?: string;
 }
 
 // Datos para crear un post

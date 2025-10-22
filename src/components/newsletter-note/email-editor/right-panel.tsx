@@ -319,9 +319,17 @@ export default function RightPanel({
     if (contentTypeId) {
       console.log('🔄 Content type cambió, cargando categorías para:', contentTypeId);
       loadCategories(contentTypeId);
-      // Resetear categoría y subcategoría cuando cambie el content type
-      setCategoryId('');
-      setSubcategoryId('');
+
+      // Solo resetear categoría y subcategoría si NO hay una nota cargada
+      // Si hay currentNoteId, significa que estamos cargando una nota existente
+      // y las categorías se setearán desde main.tsx después de cargar
+      if (!currentNoteId) {
+        console.log('🧹 Reseteando categorías (nota nueva)');
+        setCategoryId('');
+        setSubcategoryId('');
+      } else {
+        console.log('📌 Manteniendo categorías (nota existente, se cargarán después)');
+      }
     } else {
       // Si no hay content type, limpiar categorías
       console.log('🧹 Content type vacío, limpiando categorías');
@@ -331,12 +339,20 @@ export default function RightPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contentTypeId]); // Solo depender de contentTypeId
 
-  // Resetear subcategoría cuando cambie la categoría
+  // Resetear subcategoría cuando cambie la categoría (solo para notas nuevas)
   useEffect(() => {
     if (categoryId) {
       console.log('🔄 Categoría cambió a:', categoryId);
+
+      // Solo resetear subcategoría si NO hay una nota cargada
+      // Si hay currentNoteId, la subcategoría se cargará desde main.tsx
+      if (!currentNoteId) {
+        console.log('🧹 Reseteando subcategoría (nota nueva)');
+        setSubcategoryId('');
+      } else {
+        console.log('📌 Manteniendo subcategoría (nota existente, se cargará después)');
+      }
     }
-    setSubcategoryId('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId]); // Solo depender de categoryId
 

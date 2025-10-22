@@ -9,6 +9,7 @@ export type ConfigValue = {
   appVersion: string;
   serverUrl: string;
   assetsDir: string;
+  emptyImageUrl: string;
   isStaticExport: boolean;
   auth: {
     method: 'jwt' | 'amplify' | 'firebase' | 'auth0';
@@ -32,11 +33,12 @@ export type ConfigValue = {
 // ----------------------------------------------------------------------
 
 export const CONFIG: ConfigValue = {
-  appName: 'Minimal UI',
+  appName: 'Adam Pro',
   appVersion: packageJson.version,
   serverUrl: process.env.NEXT_PUBLIC_API_URL ?? '',
   assetsDir: process.env.NEXT_PUBLIC_ASSETS_DIR ?? '',
   isStaticExport: JSON.parse(process.env.BUILD_STATIC_EXPORT ?? 'false'),
+  emptyImageUrl: process.env.NEXT_PUBLIC_EMPTY_IMG ?? '',
   /**
    * Auth
    * @method jwt | amplify | firebase | supabase | auth0

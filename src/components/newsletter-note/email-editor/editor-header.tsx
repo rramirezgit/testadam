@@ -321,6 +321,63 @@ export default function EditorHeader({
     }
   };
 
+  // Función wrapper para guardar y luego abrir diálogo de envío (para newsletters)
+  const handleSaveAndOpenDialog = async (
+    dialogType: 'test' | 'approval' | 'schedule' | 'sendNow'
+  ) => {
+    try {
+      console.log('💾 Guardando newsletter antes de enviar...');
+
+      // Primero guardar el newsletter
+      await handleSaveNewsletter();
+
+      console.log('✅ Newsletter guardado, abriendo diálogo de:', dialogType);
+
+      // Luego abrir el diálogo correspondiente
+      handleSendMenuClose();
+
+      switch (dialogType) {
+        case 'test':
+          setOpenTestDialog(true);
+          break;
+        case 'approval':
+          setOpenAprob?.(true);
+          break;
+        case 'schedule':
+          setOpenSchedule?.(true);
+          break;
+        case 'sendNow':
+          setOpenSendSubs?.(true);
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error('❌ Error guardando newsletter antes de enviar:', error);
+      handleSendMenuClose();
+      // No abrir el diálogo si hubo error al guardar
+    }
+  };
+
+  // Función para guardar nota normal antes de enviar
+  const handleSaveNoteAndOpenDialog = () => {
+    try {
+      console.log('💾 Guardando nota antes de enviar...');
+
+      // Guardar la nota (onSave es síncrono)
+      onSave();
+
+      console.log('✅ Nota guardada, abriendo diálogo de prueba');
+
+      // Abrir el diálogo de prueba
+      handleSendMenuClose();
+      setOpenTestDialog(true);
+    } catch (error) {
+      console.error('❌ Error guardando nota antes de enviar:', error);
+      handleSendMenuClose();
+    }
+  };
+
   // Función para guardar newsletter
   const handleSaveNewsletter = async () => {
     try {
@@ -501,17 +558,9 @@ export default function EditorHeader({
             }),
           }}
         >
-          <Button
-            startIcon={<Icon icon="mingcute:left-line" />}
-            onClick={onClose}
-            variant="outlined"
-            sx={{
-              mr: 1,
-              height: '42px',
-            }}
-          >
-            Volver
-          </Button>
+          <IconButton onClick={onClose} sx={{ borderRadius: '8px', border: '1px solid #C4CDD520' }}>
+            <Icon icon="mingcute:left-line" />
+          </IconButton>
           <Typography
             variant="subtitle1"
             component="div"
@@ -520,17 +569,22 @@ export default function EditorHeader({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
               maxWidth: '250px',
+              fontSize: '14px',
+              marginLeft: '15px',
+              fontWeight: 500,
+              color: newsletterTitle && newsletterTitle.trim() !== '' ? '#1C252E' : '#7F8C8D',
             }}
           >
             {isNewsletterMode
-              ? 'Nuevo Newsletter'
-              : isEditingExistingNote
-                ? initialNote?.title || 'Editor de Email'
-                : 'Nuevo Email'}
+              ? newsletterTitle || 'Nuevo Newsletter'
+              : initialNote?.title || 'Nota sin título'}
           </Typography>
 
-          {/* Selector de versión Web/Newsletter - Solo para template 'news' y 'market' (storyboard solo web) */}
-          {activeTemplate === 'news' || activeTemplate === 'market' ? (
+          {/* Selector de versión Web/Newsletter - Para templates con ambas versiones */}
+          {activeTemplate === 'news' ||
+          activeTemplate === 'market' ||
+          activeTemplate === 'skillup' ||
+          activeTemplate === 'howto' ? (
             <Box
               sx={{
                 display: 'flex',
@@ -789,10 +843,7 @@ export default function EditorHeader({
               >
                 <MenuItem
                   disabled={disableOption('Prueba')}
-                  onClick={() => {
-                    setOpenTestDialog(true);
-                    handleSendMenuClose();
-                  }}
+                  onClick={() => handleSaveAndOpenDialog('test')}
                 >
                   <ListItemIcon>
                     <Icon icon="mdi:test-tube" width={24} height={24} />
@@ -802,10 +853,7 @@ export default function EditorHeader({
 
                 <MenuItem
                   disabled={disableOption('Aprobacion')}
-                  onClick={() => {
-                    setOpenAprob?.(true);
-                    handleSendMenuClose();
-                  }}
+                  onClick={() => handleSaveAndOpenDialog('approval')}
                 >
                   <ListItemIcon>
                     <Icon icon="mdi:check-circle-outline" width={24} height={24} />
@@ -815,10 +863,7 @@ export default function EditorHeader({
 
                 <MenuItem
                   disabled={disableOption('schedule')}
-                  onClick={() => {
-                    setOpenSchedule?.(true);
-                    handleSendMenuClose();
-                  }}
+                  onClick={() => handleSaveAndOpenDialog('schedule')}
                 >
                   <ListItemIcon>
                     <Icon icon="material-symbols:schedule-outline" width={24} height={24} />
@@ -828,10 +873,7 @@ export default function EditorHeader({
 
                 <MenuItem
                   disabled={disableOption('Subscriptores')}
-                  onClick={() => {
-                    setOpenSendSubs?.(true);
-                    handleSendMenuClose();
-                  }}
+                  onClick={() => handleSaveAndOpenDialog('sendNow')}
                 >
                   <ListItemIcon>
                     <Icon icon="fluent-mdl2:group" width={24} height={24} />
@@ -868,18 +910,23 @@ export default function EditorHeader({
               >
                 Guardar
               </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                endIcon={<Icon icon="mdi:chevron-down" />}
-                sx={{ backgroundColor: '#4f46e5', height: '42px' }}
-                onClick={handleSendMenuClick}
-                aria-controls={openSendMenu ? 'send-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={openSendMenu ? 'true' : undefined}
-              >
-                Enviar
-              </Button>
+              <Tooltip title={!initialNote?.id ? 'Debes guardar la nota antes de enviarla' : ''}>
+                <span>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    endIcon={<Icon icon="mdi:chevron-down" />}
+                    sx={{ backgroundColor: '#4f46e5', height: '42px' }}
+                    onClick={handleSendMenuClick}
+                    disabled={!initialNote?.id}
+                    aria-controls={openSendMenu ? 'send-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={openSendMenu ? 'true' : undefined}
+                  >
+                    Enviar
+                  </Button>
+                </span>
+              </Tooltip>
 
               {/* Menú de envío */}
               <Menu
@@ -894,13 +941,7 @@ export default function EditorHeader({
                   sx: { minWidth: '200px' },
                 }}
               >
-                <MenuItem
-                  disabled={disableOption('Prueba')}
-                  onClick={() => {
-                    setOpenTestDialog(true);
-                    handleSendMenuClose();
-                  }}
-                >
+                <MenuItem disabled={disableOption('Prueba')} onClick={handleSaveNoteAndOpenDialog}>
                   <ListItemIcon>
                     <Icon icon="mdi:test-tube" width={24} height={24} />
                   </ListItemIcon>

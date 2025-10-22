@@ -56,7 +56,73 @@ export function imgPreview(
 
   ctx.restore();
 
-  return canvas.toDataURL('image/jpeg', 0.8);
+  return canvas.toDataURL('image/webp', 0.9);
+}
+
+/**
+ * Valida que el tamaño del archivo sea razonable para la web
+ * Límite: 1MB
+ */
+export function validateFileSize(file: File): { valid: boolean; sizeMB: number } {
+  const MAX_SIZE_MB = 1;
+  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+  const sizeMB = file.size / (1024 * 1024);
+
+  return {
+    valid: file.size <= MAX_SIZE_BYTES,
+    sizeMB: parseFloat(sizeMB.toFixed(2)),
+  };
+}
+
+/**
+ * Convierte cualquier imagen (JPG, PNG) a formato WebP
+ * GIFs se mantienen como GIF para preservar animaciones
+ * Preserva transparencia en PNGs
+ */
+export function convertImageToWebP(imageFile: File, quality: number = 0.9): Promise<string> {
+  return new Promise((resolve, reject) => {
+    // Si es GIF, no convertir (preservar animación)
+    if (imageFile.type === 'image/gif') {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = () => reject(new Error('Error reading GIF'));
+      reader.readAsDataURL(imageFile);
+      return;
+    }
+
+    // Para JPG, PNG, WebP → convertir a WebP
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const img = new Image();
+
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          reject(new Error('No 2d context'));
+          return;
+        }
+
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+
+        // Importante: NO hacer fillRect para preservar transparencia
+        ctx.drawImage(img, 0, 0);
+
+        // Convertir a WebP
+        const webpBase64 = canvas.toDataURL('image/webp', quality);
+        resolve(webpBase64);
+      };
+
+      img.onerror = () => reject(new Error('Error loading image'));
+      img.src = e.target?.result as string;
+    };
+
+    reader.onerror = () => reject(new Error('Error reading file'));
+    reader.readAsDataURL(imageFile);
+  });
 }
 
 export function base64ToBlob(base64: string, mimeType: string): Blob {

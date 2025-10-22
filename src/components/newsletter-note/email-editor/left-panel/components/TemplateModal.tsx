@@ -39,9 +39,9 @@ export default function TemplateModal({
 }: TemplateModalProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
 
-  // Filtrar templates excluidos
+  // Filtrar templates excluidos y también ocultar storyboard
   const filteredTemplates = emailTemplates.filter(
-    (template) => !excludeTemplates.includes(template.id)
+    (template) => !excludeTemplates.includes(template.id) && template.id !== 'storyboard'
   );
 
   const handleTemplateClick = (templateId: string) => {

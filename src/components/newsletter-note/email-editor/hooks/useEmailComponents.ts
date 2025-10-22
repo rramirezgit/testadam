@@ -5,20 +5,24 @@ import { useState, useCallback } from 'react';
 import { debugComponents, findComponentById } from '../utils/componentHelpers';
 import {
   newsComponents,
+  howtoComponents,
   plaidComponents,
+  marketComponents,
   notionComponents,
   stripeComponents,
   vercelComponents,
-  marketComponents,
   featureComponents,
+  skillupComponents,
   newsComponentsWeb,
+  howtoComponentsWeb,
   plaidComponentsWeb,
+  marketComponentsWeb,
   notionComponentsWeb,
   stripeComponentsWeb,
   vercelComponentsWeb,
-  marketComponentsWeb,
   newsletterComponents,
   storyboardComponents,
+  skillupComponentsWeb,
   newsletterComponentsWeb,
   storyboardComponentsWeb,
 } from '../data/template-components';
@@ -59,6 +63,13 @@ export const useEmailComponents = () => {
     useState<EmailComponent[]>(storyboardComponents);
   const [storyboardComponentsWebState, setStoryboardComponentsWeb] =
     useState<EmailComponent[]>(storyboardComponentsWeb);
+  const [skillupComponentsState, setSkillupComponents] =
+    useState<EmailComponent[]>(skillupComponents);
+  const [skillupComponentsWebState, setSkillupComponentsWeb] =
+    useState<EmailComponent[]>(skillupComponentsWeb);
+  const [howtoComponentsState, setHowtoComponents] = useState<EmailComponent[]>(howtoComponents);
+  const [howtoComponentsWebState, setHowtoComponentsWeb] =
+    useState<EmailComponent[]>(howtoComponentsWeb);
 
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = useCallback(
@@ -97,6 +108,12 @@ export const useEmailComponents = () => {
           case 'storyboard':
             components = storyboardComponentsState;
             break;
+          case 'skillup':
+            components = skillupComponentsState;
+            break;
+          case 'howto':
+            components = howtoComponentsState;
+            break;
           default:
             components = blankComponentsState;
             break;
@@ -133,6 +150,12 @@ export const useEmailComponents = () => {
           case 'storyboard':
             components = storyboardComponentsWebState;
             break;
+          case 'skillup':
+            components = skillupComponentsWebState;
+            break;
+          case 'howto':
+            components = howtoComponentsWebState;
+            break;
           default:
             components = blankComponentsWebState;
             break;
@@ -164,6 +187,12 @@ export const useEmailComponents = () => {
       featureComponentsState,
       newsletterComponentsState,
       newsletterComponentsWebState,
+      storyboardComponentsState,
+      storyboardComponentsWebState,
+      skillupComponentsState,
+      skillupComponentsWebState,
+      howtoComponentsState,
+      howtoComponentsWebState,
     ]
   );
 
@@ -342,6 +371,12 @@ export const useEmailComponents = () => {
           case 'storyboard':
             setStoryboardComponentsWeb(components);
             break;
+          case 'skillup':
+            setSkillupComponentsWeb(components);
+            break;
+          case 'howto':
+            setHowtoComponentsWeb(components);
+            break;
           default:
             break;
         }
@@ -377,6 +412,12 @@ export const useEmailComponents = () => {
           case 'storyboard':
             setStoryboardComponents(components);
             break;
+          case 'skillup':
+            setSkillupComponents(components);
+            break;
+          case 'howto':
+            setHowtoComponents(components);
+            break;
           default:
             break;
         }
@@ -410,6 +451,10 @@ export const useEmailComponents = () => {
             return [...newsletterComponentsWebState];
           case 'storyboard':
             return [...storyboardComponentsWebState];
+          case 'skillup':
+            return [...skillupComponentsWebState];
+          case 'howto':
+            return [...howtoComponentsWebState];
           default:
             return [...blankComponentsWebState];
         }
@@ -435,6 +480,10 @@ export const useEmailComponents = () => {
             return [...newsletterComponentsState];
           case 'storyboard':
             return [...storyboardComponentsState];
+          case 'skillup':
+            return [...skillupComponentsState];
+          case 'howto':
+            return [...howtoComponentsState];
           default:
             return [...blankComponentsState];
         }
@@ -458,6 +507,12 @@ export const useEmailComponents = () => {
       featureComponentsState,
       newsletterComponentsState,
       newsletterComponentsWebState,
+      storyboardComponentsState,
+      storyboardComponentsWebState,
+      skillupComponentsState,
+      skillupComponentsWebState,
+      howtoComponentsState,
+      howtoComponentsWebState,
     ]
   );
 
@@ -499,6 +554,14 @@ export const useEmailComponents = () => {
         setNewsletterComponents(objData);
         if (objDataWeb) setNewsletterComponentsWeb(objDataWeb);
         break;
+      case 'skillup':
+        setSkillupComponents(objData);
+        if (objDataWeb) setSkillupComponentsWeb(objDataWeb);
+        break;
+      case 'howto':
+        setHowtoComponents(objData);
+        if (objDataWeb) setHowtoComponentsWeb(objDataWeb);
+        break;
       default:
         setNotionComponents(objData);
         if (objDataWeb) setNotionComponentsWeb(objDataWeb);
@@ -524,6 +587,10 @@ export const useEmailComponents = () => {
     featureComponentsState,
     newsletterComponentsState,
     newsletterComponentsWebState,
+    skillupComponentsState,
+    skillupComponentsWebState,
+    howtoComponentsState,
+    howtoComponentsWebState,
 
     // Funciones
     getActiveComponents,

@@ -1,10 +1,14 @@
+import { Icon } from '@iconify/react';
 import { useRef, useState } from 'react';
 
-import { Box, TextField, Typography } from '@mui/material';
+import { Box, Skeleton, TextField, Typography } from '@mui/material';
 
+import { isBase64Image } from '../utils/imageValidation';
 import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
+import ImageCropDialog from '../right-panel/ImageCropDialog';
 import { useImageUpload } from '../right-panel/useImageUpload';
+import { validateFileSize, convertImageToWebP } from '../right-panel/imgPreview';
 
 import type { EmailComponentProps } from './types';
 
@@ -34,6 +38,12 @@ const TwoColumnsComponent = ({
   // Estados para controlar qué campo está siendo editado
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
+
+  // Estados para crop dialog
+  const [showCropDialog, setShowCropDialog] = useState(false);
+  const [tempImageForCrop, setTempImageForCrop] = useState('');
+  const [editingColumn, setEditingColumn] = useState<'left' | 'right' | null>(null);
+  const [isLoadingForEdit, setIsLoadingForEdit] = useState(false);
 
   const leftColumn: ColumnData = component.props?.leftColumn || {
     imageUrl: '',
@@ -140,27 +150,86 @@ const TwoColumnsComponent = ({
     column: 'left' | 'right'
   ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target?.result as string;
+    if (!file) return;
 
-        // Primero actualizar con la imagen base64 para mostrar preview
-        const currentColumn = column === 'left' ? leftColumn : rightColumn;
-        const updatedColumn = { ...currentColumn, imageUrl: base64 };
-        updateComponentProps(component.id, { [`${column}Column`]: updatedColumn });
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      alert(
+        'Tipo de archivo no válido. Por favor selecciona una imagen PNG, JPG, JPEG, WEBP o GIF.'
+      );
+      return;
+    }
 
-        // Luego subir automáticamente a S3
-        try {
-          const s3Url = await uploadImageToS3(base64, `twocolumns_${column}_${Date.now()}`);
-          const finalUpdatedColumn = { ...currentColumn, imageUrl: s3Url };
-          updateComponentProps(component.id, { [`${column}Column`]: finalUpdatedColumn });
-        } catch (error) {
-          console.error('Error al subir la imagen a S3:', error);
-          // Mantener la imagen base64 si falla la subida
-        }
-      };
-      reader.readAsDataURL(file);
+    // Validar tamaño del archivo
+    const sizeValidation = validateFileSize(file);
+    if (!sizeValidation.valid) {
+      alert(
+        `⚠️ La imagen es demasiado grande (${sizeValidation.sizeMB}MB).\n\n` +
+          `Por favor, reduce el tamaño a menos de 1MB para optimizar la carga en la web.\n\n` +
+          `Puedes usar herramientas como TinyPNG o Squoosh para comprimir la imagen.`
+      );
+      return;
+    }
+
+    try {
+      // Convertir a WebP (excepto GIF)
+      const processedBase64 = await convertImageToWebP(file, 0.9);
+      setTempImageForCrop(processedBase64);
+      setEditingColumn(column);
+      setShowCropDialog(true);
+    } catch (error) {
+      console.error('Error converting to WebP:', error);
+      alert('Error al procesar la imagen');
+    }
+  };
+
+  const handleEditExistingImage = async (column: 'left' | 'right') => {
+    const columnData = column === 'left' ? leftColumn : rightColumn;
+    const currentImageSrc = columnData.imageUrl;
+
+    if (!currentImageSrc || isBase64Image(currentImageSrc)) return;
+
+    setIsLoadingForEdit(true);
+    try {
+      // Descargar imagen como base64 desde el endpoint
+      const { createAxiosInstance } = await import('src/utils/axiosInstance');
+      const axiosInstance = createAxiosInstance();
+
+      const response = await axiosInstance.get('/media/fetch-base64', {
+        params: { mediaUrl: currentImageSrc },
+      });
+
+      const base64Image = response.data;
+      setTempImageForCrop(base64Image);
+      setEditingColumn(column);
+      setShowCropDialog(true);
+    } catch (error) {
+      console.error('Error loading image for edit:', error);
+      alert('Error al cargar la imagen para edición');
+    } finally {
+      setIsLoadingForEdit(false);
+    }
+  };
+
+  const handleSaveCroppedImage = async (croppedImage: string) => {
+    if (!editingColumn) return;
+
+    try {
+      // Auto-upload a S3
+      const s3Url = await uploadImageToS3(
+        croppedImage,
+        `twocolumns_${editingColumn}_${Date.now()}`
+      );
+
+      const currentColumn = editingColumn === 'left' ? leftColumn : rightColumn;
+      const updatedColumn = { ...currentColumn, imageUrl: s3Url };
+      updateComponentProps(component.id, { [`${editingColumn}Column`]: updatedColumn });
+
+      setTempImageForCrop('');
+      setEditingColumn(null);
+    } catch (error) {
+      console.error('Error uploading cropped image:', error);
+      alert('Error al subir la imagen');
     }
   };
 
@@ -228,40 +297,130 @@ const TwoColumnsComponent = ({
     );
   };
 
-  const renderEditableDescription = (columnData: ColumnData, columnKey: 'left' | 'right') => {
-    const fieldKey = `${columnKey}-description`;
-    const isEditingDescription = editingField === fieldKey;
+  const renderEditableDescription = (columnData: ColumnData, columnKey: 'left' | 'right') => (
+    <Box
+      onClick={(e) => handleColumnClick(columnKey, e)}
+      sx={{
+        color: textColor,
+        fontSize: `${fontSize}px`,
+        lineHeight: 1.5,
+        cursor: 'text',
+        minHeight: '1.5em',
+        position: 'relative',
+        '& p': {
+          margin: 0,
+          color: textColor,
+        },
+        '& p:empty::before': {
+          content: '"Escribe el contenido aquí..."',
+          color: '#adb5bd',
+          fontStyle: 'italic',
+        },
+      }}
+    >
+      <SimpleTipTapEditor
+        content={columnData.description}
+        onChange={(newContent) => updateColumnContent(columnKey, 'description', newContent)}
+        showToolbar={false}
+        style={{
+          outline: 'none',
+          textAlign: 'center',
+        }}
+      />
+    </Box>
+  );
+
+  const renderImage = (columnData: ColumnData, columnKey: 'left' | 'right') => {
+    if (columnData.imageUrl) {
+      return (
+        <Box
+          onClick={(e) => handleImageClick(e, columnKey)}
+          sx={{
+            position: 'relative',
+            width: '100%',
+            mb: 2,
+            cursor: 'pointer',
+            '&:hover .edit-overlay': {
+              opacity: 1,
+            },
+          }}
+        >
+          {isLoadingForEdit && editingColumn === columnKey ? (
+            <Skeleton
+              variant="rectangular"
+              width="100%"
+              height={200}
+              sx={{ borderRadius: `${borderRadius}px` }}
+            />
+          ) : (
+            <img
+              src={columnData.imageUrl}
+              alt={columnData.imageAlt}
+              style={{
+                width: '100%',
+                height: 'auto',
+                maxHeight: 200,
+                borderRadius: `${borderRadius}px`,
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+          )}
+
+          {isSelected && !isLoadingForEdit && (
+            <Box
+              className="edit-overlay"
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                borderRadius: `${borderRadius}px`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: 0,
+                transition: 'opacity 0.2s ease',
+                color: 'white',
+              }}
+            >
+              <Typography variant="body2">✏️ Click para editar</Typography>
+            </Box>
+          )}
+        </Box>
+      );
+    }
 
     return (
       <Box
-        onClick={(e) => handleColumnClick(columnKey, e)}
+        onClick={(e) => handleImageClick(e, columnKey)}
         sx={{
-          color: textColor,
-          fontSize: `${fontSize}px`,
-          lineHeight: 1.5,
-          cursor: 'text',
-          minHeight: '1.5em',
-          position: 'relative',
-          '& p': {
-            margin: 0,
-            color: textColor,
-          },
-          '& p:empty::before': {
-            content: '"Escribe el contenido aquí..."',
-            color: '#adb5bd',
-            fontStyle: 'italic',
+          width: '100%',
+          height: 150,
+          backgroundColor: '#f5f5f5',
+          borderRadius: `${borderRadius}px`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '2px dashed #e0e0e0',
+          color: '#9e9e9e',
+          cursor: 'pointer',
+          mb: 2,
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            backgroundColor: '#eeeeee',
+            borderColor: '#2196f3',
+            color: '#2196f3',
           },
         }}
       >
-        <SimpleTipTapEditor
-          content={columnData.description}
-          onChange={(newContent) => updateColumnContent(columnKey, 'description', newContent)}
-          showToolbar={false}
-          style={{
-            outline: 'none',
-            textAlign: 'center',
-          }}
-        />
+        <Icon icon="mdi:image-plus" fontSize={40} />
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          Click para subir
+        </Typography>
       </Box>
     );
   };
@@ -277,71 +436,21 @@ const TwoColumnsComponent = ({
         textAlign: 'center',
         position: 'relative',
         cursor: 'pointer',
+        border: isSelected ? '2px solid #2196f3' : '1px solid #e0e0e0',
         transition: 'all 0.2s ease',
         '&:hover': {
-          transform: 'translateY(-1px)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          borderColor: '#2196f3',
+          boxShadow: '0 2px 8px rgba(33,150,243,0.2)',
         },
       }}
     >
-      {/* Imagen de la columna */}
-      <Box sx={{ mb: 2 }}>
-        {columnData.imageUrl ? (
-          <img
-            src={columnData.imageUrl}
-            alt={columnData.imageAlt}
-            onClick={(e) => handleImageClick(e, columnKey)}
-            style={{
-              width: '100%',
-              height: 'auto',
-              maxHeight: 200,
-              borderRadius: `${borderRadius}px`,
-              objectFit: 'cover',
-              display: 'block',
-              cursor: 'pointer',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.02)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          />
-        ) : (
-          <Box
-            onClick={(e) => handleImageClick(e, columnKey)}
-            sx={{
-              width: '100%',
-              height: 150,
-              backgroundColor: '#f5f5f5',
-              borderRadius: `${borderRadius}px`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid #e0e0e0',
-              color: '#9e9e9e',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                backgroundColor: '#eeeeee',
-                borderColor: '#2196f3',
-                color: '#2196f3',
-                transform: 'scale(1.02)',
-              },
-            }}
-          >
-            <Typography variant="body2">📷 Click para subir imagen</Typography>
-          </Box>
-        )}
-      </Box>
+      {/* Imagen arriba */}
+      {renderImage(columnData, columnKey)}
 
-      {/* Título editable */}
+      {/* Título en el centro */}
       {renderEditableTitle(columnData, columnKey)}
 
-      {/* Descripción editable con TipTap */}
+      {/* Descripción abajo */}
       {renderEditableDescription(columnData, columnKey)}
     </Box>
   );
@@ -373,15 +482,28 @@ const TwoColumnsComponent = ({
           type="file"
           ref={leftImageFileInputRef}
           style={{ display: 'none' }}
-          accept="image/*"
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
           onChange={(e) => handleImageFileChange(e, 'left')}
         />
         <input
           type="file"
           ref={rightImageFileInputRef}
           style={{ display: 'none' }}
-          accept="image/*"
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
           onChange={(e) => handleImageFileChange(e, 'right')}
+        />
+
+        {/* Dialog de crop */}
+        <ImageCropDialog
+          open={showCropDialog}
+          onClose={() => {
+            setShowCropDialog(false);
+            setTempImageForCrop('');
+            setEditingColumn(null);
+          }}
+          onSave={handleSaveCroppedImage}
+          initialImage={tempImageForCrop}
+          currentAspectRatio={undefined}
         />
       </Box>
     </ComponentWithToolbar>

@@ -6,7 +6,7 @@ import { Icon } from '@iconify/react';
 
 import { Box, Grid, Button, Typography } from '@mui/material';
 
-import NoteCard from './notes-card';
+import ContentCard from './content-card';
 
 interface NotesGridProps {
   notes: Article[];
@@ -62,7 +62,7 @@ export default function NotesGrid({
     <Grid container spacing={3}>
       {notes.map((note) => (
         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={note.id}>
-          <NoteCard note={note} onOpen={onOpenNote} onDelete={onDeleteNote} />
+          <ContentCard content={note} type="note" onOpen={onOpenNote} onDelete={onDeleteNote} />
         </Grid>
       ))}
     </Grid>
