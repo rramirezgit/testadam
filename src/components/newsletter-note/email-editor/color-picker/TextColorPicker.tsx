@@ -46,6 +46,7 @@ const TextColorPicker: React.FC<TextColorPickerProps> = ({ selectedColor, applyT
         {defaultColors.map((color) => (
           <Box
             key={color}
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => applyTextColor(color)}
             sx={{
               width: 24,
@@ -63,6 +64,7 @@ const TextColorPicker: React.FC<TextColorPickerProps> = ({ selectedColor, applyT
             key={color}
             title={
               <button
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   removeCustomColor(color);
                 }}
@@ -83,6 +85,7 @@ const TextColorPicker: React.FC<TextColorPickerProps> = ({ selectedColor, applyT
             arrow
           >
             <Box
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => applyTextColor(color)}
               sx={{
                 width: 24,
@@ -97,6 +100,7 @@ const TextColorPicker: React.FC<TextColorPickerProps> = ({ selectedColor, applyT
           </Tooltip>
         ))}
         <IconButton
+          onMouseDown={(e) => e.preventDefault()}
           onClick={handleRemoveColor}
           sx={{
             width: 24,
@@ -108,6 +112,7 @@ const TextColorPicker: React.FC<TextColorPickerProps> = ({ selectedColor, applyT
           <Icon icon="mdi:format-color-reset" />
         </IconButton>
         <IconButton
+          onMouseDown={(e) => e.preventDefault()}
           onClick={(event) => setAnchorEl(event.currentTarget)}
           sx={{
             width: 24,
@@ -131,6 +136,9 @@ const TextColorPicker: React.FC<TextColorPickerProps> = ({ selectedColor, applyT
         transformOrigin={{
           vertical: 'top',
           horizontal: 'center',
+        }}
+        PaperProps={{
+          onMouseDown: (e) => e.preventDefault(), // Prevenir blur del editor
         }}
       >
         <Box p={2}>

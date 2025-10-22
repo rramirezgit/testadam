@@ -9,9 +9,11 @@ import {
   Slider,
   Divider,
   MenuItem,
-  TextField,
+  Accordion,
   Typography,
   FormControl,
+  AccordionDetails,
+  AccordionSummary,
 } from '@mui/material';
 
 import GeneralColorPicker from 'src/components/newsletter-note/general-color-picker';
@@ -106,7 +108,6 @@ export default function TituloConIconoOptions({
   const gradientAngle = component.props?.gradientAngle || 180;
   const colorDistribution = component.props?.colorDistribution || 0;
   const textColor = component.props?.textColor || '#E67E22';
-  const titulo = component.content || 'Título';
 
   // Función para aplicar un gradiente preestablecido
   const handlePresetSelect = (preset: (typeof PRESET_GRADIENTS)[0]) => {
@@ -148,342 +149,331 @@ export default function TituloConIconoOptions({
   };
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box>
       {/* Sección de Estilos Preestablecidos */}
-      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
         Estilos Preestablecidos
       </Typography>
 
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 2 }}>
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 1,
-            maxHeight: '300px',
-            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.75,
           }}
         >
           {PRESET_GRADIENTS.map((preset) => (
-            <Paper
+            <Box
               key={preset.id}
-              elevation={1}
+              onClick={() => handlePresetSelect(preset)}
               sx={{
-                p: 1,
+                height: 40,
+                borderRadius: 1,
+                background: `linear-gradient(180deg, ${preset.gradientColor1} 0%, ${preset.gradientColor2} 100%)`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                px: 1.5,
                 cursor: 'pointer',
-                border: '2px solid transparent',
-                transition: 'all 0.2s',
+                border: '1px solid',
+                borderColor: 'grey.200',
+                transition: 'all 0.15s',
                 '&:hover': {
                   borderColor: 'primary.main',
-                  transform: 'translateY(-1px)',
+                  transform: 'translateX(2px)',
                 },
               }}
-              onClick={() => handlePresetSelect(preset)}
             >
-              {/* Vista previa del gradiente */}
-              <Box
+              <img
+                src={preset.icon}
+                alt={preset.name}
+                style={{
+                  width: 18,
+                  height: 18,
+                  objectFit: 'contain',
+                  display: 'block',
+                  flexShrink: 0,
+                }}
+              />
+              <Typography
+                variant="body2"
                 sx={{
-                  height: 32,
-                  borderRadius: 1,
-                  background: `linear-gradient(180deg, ${preset.gradientColor1} 0%, ${preset.gradientColor2} 100%)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 0.5,
-                  position: 'relative',
+                  color: preset.textColor,
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
                 }}
               >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: preset.textColor,
-                    fontWeight: 'bold',
-                    fontSize: '0.65rem',
-                  }}
-                >
-                  {preset.name}
-                </Typography>
-              </Box>
-            </Paper>
+                {preset.name}
+              </Typography>
+            </Box>
           ))}
         </Box>
       </Box>
 
       <Divider sx={{ my: 2 }} />
 
-      {/* Configuración Manual Profesional */}
-      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-        Configuración Avanzada
-      </Typography>
-
-      <Divider sx={{ mb: 2 }} />
-
-      {/* Sección: Apariencia Visual */}
-      <Paper elevation={0} sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            Apariencia Visual
+      {/* Configuración Avanzada en Acordeón */}
+      <Accordion defaultExpanded={false} elevation={0} sx={{ '&:before': { display: 'none' } }}>
+        <AccordionSummary
+          expandIcon={<Icon icon="mdi:chevron-down" />}
+          sx={{
+            px: 0,
+            minHeight: 'auto',
+            '&.Mui-expanded': { minHeight: 'auto' },
+            '& .MuiAccordionSummary-content': { my: 1 },
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+            Configuración Avanzada
           </Typography>
-        </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ px: 0, pt: 1 }}>
+          {/* Sección: Apariencia Visual */}
+          <Paper elevation={0} sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                Apariencia Visual
+              </Typography>
+            </Box>
 
-        {/* Icono */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-            Icono
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Paper
-              elevation={2}
-              sx={{
-                p: 1.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 48,
-                height: 48,
-                bgcolor: 'white',
-                border: '2px solid',
-                borderColor: 'grey.200',
-              }}
-            >
-              {/* Renderizado condicional para PNG URLs vs iconos legacy */}
-              {component.props?.icon && component.props.icon.startsWith('http') ? (
-                <img
-                  src={component.props.icon}
-                  alt="Icono seleccionado"
-                  style={{
-                    width: 24,
-                    height: 24,
-                    objectFit: 'contain',
-                    display: 'block',
+            {/* Icono */}
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                Icono
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    p: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 48,
+                    height: 48,
+                    bgcolor: 'white',
+                    border: '2px solid',
+                    borderColor: 'grey.200',
+                  }}
+                >
+                  {/* Renderizado condicional para PNG URLs vs iconos legacy */}
+                  {component.props?.icon && component.props.icon.startsWith('http') ? (
+                    <img
+                      src={component.props.icon}
+                      alt="Icono seleccionado"
+                      style={{
+                        width: 24,
+                        height: 24,
+                        objectFit: 'contain',
+                        display: 'block',
+                      }}
+                    />
+                  ) : (
+                    <Icon
+                      icon={component.props?.icon || 'mdi:chart-line'}
+                      style={{ fontSize: 24, color: textColor }}
+                    />
+                  )}
+                </Paper>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowIconPicker(true)}
+                  startIcon={<Icon icon="mdi:swap-horizontal" />}
+                  sx={{ height: 'fit-content' }}
+                >
+                  Cambiar
+                </Button>
+              </Box>
+            </Box>
+          </Paper>
+
+          {/* Sección: Configuración de Gradiente */}
+          <Paper elevation={0} sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                Configuración de Gradiente
+              </Typography>
+            </Box>
+
+            {/* Tipo de gradiente */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                Tipo de Degradado
+              </Typography>
+              <FormControl fullWidth size="small">
+                <Select
+                  value={gradientType}
+                  onChange={(e) =>
+                    updateComponentProps(selectedComponentId, { gradientType: e.target.value })
+                  }
+                  sx={{ bgcolor: 'white' }}
+                >
+                  <MenuItem value="linear">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Icon icon="mdi:vector-line" />
+                      Lineal
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="radial">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Icon icon="mdi:circle-outline" />
+                      Radial
+                    </Box>
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            {/* Ángulo del gradiente (solo para linear) */}
+            {gradientType === 'linear' && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                  Dirección del Degradado
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 3 }}>
+                  <Slider
+                    value={gradientAngle}
+                    onChange={handleAngleChange}
+                    min={0}
+                    max={360}
+                    step={15}
+                    marks={[
+                      { value: 0, label: '0°' },
+                      { value: 90, label: '90°' },
+                      { value: 180, label: '180°' },
+                      { value: 270, label: '270°' },
+                    ]}
+                    sx={{ flexGrow: 1 }}
+                  />
+                  {/* <TextField
+                    type="number"
+                    size="small"
+                    value={gradientAngle}
+                    onChange={handleAngleInputChange}
+                    inputProps={{ min: 0, max: 360, step: 15 }}
+                    sx={{
+                      width: 80,
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: 'white',
+                      },
+                    }}
+                  /> */}
+                </Box>
+              </Box>
+            )}
+
+            {/* Colores del gradiente */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, mb: 2 }}>
+                Colores del Degradado
+              </Typography>
+
+              <Box sx={{ display: 'flex', gap: 3, mb: 2 }}>
+                {/* Color inicial */}
+                <Box sx={{ flex: 1 }}>
+                  <GeneralColorPicker
+                    selectedColor={gradientColor1}
+                    onChange={(newColor) =>
+                      updateComponentProps(selectedComponentId, { gradientColor1: newColor })
+                    }
+                    label="Color Inicial"
+                    size="medium"
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mt: 1, textAlign: 'center' }}
+                  >
+                    Opacidad baja
+                  </Typography>
+                </Box>
+
+                {/* Color final */}
+                <Box sx={{ flex: 1 }}>
+                  <GeneralColorPicker
+                    selectedColor={gradientColor2}
+                    onChange={(newColor) =>
+                      updateComponentProps(selectedComponentId, { gradientColor2: newColor })
+                    }
+                    label="Color Final"
+                    size="medium"
+                  />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mt: 1, textAlign: 'center' }}
+                  >
+                    Transparente
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Chips de colores para referencia */}
+              <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                <Chip
+                  size="small"
+                  label={gradientColor1}
+                  sx={{
+                    backgroundColor: gradientColor1,
+                    color: '#fff',
+                    fontSize: '0.6rem',
+                    height: 20,
+                    minWidth: 90,
                   }}
                 />
-              ) : (
-                <Icon
-                  icon={component.props?.icon || 'mdi:chart-line'}
-                  style={{ fontSize: 24, color: textColor }}
+                <Chip
+                  size="small"
+                  label={gradientColor2}
+                  sx={{
+                    backgroundColor: gradientColor2,
+                    color: '#fff',
+                    fontSize: '0.6rem',
+                    height: 20,
+                    minWidth: 90,
+                  }}
                 />
-              )}
-            </Paper>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setShowIconPicker(true)}
-              startIcon={<Icon icon="mdi:swap-horizontal" />}
-              sx={{ height: 'fit-content' }}
-            >
-              Cambiar
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Color del texto */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-            Color del Texto
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'start', gap: 2 }}>
-            <GeneralColorPicker
-              selectedColor={textColor}
-              onChange={(newColor) =>
-                updateComponentProps(selectedComponentId, { textColor: newColor })
-              }
-              label=""
-              size="small"
-            />
-          </Box>
-        </Box>
-      </Paper>
-
-      {/* Sección: Configuración de Gradiente */}
-      <Paper elevation={0} sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            Configuración de Gradiente
-          </Typography>
-        </Box>
-
-        {/* Tipo de gradiente */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-            Tipo de Degradado
-          </Typography>
-          <FormControl fullWidth size="small">
-            <Select
-              value={gradientType}
-              onChange={(e) =>
-                updateComponentProps(selectedComponentId, { gradientType: e.target.value })
-              }
-              sx={{ bgcolor: 'white' }}
-            >
-              <MenuItem value="linear">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Icon icon="mdi:vector-line" />
-                  Lineal
-                </Box>
-              </MenuItem>
-              <MenuItem value="radial">
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Icon icon="mdi:circle-outline" />
-                  Radial
-                </Box>
-              </MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Ángulo del gradiente (solo para linear) */}
-        {gradientType === 'linear' && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-              Dirección del Degradado
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Slider
-                value={gradientAngle}
-                onChange={handleAngleChange}
-                min={0}
-                max={360}
-                step={15}
-                marks={[
-                  { value: 0, label: '0°' },
-                  { value: 90, label: '90°' },
-                  { value: 180, label: '180°' },
-                  { value: 270, label: '270°' },
-                ]}
-                sx={{ flexGrow: 1 }}
-              />
-              <TextField
-                type="number"
-                size="small"
-                value={gradientAngle}
-                onChange={handleAngleInputChange}
-                inputProps={{ min: 0, max: 360, step: 15 }}
-                sx={{
-                  width: 80,
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: 'white',
-                  },
-                }}
-              />
+              </Box>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-              0° = horizontal, 90° = vertical hacia arriba, 180° = vertical hacia abajo
-            </Typography>
-          </Box>
-        )}
 
-        {/* Colores del gradiente */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, mb: 2 }}>
-            Colores del Degradado
-          </Typography>
-
-          <Box sx={{ display: 'flex', gap: 3, mb: 2 }}>
-            {/* Color inicial */}
-            <Box sx={{ flex: 1 }}>
-              <GeneralColorPicker
-                selectedColor={gradientColor1}
-                onChange={(newColor) =>
-                  updateComponentProps(selectedComponentId, { gradientColor1: newColor })
-                }
-                label="Color Inicial"
-                size="medium"
-              />
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', mt: 1, textAlign: 'center' }}
-              >
-                Opacidad baja
+            {/* Distribución de colores */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
+                Intensidad del Degradado
               </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 4 }}>
+                <Slider
+                  value={colorDistribution}
+                  onChange={handleColorDistributionChange}
+                  min={0}
+                  max={100}
+                  step={5}
+                  marks={[
+                    { value: 0, label: 'Suave' },
+                    { value: 50, label: 'Medio' },
+                    { value: 100, label: 'Intenso' },
+                  ]}
+                  sx={{ flexGrow: 1 }}
+                />
+                {/* <TextField
+                  type="number"
+                  size="small"
+                  value={colorDistribution}
+                  onChange={handleColorDistributionInputChange}
+                  inputProps={{ min: 0, max: 100, step: 5 }}
+                  sx={{
+                    width: 80,
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'white',
+                    },
+                  }}
+                /> */}
+              </Box>
             </Box>
-
-            {/* Color final */}
-            <Box sx={{ flex: 1 }}>
-              <GeneralColorPicker
-                selectedColor={gradientColor2}
-                onChange={(newColor) =>
-                  updateComponentProps(selectedComponentId, { gradientColor2: newColor })
-                }
-                label="Color Final"
-                size="medium"
-              />
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: 'block', mt: 1, textAlign: 'center' }}
-              >
-                Transparente
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Chips de colores para referencia */}
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <Chip
-              size="small"
-              label={gradientColor1}
-              sx={{
-                backgroundColor: gradientColor1,
-                color: '#fff',
-                fontSize: '0.6rem',
-                height: 20,
-                minWidth: 90,
-              }}
-            />
-            <Chip
-              size="small"
-              label={gradientColor2}
-              sx={{
-                backgroundColor: gradientColor2,
-                color: '#fff',
-                fontSize: '0.6rem',
-                height: 20,
-                minWidth: 90,
-              }}
-            />
-          </Box>
-        </Box>
-
-        {/* Distribución de colores */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-            Intensidad del Degradado
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Slider
-              value={colorDistribution}
-              onChange={handleColorDistributionChange}
-              min={0}
-              max={100}
-              step={5}
-              marks={[
-                { value: 0, label: 'Suave' },
-                { value: 50, label: 'Medio' },
-                { value: 100, label: 'Intenso' },
-              ]}
-              sx={{ flexGrow: 1 }}
-            />
-            <TextField
-              type="number"
-              size="small"
-              value={colorDistribution}
-              onChange={handleColorDistributionInputChange}
-              inputProps={{ min: 0, max: 100, step: 5 }}
-              sx={{
-                width: 80,
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'white',
-                },
-              }}
-            />
-          </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-            0% = degradado muy suave, 100% = degradado más intenso
-          </Typography>
-        </Box>
-      </Paper>
+          </Paper>
+        </AccordionDetails>
+      </Accordion>
     </Box>
   );
 }

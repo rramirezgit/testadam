@@ -76,6 +76,7 @@ const getExtensions = () => {
         HTMLAttributes: {
           target: '_blank',
           rel: 'noopener noreferrer',
+          style: 'color: inherit; text-decoration: underline;',
         },
       }),
       TextAlign.configure({
@@ -421,6 +422,12 @@ export default function SimpleTipTapEditor({
           position: 'relative',
         },
       },
+      // ✅ Estilos para enlaces: heredar color del texto y solo subrayar
+      '& .ProseMirror a': {
+        color: 'inherit',
+        textDecoration: 'underline',
+        cursor: 'pointer',
+      },
     }),
     [showToolbar]
   );
@@ -447,10 +454,13 @@ export default function SimpleTipTapEditor({
             {/* BubbleMenu para enlaces */}
             <BubbleMenu
               editor={editor}
-              tippyOptions={{ duration: 100 }}
+              tippyOptions={{
+                duration: 100,
+                zIndex: 9999,
+              }}
               shouldShow={({ from, to }) =>
-                // Solo mostrar cuando hay texto seleccionado
-                from !== to
+                // Mostrar cuando hay texto seleccionado O cuando hay un popover/dialog abierto
+                from !== to || Boolean(colorAnchorEl) || showLinkDialog
               }
             >
               <Paper
@@ -468,6 +478,7 @@ export default function SimpleTipTapEditor({
                 <Tooltip title="Negrita">
                   <IconButton
                     size="small"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     sx={{
                       bgcolor: editor.isActive('bold') ? 'grey.300' : 'transparent',
@@ -482,6 +493,7 @@ export default function SimpleTipTapEditor({
                 <Tooltip title="Cursiva">
                   <IconButton
                     size="small"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                     sx={{
                       bgcolor: editor.isActive('italic') ? 'grey.300' : 'transparent',
@@ -496,6 +508,7 @@ export default function SimpleTipTapEditor({
                 <Tooltip title="Subrayado">
                   <IconButton
                     size="small"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => editor.chain().focus().toggleUnderline().run()}
                     sx={{
                       bgcolor: editor.isActive('underline') ? 'grey.300' : 'transparent',
@@ -513,6 +526,7 @@ export default function SimpleTipTapEditor({
                 <Tooltip title="Color de texto">
                   <IconButton
                     size="small"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={handleColorClick}
                     sx={{
                       bgcolor: 'transparent',
@@ -544,6 +558,7 @@ export default function SimpleTipTapEditor({
                 <Tooltip title={editor.isActive('link') ? 'Editar enlace' : 'Crear enlace'}>
                   <IconButton
                     size="small"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={editor.isActive('link') ? handleEditLink : handleCreateLink}
                     sx={{
                       bgcolor: editor.isActive('link') ? 'grey.300' : 'transparent',
@@ -559,6 +574,7 @@ export default function SimpleTipTapEditor({
                   <Tooltip title="Quitar enlace">
                     <IconButton
                       size="small"
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={handleRemoveLink}
                       sx={{
                         color: 'error.main',
@@ -579,7 +595,7 @@ export default function SimpleTipTapEditor({
               maxWidth="sm"
               fullWidth
             >
-              <DialogTitle>
+              <DialogTitle onMouseDown={(e) => e.preventDefault()}>
                 {editor?.isActive('link') ? 'Editar enlace' : 'Crear enlace'}
               </DialogTitle>
               <DialogContent>
@@ -597,8 +613,18 @@ export default function SimpleTipTapEditor({
                 />
               </DialogContent>
               <DialogActions>
-                <Button onClick={() => setShowLinkDialog(false)}>Cancelar</Button>
-                <Button onClick={handleApplyLink} variant="contained" disabled={!linkUrl.trim()}>
+                <Button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setShowLinkDialog(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={handleApplyLink}
+                  variant="contained"
+                  disabled={!linkUrl.trim()}
+                >
                   {editor?.isActive('link') ? 'Actualizar' : 'Crear enlace'}
                 </Button>
               </DialogActions>
@@ -623,6 +649,7 @@ export default function SimpleTipTapEditor({
                   borderRadius: 2,
                   boxShadow: 3,
                 },
+                onMouseDown: (e) => e.preventDefault(), // Prevenir blur del editor
               }}
             >
               <TextColorPicker

@@ -7,6 +7,7 @@ import type {
   ApiResponse,
   PostFilters,
   SendTestData,
+  SendEmailData,
   UpdatePostData,
   CreatePostData,
 } from 'src/types/post';
@@ -75,6 +76,7 @@ interface PostState {
   update: (id: string, data: UpdatePostData) => Promise<Post | null>;
   updateStatus: (id: string, status: PostStatus) => Promise<Post | null>;
   delete: (id: string) => Promise<boolean>;
+  sendEmail: (postId: string, emails: string[], htmlContent: string) => Promise<boolean>;
 
   // Email sending operations
   sendPostForReview: (postId: string, emails: string[], htmlContent: string) => Promise<boolean>;
@@ -364,6 +366,36 @@ const usePostStore = create<PostState>()(
             };
 
             await axiosInstance.post(endpoints.post.sendForReview, sendData);
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('Error enviando post para revisión:', error);
+            const errorMessage = error.response?.data?.message || 'Error al enviar el post';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return false;
+          }
+        },
+
+        sendEmail: async (postId: string, emails: string[], htmlContent: string) => {
+          try {
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            const currentPost = get().currentPost;
+            const subject = currentPost?.title || `Post ${postId}`;
+            // No escapar el HTML para envío normal de emails
+            const content = htmlContent;
+
+            const sendData: SendEmailData = {
+              subject,
+              content,
+              emails,
+            };
+
+            await axiosInstance.post(endpoints.post.sendEmail, sendData);
             set({ loading: false });
             return true;
           } catch (error: any) {
@@ -759,6 +791,7 @@ export type {
   PostFilters,
   Subcategory,
   SendTestData,
+  SendEmailData,
   UpdatePostData,
   CreatePostData,
   SendNewsletterData,

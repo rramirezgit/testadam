@@ -11,6 +11,11 @@ import type { EmailComponentProps } from './types';
 interface ImageComponentData {
   src?: string;
   alt?: string;
+  style?: {
+    height?: string;
+    backgroundColor?: string;
+    objectFit?: string;
+  };
 }
 
 interface ImageUploaderProps {
@@ -22,24 +27,48 @@ interface ImageUploaderProps {
 
 const ImageUploader = ({ data, componentStyle }: ImageUploaderProps) => {
   // 🚀 NUEVO: Extraer estilos del componente
-  const backgroundColor = componentStyle?.backgroundColor || 'transparent';
-  const objectFit = componentStyle?.objectFit || 'contain';
-  const width = componentStyle?.width || '100%';
-  const height = componentStyle?.height || 'auto';
+  const backgroundColor =
+    componentStyle?.backgroundColor || data?.style?.backgroundColor || 'transparent';
+  const objectFit = componentStyle?.objectFit || data?.style?.objectFit || 'contain';
+  const height = componentStyle?.height || data?.style?.height || 'auto';
+  const containerBackgroundColor =
+    (componentStyle as any)?.containerBackgroundColor ||
+    (data?.style as any)?.containerBackgroundColor ||
+    '';
+
+  console.log('🎨 ImageComponent - Estilos:', {
+    height,
+    containerBackgroundColor,
+    backgroundColor,
+    willApplyContainerBg: height !== 'auto' && !!containerBackgroundColor,
+  });
 
   return (
-    <div className="image-component-wrapper" style={{ position: 'relative' }}>
+    <div
+      className="image-component-wrapper"
+      style={{
+        position: 'relative',
+        height, // ✅ Aplicar height al contenedor padre
+        overflow: 'hidden',
+        backgroundColor:
+          height !== 'auto' && containerBackgroundColor ? containerBackgroundColor : 'transparent', // ✅ Color de fondo del contenedor
+        borderRadius: '8px', // ✅ Border radius para mejor visualización
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       {data.src ? (
         <Box
           sx={{
             position: 'relative',
-            backgroundColor, // 🚀 NUEVO: Aplicar color de fondo al contenedor
+            backgroundColor: containerBackgroundColor ? 'transparent' : backgroundColor, // ✅ No aplicar backgroundColor si hay containerBackgroundColor
             borderRadius: '8px',
             overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: '200px', // 🚀 NUEVO: Altura mínima para ver el color de fondo
+            height: '100%', // ✅ Llenar el contenedor padre
           }}
         >
           <img
@@ -47,9 +76,9 @@ const ImageUploader = ({ data, componentStyle }: ImageUploaderProps) => {
             alt={data.alt || 'Newsletter image'}
             style={{
               maxWidth: '100%',
-              width,
-              height,
-              objectFit, // 🚀 NUEVO: Aplicar objectFit
+              width: '100%',
+              height: '100%', // ✅ Llenar el contenedor
+              objectFit: objectFit as React.CSSProperties['objectFit'], // Se adapta según objectFit (contain/cover)
               borderRadius: '8px',
               cursor: 'pointer', // Cambiar a pointer para indicar que es clickeable
               display: 'block',
@@ -146,7 +175,12 @@ const ImageComponent = ({
         data={component.props || {}}
         onUpdate={updateComponentProps}
         componentId={component.id}
-        componentStyle={component.style} // 🚀 NUEVO: Pasar estilos del componente
+        componentStyle={
+          {
+            ...component.style,
+            ...(component.props?.style || {}),
+          } as React.CSSProperties
+        } // 🚀 NUEVO: Combinar estilos del componente y props
       />
     </ComponentWithToolbar>
   );

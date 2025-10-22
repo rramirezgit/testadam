@@ -40,6 +40,7 @@ const TituloConIconoComponent = ({
   };
 
   const handleTituloChange = (newContent: string) => {
+    console.log('💾 Guardando contenido:', newContent);
     updateComponentContent(component.id, newContent);
   };
 
@@ -60,6 +61,7 @@ const TituloConIconoComponent = ({
       onClick={handleClick}
       sx={{
         position: 'relative',
+        overflow: 'visible',
       }}
     >
       <ComponentWithToolbar
@@ -71,7 +73,7 @@ const TituloConIconoComponent = ({
         removeComponent={removeComponent}
         onClick={handleClick}
       >
-        <Box>
+        <Box sx={{ overflow: 'visible' }}>
           <TituloConIcono
             titulo={component.content}
             icon={component.props?.icon || 'mdi:chart-line'}
@@ -85,6 +87,7 @@ const TituloConIconoComponent = ({
             onIconChange={handleIconChangeTitulo}
             onGradientChange={handleGradientChange}
             setShowIconPicker={setShowIconPickerTitulo}
+            isSelected={isSelected}
           />
         </Box>
       </ComponentWithToolbar>

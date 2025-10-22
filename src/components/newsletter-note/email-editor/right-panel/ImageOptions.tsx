@@ -5,27 +5,32 @@ import 'src/styles/react-crop.css';
 import { Icon } from '@iconify/react';
 import { useRef, useState, useEffect } from 'react';
 
-import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Alert,
   Stack,
   Button,
+  Slider,
   Select,
-  Divider,
-  MenuItem,
+  Switch,
+  Tooltip,
   Skeleton,
+  MenuItem,
   TextField,
+  IconButton,
   Typography,
   InputLabel,
   FormControl,
   LinearProgress,
+  FormControlLabel,
 } from '@mui/material';
+
+import GeneralColorPicker from 'src/components/newsletter-note/general-color-picker';
 
 import ImageCropDialog from './ImageCropDialog';
 import { useImageUpload } from './useImageUpload';
 import { isBase64Image } from '../utils/imageValidation';
-import { validateFileSize, convertImageToWebP } from './imgPreview';
+import { validateFileSize, convertImageToOptimalFormat } from './imgPreview';
 
 import type { ImageOptionsProps } from './types';
 
@@ -164,12 +169,12 @@ const ImageOptions = ({
     }
 
     try {
-      // Convertir a WebP (excepto GIF que se mantiene como GIF)
-      const processedBase64 = await convertImageToWebP(file, 0.9);
+      // Convertir al formato óptimo (PNG si tiene transparencia, WebP si no)
+      const processedBase64 = await convertImageToOptimalFormat(file, 0.9);
       setTempImage(processedBase64);
       setShowCropDialog(true);
     } catch (error) {
-      console.error('Error converting to WebP:', error);
+      console.error('Error processing image:', error);
       alert('Error al procesar la imagen');
     }
   };
@@ -253,7 +258,7 @@ const ImageOptions = ({
       )}
 
       {/* Alertas de estado */}
-      {!uploadMessage && !isProcessing && (
+      {/* {!uploadMessage && !isProcessing && (
         <>
           {needsUpload ? (
             <Alert severity="warning" sx={{ mb: 2, fontSize: '0.875rem' }}>
@@ -270,37 +275,125 @@ const ImageOptions = ({
             </Alert>
           )}
         </>
-      )}
+      )} */}
 
-      {/* Vista previa de la imagen */}
+      {/* Vista previa de la imagen con botones integrados */}
       {currentImageSrc && (
         <Box
           sx={{
             mb: 3,
-            p: 2,
-            border: 1,
-            borderColor: 'divider',
+            position: 'relative',
             borderRadius: 2,
+            overflow: 'hidden',
             backgroundColor: 'grey.50',
+            minHeight: 200,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: 200,
+            '&:hover .image-overlay': {
+              opacity: 1,
+            },
           }}
         >
           {isLoadingForEdit ? (
-            <Skeleton variant="rectangular" width="100%" height={180} />
+            <Skeleton variant="rectangular" width="100%" height={200} />
           ) : (
-            <img
-              src={currentImageSrc}
-              alt={selectedComponent.props?.alt || 'Preview'}
-              style={{
-                maxWidth: '100%',
-                maxHeight: '180px',
-                objectFit: 'contain',
-                borderRadius: '8px',
-              }}
-            />
+            <>
+              {/* Imagen */}
+              <img
+                src={currentImageSrc}
+                alt={selectedComponent.props?.alt || 'Preview'}
+                style={{
+                  width: '100%',
+                  maxHeight: '200px',
+                  objectFit: 'contain',
+                }}
+              />
+
+              {/* Overlay con botones */}
+              <Box
+                className="image-overlay"
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease',
+                }}
+              >
+                {/* Botón Cambiar Imagen */}
+                <Tooltip title="Cambiar imagen" arrow>
+                  <IconButton
+                    onClick={handleSelectImage}
+                    disabled={isProcessing}
+                    sx={{
+                      backgroundColor: 'background.paper',
+                      width: 56,
+                      height: 56,
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                        color: 'primary.contrastText',
+                        transform: 'scale(1.1)',
+                      },
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Icon icon="mdi:image-plus" width={28} />
+                  </IconButton>
+                </Tooltip>
+
+                {/* Botón Editar Imagen */}
+                {canEditImage && (
+                  <Tooltip title="Editar imagen actual" arrow>
+                    <IconButton
+                      onClick={handleEditExistingImage}
+                      disabled={isProcessing}
+                      sx={{
+                        backgroundColor: 'background.paper',
+                        width: 56,
+                        height: 56,
+                        '&:hover': {
+                          backgroundColor: 'info.main',
+                          color: 'info.contrastText',
+                          transform: 'scale(1.1)',
+                        },
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <Icon icon="mdi:image-edit" width={28} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                {/* Botón Eliminar/Restablecer */}
+                <Tooltip title="Restablecer imagen" arrow>
+                  <IconButton
+                    onClick={handleResetToDefault}
+                    disabled={isProcessing}
+                    sx={{
+                      backgroundColor: 'background.paper',
+                      width: 56,
+                      height: 56,
+                      '&:hover': {
+                        backgroundColor: 'error.main',
+                        color: 'error.contrastText',
+                        transform: 'scale(1.1)',
+                      },
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Icon icon="mdi:delete-outline" width={28} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </>
           )}
         </Box>
       )}
@@ -335,92 +428,165 @@ const ImageOptions = ({
         sx={{ mb: 3 }}
       />
 
-      {/* Ajuste de imagen */}
+      {/* URL de enlace */}
       <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-        Ajuste de imagen
+        Enlace (opcional)
       </Typography>
-      <FormControl fullWidth size="small" sx={{ mb: 3 }}>
-        <InputLabel>Modo de ajuste</InputLabel>
-        <Select
-          value={adjustImageCrop ? 'contain' : 'cover'}
-          label="Modo de ajuste"
-          onChange={(e) => setAdjustImageCrop(e.target.value === 'contain')}
-          disabled={isProcessing}
-        >
-          <MenuItem value="contain">
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Icon icon="mdi:fit-to-screen" />
-              <Box>
-                <Typography variant="body2">Contener</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Mostrar toda la imagen
-                </Typography>
-              </Box>
-            </Stack>
-          </MenuItem>
-          <MenuItem value="cover">
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Icon icon="mdi:fullscreen" />
-              <Box>
-                <Typography variant="body2">Cubrir</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Llenar el espacio disponible
-                </Typography>
-              </Box>
-            </Stack>
-          </MenuItem>
-        </Select>
-      </FormControl>
+      <TextField
+        fullWidth
+        size="small"
+        placeholder="https://ejemplo.com"
+        value={selectedComponent.props?.link || ''}
+        onChange={(e) => updateComponentProps(selectedComponentId!, { link: e.target.value })}
+        disabled={isProcessing}
+        helperText="Si agregas una URL, la imagen será clickeable en el correo electronico"
+        sx={{ mb: 3 }}
+      />
 
-      <Divider sx={{ my: 3 }} />
+      {/* Altura de la imagen */}
+      {currentImageSrc && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+            Altura de la imagen
+          </Typography>
 
-      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-        Opciones de imagen
-      </Typography>
-
-      <Stack spacing={1.5}>
-        {/* Botones principales */}
-        {currentImageSrc ? (
-          <Stack direction="column" spacing={1.5}>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              startIcon={<Icon icon="mdi:image-plus" />}
-              onClick={handleSelectImage}
-              disabled={isProcessing}
-            >
-              Cambiar imagen
-            </Button>
-
-            {canEditImage && (
-              <LoadingButton
-                variant="outlined"
-                color="secondary"
-                fullWidth
-                startIcon={<Icon icon="mdi:image-edit" />}
-                onClick={handleEditExistingImage}
-                loading={isLoadingForEdit}
+          {/* Switch para altura automática */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={selectedComponent.props?.style?.height === 'auto'}
+                onChange={(e) => {
+                  updateComponentProps(selectedComponentId!, {
+                    style: {
+                      ...selectedComponent.props?.style,
+                      height: e.target.checked ? 'auto' : '400px',
+                    },
+                  });
+                }}
                 disabled={isProcessing}
-              >
-                Editar actual
-              </LoadingButton>
-            )}
-          </Stack>
-        ) : null}
+              />
+            }
+            label="Altura automática"
+            sx={{ mb: 2 }}
+          />
 
-        {/* Botón imagen por defecto */}
-        <Button
-          variant="outlined"
-          color="error"
-          fullWidth
-          startIcon={<Icon icon="mdi:restore" />}
-          onClick={handleResetToDefault}
-          disabled={isProcessing || !currentImageSrc}
-        >
-          Restablecer
-        </Button>
-      </Stack>
+          {/* Slider solo visible cuando NO es auto */}
+          {selectedComponent.props?.style?.height !== 'auto' && (
+            <>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 2 }}>
+                <Slider
+                  value={
+                    selectedComponent.props?.style?.height
+                      ? parseInt(selectedComponent.props.style.height as string)
+                      : 400
+                  }
+                  onChange={(_, newValue) => {
+                    updateComponentProps(selectedComponentId!, {
+                      style: {
+                        ...selectedComponent.props?.style,
+                        height: `${newValue}px`,
+                      },
+                    });
+                  }}
+                  min={100}
+                  max={800}
+                  step={50}
+                  marks={[
+                    { value: 100, label: '100px' },
+                    { value: 400, label: '400px' },
+                    { value: 800, label: '800px' },
+                  ]}
+                  valueLabelDisplay="auto"
+                  disabled={isProcessing}
+                  sx={{ flexGrow: 1 }}
+                />
+              </Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mt: 0.5 }}
+              >
+                Controla la altura del contenedor de la imagen
+              </Typography>
+
+              {/* Color de fondo del contenedor */}
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+                  Color de fondo del contenedor
+                </Typography>
+                <GeneralColorPicker
+                  selectedColor={selectedComponent.props?.style?.containerBackgroundColor || ''}
+                  onChange={(color) => {
+                    updateComponentProps(selectedComponentId!, {
+                      style: {
+                        ...selectedComponent.props?.style,
+                        containerBackgroundColor: color,
+                      },
+                    });
+                  }}
+                  label=""
+                  showLabel={false}
+                  allowReset
+                  size="medium"
+                  defaultColors={[
+                    '#FFFFFF',
+                    '#F5F5F5',
+                    '#E0E0E0',
+                    '#000000',
+                    '#808080',
+                    '#FFA500',
+                    '#008000',
+                    '#FF4500',
+                  ]}
+                />
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: 'block', mt: 1 }}
+                >
+                  Define el color de fondo del contenedor de la imagen
+                </Typography>
+              </Box>
+            </>
+          )}
+        </Box>
+      )}
+
+      {/* Ajuste de imagen - Solo visible cuando NO es altura automática */}
+      {currentImageSrc && selectedComponent.props?.style?.height !== 'auto' && (
+        <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+          <InputLabel>Modo de ajuste</InputLabel>
+          <Select
+            value={adjustImageCrop ? 'contain' : 'cover'}
+            label="Modo de ajuste"
+            onChange={(e) => setAdjustImageCrop(e.target.value === 'contain')}
+            disabled={isProcessing}
+          >
+            <MenuItem value="contain">
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Icon icon="mdi:fit-to-screen" />
+                <Box>
+                  <Typography variant="body2">Contener</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Mostrar toda la imagen
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
+            <MenuItem value="cover">
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Icon icon="mdi:fullscreen" />
+                <Box>
+                  <Typography variant="body2">Cubrir</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Llenar el espacio disponible
+                  </Typography>
+                </Box>
+              </Stack>
+            </MenuItem>
+          </Select>
+        </FormControl>
+      )}
 
       {/* Input file oculto */}
       <input

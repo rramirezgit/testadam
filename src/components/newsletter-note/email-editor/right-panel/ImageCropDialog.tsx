@@ -314,7 +314,7 @@ export default function ImageCropDialog({
               {/* Sección 2: Ajustes */}
               <Card elevation={1} sx={{ p: 2, borderRadius: 2 }}>
                 {/* Escala */}
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ mt: 2, px: 3 }}>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                     <Icon icon="mdi:magnify" style={{ fontSize: 20, color: 'text.secondary' }} />
                     <Typography variant="body2" color="text.secondary">
@@ -339,7 +339,7 @@ export default function ImageCropDialog({
                 </Box>
 
                 {/* Rotación */}
-                <Box sx={{ mt: 3 }}>
+                <Box sx={{ mt: 3, px: 3 }}>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                     <Icon
                       icon="mdi:rotate-right"

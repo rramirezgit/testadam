@@ -196,6 +196,12 @@ export interface SendTestData {
   reviewerEmails?: string[];
 }
 
+export interface SendEmailData {
+  subject: string;
+  content: string;
+  emails: string[];
+}
+
 // Datos para envío de newsletter
 export interface SendNewsletterData {
   subject: string;

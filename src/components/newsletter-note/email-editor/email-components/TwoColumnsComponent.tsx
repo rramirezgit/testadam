@@ -8,7 +8,7 @@ import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
 import ImageCropDialog from '../right-panel/ImageCropDialog';
 import { useImageUpload } from '../right-panel/useImageUpload';
-import { validateFileSize, convertImageToWebP } from '../right-panel/imgPreview';
+import { validateFileSize, convertImageToOptimalFormat } from '../right-panel/imgPreview';
 
 import type { EmailComponentProps } from './types';
 
@@ -172,13 +172,13 @@ const TwoColumnsComponent = ({
     }
 
     try {
-      // Convertir a WebP (excepto GIF)
-      const processedBase64 = await convertImageToWebP(file, 0.9);
+      // Convertir al formato óptimo (PNG si tiene transparencia, WebP si no)
+      const processedBase64 = await convertImageToOptimalFormat(file, 0.9);
       setTempImageForCrop(processedBase64);
       setEditingColumn(column);
       setShowCropDialog(true);
     } catch (error) {
-      console.error('Error converting to WebP:', error);
+      console.error('Error processing image:', error);
       alert('Error al procesar la imagen');
     }
   };

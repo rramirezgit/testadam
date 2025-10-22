@@ -119,8 +119,13 @@ export default function EditorHeader({
   const theme = useTheme();
 
   // Hook del store
-  const { sendPostForReview, sendNewsletterForReview, createNewsletter, updateNewsletter } =
-    usePostStore();
+  const {
+    sendPostForReview,
+    sendNewsletterForReview,
+    createNewsletter,
+    updateNewsletter,
+    sendEmail,
+  } = usePostStore();
 
   // Necesitamos acceder a los componentes del newsletter desde el editor
   // Esta función debería ser pasada como prop desde el componente padre
@@ -256,36 +261,17 @@ export default function EditorHeader({
   // Función para manejar el envío de pruebas
   const handleSendTest = async (emails: string[]) => {
     try {
-      console.log('🔄 handleSendTest called:', {
-        emails,
-        isNewsletterMode,
-        currentNewsletterId,
-        hasHtmlContent: !!htmlContent,
-        hasOnGenerateHtml: !!onGenerateHtml,
-      });
-
       let content = htmlContent;
 
       // Si no hay contenido HTML, intentar generarlo
       if (!content && onGenerateHtml) {
-        console.log('📝 Generando HTML para envío...');
         content = await onGenerateHtml();
-        console.log('✅ HTML generado:', {
-          contentLength: content?.length,
-          contentPreview: content?.substring(0, 200) + '...',
-        });
       }
 
       if (!content) {
         console.error('❌ No se pudo generar el contenido HTML');
         throw new Error('No se pudo generar el contenido HTML');
       }
-
-      console.log('📧 Enviando prueba:', {
-        isNewsletterMode,
-        currentNewsletterId,
-        contentLength: content.length,
-      });
 
       if (isNewsletterMode) {
         // Para newsletters, solo enviar si está guardado
@@ -295,26 +281,23 @@ export default function EditorHeader({
         }
 
         // Enviar newsletter existente para revisión
-        console.log('📨 Enviando newsletter existente para revisión:', currentNewsletterId);
         await sendNewsletterForReview(currentNewsletterId, emails, content);
-        console.log('✅ Newsletter existente enviado exitosamente');
       } else if (initialNote?.id) {
         // Enviar post para revisión (nota existente)
-        console.log('📨 Enviando post para revisión:', initialNote.id);
-        await sendPostForReview(initialNote.id, emails, content);
-        console.log('✅ Post enviado exitosamente');
-      } else {
-        // Enviar prueba de nota nueva (sin ID todavía)
-        console.log('📨 Enviando prueba de nota nueva');
-        // Crear un objeto temporal para el envío
-        const tempNote = {
-          id: `temp_${Date.now()}`, // ID temporal
-          title: initialNote?.title || 'Nueva Nota',
-          content,
-        };
-        await sendPostForReview(tempNote.id, emails, content);
-        console.log('✅ Prueba de nota nueva enviada exitosamente');
+        await sendEmail(initialNote.id, emails, content);
       }
+
+      // else {
+      //   // Enviar prueba de nota nueva (sin ID todavía)
+      //   // Crear un objeto temporal para el envío
+      //   const tempNote = {
+      //     id: `temp_${Date.now()}`, // ID temporal
+      //     title: initialNote?.title || 'Nueva Nota',
+      //     content,
+      //   };
+      //   await sendPostForReview(tempNote.id, emails, content);
+      //   console.log('✅ Prueba de nota nueva enviada exitosamente');
+      // }
     } catch (error) {
       console.error('❌ Error enviando prueba:', error);
       throw error;

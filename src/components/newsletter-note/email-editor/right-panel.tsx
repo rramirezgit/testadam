@@ -724,17 +724,17 @@ export default function RightPanel({
                   )}
 
                   {/* Alertas de estado */}
-                  {newsletterHeader.logo && isBase64Image(newsletterHeader.logo) && (
+                  {/* {newsletterHeader.logo && isBase64Image(newsletterHeader.logo) && (
                     <Alert severity="warning" sx={{ mb: 2, fontSize: '0.875rem' }}>
                       ⚠️ Esta imagen debe subirse a S3 antes de guardar
                     </Alert>
-                  )}
+                  )} */}
 
-                  {newsletterHeader.logo && !isBase64Image(newsletterHeader.logo) && (
+                  {/* {newsletterHeader.logo && !isBase64Image(newsletterHeader.logo) && (
                     <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
                       ✅ Imagen guardada correctamente
                     </Alert>
-                  )}
+                  )} */}
 
                   {/* Botón para seleccionar imagen */}
                   <Button
@@ -890,19 +890,19 @@ export default function RightPanel({
                   )}
 
                   {/* Alertas de estado */}
-                  {newsletterHeader.sponsor?.image &&
+                  {/* {newsletterHeader.sponsor?.image &&
                     isBase64Image(newsletterHeader.sponsor.image) && (
                       <Alert severity="warning" sx={{ mb: 2, fontSize: '0.875rem' }}>
                         ⚠️ Esta imagen debe subirse a S3 antes de guardar
                       </Alert>
-                    )}
+                    )} */}
 
-                  {newsletterHeader.sponsor?.image &&
+                  {/* {newsletterHeader.sponsor?.image &&
                     !isBase64Image(newsletterHeader.sponsor.image) && (
                       <Alert severity="success" sx={{ mb: 2, fontSize: '0.875rem' }}>
                         ✅ Imagen guardada correctamente
                       </Alert>
-                    )}
+                    )} */}
 
                   {/* Botón para seleccionar imagen */}
                   <Button

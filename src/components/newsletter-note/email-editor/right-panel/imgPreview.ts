@@ -1,5 +1,21 @@
 import type { PixelCrop } from 'react-image-crop';
 
+/**
+ * Detecta si un canvas tiene transparencia verificando el canal alpha
+ */
+function hasTransparency(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): boolean {
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  // Verificar cada píxel del canal alpha (cada 4to valor)
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] < 255) {
+      return true; // Encontró transparencia
+    }
+  }
+  return false;
+}
+
 export function imgPreview(
   image: HTMLImageElement,
   crop: PixelCrop,
@@ -56,7 +72,9 @@ export function imgPreview(
 
   ctx.restore();
 
-  return canvas.toDataURL('image/webp', 0.9);
+  // Detectar transparencia y elegir formato óptimo
+  const hasAlpha = hasTransparency(ctx, canvas);
+  return hasAlpha ? canvas.toDataURL('image/png') : canvas.toDataURL('image/webp', 0.9);
 }
 
 /**
@@ -75,11 +93,15 @@ export function validateFileSize(file: File): { valid: boolean; sizeMB: number }
 }
 
 /**
- * Convierte cualquier imagen (JPG, PNG) a formato WebP
- * GIFs se mantienen como GIF para preservar animaciones
- * Preserva transparencia en PNGs
+ * Convierte cualquier imagen al formato óptimo
+ * - GIFs se mantienen como GIF para preservar animaciones
+ * - PNG si la imagen tiene transparencia (mejor compatibilidad en correos)
+ * - WebP si no tiene transparencia (mejor compresión)
  */
-export function convertImageToWebP(imageFile: File, quality: number = 0.9): Promise<string> {
+export function convertImageToOptimalFormat(
+  imageFile: File,
+  quality: number = 0.9
+): Promise<string> {
   return new Promise((resolve, reject) => {
     // Si es GIF, no convertir (preservar animación)
     if (imageFile.type === 'image/gif') {
@@ -90,7 +112,7 @@ export function convertImageToWebP(imageFile: File, quality: number = 0.9): Prom
       return;
     }
 
-    // Para JPG, PNG, WebP → convertir a WebP
+    // Para JPG, PNG, WebP → convertir a formato óptimo
     const reader = new FileReader();
 
     reader.onload = (e) => {
@@ -111,9 +133,15 @@ export function convertImageToWebP(imageFile: File, quality: number = 0.9): Prom
         // Importante: NO hacer fillRect para preservar transparencia
         ctx.drawImage(img, 0, 0);
 
-        // Convertir a WebP
-        const webpBase64 = canvas.toDataURL('image/webp', quality);
-        resolve(webpBase64);
+        // Detectar transparencia y elegir formato
+        const hasAlpha = hasTransparency(ctx, canvas);
+
+        // PNG si tiene transparencia (mejor para correos), WebP si no
+        const result = hasAlpha
+          ? canvas.toDataURL('image/png')
+          : canvas.toDataURL('image/webp', quality);
+
+        resolve(result);
       };
 
       img.onerror = () => reject(new Error('Error loading image'));

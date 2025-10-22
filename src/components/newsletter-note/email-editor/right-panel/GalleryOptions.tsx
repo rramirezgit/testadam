@@ -19,7 +19,7 @@ import {
 import ImageCropDialog from './ImageCropDialog';
 import { useImageUpload } from './useImageUpload';
 import { isBase64Image } from '../utils/imageValidation';
-import { validateFileSize, convertImageToWebP } from './imgPreview';
+import { validateFileSize, convertImageToOptimalFormat } from './imgPreview';
 
 import type { GalleryOptionsProps } from './types';
 
@@ -154,13 +154,13 @@ const GalleryOptions = ({
     }
 
     try {
-      // Convertir a WebP (excepto GIF que se mantiene como GIF)
-      const processedBase64 = await convertImageToWebP(file, 0.9);
+      // Convertir al formato óptimo (PNG si tiene transparencia, WebP si no)
+      const processedBase64 = await convertImageToOptimalFormat(file, 0.9);
       setTempImageForCrop(processedBase64);
       setEditingImageIndex(imageIndex);
       setShowCropDialog(true);
     } catch (error) {
-      console.error('Error converting to WebP:', error);
+      console.error('Error processing image:', error);
       alert('Error al procesar la imagen');
     }
   };
