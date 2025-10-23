@@ -64,7 +64,7 @@ export default function SavedNoteCard({ note, onOpen, onDelete }: SavedNoteCardP
       }
 
       return 'No text content';
-    } catch (error) {
+    } catch {
       return 'Error parsing note content';
     }
   };
@@ -82,7 +82,7 @@ export default function SavedNoteCard({ note, onOpen, onDelete }: SavedNoteCardP
         },
         {} as Record<string, number>
       );
-    } catch (error) {
+    } catch {
       return {};
     }
   };

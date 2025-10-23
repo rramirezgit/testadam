@@ -22,7 +22,7 @@ class PerformanceManager {
 
       try {
         this.observer.observe({ entryTypes: ['measure'] });
-      } catch (e) {
+      } catch {
         // Fallback si no se puede observar
         this.observer = null;
       }
@@ -99,7 +99,7 @@ class PerformanceManager {
         try {
           performance.clearMarks(`${name}-start`);
           performance.clearMarks(`${name}-end`);
-        } catch (e) {
+        } catch {
           // Ignore cleanup errors
         }
       }

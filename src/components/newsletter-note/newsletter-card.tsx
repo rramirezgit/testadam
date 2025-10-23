@@ -69,7 +69,7 @@ export default function NewsletterCard({ newsletter, onOpen, onDelete }: Newslet
       }
 
       return 'No text content';
-    } catch (error) {
+    } catch {
       return 'Error parsing newsletter content';
     }
   };
@@ -90,7 +90,7 @@ export default function NewsletterCard({ newsletter, onOpen, onDelete }: Newslet
         },
         {} as Record<string, number>
       );
-    } catch (error) {
+    } catch {
       return {};
     }
   };

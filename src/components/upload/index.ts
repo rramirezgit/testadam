@@ -2,9 +2,9 @@ export * from './upload';
 
 export * from './upload-box';
 
-export * from './upload-avatar';
-
 export * from './upload-cover';
+
+export * from './upload-avatar';
 
 export * from './components/rejection-files';
 

@@ -717,12 +717,38 @@ export default function EditorHeader({
           )}
 
           {isNewsletterMode ? (
-            <>
+            <Stack direction="row" spacing={1}>
+              {/* Chip de status del newsletter */}
+              <Chip
+                variant="outlined"
+                sx={{
+                  margin: 'auto 0',
+                }}
+                label={(() => {
+                  const newsletter = newsletterList?.find(
+                    (item) => item.id === currentNewsletterId
+                  );
+                  const status = newsletter?.status || 'DRAFT';
+
+                  return status === 'DRAFT'
+                    ? 'Borrador'
+                    : status === 'PENDING_APPROVAL'
+                      ? 'Pendiente'
+                      : status === 'APPROVED'
+                        ? 'Aprobado'
+                        : status === 'REJECTED'
+                          ? 'Rechazado'
+                          : status === 'SENDED'
+                            ? 'Enviado'
+                            : 'Borrador';
+                })()}
+              />
+
               {/* Botón de guardar newsletter */}
               <Button
                 variant="contained"
                 color="primary"
-                sx={{ mr: 1, height: '42px' }}
+                sx={{ height: '42px' }}
                 startIcon={<Icon icon="material-symbols:save" />}
                 onClick={handleSaveNewsletter}
                 disabled={saving}
@@ -750,7 +776,7 @@ export default function EditorHeader({
                     aria-haspopup="true"
                     aria-expanded={openSendMenu ? 'true' : undefined}
                   >
-                    Enviar Newsletter
+                    Enviar
                   </Button>
                 </span>
               </Tooltip>
@@ -808,7 +834,7 @@ export default function EditorHeader({
                   <ListItemText>Enviar ahora</ListItemText>
                 </MenuItem>
               </Menu>
-            </>
+            </Stack>
           ) : (
             <Stack direction="row" spacing={1}>
               <Chip
