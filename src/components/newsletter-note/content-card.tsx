@@ -56,13 +56,7 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
   };
 
   // Obtener imagen de portada
-  const getCoverImage = () => {
-    if (type === 'note') {
-      return (content as Article).coverImageUrl;
-    }
-    // Para newsletters, podrías agregar un campo coverImageUrl en el futuro
-    return null;
-  };
+  const getCoverImage = () => (content as Article).coverImageUrl;
 
   // Obtener badge de origen/tipo
   const getOriginBadge = () => {
@@ -158,10 +152,6 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background:
-              type === 'newsletter'
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                : undefined,
           }}
         >
           {coverImage ? (

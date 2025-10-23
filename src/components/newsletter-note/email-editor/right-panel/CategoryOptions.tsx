@@ -2,8 +2,6 @@ import { Icon } from '@iconify/react';
 
 import {
   Box,
-  Card,
-  Chip,
   Stack,
   Alert,
   Button,
@@ -11,14 +9,11 @@ import {
   Slider,
   Divider,
   MenuItem,
-  TextField,
   Typography,
   InputLabel,
   FormControl,
-  CardContent,
 } from '@mui/material';
 
-import TextColorPicker from '../color-picker/TextColorPicker';
 import { findComponentById } from '../utils/componentHelpers';
 
 import type { CategoryOptionsProps } from './types';
@@ -62,56 +57,6 @@ export default function CategoryOptions({
   const padding = component.props?.padding || 4;
   const fontSize = component.props?.fontSize || 14;
   const fontWeight = component.props?.fontWeight || 'normal';
-
-  // Manejar edición de categoría
-  const handleUpdateCategoria = (catId: string, field: keyof Categoria, value: string) => {
-    const nuevasCategorias = categorias.map((cat) =>
-      cat.id === catId ? { ...cat, [field]: value } : cat
-    );
-    updateComponentProps(selectedComponentId, { categorias: nuevasCategorias });
-  };
-
-  // Manejar actualización múltiple de categoría (para presets)
-  const handleUpdateCategoriaMultiple = (catId: string, updates: Partial<Categoria>) => {
-    const nuevasCategorias = categorias.map((cat) =>
-      cat.id === catId ? { ...cat, ...updates } : cat
-    );
-    updateComponentProps(selectedComponentId, { categorias: nuevasCategorias });
-  };
-
-  // Agregar nueva categoría
-  const handleAddCategoria = () => {
-    if (categorias.length >= 6) return; // Máximo 6 categorías
-
-    const nuevaCategoria: Categoria = {
-      id: `cat-${Date.now()}`,
-      texto: 'Nueva categoría',
-      colorFondo: '#2196f3',
-      colorTexto: 'white',
-    };
-
-    updateComponentProps(selectedComponentId, {
-      categorias: [...categorias, nuevaCategoria],
-    });
-  };
-
-  // Eliminar categoría
-  const handleRemoveCategoria = (catId: string) => {
-    if (categorias.length <= 1) return; // Mantener al menos una categoría
-
-    const nuevasCategorias = categorias.filter((cat) => cat.id !== catId);
-    updateComponentProps(selectedComponentId, { categorias: nuevasCategorias });
-  };
-
-  // Definir presets de colores para categorías individuales
-  const colorPresets = [
-    { name: 'Azul', bg: '#e3f2fd', text: '#1565c0' },
-    { name: 'Morado', bg: '#f3e5f5', text: '#7b1fa2' },
-    { name: 'Rojo', bg: '#fce4ec', text: '#c2185b' },
-    { name: 'Verde', bg: '#e8f5e8', text: '#388e3c' },
-    { name: 'Amarillo', bg: '#fff3e0', text: '#f57c00' },
-    { name: 'Celeste', bg: '#e1f5fe', text: '#0277bd' },
-  ];
 
   // Sistema de categorías rápidas prediseñadas
   const categoriasRapidas = [
@@ -201,130 +146,14 @@ export default function CategoryOptions({
             Has alcanzado el límite de 6 categorías. Elimina alguna para agregar nuevas.
           </Alert>
         )}
+
+        <Alert severity="info" sx={{ mt: 2 }}>
+          💡 Haz clic en cualquier categoría para editar su texto directamente. Usa el botón × para
+          eliminarla.
+        </Alert>
       </Box>
 
-      <Divider sx={{ mb: 3 }} />
-
-      {/* Configuración individual de categorías */}
-      <Typography variant="subtitle1" gutterBottom>
-        Categorías ({categorias.length}/6)
-      </Typography>
-
-      {categorias.map((categoria, index) => (
-        <Card
-          key={categoria.id}
-          variant="outlined"
-          sx={{ mb: 2, border: '2px solid', borderColor: categoria.colorFondo }}
-        >
-          <CardContent sx={{ pb: '16px !important' }}>
-            <Box
-              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
-            >
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Categoría {index + 1}
-              </Typography>
-              {categorias.length > 1 && (
-                <Button
-                  size="small"
-                  color="error"
-                  startIcon={<Icon icon="mdi:delete" />}
-                  onClick={() => handleRemoveCategoria(categoria.id)}
-                  sx={{ minWidth: 'auto', px: 1 }}
-                >
-                  Eliminar
-                </Button>
-              )}
-            </Box>
-
-            <TextField
-              fullWidth
-              size="small"
-              label="Texto de la categoría"
-              value={categoria.texto}
-              onChange={(e) => handleUpdateCategoria(categoria.id, 'texto', e.target.value)}
-              sx={{ mb: 3 }}
-              placeholder="Ej: Tecnología, Marketing, etc."
-            />
-
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" gutterBottom sx={{ fontWeight: 500 }}>
-                Color de fondo
-              </Typography>
-              <TextColorPicker
-                selectedColor={categoria.colorFondo}
-                applyTextColor={(color) => handleUpdateCategoria(categoria.id, 'colorFondo', color)}
-              />
-            </Box>
-
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" gutterBottom sx={{ fontWeight: 500 }}>
-                Color de texto
-              </Typography>
-              <TextColorPicker
-                selectedColor={categoria.colorTexto}
-                applyTextColor={(color) => handleUpdateCategoria(categoria.id, 'colorTexto', color)}
-              />
-            </Box>
-
-            {/* Presets rápidos */}
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-                Presets rápidos:
-              </Typography>
-              <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                {colorPresets.map((preset) => (
-                  <Chip
-                    key={preset.name}
-                    label={preset.name}
-                    size="small"
-                    clickable
-                    onClick={() => {
-                      handleUpdateCategoriaMultiple(categoria.id, {
-                        colorFondo: preset.bg,
-                        colorTexto: preset.text,
-                      });
-                    }}
-                    sx={{
-                      backgroundColor: preset.bg,
-                      color: preset.text,
-                      fontSize: '11px',
-                      height: '24px',
-                      '&:hover': {
-                        backgroundColor: preset.bg,
-                        opacity: 0.8,
-                      },
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          </CardContent>
-        </Card>
-      ))}
-
-      {/* Botón para agregar nueva categoría */}
-      {categorias.length < 6 && (
-        <Button
-          variant="outlined"
-          fullWidth
-          startIcon={<Icon icon="mdi:plus" />}
-          onClick={handleAddCategoria}
-          sx={{
-            mb: 3,
-            borderStyle: 'dashed',
-            borderWidth: 2,
-            py: 1.5,
-            '&:hover': {
-              borderStyle: 'dashed',
-              borderWidth: 2,
-            },
-          }}
-        >
-          Añadir nueva categoría
-        </Button>
-      )}
-
-      <Divider sx={{ mb: 3 }} />
+      <Divider sx={{ my: 3 }} />
 
       {/* Configuración de estilo global */}
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

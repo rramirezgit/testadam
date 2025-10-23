@@ -438,7 +438,7 @@ export default function ComponentCategories({
       )}
 
       {/* Categoría de Newsletter - Solo mostrar si tiene componentes habilitados */}
-      {isNewsletterMode && (
+      {/* {isNewsletterMode && (
         <Accordion
           expanded={expandedCategories.newsletter}
           onChange={() =>
@@ -496,7 +496,7 @@ export default function ComponentCategories({
             </Grid>
           </AccordionDetails>
         </Accordion>
-      )}
+      )} */}
 
       {/* Categoría de Producción - Solo mostrar si tiene componentes habilitados */}
       {hasCategoryComponents('produccion', enabledComponents) && (

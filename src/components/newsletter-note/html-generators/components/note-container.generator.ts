@@ -4,8 +4,9 @@
  * Compatible con Gmail, Outlook y Apple Mail
  */
 
-import type { EmailComponent } from '../types';
 import { escapeHtml } from '../utils/html-utils';
+
+import type { EmailComponent } from '../types';
 
 // Importación circular se resolverá en el index.ts
 let renderComponentToHtmlFn: ((component: EmailComponent) => string) | null = null;

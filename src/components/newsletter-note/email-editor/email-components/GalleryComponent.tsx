@@ -2,6 +2,8 @@ import { Icon } from '@iconify/react';
 
 import { Box, Chip, Typography } from '@mui/material';
 
+import { CONFIG } from 'src/global-config';
+
 import ComponentWithToolbar from './ComponentWithToolbar';
 
 import type { EmailComponentProps } from './types';
@@ -9,6 +11,7 @@ import type { EmailComponentProps } from './types';
 interface GalleryImage {
   src: string;
   alt: string;
+  link?: string;
   crop?: {
     x: number;
     y: number;
@@ -29,16 +32,16 @@ const GalleryComponent = ({
 }: EmailComponentProps) => {
   // Inicializar con 4 imágenes vacías si no existen
   const images = component.props?.images || [
-    { src: '', alt: 'Imagen 1' },
-    { src: '', alt: 'Imagen 2' },
-    { src: '', alt: 'Imagen 3' },
-    { src: '', alt: 'Imagen 4' },
+    { src: CONFIG.emptyImageUrl, alt: 'Imagen 1' },
+    { src: CONFIG.emptyImageUrl, alt: 'Imagen 2' },
+    { src: CONFIG.emptyImageUrl, alt: 'Imagen 3' },
+    { src: CONFIG.emptyImageUrl, alt: 'Imagen 4' },
   ];
 
   // Asegurar que siempre tengamos exactamente 4 imágenes
   const galleryImages: GalleryImage[] = Array.from(
     { length: 4 },
-    (_, idx) => images[idx] || { src: '', alt: `Imagen ${idx + 1}` }
+    (_, idx) => images[idx] || { src: CONFIG.emptyImageUrl, alt: `Imagen ${idx + 1}` }
   );
 
   const spacing = component.props?.spacing || 8;
@@ -108,11 +111,6 @@ const GalleryComponent = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                '&:hover': {
-                  borderColor: isSelected ? 'primary.light' : 'grey.400',
-                  transform: 'scale(1.02)',
-                  boxShadow: isSelected ? 2 : 1,
-                },
               }}
             >
               {image.src ? (

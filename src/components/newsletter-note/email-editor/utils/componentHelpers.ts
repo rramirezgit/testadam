@@ -41,7 +41,7 @@ export const createNewComponent = (
         : type === 'button'
           ? { variant: 'contained', color: 'primary' }
           : type === 'image'
-            ? { src: 'https://via.placeholder.com/600x400', alt: 'Placeholder image' }
+            ? { src: '', alt: 'Placeholder image' }
             : type === 'bulletList'
               ? { items: ['List item 1'], listStyle: 'disc', listColor: '#000000' }
               : type === 'summary'

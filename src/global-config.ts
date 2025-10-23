@@ -11,6 +11,7 @@ export type ConfigValue = {
   assetsDir: string;
   emptyImageUrl: string;
   isStaticExport: boolean;
+  defaultLogoUrl: string;
   auth: {
     method: 'jwt' | 'amplify' | 'firebase' | 'auth0';
     skip: boolean;
@@ -39,6 +40,7 @@ export const CONFIG: ConfigValue = {
   assetsDir: process.env.NEXT_PUBLIC_ASSETS_DIR ?? '',
   isStaticExport: JSON.parse(process.env.BUILD_STATIC_EXPORT ?? 'false'),
   emptyImageUrl: process.env.NEXT_PUBLIC_EMPTY_IMG ?? '',
+  defaultLogoUrl: process.env.NEXT_PUBLIC_LOGO_NEWS ?? '',
   /**
    * Auth
    * @method jwt | amplify | firebase | supabase | auth0
@@ -80,4 +82,19 @@ export const CONFIG: ConfigValue = {
     domain: process.env.NEXT_PUBLIC_AUTH0_DOMAIN ?? '',
     callbackUrl: process.env.NEXT_PUBLIC_AUTH0_CALLBACK_URL ?? '',
   },
+};
+
+// ----------------------------------------------------------------------
+
+/**
+ * Social Media Icons URLs
+ * Used in newsletter footer for social media links
+ */
+export const SOCIAL_ICONS: Record<string, string> = {
+  instagram: 'https://s3.amazonaws.com/s3.condoor.ai/adam/47b192e0d0.png',
+  facebook: 'https://s3.amazonaws.com/s3.condoor.ai/adam/e673e848a3.png',
+  x: 'https://s3.amazonaws.com/s3.condoor.ai/adam/e6db6baccf8.png',
+  twitter: 'https://s3.amazonaws.com/s3.condoor.ai/adam/e6db6baccf8.png', // Twitter es X
+  tiktok: 'https://s3.amazonaws.com/s3.condoor.ai/adam/8ffcbf79bb.png',
+  linkedin: 'https://s3.amazonaws.com/s3.condoor.ai/adam/ee993e33c6e.png',
 };

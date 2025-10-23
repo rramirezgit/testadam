@@ -9,7 +9,10 @@ import React, { memo, useMemo } from 'react';
 
 import { Box, Paper, Button, Typography } from '@mui/material';
 
+import { CONFIG, SOCIAL_ICONS } from 'src/global-config';
+
 import EmailList from './email-list';
+import SimpleTipTapEditor from '../simple-tiptap-editor';
 import EmailComponentRenderer from './email-component-renderer';
 import ComponentWithToolbar from './email-components/ComponentWithToolbar';
 
@@ -245,10 +248,12 @@ const NewsletterFooterComponent = ({
   isSelected,
   onSelect,
   footer,
+  onFooterTextChange,
 }: {
   isSelected: boolean;
   onSelect: () => void;
   footer?: NewsletterFooter;
+  onFooterTextChange?: (text: string) => void;
 }) => {
   // Extraer valores para aplicar directamente en el sx prop
   const useGradient = footer?.useGradient;
@@ -274,7 +279,7 @@ const NewsletterFooterComponent = ({
         borderRadius: 2,
         cursor: 'pointer',
         transition: 'all 0.2s',
-        textAlign: 'center',
+        textAlign: 'left',
         position: 'relative',
         // Aplicar el backgroundStyle
         ...(useGradient && gradientColor1 && gradientColor2
@@ -297,70 +302,55 @@ const NewsletterFooterComponent = ({
       }}
     >
       <Box sx={{ position: 'relative' }}>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            color: footer?.textColor || '#333',
-            mb: 1,
-            fontSize: footer?.fontSize ? `${footer.fontSize + 4}px` : '1.125rem',
-          }}
-        >
-          {footer?.companyName || 'Tu Empresa'}
-        </Typography>
-
-        {footer?.showAddress && footer?.address && (
-          <Typography
-            variant="body2"
-            sx={{
-              color: footer?.textColor || '#666',
-              mb: 1,
-              fontSize: footer?.fontSize ? `${footer.fontSize}px` : '0.875rem',
-            }}
-          >
-            {footer.address}
-          </Typography>
-        )}
-
-        {footer?.contactEmail && (
-          <Typography
-            variant="body2"
-            sx={{
-              color: footer?.textColor || '#666',
-              mb: 2,
-              fontSize: footer?.fontSize ? `${footer.fontSize}px` : '0.875rem',
-            }}
-          >
-            Contacto: {footer.contactEmail}
-          </Typography>
-        )}
-
-        {footer?.showSocial && enabledSocialLinks.length > 0 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 2 }}>
-            <Typography
-              variant="caption"
-              sx={{
-                color: footer?.textColor || '#666',
-                fontSize: footer?.fontSize ? `${footer.fontSize - 2}px` : '0.75rem',
+        {/* Logo */}
+        {footer?.showLogo && (footer?.logo || CONFIG.defaultLogoUrl) && (
+          <Box sx={{ mb: 2 }}>
+            <img
+              src={footer.logo || CONFIG.defaultLogoUrl}
+              alt="Logo"
+              style={{
+                height: footer.logoHeight || 40.218,
+                display: 'block',
               }}
-            >
-              {enabledSocialLinks
-                .map((link) => link.platform.charAt(0).toUpperCase() + link.platform.slice(1))
-                .join(' • ')}
-            </Typography>
+            />
           </Box>
         )}
 
-        <Typography
-          variant="caption"
-          sx={{
-            color: footer?.textColor || '#999',
-            fontSize: footer?.fontSize ? `${footer.fontSize - 2}px` : '0.75rem',
-          }}
-        >
-          © {new Date().getFullYear()} {footer?.companyName || 'Tu Empresa'}. Todos los derechos
-          reservados.
-        </Typography>
+        {/* Íconos de redes sociales */}
+        {footer?.showSocial && enabledSocialLinks.length > 0 && (
+          <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+            {enabledSocialLinks.map((link) => (
+              <a
+                key={link.platform}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-block' }}
+              >
+                <img
+                  src={SOCIAL_ICONS[link.platform.toLowerCase()] || ''}
+                  alt={link.platform}
+                  style={{ width: 24, height: 24, display: 'block' }}
+                />
+              </a>
+            ))}
+          </Box>
+        )}
+
+        {/* Texto del footer editable */}
+        <Box onClick={(e) => e.stopPropagation()}>
+          <SimpleTipTapEditor
+            content={footer?.footerText || ''}
+            onChange={(newContent) => {
+              if (onFooterTextChange) {
+                onFooterTextChange(newContent);
+              }
+            }}
+            showToolbar={false}
+            placeholder="Texto del footer..."
+            style={{ fontSize: '14px', color: footer?.textColor || '#666' }}
+          />
+        </Box>
 
         {/* Indicador de edición */}
         <Box

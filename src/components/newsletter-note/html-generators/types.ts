@@ -49,11 +49,16 @@ export interface FooterConfig {
   showSocial?: boolean;
   padding?: number;
   fontSize?: number;
+  logo?: string;
+  logoHeight?: number;
+  showLogo?: boolean;
+  footerText?: string;
 }
 
 export interface GalleryImage {
   src: string;
   alt: string;
+  link?: string;
 }
 
 export interface Herramienta {

@@ -7,15 +7,17 @@ import {
   Box,
   Switch,
   Slider,
-  Button,
   Divider,
   TextField,
   Typography,
-  IconButton,
+  InputAdornment,
   FormControlLabel,
 } from '@mui/material';
 
+import { CONFIG, SOCIAL_ICONS } from 'src/global-config';
+
 import { ColorPicker } from '../../../color-utils';
+import SimpleTipTapEditor from '../../simple-tiptap-editor';
 
 interface NewsletterFooterReusableOptionsProps {
   selectedComponentId: string | null;
@@ -41,26 +43,12 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
     const newSocialLinks = [...(props.socialLinks || [])];
     if (newSocialLinks[index]) {
       newSocialLinks[index] = { ...newSocialLinks[index], [field]: value };
+      // Automáticamente habilitar/deshabilitar según tenga URL
+      if (field === 'url') {
+        newSocialLinks[index].enabled = value.trim() !== '';
+      }
       updateProp('socialLinks', newSocialLinks);
     }
-  };
-
-  const addSocialLink = () => {
-    const newSocialLinks = [
-      ...(props.socialLinks || []),
-      {
-        platform: 'twitter',
-        url: '',
-        enabled: true,
-      },
-    ];
-    updateProp('socialLinks', newSocialLinks);
-  };
-
-  const removeSocialLink = (index: number) => {
-    const newSocialLinks = [...(props.socialLinks || [])];
-    newSocialLinks.splice(index, 1);
-    updateProp('socialLinks', newSocialLinks);
   };
 
   return (
@@ -123,6 +111,75 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
             fullWidth
             size="small"
             placeholder="#unsubscribe"
+          />
+        </Box>
+      </Box>
+
+      <Divider />
+
+      {/* LOGO */}
+      <Box>
+        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Icon icon="mdi:image" />
+          Logo
+        </Typography>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={props.showLogo || false}
+                onChange={(e) => updateProp('showLogo', e.target.checked)}
+                size="small"
+              />
+            }
+            label="Mostrar Logo"
+          />
+
+          {props.showLogo && (
+            <>
+              <TextField
+                label="URL del Logo"
+                value={props.logo || CONFIG.defaultLogoUrl}
+                onChange={(e) => updateProp('logo', e.target.value)}
+                placeholder={CONFIG.defaultLogoUrl}
+                fullWidth
+                size="small"
+              />
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                  Altura del Logo: {props.logoHeight || 40.218}px
+                </Typography>
+                <Slider
+                  value={props.logoHeight || 40.218}
+                  onChange={(e, value) => updateProp('logoHeight', value)}
+                  min={20}
+                  max={100}
+                  step={0.1}
+                  valueLabelDisplay="auto"
+                />
+              </Box>
+            </>
+          )}
+        </Box>
+      </Box>
+
+      <Divider />
+
+      {/* TEXTO DEL FOOTER */}
+      <Box>
+        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Icon icon="mdi:text" />
+          Texto del Footer
+        </Typography>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <SimpleTipTapEditor
+            content={props.footerText || ''}
+            onChange={(content) => updateProp('footerText', content)}
+            showToolbar
+            placeholder="Este correo electrónico se le envió como miembro registrado..."
+            style={{ minHeight: '100px' }}
           />
         </Box>
       </Box>
@@ -272,68 +329,63 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
 
           {props.showSocial && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {(props.socialLinks || []).map((link: any, index: number) => (
-                <Box
-                  key={index}
-                  sx={{
-                    p: 2,
-                    border: '1px solid #e0e0e0',
-                    borderRadius: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                  }}
-                >
+              {(props.socialLinks || []).map((link: any, index: number) => {
+                const platformName = link.platform.charAt(0).toUpperCase() + link.platform.slice(1);
+                const iconUrl = SOCIAL_ICONS[link.platform.toLowerCase()];
+
+                return (
                   <Box
-                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    key={index}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                    }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Red Social {index + 1}
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 500,
+                        color: '#637381',
+                        mb: 0.5,
+                      }}
+                    >
+                      {platformName === 'X' || platformName === 'Twitter' ? 'X' : platformName}
                     </Typography>
-                    <IconButton size="small" onClick={() => removeSocialLink(index)} color="error">
-                      <Icon icon="mdi:delete" />
-                    </IconButton>
+
+                    <TextField
+                      value={link.url || ''}
+                      onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)}
+                      fullWidth
+                      size="small"
+                      placeholder="/usuario"
+                      InputProps={{
+                        startAdornment: iconUrl && (
+                          <InputAdornment position="start">
+                            <Box
+                              component="img"
+                              src={iconUrl}
+                              alt={link.platform}
+                              sx={{
+                                width: 20,
+                                height: 20,
+                                display: 'block',
+                                opacity: 0.7,
+                              }}
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          bgcolor: 'white',
+                          borderRadius: 2,
+                        },
+                      }}
+                    />
                   </Box>
-
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={link.enabled || false}
-                        onChange={(e) => handleSocialLinkChange(index, 'enabled', e.target.checked)}
-                        size="small"
-                      />
-                    }
-                    label="Habilitado"
-                  />
-
-                  <TextField
-                    label="Plataforma"
-                    value={link.platform || ''}
-                    onChange={(e) => handleSocialLinkChange(index, 'platform', e.target.value)}
-                    fullWidth
-                    size="small"
-                    placeholder="twitter, facebook, instagram..."
-                  />
-
-                  <TextField
-                    label="URL"
-                    value={link.url || ''}
-                    onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)}
-                    fullWidth
-                    size="small"
-                    placeholder="https://twitter.com/..."
-                  />
-                </Box>
-              ))}
-
-              <Button
-                variant="outlined"
-                startIcon={<Icon icon="mdi:plus" />}
-                onClick={addSocialLink}
-                fullWidth
-              >
-                Agregar Red Social
-              </Button>
+                );
+              })}
             </Box>
           )}
         </Box>

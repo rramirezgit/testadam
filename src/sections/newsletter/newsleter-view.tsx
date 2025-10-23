@@ -294,9 +294,6 @@ export default function NewsletterView() {
 
         {/* Filtro de Estado */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
-            Estado de los newsletters
-          </Typography>
           <Tabs
             value={tab}
             onChange={handleChangeTab}

@@ -38,25 +38,13 @@ const RespaldadoPorComponent = ({
   };
 
   // Handlers para la sección adicional (Escritor con Propietario)
-  const handleMostrarEscritorPropietarioChange = (mostrar: boolean) => {
-    updateComponentProps(component.id, { mostrarEscritorPropietario: mostrar });
+  const handleEscritorNombreChange = (newName: string) => {
+    updateComponentProps(component.id, { escritorNombre: newName });
   };
 
-  // const handleEscritorNombreChange = (newName: string) => {
-  //   updateComponentProps(component.id, { escritorNombre: newName });
-  // };
-
-  // const handleEscritorAvatarChange = (newUrl: string) => {
-  //   updateComponentProps(component.id, { escritorAvatarUrl: newUrl });
-  // };
-
-  // const handlePropietarioNombreChange = (newName: string) => {
-  //   updateComponentProps(component.id, { propietarioNombre: newName });
-  // };
-
-  // const handlePropietarioAvatarChange = (newUrl: string) => {
-  //   updateComponentProps(component.id, { propietarioAvatarUrl: newUrl });
-  // };
+  const handlePropietarioNombreChange = (newName: string) => {
+    updateComponentProps(component.id, { propietarioNombre: newName });
+  };
 
   return (
     <Box
@@ -100,6 +88,9 @@ const RespaldadoPorComponent = ({
           onNombreChange={handleNombreChange}
           onAvatarChange={handleAvatarChange}
           onTamanoChange={handleTamanoChange}
+          // Handlers adicionales
+          onEscritorNombreChange={handleEscritorNombreChange}
+          onPropietarioNombreChange={handlePropietarioNombreChange}
         />
       </ComponentWithToolbar>
     </Box>

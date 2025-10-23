@@ -68,6 +68,12 @@ interface EditorHeaderProps {
   getActiveComponents?: () => any[];
   // Nueva prop para actualizar el ID del newsletter después de guardarlo
   onNewsletterIdChange?: (id: string) => void;
+  // Nueva prop para la imagen de portada del newsletter
+  noteCoverImageUrl?: string;
+  // Nueva prop para el ID de la nota actual
+  currentNoteId?: string | null;
+  // Nueva prop para mostrar notificaciones
+  showNotification?: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void;
 }
 
 export default function EditorHeader({
@@ -101,6 +107,9 @@ export default function EditorHeader({
   newsletterTitle = '',
   getActiveComponents = () => [],
   onNewsletterIdChange = () => {},
+  noteCoverImageUrl = '',
+  currentNoteId = null,
+  showNotification = () => {},
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
@@ -165,38 +174,6 @@ export default function EditorHeader({
         })
         .filter(Boolean) || []
     );
-  };
-
-  // Función para debuggear el problema del status y notes
-  const debugStatusIssue = () => {
-    console.log('🔍 Debugging status and notes issue...');
-    console.log('📋 Datos disponibles:', {
-      isNewsletterMode,
-      newsletterList: newsletterList?.length || 0,
-      currentNewsletterId,
-      initialNote: initialNote?.title,
-    });
-
-    // Verificar estructura de datos que se enviará
-    const testData = {
-      subject: initialNote?.title || 'Nuevo Newsletter',
-      content: 'Test content',
-      // NO enviar status ni notes al crear un newsletter nuevo
-      objData: '[]',
-      config: {
-        templateType: 'newsletter',
-        dateCreated: new Date().toISOString(),
-        dateModified: new Date().toISOString(),
-        activeVersion: 'newsletter',
-      },
-    };
-
-    console.log('🧪 Datos de prueba que se enviarían:', testData);
-    console.log('✅ Content incluido:', testData.content);
-    console.log('✅ ObjData incluido:', testData.objData);
-    console.log('✅ Config incluido:', testData.config);
-    console.log('❌ Status NO incluido (correcto para crear nuevo)');
-    console.log('❌ Notes NO incluido (correcto para crear nuevo)');
   };
 
   // Función para deshabilitar opciones del menú de envío
@@ -282,9 +259,9 @@ export default function EditorHeader({
 
         // Enviar newsletter existente para revisión
         await sendNewsletterForReview(currentNewsletterId, emails, content);
-      } else if (initialNote?.id) {
+      } else if (currentNoteId) {
         // Enviar post para revisión (nota existente)
-        await sendEmail(initialNote.id, emails, content);
+        await sendEmail(currentNoteId, emails, content);
       }
 
       // else {
@@ -445,6 +422,7 @@ export default function EditorHeader({
           subject,
           content,
           objData: objDataString,
+          coverImageUrl: noteCoverImageUrl || '',
         };
 
         console.log('📤 PUT /newsletters/{id} - Datos para actualización:', {
@@ -452,12 +430,14 @@ export default function EditorHeader({
           subject,
           contentLength: updateData.content.length,
           objDataLength: updateData.objData.length,
+          coverImageUrl: updateData.coverImageUrl,
         });
 
         const updateResult = await updateNewsletter(currentNewsletterId, updateData);
 
         if (updateResult) {
           console.log('✅ Newsletter actualizado exitosamente:', updateResult);
+          showNotification('Newsletter actualizado correctamente', 'success');
         } else {
           console.error('❌ Error al actualizar newsletter');
           throw new Error('Error al actualizar newsletter');
@@ -466,15 +446,17 @@ export default function EditorHeader({
         // ✅ CREAR newsletter nuevo (flujo de 2 pasos)
         console.log('📝 Creando newsletter nuevo (POST + PUT)');
 
-        // PASO 1: POST - Solo subject y content (HTML completo)
+        // PASO 1: POST - Solo subject, content y coverImageUrl
         const createData = {
           subject,
           content, // HTML completo del newsletter
+          coverImageUrl: noteCoverImageUrl || '',
         };
 
         console.log('📤 PASO 1: POST /newsletters - Crear newsletter:', {
           subject: createData.subject,
           contentLength: createData.content.length,
+          coverImageUrl: createData.coverImageUrl,
         });
 
         const result = await createNewsletter(subject, createData);
@@ -503,8 +485,10 @@ export default function EditorHeader({
 
           if (updateResult) {
             console.log('✅ PASO 2 completado - objData guardado exitosamente:', updateResult);
+            showNotification('Newsletter guardado correctamente', 'success');
           } else {
             console.warn('⚠️ PASO 2 falló - Newsletter creado pero objData no guardado');
+            showNotification('Newsletter creado, pero algunos datos no se guardaron', 'warning');
             // No lanzar error aquí, el newsletter ya se creó
           }
         } else {
@@ -734,46 +718,6 @@ export default function EditorHeader({
 
           {isNewsletterMode ? (
             <>
-              {/* Contador de notas del newsletter */}
-              <Button
-                variant="outlined"
-                color="inherit"
-                sx={{ mr: 1, height: '42px' }}
-                startIcon={<Icon icon="mdi:note-multiple" />}
-              >
-                {newsletterNotesCount} Notas
-              </Button>
-
-              {/* Botón para generar/alternar vista de preview HTML */}
-              <Button
-                variant={showNewsletterPreview ? 'contained' : 'outlined'}
-                color="secondary"
-                sx={{ mr: 1, height: '42px' }}
-                startIcon={
-                  generatingNewsletterHtml ? (
-                    <Icon icon="mdi:loading" className="animate-spin" />
-                  ) : (
-                    <Icon icon={showNewsletterPreview ? 'mdi:eye-off' : 'mdi:eye'} />
-                  )
-                }
-                onClick={showNewsletterPreview ? onToggleNewsletterView : onGenerateNewsletterHtml}
-                disabled={generatingNewsletterHtml}
-              >
-                {showNewsletterPreview ? 'Ver Notas' : 'Preview HTML'}
-              </Button>
-
-              {/* Botón de debug temporal */}
-              <Button
-                variant="outlined"
-                color="secondary"
-                sx={{ mr: 1, height: '42px' }}
-                startIcon={<Icon icon="mdi:bug" />}
-                onClick={debugStatusIssue}
-                size="small"
-              >
-                Debug Data
-              </Button>
-
               {/* Botón de guardar newsletter */}
               <Button
                 variant="contained"
@@ -893,7 +837,9 @@ export default function EditorHeader({
               >
                 Guardar
               </Button>
-              <Tooltip title={!initialNote?.id ? 'Debes guardar la nota antes de enviarla' : ''}>
+              <Tooltip
+                title={!isEditingExistingNote ? 'Debes guardar la nota antes de enviarla' : ''}
+              >
                 <span>
                   <Button
                     variant="contained"
@@ -901,7 +847,7 @@ export default function EditorHeader({
                     endIcon={<Icon icon="mdi:chevron-down" />}
                     sx={{ backgroundColor: '#4f46e5', height: '42px' }}
                     onClick={handleSendMenuClick}
-                    disabled={!initialNote?.id}
+                    disabled={!isEditingExistingNote}
                     aria-controls={openSendMenu ? 'send-menu' : undefined}
                     aria-haspopup="true"
                     aria-expanded={openSendMenu ? 'true' : undefined}

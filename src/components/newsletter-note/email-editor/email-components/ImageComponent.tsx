@@ -1,7 +1,8 @@
-import Image from 'next/image';
 import { Icon } from '@iconify/react';
 
 import { Box, Chip } from '@mui/material';
+
+import { CONFIG } from 'src/global-config';
 
 import { isBase64Image } from '../utils/imageValidation';
 import ComponentWithToolbar from './ComponentWithToolbar';
@@ -116,10 +117,7 @@ const ImageUploader = ({ data, componentStyle }: ImageUploaderProps) => {
       ) : (
         <div
           style={{
-            height: '270px',
             borderRadius: '8px',
-            backgroundColor:
-              backgroundColor !== 'transparent' ? backgroundColor : 'rgba(145, 158, 171, 0.12)', // 🚀 NUEVO: Usar color de fondo personalizado
             textAlign: 'center',
             cursor: 'pointer', // Cambiar a pointer para indicar que es clickeable
             display: 'flex',
@@ -127,11 +125,9 @@ const ImageUploader = ({ data, componentStyle }: ImageUploaderProps) => {
             justifyContent: 'center',
             flexDirection: 'column',
             gap: 2,
-            color: 'rgba(145, 158, 171, 0.94)',
           }}
         >
-          <Image src="/assets/icons/apps/ic-empty.svg" alt="Imagen" width={40} height={40} />
-          <p>Selecciona la imagen desde el panel de opciones</p>
+          <img src={CONFIG.emptyImageUrl} alt="Imagen" />
         </div>
       )}
     </div>

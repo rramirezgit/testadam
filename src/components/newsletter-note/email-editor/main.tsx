@@ -79,6 +79,7 @@ interface EmailEditorMainProps {
   // Nuevas props para carga de newsletter existente
   initialComponents?: any[] | null;
   onNewsletterIdChange?: (id: string) => void;
+  initialCoverImageUrl?: string;
 }
 
 export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
@@ -111,6 +112,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   // Nuevas props para carga de newsletter existente
   initialComponents = null,
   onNewsletterIdChange = () => {},
+  initialCoverImageUrl = '',
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
@@ -1341,6 +1343,11 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           configPost: JSON.stringify(configPostObject),
           content: '', // Campo requerido por el backend (puede estar vacío)
           highlight: noteData.highlight,
+          // ✅ Incluir campos de metadata que pueden ser editados
+          contentTypeId: noteData.contentTypeId,
+          audienceId: noteData.audienceId || null,
+          categoryId: noteData.categoryId || null,
+          subcategoryId: noteData.subcategoryId || null,
         };
 
         console.log('📝 Actualizando post existente:', {
@@ -1566,6 +1573,14 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       }
     }
   }, [initialNote]);
+
+  // Cargar coverImageUrl inicial cuando es modo newsletter
+  useEffect(() => {
+    if (isNewsletterMode && initialCoverImageUrl) {
+      console.log('🖼️ Cargando coverImageUrl inicial del newsletter:', initialCoverImageUrl);
+      noteData.setNoteCoverImageUrl(initialCoverImageUrl);
+    }
+  }, [isNewsletterMode, initialCoverImageUrl, noteData]);
 
   // Cargar datos del post cuando se edite una nota existente
   useEffect(() => {
@@ -2482,6 +2497,12 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         getActiveComponents={getActiveComponents}
         // Nueva prop para actualizar el ID del newsletter
         onNewsletterIdChange={onNewsletterIdChange}
+        // Nueva prop para la imagen de portada
+        noteCoverImageUrl={noteData.noteCoverImageUrl}
+        // Nueva prop para el ID de la nota actual
+        currentNoteId={noteData.currentNoteId}
+        // Nueva prop para mostrar notificaciones
+        showNotification={showNotification}
       />
 
       {/* Contenedor principal */}

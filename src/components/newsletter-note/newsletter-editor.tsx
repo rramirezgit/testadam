@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, Dialog, Typography, IconButton } from '@mui/material';
 
 import { useStore } from 'src/lib/store';
+import { CONFIG } from 'src/global-config';
 import usePostStore from 'src/store/PostStore';
 
 import EmailEditor from './email-editor';
@@ -100,6 +101,7 @@ export default function NewsletterEditor({
 }: NewsletterEditorProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [coverImageUrl, setCoverImageUrl] = useState('');
   const [selectedNotes, setSelectedNotes] = useState<NewsletterNote[]>([]);
   const [editingNote, setEditingNote] = useState<SavedNote | null>(null);
   const [openNoteEditor, setOpenNoteEditor] = useState(false);
@@ -133,7 +135,7 @@ export default function NewsletterEditor({
   const [header, setHeader] = useState<NewsletterHeader>({
     title: '',
     subtitle: '',
-    logo: 'https://s3.amazonaws.com/s3.condoor.ai/adam/d5a5c0e8d1.png',
+    logo: CONFIG.defaultLogoUrl,
     logoAlt: 'Logo',
     bannerImage: '',
     backgroundColor: '#FFF9CE',
@@ -160,10 +162,11 @@ export default function NewsletterEditor({
     address: '123 Calle Principal, Ciudad, País',
     contactEmail: 'contacto@ejemplo.com',
     socialLinks: [
-      { platform: 'twitter', url: 'https://twitter.com', enabled: true },
-      { platform: 'facebook', url: 'https://facebook.com', enabled: true },
-      { platform: 'instagram', url: 'https://instagram.com', enabled: true },
-      { platform: 'linkedin', url: 'https://linkedin.com', enabled: false },
+      { platform: 'instagram', url: '', enabled: false },
+      { platform: 'facebook', url: '', enabled: false },
+      { platform: 'x', url: '', enabled: false },
+      { platform: 'tiktok', url: '', enabled: false },
+      { platform: 'linkedin', url: '', enabled: false },
     ],
     unsubscribeLink: '#unsubscribe',
     backgroundColor: '#f5f5f5',
@@ -175,6 +178,10 @@ export default function NewsletterEditor({
     showAddress: true,
     padding: 24,
     fontSize: 12,
+    showLogo: true,
+    logo: CONFIG.defaultLogoUrl,
+    logoHeight: 40.218,
+    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de ADAC. El uso del servicio y del sitio web está sujeto a nuestros <a href="#" style="color: #1976d2;">Términos de uso</a> y <a href="#" style="color: #1976d2;">Declaración de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir mas estos emails <a href="#unsubscribe" style="color: #1976d2;">Unsubscribe</a></p>`,
   });
 
   // Use Zustand store
@@ -281,9 +288,10 @@ export default function NewsletterEditor({
           if (fullNewsletter) {
             console.log('✅ Newsletter completo cargado:', fullNewsletter);
 
-            // Setear el título y descripción
+            // Setear el título, descripción y coverImageUrl
             setTitle(fullNewsletter.subject || '');
             setDescription(fullNewsletter.description || '');
+            setCoverImageUrl(fullNewsletter.coverImageUrl || '');
             setIsEditingExisting(true);
             setNewsletterId(fullNewsletter.id);
             setCurrentNewsletterId(fullNewsletter.id);
@@ -607,6 +615,7 @@ export default function NewsletterEditor({
         setOpenSchedule={setOpenSchedule}
         setOpenSendSubs={setOpenSendSubs}
         initialComponents={initialComponents}
+        initialCoverImageUrl={coverImageUrl}
         onNewsletterIdChange={(newId: string) => {
           console.log('🆔 Newsletter ID actualizado:', newId);
           setCurrentNewsletterId(newId);

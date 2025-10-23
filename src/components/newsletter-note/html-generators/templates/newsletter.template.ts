@@ -9,6 +9,18 @@ import { tableAttrs, outlookMetaTags } from '../utils/outlook-helpers';
 
 import type { HeaderConfig, FooterConfig } from '../types';
 
+function getSocialIconUrlForTemplate(platform: string): string {
+  const icons: Record<string, string> = {
+    instagram: 'https://s3.amazonaws.com/s3.condoor.ai/adam/47b192e0d0.png',
+    facebook: 'https://s3.amazonaws.com/s3.condoor.ai/adam/e673e848a3.png',
+    x: 'https://s3.amazonaws.com/s3.condoor.ai/adam/e6db6baccf8.png',
+    twitter: 'https://s3.amazonaws.com/s3.condoor.ai/adam/e6db6baccf8.png', // Twitter es X
+    tiktok: 'https://s3.amazonaws.com/s3.condoor.ai/adam/8ffcbf79bb.png',
+    linkedin: 'https://s3.amazonaws.com/s3.condoor.ai/adam/ee993e33c6e.png',
+  };
+  return icons[platform] || '';
+}
+
 export interface NewsletterNote {
   noteId: string;
   order: number;
@@ -198,7 +210,7 @@ export function generateNewsletterTemplate(
                 </div>`
                     : ''
                 }
-                ${header.title || title ? `<p class="header-title">${escapeHtml(header.title || title || '')}</p>` : ''}
+                ${header.title ? `<p class="header-title">${escapeHtml(header.title)}</p>` : ''}
                 ${header.subtitle ? `<p class="header-subtitle">${escapeHtml(header.subtitle)}</p>` : ''}
                 ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 20px; border-radius: 8px;">` : ''}
               </td>
@@ -217,25 +229,28 @@ export function generateNewsletterTemplate(
           <!-- Footer -->
           <table ${tableAttrs()} width="100%">
             <tr>
-              <td class="email-footer">
-                <p class="footer-company">${escapeHtml(footer.companyName)}</p>
-                ${footer.address ? `<p class="footer-address">${escapeHtml(footer.address)}</p>` : ''}
-                ${footer.contactEmail ? `<p style="margin: 12px 0; font-size: 14px;">Contacto: <a href="mailto:${footer.contactEmail}" style="color: ${footer.textColor} !important; text-decoration: none;">${escapeHtml(footer.contactEmail)}</a></p>` : ''}
-                <div class="footer-links">
+              <td class="email-footer" style="text-align: left;">
+                ${footer.logo ? `<img src="${footer.logo}" alt="Logo" style="height: ${footer.logoHeight || 40.218}px; margin-bottom: 16px; display: block;">` : ''}
+                
+                <div style="margin-bottom: 16px;">
                   ${
                     footer.socialLinks
-                      ?.map(
-                        (link) =>
-                          `<a href="${link.url}">${link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}</a>`
-                      )
-                      .join(' • ') || ''
+                      ?.filter((link) => link.enabled)
+                      ?.map((link) => {
+                        const iconUrl = getSocialIconUrlForTemplate(link.platform.toLowerCase());
+                        return iconUrl
+                          ? `<a href="${link.url}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-right: 12px; text-decoration: none;">
+                              <img src="${iconUrl}" alt="${link.platform}" style="width: 24px; height: 24px; display: block;" />
+                            </a>`
+                          : '';
+                      })
+                      .join('') || ''
                   }
                 </div>
-                <div class="footer-unsubscribe">
-                  <a href="${footer.unsubscribeLink || '#'}">Cancelar suscripción</a> • 
-                  <a href="#">Ver en navegador</a>
+                
+                <div style="color: ${footer.textColor}; font-size: 14px; line-height: 1.5;">
+                  ${footer.footerText || ''}
                 </div>
-                <p style="margin: 20px 0 0 0; font-size: 12px; opacity: 0.6;">© ${new Date().getFullYear()} ${escapeHtml(footer.companyName)}. Todos los derechos reservados.</p>
               </td>
             </tr>
           </table>

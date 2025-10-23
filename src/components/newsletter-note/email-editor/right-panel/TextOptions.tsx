@@ -51,7 +51,7 @@ const TextOptions = ({
   const isParagraphComponent = selectedComponent?.type === 'paragraph';
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box>
       <Box sx={{ mb: 1, display: 'flex', gap: 1 }}>
         <ToggleButtonGroup
           value={textFormat}
@@ -215,7 +215,7 @@ const TextOptions = ({
       </Box> */}
 
       {/* ⚡ NUEVO: Controles de Espaciado */}
-      <Paper elevation={1} sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
+      <Paper elevation={1} sx={{ p: 1, mb: 3, bgcolor: 'grey.50' }}>
         <Typography
           variant="subtitle2"
           gutterBottom

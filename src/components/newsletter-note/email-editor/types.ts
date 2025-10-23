@@ -72,6 +72,10 @@ export interface NewsletterFooter {
   showAddress: boolean;
   padding: number;
   fontSize: number;
+  logo?: string;
+  logoHeight?: number;
+  showLogo?: boolean;
+  footerText?: string;
 }
 
 export interface EmailEditorProps {
@@ -107,4 +111,6 @@ export interface EmailEditorProps {
   // Nuevas props para carga de newsletter existente
   initialComponents?: any[] | null;
   onNewsletterIdChange?: (id: string) => void;
+  // Prop para la imagen de portada inicial
+  initialCoverImageUrl?: string;
 }

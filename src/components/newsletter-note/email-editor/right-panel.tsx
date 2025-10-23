@@ -15,6 +15,7 @@ import {
   Dialog,
   Select,
   Switch,
+  Slider,
   Toolbar,
   MenuItem,
   Snackbar,
@@ -29,6 +30,7 @@ import {
   ToggleButton,
   DialogActions,
   DialogContent,
+  InputAdornment,
   LinearProgress,
   AccordionSummary,
   AccordionDetails,
@@ -38,6 +40,7 @@ import {
 } from '@mui/material';
 
 import usePostStore from 'src/store/PostStore';
+import { CONFIG, SOCIAL_ICONS } from 'src/global-config';
 
 import { UploadCover } from 'src/components/upload';
 
@@ -57,7 +60,6 @@ import ContainerOptions from './right-panel/ContainerOptions';
 import ImageTextOptions from './right-panel/ImageTextOptions';
 import { useImageUpload } from './right-panel/useImageUpload';
 import TwoColumnsOptions from './right-panel/TwoColumnsOptions';
-// Importaciones de hooks y utilidades
 import ChartOptions from './email-components/options/ChartOptions';
 import HerramientasOptions from './right-panel/HerramientasOptions';
 import TextWithIconOptions from './right-panel/TextWithIconOptions';
@@ -661,8 +663,7 @@ export default function RightPanel({
                     checked={newsletterHeader.showLogo}
                     onChange={(e) => {
                       const newShowLogo = e.target.checked;
-                      const defaultLogo =
-                        'https://s3.amazonaws.com/s3.condoor.ai/adam/d5a5c0e8d1.png';
+                      const defaultLogo = CONFIG.defaultLogoUrl;
                       onHeaderChange({
                         ...newsletterHeader,
                         showLogo: newShowLogo,
@@ -1024,94 +1025,97 @@ export default function RightPanel({
         </AppBar>
 
         <Box sx={{ overflowY: 'auto', overflowX: 'hidden', flexGrow: 1, height: 0, p: 2 }}>
-          <TextField
-            fullWidth
-            label="Nombre de la Empresa"
-            value={newsletterFooter.companyName}
-            onChange={(e) => onFooterChange({ ...newsletterFooter, companyName: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Dirección"
-            value={newsletterFooter.address}
-            onChange={(e) => onFooterChange({ ...newsletterFooter, address: e.target.value })}
-            multiline
-            rows={2}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Email de Contacto"
-            type="email"
-            value={newsletterFooter.contactEmail}
-            onChange={(e) => onFooterChange({ ...newsletterFooter, contactEmail: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Color de Fondo"
-            type="color"
-            value={newsletterFooter.backgroundColor}
-            onChange={(e) =>
-              onFooterChange({ ...newsletterFooter, backgroundColor: e.target.value })
-            }
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Color del Texto"
-            type="color"
-            value={newsletterFooter.textColor}
-            onChange={(e) => onFooterChange({ ...newsletterFooter, textColor: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-
-          <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
+          <Typography variant="subtitle2" gutterBottom sx={{ mt: 1 }}>
             Redes Sociales
           </Typography>
-          {newsletterFooter.socialLinks.map((link, index) => (
-            <Box
-              key={index}
-              sx={{ mb: 2, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  mb: 1,
-                }}
-              >
-                <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
-                  {link.platform}
-                </Typography>
-                <IconButton
-                  size="small"
-                  onClick={() => {
+          {newsletterFooter.socialLinks.map((link, index) => {
+            const platformName = link.platform.charAt(0).toUpperCase() + link.platform.slice(1);
+            const iconUrl = SOCIAL_ICONS[link.platform.toLowerCase()];
+
+            return (
+              <Box key={index} sx={{ mb: 2 }}>
+                <TextField
+                  fullWidth
+                  label={`${platformName === 'X' || platformName === 'Twitter' ? 'X' : platformName}`}
+                  value={link.url}
+                  onChange={(e) => {
                     const newSocialLinks = [...newsletterFooter.socialLinks];
-                    newSocialLinks[index].enabled = !newSocialLinks[index].enabled;
+                    newSocialLinks[index].url = e.target.value;
+                    // Automáticamente habilitar/deshabilitar según tenga URL
+                    newSocialLinks[index].enabled = e.target.value.trim() !== '';
                     onFooterChange({ ...newsletterFooter, socialLinks: newSocialLinks });
                   }}
-                  color={link.enabled ? 'primary' : 'default'}
-                >
-                  <Icon icon={link.enabled ? 'mdi:eye' : 'mdi:eye-off'} />
-                </IconButton>
+                  placeholder="/usuario"
+                  InputProps={{
+                    startAdornment: iconUrl && (
+                      <InputAdornment position="start">
+                        <Box
+                          component="img"
+                          src={iconUrl}
+                          alt={link.platform}
+                          sx={{
+                            width: 25,
+                            height: 20,
+                            display: 'block',
+                            opacity: 0.7,
+                          }}
+                        />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'white',
+                    },
+                  }}
+                />
               </Box>
+            );
+          })}
+
+          <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
+            Logo
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={newsletterFooter.showLogo || false}
+                onChange={(e) =>
+                  onFooterChange({ ...newsletterFooter, showLogo: e.target.checked })
+                }
+              />
+            }
+            label="Mostrar Logo"
+            sx={{ mb: 2 }}
+          />
+          {newsletterFooter.showLogo && (
+            <>
               <TextField
                 fullWidth
-                label={`URL de ${link.platform}`}
-                value={link.url}
-                onChange={(e) => {
-                  const newSocialLinks = [...newsletterFooter.socialLinks];
-                  newSocialLinks[index].url = e.target.value;
-                  onFooterChange({ ...newsletterFooter, socialLinks: newSocialLinks });
-                }}
-                disabled={!link.enabled}
+                label="URL del Logo"
+                value={newsletterFooter.logo || CONFIG.defaultLogoUrl}
+                onChange={(e) => onFooterChange({ ...newsletterFooter, logo: e.target.value })}
+                placeholder={CONFIG.defaultLogoUrl}
+                sx={{ mb: 2 }}
                 size="small"
               />
-            </Box>
-          ))}
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Altura del Logo: {newsletterFooter.logoHeight || 40.218}px
+                </Typography>
+                <Slider
+                  value={newsletterFooter.logoHeight || 40.218}
+                  onChange={(e, value) =>
+                    onFooterChange({ ...newsletterFooter, logoHeight: value as number })
+                  }
+                  min={20}
+                  max={100}
+                  step={0.1}
+                  valueLabelDisplay="auto"
+                />
+              </Box>
+            </>
+          )}
         </Box>
       </Box>
     );

@@ -3,52 +3,50 @@
  * Exporta todas las funciones y tipos necesarios
  */
 
-// ===== TIPOS =====
-export type * from './types';
-
 // ===== UTILIDADES =====
 export * from './utils/html-utils';
+
 export * from './utils/email-styles';
 export * from './utils/outlook-helpers';
+// ===== TEMPLATES =====
+export { generateNewsletterTemplate } from './templates/newsletter.template';
 
-// ===== GENERADORES DE COMPONENTES BÁSICOS =====
-import { generateHeadingHtml } from './components/heading.generator';
-import { generateParagraphHtml } from './components/paragraph.generator';
-import { generateBulletListHtml } from './components/bulletlist.generator';
-import { generateDividerHtml } from './components/divider.generator';
 import { generateImageHtml } from './components/image.generator';
-
 // ===== GENERADORES DE COMPONENTES DE CONTENIDO =====
 import { generateButtonHtml } from './components/button.generator';
-import { generateCategoryHtml } from './components/category.generator';
-import { generateSummaryHtml } from './components/summary.generator';
 import { generateAuthorHtml } from './components/author.generator';
 import { generateSpacerHtml } from './components/spacer.generator';
-
+// ===== GENERADORES DE COMPONENTES BÁSICOS =====
+import { generateHeadingHtml } from './components/heading.generator';
+import { generateDividerHtml } from './components/divider.generator';
+import { generateSummaryHtml } from './components/summary.generator';
 // ===== GENERADORES DE COMPONENTES COMPLEJOS =====
 import { generateGalleryHtml } from './components/gallery.generator';
-import { generateTituloConIconoHtml } from './components/titulo-con-icono.generator';
-import { generateHerramientasHtml } from './components/herramientas.generator';
-import { generateRespaldadoPorHtml } from './components/respaldado-por.generator';
+import { generateCategoryHtml } from './components/category.generator';
+import { generateParagraphHtml } from './components/paragraph.generator';
 import { generateImageTextHtml } from './components/image-text.generator';
-import { generateTextWithIconHtml } from './components/text-with-icon.generator';
+import { generateBulletListHtml } from './components/bulletlist.generator';
 import { generateTwoColumnsHtml } from './components/two-columns.generator';
-
+import { generateHerramientasHtml } from './components/herramientas.generator';
+import { generateTextWithIconHtml } from './components/text-with-icon.generator';
+import { generateRespaldadoPorHtml } from './components/respaldado-por.generator';
+import { generateTituloConIconoHtml } from './components/titulo-con-icono.generator';
 // ===== GENERADORES ESTRUCTURALES =====
 import { generateNewsletterHeaderHtml } from './components/newsletter-header.generator';
 import { generateNewsletterFooterHtml } from './components/newsletter-footer.generator';
 import {
-  generateNoteContainerHtml,
   setRenderComponentToHtml,
+  generateNoteContainerHtml,
 } from './components/note-container.generator';
 
-// ===== TEMPLATES =====
-export { generateNewsletterTemplate } from './templates/newsletter.template';
 export { generateSingleNoteTemplate } from './templates/single-note.template';
+// ===== TIPOS =====
+export type * from './types';
 export type { NewsletterNote } from './templates/newsletter.template';
 
-import type { EmailComponent } from './types';
 import { escapeHtml } from './utils/html-utils';
+
+import type { EmailComponent } from './types';
 
 /**
  * Función principal que renderiza cualquier componente a HTML
@@ -137,28 +135,28 @@ setRenderComponentToHtml(renderComponentToHtml);
  * Re-exportar generadores individuales para uso directo si es necesario
  */
 export {
-  // Básicos
-  generateHeadingHtml,
-  generateParagraphHtml,
-  generateBulletListHtml,
-  generateDividerHtml,
   generateImageHtml,
   // Contenido
   generateButtonHtml,
-  generateCategoryHtml,
-  generateSummaryHtml,
   generateAuthorHtml,
   generateSpacerHtml,
+  // Básicos
+  generateHeadingHtml,
+  generateDividerHtml,
+  generateSummaryHtml,
   // Complejos
   generateGalleryHtml,
-  generateTituloConIconoHtml,
-  generateHerramientasHtml,
-  generateRespaldadoPorHtml,
+  generateCategoryHtml,
+  generateParagraphHtml,
   generateImageTextHtml,
-  generateTextWithIconHtml,
+  generateBulletListHtml,
   generateTwoColumnsHtml,
+  generateHerramientasHtml,
+  generateTextWithIconHtml,
+  generateRespaldadoPorHtml,
+  generateNoteContainerHtml,
+  generateTituloConIconoHtml,
   // Estructurales
   generateNewsletterHeaderHtml,
   generateNewsletterFooterHtml,
-  generateNoteContainerHtml,
 };

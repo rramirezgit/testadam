@@ -32,6 +32,8 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
+import { CONFIG } from 'src/global-config';
+
 import ColorPicker from 'src/components/newsletter-note/color-picker';
 import GalleryEditorDialog from 'src/components/newsletter-note/gallery-editor-dialog';
 import BannerSelector, { type BannerOption } from 'src/components/newsletter-note/banner-selector';
@@ -55,10 +57,21 @@ interface NewsletterFooter {
   companyName: string;
   address?: string;
   contactEmail?: string;
-  socialLinks?: { platform: string; url: string }[];
+  socialLinks?: { platform: string; url: string; enabled?: boolean }[];
   unsubscribeLink?: string;
   backgroundColor: string;
   textColor?: string;
+  useGradient?: boolean;
+  gradientColors?: string[];
+  gradientDirection?: number;
+  showSocial?: boolean;
+  showAddress?: boolean;
+  padding?: number;
+  fontSize?: number;
+  showLogo?: boolean;
+  logo?: string;
+  logoHeight?: number;
+  footerText?: string;
 }
 
 interface NewsletterContentEditorProps {
@@ -208,13 +221,26 @@ export default function NewsletterContentEditor({
     address: '123 Main St, City, Country',
     contactEmail: 'contact@example.com',
     socialLinks: [
-      { platform: 'twitter', url: 'https://twitter.com' },
-      { platform: 'facebook', url: 'https://facebook.com' },
-      { platform: 'instagram', url: 'https://instagram.com' },
+      { platform: 'instagram', url: '', enabled: false },
+      { platform: 'facebook', url: '', enabled: false },
+      { platform: 'x', url: '', enabled: false },
+      { platform: 'tiktok', url: '', enabled: false },
+      { platform: 'linkedin', url: '', enabled: false },
     ],
     unsubscribeLink: '#unsubscribe',
     backgroundColor: '#f5f5f5',
     textColor: '#666666',
+    useGradient: false,
+    gradientColors: ['#f5f5f5', '#e0e0e0'],
+    gradientDirection: 180,
+    showSocial: true,
+    showAddress: true,
+    padding: 24,
+    fontSize: 12,
+    showLogo: true,
+    logo: CONFIG.defaultLogoUrl,
+    logoHeight: 40.218,
+    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de ADAC. El uso del servicio y del sitio web está sujeto a nuestros <a href="#" style="color: #1976d2;">Términos de uso</a> y <a href="#" style="color: #1976d2;">Declaración de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir mas estos emails <a href="#unsubscribe" style="color: #1976d2;">Unsubscribe</a></p>`,
   });
 
   // Design settings

@@ -41,6 +41,11 @@ interface SimpleTipTapEditorProps {
   onSelectionUpdate?: (editor: any) => void;
   showToolbar?: boolean;
   onBlur?: () => void;
+  // Props opcionales para bubble menu customizado (usado en categorías)
+  showBackgroundColorPicker?: boolean;
+  backgroundColor?: string;
+  onBackgroundColorChange?: (color: string) => void;
+  onTextColorChange?: (color: string) => void;
 }
 
 // ⚡ ULTRA-OPTIMIZACIÓN: Cache global de extensiones
@@ -144,6 +149,10 @@ export default function SimpleTipTapEditor({
   onSelectionUpdate,
   showToolbar = true,
   onBlur,
+  showBackgroundColorPicker = false,
+  backgroundColor = '#e3f2fd',
+  onBackgroundColorChange,
+  onTextColorChange,
 }: SimpleTipTapEditorProps) {
   const editorRef = useRef<any>(null);
   const isUpdatingContent = useRef(false);
@@ -156,6 +165,10 @@ export default function SimpleTipTapEditor({
   // Estados para el color picker en BubbleMenu
   const [colorAnchorEl, setColorAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedTextColor, setSelectedTextColor] = useState('#000000');
+
+  // Estados para el color de fondo (usado en categorías)
+  const [bgColorAnchorEl, setBgColorAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedBgColor, setSelectedBgColor] = useState(backgroundColor);
 
   // Funciones para el BubbleMenu
   const handleCreateLink = () => {
@@ -194,7 +207,7 @@ export default function SimpleTipTapEditor({
     }
   };
 
-  // Funciones para el color picker
+  // Funciones para el color picker de texto
   const handleColorClick = (event: React.MouseEvent<HTMLElement>) => {
     setColorAnchorEl(event.currentTarget);
   };
@@ -204,6 +217,14 @@ export default function SimpleTipTapEditor({
   };
 
   const handleApplyTextColor = (color: string) => {
+    // Si hay un callback personalizado (para categorías), usarlo
+    if (onTextColorChange) {
+      onTextColorChange(color);
+      setSelectedTextColor(color);
+      return;
+    }
+
+    // Comportamiento normal: aplicar color al texto seleccionado
     if (editor) {
       if (color) {
         editor.chain().focus().setColor(color).run();
@@ -211,6 +232,22 @@ export default function SimpleTipTapEditor({
         editor.chain().focus().unsetColor().run();
       }
       setSelectedTextColor(color);
+    }
+  };
+
+  // Funciones para el color de fondo (categorías)
+  const handleBgColorClick = (event: React.MouseEvent<HTMLElement>) => {
+    setBgColorAnchorEl(event.currentTarget);
+  };
+
+  const handleBgColorClose = () => {
+    setBgColorAnchorEl(null);
+  };
+
+  const handleApplyBgColor = (color: string) => {
+    setSelectedBgColor(color);
+    if (onBackgroundColorChange) {
+      onBackgroundColorChange(color);
     }
   };
 
@@ -454,13 +491,22 @@ export default function SimpleTipTapEditor({
             {/* BubbleMenu para enlaces */}
             <BubbleMenu
               editor={editor}
+              updateDelay={50}
               tippyOptions={{
                 duration: 100,
                 zIndex: 9999,
+                onHide: () => {
+                  // No ocultar si hay un popover abierto
+                  if (Boolean(colorAnchorEl) || Boolean(bgColorAnchorEl) || showLinkDialog) {
+                    return false;
+                  }
+                  // Permitir ocultar devolviendo undefined (void)
+                  return undefined;
+                },
               }}
               shouldShow={({ from, to }) =>
                 // Mostrar cuando hay texto seleccionado O cuando hay un popover/dialog abierto
-                from !== to || Boolean(colorAnchorEl) || showLinkDialog
+                from !== to || Boolean(colorAnchorEl) || Boolean(bgColorAnchorEl) || showLinkDialog
               }
             >
               <Paper
@@ -551,6 +597,37 @@ export default function SimpleTipTapEditor({
                   </IconButton>
                 </Tooltip>
 
+                {/* Botón de color de fondo (solo para categorías) */}
+                {showBackgroundColorPicker && (
+                  <Tooltip title="Color de fondo">
+                    <IconButton
+                      size="small"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleBgColorClick}
+                      sx={{
+                        bgcolor: 'transparent',
+                        color: 'inherit',
+                        position: 'relative',
+                      }}
+                    >
+                      <Icon icon="mdi:format-color-fill" />
+                      {/* Indicador de color actual */}
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          bottom: 2,
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: 12,
+                          height: 2,
+                          bgcolor: selectedBgColor,
+                          borderRadius: 1,
+                        }}
+                      />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
                 {/* Separador */}
                 <Box sx={{ width: 1, bgcolor: 'divider', mx: 0.5 }} />
 
@@ -630,11 +707,14 @@ export default function SimpleTipTapEditor({
               </DialogActions>
             </Dialog>
 
-            {/* Popover para color picker */}
+            {/* Popover para color picker de texto */}
             <Popover
               open={Boolean(colorAnchorEl)}
               anchorEl={colorAnchorEl}
               onClose={handleColorClose}
+              disableRestoreFocus
+              disableAutoFocus
+              disableEnforceFocus
               anchorOrigin={{
                 vertical: 'bottom',
                 horizontal: 'center',
@@ -650,20 +730,63 @@ export default function SimpleTipTapEditor({
                   boxShadow: 3,
                 },
                 onMouseDown: (e) => e.preventDefault(), // Prevenir blur del editor
+                onClick: (e) => e.stopPropagation(),
               }}
             >
-              <TextColorPicker
-                selectedColor={selectedTextColor}
-                applyTextColor={(color) => {
-                  handleApplyTextColor(color);
-                  handleColorClose();
-                }}
-              />
+              <Box onMouseDown={(e) => e.preventDefault()}>
+                <TextColorPicker
+                  selectedColor={selectedTextColor}
+                  applyTextColor={(color) => {
+                    handleApplyTextColor(color);
+                    handleColorClose();
+                  }}
+                />
+              </Box>
             </Popover>
+
+            {/* Popover para color picker de fondo (categorías) */}
+            {showBackgroundColorPicker && (
+              <Popover
+                open={Boolean(bgColorAnchorEl)}
+                anchorEl={bgColorAnchorEl}
+                onClose={handleBgColorClose}
+                disableRestoreFocus
+                disableAutoFocus
+                disableEnforceFocus
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'center',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'center',
+                }}
+                PaperProps={{
+                  sx: {
+                    p: 1,
+                    borderRadius: 2,
+                    boxShadow: 3,
+                  },
+                  onMouseDown: (e) => e.preventDefault(), // Prevenir blur del editor
+                  onClick: (e) => e.stopPropagation(),
+                }}
+              >
+                <Box onMouseDown={(e) => e.preventDefault()}>
+                  <TextColorPicker
+                    selectedColor={selectedBgColor}
+                    applyTextColor={(color) => {
+                      handleApplyBgColor(color);
+                      handleBgColorClose();
+                    }}
+                  />
+                </Box>
+              </Popover>
+            )}
           </>
         )}
       </Box>
     ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       className,
       style,
@@ -674,6 +797,9 @@ export default function SimpleTipTapEditor({
       linkUrl,
       colorAnchorEl,
       selectedTextColor,
+      bgColorAnchorEl,
+      selectedBgColor,
+      showBackgroundColorPicker,
     ]
   );
 
@@ -688,6 +814,20 @@ export default function SimpleTipTapEditor({
       }
     };
   }, [editor]);
+
+  // Sincronizar color de fondo con las props
+  useEffect(() => {
+    if (showBackgroundColorPicker && backgroundColor) {
+      setSelectedBgColor(backgroundColor);
+    }
+  }, [backgroundColor, showBackgroundColorPicker]);
+
+  // Sincronizar color de texto con las props (para categorías)
+  useEffect(() => {
+    if (onTextColorChange && style?.color) {
+      setSelectedTextColor(style.color as string);
+    }
+  }, [style?.color, onTextColorChange]);
 
   // Actualizar color seleccionado cuando cambia la selección
   useEffect(() => {

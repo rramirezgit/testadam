@@ -1,13 +1,11 @@
 import { Icon } from '@iconify/react';
 import { useRef, useState } from 'react';
 
-import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Card,
   Alert,
   Stack,
-  Paper,
   Button,
   Slider,
   Divider,
@@ -26,6 +24,7 @@ import type { GalleryOptionsProps } from './types';
 interface GalleryImage {
   src: string;
   alt: string;
+  link?: string;
   crop?: {
     x: number;
     y: number;
@@ -306,56 +305,122 @@ const GalleryOptions = ({
     !currentImage.src.startsWith('/assets/');
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box>
       {/* Header con imagen seleccionada */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-        <Icon icon="mdi:image-edit" fontSize={24} />
         <Typography variant="h6">Editando: Imagen {selectedImageIndex + 1}</Typography>
       </Stack>
 
-      {/* Preview grande */}
-      {currentImage.src ? (
-        <Paper
-          elevation={2}
+      {/* Preview grande con overlay */}
+      {currentImage.src && (
+        <Box
           sx={{
             mb: 3,
-            p: 2,
+            position: 'relative',
+            borderRadius: 2,
+            overflow: 'hidden',
+            backgroundColor: 'grey.50',
+            minHeight: 200,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: 'grey.50',
-            borderRadius: 2,
-            minHeight: 200,
             border: 2,
             borderColor: 'primary.light',
+            '&:hover .image-overlay': {
+              opacity: 1,
+            },
           }}
         >
           {isLoadingForEdit ? (
-            <Skeleton variant="rectangular" width="100%" height={180} />
+            <Skeleton variant="rectangular" width="100%" height={200} />
           ) : (
-            <img
-              src={currentImage.src}
-              alt={currentImage.alt}
-              style={{
-                maxWidth: '100%',
-                maxHeight: '180px',
-                objectFit: 'contain',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              }}
-            />
+            <>
+              {/* Imagen */}
+              <img
+                src={currentImage.src}
+                alt={currentImage.alt}
+                style={{
+                  width: '100%',
+                  maxHeight: '200px',
+                  objectFit: 'contain',
+                }}
+              />
+
+              {/* Overlay con botones */}
+              <Box
+                className="image-overlay"
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 2,
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease',
+                }}
+              >
+                {/* Botón Cambiar Imagen */}
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  startIcon={<Icon icon="mdi:image-plus" />}
+                  onClick={() => handleSelectImage(selectedImageIndex)}
+                  disabled={uploading || isLoadingForEdit}
+                  sx={{
+                    minWidth: 'auto',
+                    px: 2,
+                  }}
+                >
+                  Cambiar
+                </Button>
+
+                {/* Botón Editar Imagen */}
+                {canEditCurrentImage && (
+                  <Button
+                    variant="contained"
+                    color="info"
+                    size="small"
+                    startIcon={<Icon icon="mdi:image-edit" />}
+                    onClick={() => handleEditImage(selectedImageIndex)}
+                    disabled={uploading || isLoadingForEdit}
+                    sx={{
+                      minWidth: 'auto',
+                      px: 2,
+                    }}
+                  >
+                    Editar
+                  </Button>
+                )}
+
+                {/* Botón Eliminar */}
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  startIcon={<Icon icon="mdi:delete" />}
+                  onClick={() => handleDeleteImage(selectedImageIndex)}
+                  disabled={uploading || isLoadingForEdit}
+                  sx={{
+                    minWidth: 'auto',
+                    px: 2,
+                  }}
+                >
+                  Eliminar
+                </Button>
+              </Box>
+            </>
           )}
-        </Paper>
-      ) : (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2">
-            No hay imagen en esta posición. Haz clic en &quot;Subir Imagen&quot; para agregar una.
-          </Typography>
-        </Alert>
+        </Box>
       )}
 
-      {/* Botones de acción */}
-      <Stack spacing={1.5} sx={{ mb: 3 }}>
+      {/* Botón inicial para seleccionar imagen si no hay imagen */}
+      {!currentImage.src && (
         <Button
           variant="contained"
           color="primary"
@@ -364,48 +429,39 @@ const GalleryOptions = ({
           startIcon={<Icon icon="mdi:image-plus" />}
           onClick={() => handleSelectImage(selectedImageIndex)}
           disabled={uploading || isLoadingForEdit}
+          sx={{ mb: 3, py: 1.5 }}
         >
-          {currentImage.src ? 'Cambiar Imagen' : 'Subir Imagen'}
+          Subir Imagen
         </Button>
-
-        {canEditCurrentImage && (
-          <LoadingButton
-            variant="outlined"
-            color="secondary"
-            fullWidth
-            startIcon={<Icon icon="mdi:image-edit" />}
-            onClick={() => handleEditImage(selectedImageIndex)}
-            loading={isLoadingForEdit}
-            disabled={uploading}
-          >
-            Editar Actual
-          </LoadingButton>
-        )}
-
-        {currentImage.src && (
-          <Button
-            variant="outlined"
-            color="error"
-            fullWidth
-            startIcon={<Icon icon="mdi:delete" />}
-            onClick={() => handleDeleteImage(selectedImageIndex)}
-            disabled={uploading || isLoadingForEdit}
-          >
-            Eliminar Imagen
-          </Button>
-        )}
-      </Stack>
+      )}
 
       {/* Texto alternativo */}
+      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+        Texto alternativo
+      </Typography>
       <TextField
         fullWidth
-        label="Texto alternativo"
+        size="small"
         value={currentImage.alt || ''}
         onChange={(e) => updateImage(selectedImageIndex, { alt: e.target.value })}
         placeholder={`Descripción de la imagen ${selectedImageIndex + 1}`}
-        size="small"
         disabled={uploading || isLoadingForEdit}
         helperText="Describe la imagen para mejorar la accesibilidad"
+        sx={{ mb: 3 }}
+      />
+
+      {/* URL de enlace */}
+      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+        Enlace (opcional)
+      </Typography>
+      <TextField
+        fullWidth
+        size="small"
+        placeholder="https://ejemplo.com"
+        value={currentImage.link || ''}
+        onChange={(e) => updateImage(selectedImageIndex, { link: e.target.value })}
+        disabled={uploading || isLoadingForEdit}
+        helperText="Si agregas una URL, la imagen será clickeable en el correo electrónico"
         sx={{ mb: 3 }}
       />
 

@@ -39,6 +39,13 @@ const CategoryComponent = ({
     updateComponentProps(component.id, { categorias: nuevasCategorias });
   };
 
+  const handleCategoriaUpdate = (catId: string, field: keyof Categoria, value: string) => {
+    const nuevasCategorias = categorias.map((cat) =>
+      cat.id === catId ? { ...cat, [field]: value } : cat
+    );
+    updateComponentProps(component.id, { categorias: nuevasCategorias });
+  };
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onSelect();
@@ -58,6 +65,7 @@ const CategoryComponent = ({
         <Categorias
           categorias={categorias}
           onCategoriasChange={handleCategoriasChange}
+          onCategoriaUpdate={handleCategoriaUpdate}
           editable={isSelected}
           borderRadius={component.props?.borderRadius ?? 16}
           padding={component.props?.padding ?? 4}

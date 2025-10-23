@@ -46,16 +46,27 @@ export function generateGalleryHtml(component: EmailComponent): string {
  * Renderiza una celda individual de la galería
  */
 function renderGalleryCell(image: GalleryImage, spacing: number, borderRadius: number): string {
+  // Usar padding para el spacing en lugar de margin para consistencia
   const cellStyles = `text-align: center; vertical-align: top; width: 50%; padding: ${spacing}px;`;
 
   if (image.src) {
-    const imgStyles = `width: 100%; max-width: 200px; height: 150px; object-fit: cover; border-radius: ${borderRadius}px; display: block; margin: 0 auto;`;
+    // Estilos de la imagen - sin margin para que ocupe todo el espacio disponible
+    const imgStyles = `width: 100%; max-width: 100%; height: 150px; object-fit: cover; border-radius: ${borderRadius}px; display: block;`;
+
+    // Renderizar imagen
+    const imgElement = `<img src="${image.src}" alt="${escapeHtml(image.alt || '')}" style="${imgStyles}">`;
+
+    // Si la imagen tiene un enlace, envolverla en un tag <a> con estilos que no afecten el layout
+    const content = image.link
+      ? `<a href="${image.link}" target="_blank" rel="noopener noreferrer" style="display: block; width: 100%; text-decoration: none; margin: 0; padding: 0;">${imgElement}</a>`
+      : imgElement;
+
     return `<td style="${cellStyles}">
-      <img src="${image.src}" alt="${escapeHtml(image.alt || '')}" style="${imgStyles}">
+      ${content}
     </td>`;
   } else {
     // Placeholder para imagen vacía
-    const placeholderStyles = `width: 100%; max-width: 200px; height: 150px; background-color: #f5f5f5; border-radius: ${borderRadius}px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid #e0e0e0;`;
+    const placeholderStyles = `width: 100%; height: 150px; background-color: #f5f5f5; border-radius: ${borderRadius}px; display: flex; align-items: center; justify-content: center; border: 1px solid #e0e0e0;`;
     return `<td style="${cellStyles}">
       <div style="${placeholderStyles}">
         <span style="color: #9e9e9e; font-size: 14px;">${escapeHtml(image.alt)}</span>

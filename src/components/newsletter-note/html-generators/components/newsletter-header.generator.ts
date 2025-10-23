@@ -41,9 +41,9 @@ export function generateNewsletterHeaderHtml(component: EmailComponent): string 
 
   // ✅ Sponsor
   if (props.sponsor?.enabled && props.sponsor?.image) {
-    headerHtml += `<div style="margin-bottom: 16px;">
+    headerHtml += `<div style="margin-bottom: 16px; text-align: center;">
       <div style="color: ${headerTextColor}; margin-bottom: 8px; font-size: 14px;">${escapeHtml(props.sponsor.label || 'Juntos con')}</div>
-      <img src="${props.sponsor.image}" alt="${props.sponsor.imageAlt || 'Sponsor'}" style="max-height: 48px;">
+      <img src="${props.sponsor.image}" alt="${props.sponsor.imageAlt || 'Sponsor'}" style="max-height: 48px; display: block; margin: 0 auto;">
     </div>`;
   }
 
@@ -54,7 +54,8 @@ export function generateNewsletterHeaderHtml(component: EmailComponent): string 
 
   // ✅ Subtítulo
   if (props.subtitle && props.subtitle.trim() !== '') {
-    headerHtml += `<p style="color: ${headerTextColor}; margin: 0 0 16px 0; font-style: italic; font-size: 16px;">${escapeHtml(props.subtitle)}</p>`;
+    const subtitleColor = props.textColor || '#666666';
+    headerHtml += `<p style="color: ${subtitleColor}; margin: 0 0 16px 0; font-style: italic; font-size: 16px;">${escapeHtml(props.subtitle)}</p>`;
   }
 
   // ✅ Banner image

@@ -37,10 +37,9 @@ export default function RespaldadoPorOptions({
   if (!component || component.type !== 'respaldadoPor') return null;
 
   // Valores por defecto para sección principal
-  const texto = component.props?.texto || 'Respaldado por';
-  const nombre = component.props?.nombre || 'Redacción';
   const avatarUrl = component.props?.avatarUrl || '';
   const avatarTamano = component.props?.avatarTamano || 21;
+  const nombre = component.props?.nombre || 'Redacción'; // Para el alt del avatar
 
   // Valores para sección adicional "Escritor con Propietario"
   const mostrarEscritorPropietario = component.props?.mostrarEscritorPropietario || false;
@@ -84,13 +83,6 @@ export default function RespaldadoPorOptions({
     <Box sx={{ p: 2 }}>
       {/* Sección Principal: Respaldado por */}
       <Paper elevation={0}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Icon icon="mdi:shield-check" style={{ marginRight: 8, fontSize: 18 }} />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-            Respaldado por (Principal)
-          </Typography>
-        </Box>
-
         {/* Avatar principal - PRIMERO */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
@@ -150,45 +142,7 @@ export default function RespaldadoPorOptions({
           />
         </Box>
 
-        {/* Nombre del autor - SEGUNDO */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-            Nombre del Autor
-          </Typography>
-          <TextField
-            fullWidth
-            size="small"
-            value={nombre}
-            onChange={(e) => updateComponentProps(selectedComponentId, { nombre: e.target.value })}
-            placeholder="Redacción"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'white',
-              },
-            }}
-          />
-        </Box>
-
-        {/* Texto descriptivo - TERCERO */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-            Texto Descriptivo
-          </Typography>
-          <TextField
-            fullWidth
-            size="small"
-            value={texto}
-            onChange={(e) => updateComponentProps(selectedComponentId, { texto: e.target.value })}
-            placeholder="Respaldado por"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                bgcolor: 'white',
-              },
-            }}
-          />
-        </Box>
-
-        {/* Tamaño del avatar - CUARTO */}
+        {/* Tamaño del avatar - SEGUNDO */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
             Tamaño del Avatar: {avatarTamano}px
