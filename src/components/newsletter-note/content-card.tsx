@@ -15,12 +15,16 @@ import {
   Box,
   Card,
   Chip,
+  Alert,
   Button,
+  Snackbar,
   Typography,
   IconButton,
   CardContent,
   CardActions,
 } from '@mui/material';
+
+import usePostStore from 'src/store/PostStore';
 
 interface ContentCardProps {
   content: Article | Newsletter;
@@ -32,6 +36,49 @@ interface ContentCardProps {
 export default function ContentCard({ content, type, onOpen, onDelete }: ContentCardProps) {
   const [fecha, setFecha] = useState<string>('');
   const [hora, setHora] = useState<string>('');
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const { unscheduleNewsletter } = usePostStore();
+
+  const showNotification = (
+    message: string,
+    severity: 'success' | 'error' | 'info' | 'warning'
+  ) => {
+    setNotification({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleCloseNotification = () => {
+    setNotification((prev) => ({ ...prev, open: false }));
+  };
+
+  // Función para calcular tiempo restante para newsletters programados
+  const getTimeRemaining = (scheduleDate: string) => {
+    const now = new Date().getTime();
+    const scheduled = new Date(scheduleDate).getTime();
+    const diff = scheduled - now;
+
+    if (diff <= 0) return 'Enviando...';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) return `En ${days}d ${hours}h`;
+    if (hours > 0) return `En ${hours}h ${minutes}m`;
+    return `En ${minutes}m`;
+  };
 
   useEffect(() => {
     if (content?.createdAt) {
@@ -219,6 +266,73 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
             {hora}
           </Typography>
         </Box>
+
+        {/* Información de newsletter programado */}
+        {type === 'newsletter' &&
+          (content as Newsletter).status === 'SCHEDULED' &&
+          (content as Newsletter).scheduleDate && (
+            <Box
+              sx={{
+                mt: 2,
+                p: 1.5,
+                bgcolor: 'info.lighter',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'info.light',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Icon icon="mdi:clock-outline" style={{ fontSize: 18, color: '#2196f3' }} />
+                <Typography variant="caption" color="info.dark" sx={{ fontWeight: 600 }}>
+                  Programado para:{' '}
+                  {new Date((content as Newsletter).scheduleDate!).toLocaleString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Typography>
+              </Box>
+              <Typography
+                variant="body2"
+                color="info.dark"
+                sx={{ fontWeight: 700, mb: 1, fontSize: '1.1rem' }}
+              >
+                {getTimeRemaining((content as Newsletter).scheduleDate!)}
+              </Typography>
+              <Button
+                fullWidth
+                size="small"
+                variant="outlined"
+                color="warning"
+                startIcon={<Icon icon="mdi:cancel" />}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const newsletter = content as Newsletter;
+                    await unscheduleNewsletter(
+                      newsletter.id,
+                      newsletter.subject || '',
+                      newsletter.content || '',
+                      newsletter.objData || '',
+                      newsletter.scheduleDate || ''
+                    );
+                    showNotification('Envío cancelado correctamente', 'success');
+                    // Recargar la página después de un breve delay
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 1500);
+                  } catch (error) {
+                    console.error('Error al cancelar el envío:', error);
+                    showNotification('Error al cancelar el envío', 'error');
+                  }
+                }}
+              >
+                Cancelar Envío
+              </Button>
+            </Box>
+          )}
       </CardContent>
 
       {/* Acciones */}
@@ -235,6 +349,22 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
           Eliminar
         </Button>
       </CardActions>
+
+      {/* Snackbar para notificaciones */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={4000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Card>
   );
 }

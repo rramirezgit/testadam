@@ -93,6 +93,9 @@ export const endpoints = {
     send: (id: string) => `/newsletters/${id}/send`,
     sendForReview: (id: string) => `/newsletters/${id}/send-for-review`,
     requestApproval: (id: string) => `/newsletters/${id}/request-approval`,
+    review: (id: string) => `/newsletters/${id}/review`,
+    schedule: (id: string) => `/newsletters/${id}/schedule`,
+    unschedule: (id: string) => `/newsletters/${id}/unschedule`,
   },
   // Metadata endpoints
   contentType: {

@@ -80,6 +80,8 @@ interface EmailEditorMainProps {
   initialComponents?: any[] | null;
   onNewsletterIdChange?: (id: string) => void;
   initialCoverImageUrl?: string;
+  newsletterStatus?: string;
+  onNewsletterUpdate?: () => void;
 }
 
 export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
@@ -113,6 +115,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   initialComponents = null,
   onNewsletterIdChange = () => {},
   initialCoverImageUrl = '',
+  newsletterStatus = '',
+  onNewsletterUpdate = () => {},
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
@@ -2503,6 +2507,9 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         currentNoteId={noteData.currentNoteId}
         // Nueva prop para mostrar notificaciones
         showNotification={showNotification}
+        // Nuevas props para el status del newsletter y actualización
+        newsletterStatus={newsletterStatus}
+        onNewsletterUpdate={onNewsletterUpdate}
       />
 
       {/* Contenedor principal */}
@@ -2777,6 +2784,9 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
             onHeaderChange={handleHeaderChange}
             onFooterChange={handleFooterChange}
             onNewsletterConfigChange={onNewsletterConfigChange}
+            newsletterStatus={newsletterStatus}
+            currentNewsletterId={currentNewsletterId}
+            onNewsletterUpdate={onNewsletterUpdate}
           />
         </Box>
       </Box>

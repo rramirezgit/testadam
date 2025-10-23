@@ -113,4 +113,7 @@ export interface EmailEditorProps {
   onNewsletterIdChange?: (id: string) => void;
   // Prop para la imagen de portada inicial
   initialCoverImageUrl?: string;
+  // Props para el flujo de aprobación/programación
+  newsletterStatus?: string;
+  onNewsletterUpdate?: () => void;
 }

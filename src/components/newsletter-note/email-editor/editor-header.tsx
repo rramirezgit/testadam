@@ -11,6 +11,7 @@ import {
   Menu,
   Chip,
   Stack,
+  Alert,
   AppBar,
   Button,
   Dialog,
@@ -18,6 +19,7 @@ import {
   Tooltip,
   MenuItem,
   useTheme,
+  TextField,
   Typography,
   IconButton,
   DialogTitle,
@@ -74,6 +76,9 @@ interface EditorHeaderProps {
   currentNoteId?: string | null;
   // Nueva prop para mostrar notificaciones
   showNotification?: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void;
+  // Nuevas props para el status del newsletter y actualización
+  newsletterStatus?: string;
+  onNewsletterUpdate?: () => void;
 }
 
 export default function EditorHeader({
@@ -110,6 +115,8 @@ export default function EditorHeader({
   noteCoverImageUrl = '',
   currentNoteId = null,
   showNotification = () => {},
+  newsletterStatus = '',
+  onNewsletterUpdate = () => {},
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
@@ -125,15 +132,25 @@ export default function EditorHeader({
   // Estado para el modal de error del título
   const [openTitleErrorDialog, setOpenTitleErrorDialog] = useState(false);
 
+  // Estados para los modales del flujo de newsletter
+  const [openApprovalDialog, setOpenApprovalDialog] = useState(false);
+  const [openSendNowDialog, setOpenSendNowDialog] = useState(false);
+  const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [approverEmails] = useState(['97.rramirez@gmail.com']); // Email predeterminado
+
   const theme = useTheme();
 
   // Hook del store
   const {
-    sendPostForReview,
-    sendNewsletterForReview,
     createNewsletter,
     updateNewsletter,
     sendEmail,
+    sendNewsletterNow,
+    scheduleNewsletter,
+    findNewsletterById,
+    requestNewsletterApproval,
+    sendNewsletterForReview,
   } = usePostStore();
 
   // Necesitamos acceder a los componentes del newsletter desde el editor
@@ -183,36 +200,43 @@ export default function EditorHeader({
         return true;
       }
 
-      const newsletter = newsletterList?.find((item) => item.id === currentNewsletterId);
+      // Usar newsletterStatus prop directamente
+      const status = newsletterStatus || 'DRAFT';
 
-      if (option === 'Aprobacion') {
-        if (newsletter) {
-          if (
-            newsletter.status === 'APPROVED' ||
-            newsletter.status === 'PENDING_APPROVAL' ||
-            newsletter.status === 'SENDED'
-          ) {
-            return true;
-          }
-        }
+      // Prueba: siempre activo
+      if (option === 'Prueba') {
+        return false;
       }
 
-      if (option === 'Subscriptores' || option === 'schedule') {
-        if (newsletter) {
-          if (
-            newsletter.status === 'DRAFT' ||
-            newsletter.status === 'REJECTED' ||
-            newsletter.status === 'SENDED' ||
-            newsletter.status === 'PENDING_APPROVAL'
-          ) {
-            return true;
-          }
+      // Aprobación: disabled cuando está APPROVED, PENDING_APPROVAL, SENDED
+      if (option === 'Aprobacion') {
+        if (status === 'APPROVED' || status === 'PENDING_APPROVAL' || status === 'SENDED') {
+          return true;
         }
+        return false; // Si no está en esos estados, está activo
+      }
+
+      // Enviar ahora y Programar: disabled cuando está DRAFT, REJECTED, SENDED, PENDING_APPROVAL
+      // También disabled si no existe el newsletter
+      if (option === 'Subscriptores' || option === 'schedule') {
+        if (!currentNewsletterId) {
+          return true; // Si no existe el newsletter, disabled
+        }
+
+        if (
+          status === 'DRAFT' ||
+          status === 'REJECTED' ||
+          status === 'SENDED' ||
+          status === 'PENDING_APPROVAL'
+        ) {
+          return true;
+        }
+        return false; // Solo activo cuando está APPROVED o SCHEDULED
       }
 
       return false;
     },
-    [currentNewsletterId, newsletterList, saving]
+    [currentNewsletterId, newsletterStatus, saving]
   );
 
   // Abrir el menú de transferencia
@@ -502,6 +526,140 @@ export default function EditorHeader({
     }
   };
 
+  // Handler para solicitar aprobación
+  const handleRequestApproval = async () => {
+    try {
+      console.log('🔄 Solicitando aprobación del newsletter...');
+
+      // Validar que el newsletter esté guardado
+      if (!currentNewsletterId || currentNewsletterId.trim() === '') {
+        showNotification('Debes guardar el newsletter antes de solicitar aprobación', 'error');
+        return;
+      }
+
+      // Generar HTML si no está disponible
+      let content = htmlContent;
+      if (!content && onGenerateHtml) {
+        console.log('📝 Generando HTML para aprobación...');
+        content = await onGenerateHtml();
+      }
+
+      if (!content) {
+        console.error('❌ No se pudo generar el contenido HTML');
+        throw new Error('No se pudo generar el contenido HTML');
+      }
+
+      // Enviar solicitud de aprobación con el endpoint correcto
+      await requestNewsletterApproval(
+        currentNewsletterId,
+        approverEmails,
+        newsletterTitle,
+        content
+      );
+
+      // Recargar newsletter para obtener el estado actualizado
+      await findNewsletterById(currentNewsletterId);
+
+      // Llamar al callback para actualizar el estado en el componente padre
+      if (onNewsletterUpdate) {
+        onNewsletterUpdate();
+      }
+
+      showNotification('Solicitud de aprobación enviada correctamente', 'success');
+      setOpenApprovalDialog(false);
+    } catch (error) {
+      console.error('❌ Error al solicitar aprobación:', error);
+      showNotification('Error al solicitar aprobación', 'error');
+    }
+  };
+
+  // Handler para enviar ahora
+  const handleSendNow = async () => {
+    try {
+      console.log('🔄 Enviando newsletter ahora...');
+
+      // Generar HTML si no está disponible
+      let content = htmlContent;
+      if (!content && onGenerateHtml) {
+        console.log('📝 Generando HTML para envío...');
+        content = await onGenerateHtml();
+      }
+
+      if (!content) {
+        console.error('❌ No se pudo generar el contenido HTML');
+        throw new Error('No se pudo generar el contenido HTML');
+      }
+
+      // Enviar newsletter
+      await sendNewsletterNow(currentNewsletterId || '', newsletterTitle, content);
+
+      // Recargar newsletter para obtener el estado actualizado
+      if (currentNewsletterId) {
+        await findNewsletterById(currentNewsletterId);
+      }
+
+      // Llamar al callback para actualizar el estado en el componente padre
+      if (onNewsletterUpdate) {
+        onNewsletterUpdate();
+      }
+
+      showNotification('Newsletter enviado a todos los suscriptores', 'success');
+      setOpenSendNowDialog(false);
+    } catch (error) {
+      console.error('❌ Error al enviar newsletter:', error);
+      showNotification('Error al enviar el newsletter', 'error');
+    }
+  };
+
+  // Handler para programar envío
+  const handleSchedule = async () => {
+    try {
+      console.log('🔄 Programando newsletter...', { scheduleDate });
+
+      // Validar que la fecha sea futura
+      const scheduledTime = new Date(scheduleDate).getTime();
+      const now = new Date().getTime();
+
+      if (scheduledTime <= now) {
+        showNotification('La fecha debe ser futura', 'error');
+        return;
+      }
+
+      // Generar HTML si no está disponible
+      let content = htmlContent;
+      if (!content && onGenerateHtml) {
+        console.log('📝 Generando HTML para programación...');
+        content = await onGenerateHtml();
+      }
+
+      if (!content) {
+        console.error('❌ No se pudo generar el contenido HTML');
+        throw new Error('No se pudo generar el contenido HTML');
+      }
+
+      // Programar newsletter (convertir a ISO string)
+      const isoDate = new Date(scheduleDate).toISOString();
+      await scheduleNewsletter(currentNewsletterId || '', isoDate, newsletterTitle, content);
+
+      // Recargar newsletter para obtener el estado actualizado
+      if (currentNewsletterId) {
+        await findNewsletterById(currentNewsletterId);
+      }
+
+      // Llamar al callback para actualizar el estado en el componente padre
+      if (onNewsletterUpdate) {
+        onNewsletterUpdate();
+      }
+
+      showNotification('Newsletter programado correctamente', 'success');
+      setOpenScheduleDialog(false);
+      setScheduleDate(''); // Limpiar fecha
+    } catch (error) {
+      console.error('❌ Error al programar newsletter:', error);
+      showNotification('Error al programar el newsletter', 'error');
+    }
+  };
+
   return (
     <>
       <AppBar
@@ -725,22 +883,24 @@ export default function EditorHeader({
                   margin: 'auto 0',
                 }}
                 label={(() => {
-                  const newsletter = newsletterList?.find(
-                    (item) => item.id === currentNewsletterId
-                  );
-                  const status = newsletter?.status || 'DRAFT';
+                  // Usar newsletterStatus prop directamente en lugar de buscar en newsletterList
+                  const status = newsletterStatus || 'DRAFT';
 
                   return status === 'DRAFT'
                     ? 'Borrador'
                     : status === 'PENDING_APPROVAL'
-                      ? 'Pendiente'
+                      ? 'Pendiente Aprobación'
                       : status === 'APPROVED'
                         ? 'Aprobado'
                         : status === 'REJECTED'
                           ? 'Rechazado'
-                          : status === 'SENDED'
-                            ? 'Enviado'
-                            : 'Borrador';
+                          : status === 'SCHEDULED'
+                            ? 'Programado'
+                            : status === 'SENDED'
+                              ? 'Enviado'
+                              : status === 'DELETED'
+                                ? 'Eliminado'
+                                : 'Borrador';
                 })()}
               />
 
@@ -806,7 +966,10 @@ export default function EditorHeader({
 
                 <MenuItem
                   disabled={disableOption('Aprobacion')}
-                  onClick={() => handleSaveAndOpenDialog('approval')}
+                  onClick={() => {
+                    handleSendMenuClose();
+                    setOpenApprovalDialog(true);
+                  }}
                 >
                   <ListItemIcon>
                     <Icon icon="mdi:check-circle-outline" width={24} height={24} />
@@ -816,7 +979,10 @@ export default function EditorHeader({
 
                 <MenuItem
                   disabled={disableOption('schedule')}
-                  onClick={() => handleSaveAndOpenDialog('schedule')}
+                  onClick={() => {
+                    handleSendMenuClose();
+                    setOpenScheduleDialog(true);
+                  }}
                 >
                   <ListItemIcon>
                     <Icon icon="material-symbols:schedule-outline" width={24} height={24} />
@@ -826,7 +992,10 @@ export default function EditorHeader({
 
                 <MenuItem
                   disabled={disableOption('Subscriptores')}
-                  onClick={() => handleSaveAndOpenDialog('sendNow')}
+                  onClick={() => {
+                    handleSendMenuClose();
+                    setOpenSendNowDialog(true);
+                  }}
                 >
                   <ListItemIcon>
                     <Icon icon="fluent-mdl2:group" width={24} height={24} />
@@ -1003,6 +1172,87 @@ export default function EditorHeader({
         <DialogActions>
           <Button onClick={() => setOpenTitleErrorDialog(false)} variant="outlined" color="primary">
             Entendido
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Aprobación */}
+      <Dialog
+        open={openApprovalDialog}
+        onClose={() => setOpenApprovalDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Enviar para Aprobación</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            El newsletter será enviado al siguiente correo para su aprobación:
+          </Typography>
+          <TextField
+            fullWidth
+            value={approverEmails[0]}
+            disabled
+            label="Email del Aprobador"
+            sx={{ mb: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenApprovalDialog(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleRequestApproval}>
+            Enviar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Enviar Ahora */}
+      <Dialog
+        open={openSendNowDialog}
+        onClose={() => setOpenSendNowDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Enviar Newsletter</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            El newsletter será enviado inmediatamente a todos los suscriptores.
+          </Alert>
+          <Typography variant="body2">
+            ¿Estás seguro de que deseas enviar este newsletter ahora?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenSendNowDialog(false)}>Cancelar</Button>
+          <Button variant="contained" color="primary" onClick={handleSendNow}>
+            Enviar Ahora
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Programar */}
+      <Dialog
+        open={openScheduleDialog}
+        onClose={() => setOpenScheduleDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Programar Envío</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Selecciona la fecha y hora en que deseas enviar este newsletter:
+          </Typography>
+          <TextField
+            fullWidth
+            type="datetime-local"
+            value={scheduleDate}
+            onChange={(e) => setScheduleDate(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenScheduleDialog(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSchedule} disabled={!scheduleDate}>
+            Programar
           </Button>
         </DialogActions>
       </Dialog>

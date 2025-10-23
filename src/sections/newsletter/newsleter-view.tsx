@@ -51,16 +51,28 @@ const TABS: Tab[] = [
     value: 'DRAFT',
   },
   {
-    label: 'Review',
-    value: 'REVIEW',
+    label: 'Pendiente Aprobación',
+    value: 'PENDING_APPROVAL',
   },
   {
     label: 'Aprobados',
     value: 'APPROVED',
   },
   {
-    label: 'ADAC',
-    value: 'PUBLISHED',
+    label: 'Rechazados',
+    value: 'REJECTED',
+  },
+  {
+    label: 'Programados',
+    value: 'SCHEDULED',
+  },
+  {
+    label: 'Enviados',
+    value: 'SENDED',
+  },
+  {
+    label: 'Eliminados',
+    value: 'DELETED',
   },
 ];
 
@@ -87,14 +99,14 @@ export default function NewsletterView() {
   const { findAllNewsletters, delete: deleteNewsletter } = usePostStore();
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
 
-  // Load saved newsletters on component mount
+  // Load saved newsletters on component mount and when tab changes
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Cargando datos de newsletters...');
+        console.log('🔄 Cargando datos de newsletters con status:', tab);
 
-        const newslettersData = await findAllNewsletters();
+        const newslettersData = await findAllNewsletters(tab);
         setNewsletters(newslettersData);
 
         console.log('✅ Datos de newsletters cargados exitosamente');
@@ -118,7 +130,7 @@ export default function NewsletterView() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [findAllNewsletters]);
+  }, [findAllNewsletters, tab]);
 
   // Refresh data when editors are closed
   useEffect(() => {
@@ -353,12 +365,18 @@ export default function NewsletterView() {
                 switch (tab) {
                   case 'DRAFT':
                     return newsletter.status === 'DRAFT' || !newsletter.status;
-                  case 'REVIEW':
-                    return newsletter.status === 'REVIEW';
+                  case 'PENDING_APPROVAL':
+                    return newsletter.status === 'PENDING_APPROVAL';
                   case 'APPROVED':
                     return newsletter.status === 'APPROVED';
-                  case 'PUBLISHED':
-                    return newsletter.status === 'PUBLISHED';
+                  case 'REJECTED':
+                    return newsletter.status === 'REJECTED';
+                  case 'SCHEDULED':
+                    return newsletter.status === 'SCHEDULED';
+                  case 'SENDED':
+                    return newsletter.status === 'SENDED';
+                  case 'DELETED':
+                    return newsletter.status === 'DELETED';
                   default:
                     return true;
                 }

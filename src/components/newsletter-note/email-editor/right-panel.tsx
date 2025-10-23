@@ -223,6 +223,9 @@ export default function RightPanel({
   onHeaderChange = () => {},
   onFooterChange = () => {},
   onNewsletterConfigChange,
+  newsletterStatus,
+  currentNewsletterId,
+  onNewsletterUpdate = () => {},
 }: RightPanelProps) {
   // Estados locales para input inmediato (sin lag)
   const [localTitle, setLocalTitle] = useState(noteTitle);
@@ -1230,6 +1233,7 @@ export default function RightPanel({
               ) : (
                 <>
                   {/* Modo Normal: mostrar campos de nota */}
+
                   {/* Título */}
                   <TextField
                     fullWidth
@@ -1275,6 +1279,52 @@ export default function RightPanel({
                   />
                 </>
               )}
+
+              {/* Botones de Aprobación/Rechazo - Solo en modo newsletter y estado PENDING_APPROVAL */}
+              {isNewsletterMode &&
+                currentNewsletterId &&
+                newsletterStatus === 'PENDING_APPROVAL' && (
+                  <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="success"
+                      startIcon={<Icon icon="mdi:check-circle" />}
+                      onClick={async () => {
+                        try {
+                          const { approveNewsletter, findNewsletterById } = usePostStore.getState();
+                          await approveNewsletter(currentNewsletterId);
+                          await findNewsletterById(currentNewsletterId);
+                          if (onNewsletterUpdate) onNewsletterUpdate();
+                          showNotification('Newsletter aprobado correctamente', 'success');
+                        } catch {
+                          showNotification('Error al aprobar el newsletter', 'error');
+                        }
+                      }}
+                    >
+                      Aprobar
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="error"
+                      startIcon={<Icon icon="mdi:close-circle" />}
+                      onClick={async () => {
+                        try {
+                          const { rejectNewsletter, findNewsletterById } = usePostStore.getState();
+                          await rejectNewsletter(currentNewsletterId);
+                          await findNewsletterById(currentNewsletterId);
+                          if (onNewsletterUpdate) onNewsletterUpdate();
+                          showNotification('Newsletter rechazado', 'info');
+                        } catch {
+                          showNotification('Error al rechazar el newsletter', 'error');
+                        }
+                      }}
+                    >
+                      Rechazar
+                    </Button>
+                  </Box>
+                )}
 
               {/* Portada de nota / newsletter */}
 
@@ -1326,6 +1376,44 @@ export default function RightPanel({
                   </Box>
                 )}
               </Box>
+
+              {/* Botón para cancelar envío programado - Solo en modo newsletter y estado SCHEDULED */}
+              {isNewsletterMode && currentNewsletterId && newsletterStatus === 'SCHEDULED' && (
+                <Box sx={{ mb: 2 }}>
+                  <Alert severity="info" sx={{ mb: 1 }}>
+                    Este newsletter está programado para enviarse
+                  </Alert>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="warning"
+                    startIcon={<Icon icon="mdi:cancel" />}
+                    onClick={async () => {
+                      try {
+                        // Necesitamos los datos del newsletter
+                        const { unscheduleNewsletter, findNewsletterById } =
+                          usePostStore.getState();
+                        const newsletter = await findNewsletterById(currentNewsletterId);
+
+                        await unscheduleNewsletter(
+                          currentNewsletterId,
+                          newsletter.subject,
+                          newsletter.content || '',
+                          newsletter.objData || '',
+                          newsletter.scheduleDate
+                        );
+
+                        if (onNewsletterUpdate) onNewsletterUpdate();
+                        showNotification('Envío programado cancelado', 'success');
+                      } catch {
+                        showNotification('Error al cancelar el envío', 'error');
+                      }
+                    }}
+                  >
+                    Cancelar Envío Programado
+                  </Button>
+                </Box>
+              )}
 
               {/* Estado - Solo mostrar si la nota ya está guardada Y NO está en modo newsletter */}
               {currentNoteId && !isNewsletterMode && (

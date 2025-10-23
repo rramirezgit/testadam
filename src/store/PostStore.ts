@@ -86,13 +86,34 @@ interface PostState {
     htmlContent: string
   ) => Promise<boolean>;
   sendNewsletter: (newsletterId: string, htmlContent: string) => Promise<boolean>;
-  requestNewsletterApproval: (newsletterId: string, htmlContent: string) => Promise<boolean>;
+  requestNewsletterApproval: (
+    newsletterId: string,
+    approverEmails: string[],
+    subject: string,
+    htmlContent: string
+  ) => Promise<boolean>;
 
   // Newsletter operations
   createNewsletter: (subject: string, newsletterData: any) => Promise<any>;
   updateNewsletter: (id: string, newsletterData: any) => Promise<any>;
-  findAllNewsletters: () => Promise<any[]>;
+  findAllNewsletters: (status?: string) => Promise<any[]>;
   findNewsletterById: (id: string) => Promise<any>;
+  approveNewsletter: (id: string) => Promise<boolean>;
+  rejectNewsletter: (id: string) => Promise<boolean>;
+  scheduleNewsletter: (
+    id: string,
+    scheduleDate: string,
+    subject: string,
+    content: string
+  ) => Promise<boolean>;
+  unscheduleNewsletter: (
+    id: string,
+    subject: string,
+    content: string,
+    objData: string,
+    scheduleDate: string
+  ) => Promise<boolean>;
+  sendNewsletterNow: (id: string, subject: string, content: string) => Promise<boolean>;
 
   // Metadata operations
   loadContentTypes: () => Promise<ContentType[]>;
@@ -486,22 +507,33 @@ const usePostStore = create<PostState>()(
           }
         },
 
-        requestNewsletterApproval: async (newsletterId: string, htmlContent: string) => {
+        requestNewsletterApproval: async (
+          newsletterId: string,
+          approverEmails: string[],
+          subject: string,
+          htmlContent: string
+        ) => {
           try {
+            console.log('🔄 requestNewsletterApproval called:', {
+              newsletterId,
+              approverEmails,
+              subject,
+            });
             set({ loading: true, error: null });
             const axiosInstance = createAxiosInstance();
 
-            // No escapar el HTML para envío de aprobación
-            const content = htmlContent;
             const sendData = {
-              content,
+              approverEmails,
+              subject,
+              content: htmlContent,
             };
 
             await axiosInstance.post(endpoints.newsletter.requestApproval(newsletterId), sendData);
+            console.log('✅ Solicitud de aprobación enviada exitosamente');
             set({ loading: false });
             return true;
           } catch (error: any) {
-            console.error('Error solicitando aprobación del newsletter:', error);
+            console.error('❌ Error solicitando aprobación del newsletter:', error);
             const errorMessage = error.response?.data?.message || 'Error al solicitar aprobación';
             set({
               loading: false,
@@ -591,13 +623,18 @@ const usePostStore = create<PostState>()(
           }
         },
 
-        findAllNewsletters: async () => {
+        findAllNewsletters: async (status?: string) => {
           try {
-            console.log('🔄 findAllNewsletters called');
+            console.log('🔄 findAllNewsletters called', { status });
             set({ loading: true, error: null });
             const axiosInstance = createAxiosInstance();
 
-            const response = await axiosInstance.get(endpoints.newsletter.findAll);
+            // Construir la URL con el parámetro status si se proporciona
+            const url = status
+              ? `${endpoints.newsletter.findAll}?status=${status}`
+              : endpoints.newsletter.findAll;
+
+            const response = await axiosInstance.get(url);
 
             // Manejar la estructura { data: [...] }
             const newsletters = response.data?.data || response.data || [];
@@ -605,6 +642,7 @@ const usePostStore = create<PostState>()(
             console.log('✅ Newsletters obtenidos exitosamente:', {
               responseStatus: response.status,
               newslettersCount: newsletters.length,
+              status,
               responseData: response.data,
               newsletters,
             });
@@ -655,6 +693,123 @@ const usePostStore = create<PostState>()(
               error: errorMessage,
             });
             return null;
+          }
+        },
+
+        approveNewsletter: async (id: string) => {
+          try {
+            console.log('🔄 approveNewsletter called:', { id });
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            await axiosInstance.patch(endpoints.newsletter.review(id), { approved: true });
+
+            console.log('✅ Newsletter aprobado exitosamente');
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('❌ Error aprobando newsletter:', error);
+            const errorMessage = error.response?.data?.message || 'Error al aprobar el newsletter';
+            set({ loading: false, error: errorMessage });
+            return false;
+          }
+        },
+
+        rejectNewsletter: async (id: string) => {
+          try {
+            console.log('🔄 rejectNewsletter called:', { id });
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            await axiosInstance.patch(endpoints.newsletter.review(id), { approved: false });
+
+            console.log('✅ Newsletter rechazado exitosamente');
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('❌ Error rechazando newsletter:', error);
+            const errorMessage = error.response?.data?.message || 'Error al rechazar el newsletter';
+            set({ loading: false, error: errorMessage });
+            return false;
+          }
+        },
+
+        sendNewsletterNow: async (id: string, subject: string, content: string) => {
+          try {
+            console.log('🔄 sendNewsletterNow called:', { id, subject });
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            await axiosInstance.post(endpoints.newsletter.send(id), { subject, content });
+
+            console.log('✅ Newsletter enviado exitosamente');
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('❌ Error enviando newsletter:', error);
+            const errorMessage = error.response?.data?.message || 'Error al enviar el newsletter';
+            set({ loading: false, error: errorMessage });
+            return false;
+          }
+        },
+
+        scheduleNewsletter: async (
+          id: string,
+          scheduleDate: string,
+          subject: string,
+          content: string
+        ) => {
+          try {
+            console.log('🔄 scheduleNewsletter called:', { id, scheduleDate, subject });
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            await axiosInstance.post(endpoints.newsletter.schedule(id), {
+              scheduleDate,
+              subject,
+              content,
+            });
+
+            console.log('✅ Newsletter programado exitosamente');
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('❌ Error programando newsletter:', error);
+            const errorMessage =
+              error.response?.data?.message || 'Error al programar el newsletter';
+            set({ loading: false, error: errorMessage });
+            return false;
+          }
+        },
+
+        unscheduleNewsletter: async (
+          id: string,
+          subject: string,
+          content: string,
+          objData: string,
+          scheduleDate: string
+        ) => {
+          try {
+            console.log('🔄 unscheduleNewsletter called:', { id });
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            await axiosInstance.patch(endpoints.newsletter.unschedule(id), {
+              subject,
+              content,
+              objData,
+              scheduleDate,
+            });
+
+            console.log('✅ Newsletter desprogramado exitosamente');
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('❌ Error desprogramando newsletter:', error);
+            const errorMessage =
+              error.response?.data?.message || 'Error al desprogramar el newsletter';
+            set({ loading: false, error: errorMessage });
+            return false;
           }
         },
 

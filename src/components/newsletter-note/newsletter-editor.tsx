@@ -123,6 +123,7 @@ export default function NewsletterEditor({
   // Estados para el menú de envío
   const [newsletterList, setNewsletterList] = useState<any[]>([]);
   const [currentNewsletterId, setCurrentNewsletterId] = useState<string>('');
+  const [newsletterStatus, setNewsletterStatus] = useState<string>('');
   const [openSendDialog, setOpenSendDialog] = useState(false);
   const [openAprob, setOpenAprob] = useState(false);
   const [openSchedule, setOpenSchedule] = useState(false);
@@ -295,6 +296,7 @@ export default function NewsletterEditor({
             setIsEditingExisting(true);
             setNewsletterId(fullNewsletter.id);
             setCurrentNewsletterId(fullNewsletter.id);
+            setNewsletterStatus(fullNewsletter.status || 'DRAFT');
 
             // Parsear objData si existe
             if (fullNewsletter.objData) {
@@ -362,6 +364,22 @@ export default function NewsletterEditor({
     loadNewsletterData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNewsletter, storeSelectedNotes]);
+
+  // Función para recargar el newsletter después de actualizaciones
+  const handleNewsletterUpdate = async () => {
+    if (currentNewsletterId) {
+      try {
+        console.log('🔄 Recargando newsletter después de actualización...');
+        const fullNewsletter = await findNewsletterById(currentNewsletterId);
+        if (fullNewsletter) {
+          setNewsletterStatus(fullNewsletter.status || 'DRAFT');
+          console.log('✅ Status actualizado:', fullNewsletter.status);
+        }
+      } catch (error) {
+        console.error('❌ Error recargando newsletter:', error);
+      }
+    }
+  };
 
   const handleSaveNote = (updatedNote: SavedNote) => {
     if (isCreatingNewNote) {
@@ -621,6 +639,8 @@ export default function NewsletterEditor({
           setCurrentNewsletterId(newId);
           setNewsletterId(newId);
         }}
+        newsletterStatus={newsletterStatus}
+        onNewsletterUpdate={handleNewsletterUpdate}
       />
 
       {/* Note Editor Dialog */}

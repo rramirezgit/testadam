@@ -124,6 +124,9 @@ export interface RightPanelProps {
   onHeaderChange?: (header: any) => void;
   onFooterChange?: (footer: any) => void;
   onNewsletterConfigChange?: (config: { header?: any; footer?: any }) => void;
+  newsletterStatus?: string;
+  currentNewsletterId?: string | null;
+  onNewsletterUpdate?: () => void;
 }
 
 export interface ListStyleOptionsProps {
