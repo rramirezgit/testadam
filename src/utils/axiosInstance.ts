@@ -114,4 +114,8 @@ export const endpoints = {
   category: {
     findAll: '/categories',
   },
+  // MagicWrite endpoints
+  magicWrite: {
+    process: '/api/v1/magic-write',
+  },
 };

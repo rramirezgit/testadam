@@ -225,6 +225,7 @@ export default function RespaldadoPor({
                 color: '#9e9e9e',
                 fontWeight: 400,
               }}
+              showAIButton={false}
             />
           </Box>
         ) : (
@@ -291,6 +292,7 @@ export default function RespaldadoPor({
                 color: '#616161',
                 fontWeight: 400,
               }}
+              showAIButton={false}
             />
           </Box>
         ) : (
@@ -381,6 +383,7 @@ export default function RespaldadoPor({
                     fontSize: '13px',
                     fontWeight: 400,
                   }}
+                  showAIButton={false}
                 />
               </Box>
             ) : (
@@ -446,6 +449,7 @@ export default function RespaldadoPor({
                     fontSize: '13px',
                     fontWeight: 400,
                   }}
+                  showAIButton={false}
                 />
               </Box>
             ) : (

@@ -32,6 +32,7 @@ export interface ComponentWithToolbarProps {
   children: React.ReactNode;
   onClick: (e: React.MouseEvent) => void;
   isViewOnly?: boolean;
+  onAIClick?: () => void;
 }
 
 // Tipo para categoría

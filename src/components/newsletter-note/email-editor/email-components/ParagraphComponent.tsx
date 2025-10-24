@@ -1,9 +1,10 @@
-import React, { memo, useRef, useMemo, useCallback } from 'react';
+import React, { memo, useRef, useMemo, useState, useCallback } from 'react';
 
 import { Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
+import AIAssistantModal from '../ai-menu/AIAssistantModal';
 
 import type { EmailComponentProps } from './types';
 
@@ -89,6 +90,7 @@ const MemoizedEditor = memo(
       onSelectionUpdate={onSelectionUpdate}
       showToolbar={false}
       style={editorStyle}
+      showAIButton
     />
   ),
   (prevProps, nextProps) =>
@@ -116,6 +118,9 @@ const ParagraphComponent = memo(
     totalComponents,
   }: EmailComponentProps) => {
     const lastRenderTime = useRef(performance.now());
+
+    // Estados para el modal de IA
+    const [showAIModal, setShowAIModal] = useState(false);
 
     // ⚡ ULTRA-OPTIMIZACIÓN: Memoización de estilos con cache
     const containerStyles = useMemo(
@@ -188,6 +193,25 @@ const ParagraphComponent = memo(
       [isSelected, handleSelectionUpdate]
     );
 
+    // Funciones para el modal de IA
+    const handleAIClick = useCallback(() => {
+      setShowAIModal(true);
+    }, []);
+
+    const handleAIModalClose = useCallback(() => {
+      setShowAIModal(false);
+    }, []);
+
+    const handleApplyAIResult = useCallback(
+      (newText: string) => {
+        if (updateComponentContent) {
+          updateComponentContent(component.id, newText);
+        }
+        setShowAIModal(false);
+      },
+      [updateComponentContent, component.id]
+    );
+
     // ⚡ ULTRA-OPTIMIZACIÓN: Log de rendimiento (solo en desarrollo)
     if (process.env.NODE_ENV === 'development') {
       const currentTime = performance.now();
@@ -201,24 +225,36 @@ const ParagraphComponent = memo(
 
     // ⚡ ULTRA-OPTIMIZAÇÃO: Renderizado optimizado con el sistema original
     return (
-      <ComponentWithToolbar
-        isSelected={isSelected}
-        index={index}
-        totalComponents={totalComponents}
-        componentId={component.id}
-        moveComponent={moveComponent}
-        removeComponent={removeComponent}
-        onClick={handleClick}
-      >
-        <Typography variant="body1" component="div" style={containerStyles}>
-          <MemoizedEditor
-            content={component.content}
-            onContentChange={handleContentChange}
-            onSelectionUpdate={handleSelectionUpdateMemo}
-            editorStyle={editorStyle}
-          />
-        </Typography>
-      </ComponentWithToolbar>
+      <>
+        <ComponentWithToolbar
+          isSelected={isSelected}
+          index={index}
+          totalComponents={totalComponents}
+          componentId={component.id}
+          componentType="paragraph"
+          moveComponent={moveComponent}
+          removeComponent={removeComponent}
+          onClick={handleClick}
+          onAIClick={handleAIClick}
+        >
+          <Typography variant="body1" component="div" style={containerStyles}>
+            <MemoizedEditor
+              content={component.content}
+              onContentChange={handleContentChange}
+              onSelectionUpdate={handleSelectionUpdateMemo}
+              editorStyle={editorStyle}
+            />
+          </Typography>
+        </ComponentWithToolbar>
+
+        {/* Modal de Asistente de IA */}
+        <AIAssistantModal
+          open={showAIModal}
+          onClose={handleAIModalClose}
+          selectedText={component.content || ''}
+          onApply={handleApplyAIResult}
+        />
+      </>
     );
   },
   (prevProps, nextProps) => {

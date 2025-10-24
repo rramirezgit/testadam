@@ -5,20 +5,24 @@ import { Box, IconButton } from '@mui/material';
 
 import type { ComponentWithToolbarProps } from './types';
 
-// Toolbar con flechas arriba/abajo y botón eliminar
+// Toolbar con flechas arriba/abajo, botón eliminar y botón de IA
 const ComponentToolbar = memo(
   ({
     componentId,
     index,
     totalComponents,
+    componentType,
     moveComponent,
     removeComponent,
+    onAIClick,
   }: {
     componentId: string;
     index: number;
     totalComponents: number;
+    componentType?: string;
     moveComponent: (id: string, direction: 'up' | 'down') => void;
     removeComponent: (id: string) => void;
+    onAIClick?: () => void;
   }) => {
     const handleMoveUp = useCallback(() => {
       moveComponent(componentId, 'up');
@@ -31,6 +35,20 @@ const ComponentToolbar = memo(
     const handleRemove = useCallback(() => {
       removeComponent(componentId);
     }, [componentId, removeComponent]);
+
+    const handleAIClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (onAIClick) {
+          onAIClick();
+        }
+      },
+      [onAIClick]
+    );
+
+    // Mostrar botón de IA solo para párrafos, headings y títulos con icono
+    const showAIButton =
+      componentType && ['paragraph', 'heading', 'tituloConIcono'].includes(componentType);
 
     return (
       <Box
@@ -45,9 +63,28 @@ const ComponentToolbar = memo(
           borderRadius: '8px',
           padding: '4px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          zIndex: 10,
+          zIndex: 100,
         }}
       >
+        {/* Botón de IA - solo para párrafos, headings y títulos */}
+        {showAIButton && onAIClick && (
+          <IconButton
+            size="small"
+            onClick={handleAIClick}
+            sx={{
+              width: '28px',
+              height: '28px',
+              color: '#667eea',
+              '&:hover': {
+                bgcolor: 'rgba(102, 126, 234, 0.08)',
+              },
+            }}
+            title="Asistente de IA"
+          >
+            <Icon icon="mdi:magic-staff" width={18} />
+          </IconButton>
+        )}
+
         <IconButton
           size="small"
           onClick={handleMoveUp}
@@ -91,6 +128,7 @@ const ComponentWithToolbar = memo(
     children,
     onClick,
     isViewOnly = false,
+    onAIClick,
   }: ComponentWithToolbarProps) => {
     const showToolbar = isSelected && !isViewOnly;
     // noteContainer tiene su propio borde, no agregar borde adicional
@@ -106,6 +144,7 @@ const ComponentWithToolbar = memo(
       <Box
         sx={{
           position: 'relative',
+          zIndex: 1,
           // No agregar borde para noteContainer ya que tiene su propio estilo
           border:
             !isNoteContainer && isSelected && !isViewOnly
@@ -126,8 +165,10 @@ const ComponentWithToolbar = memo(
             componentId={componentId}
             index={index}
             totalComponents={totalComponents}
+            componentType={componentType}
             moveComponent={moveComponent}
             removeComponent={removeComponent}
+            onAIClick={onAIClick}
           />
         )}
         {children}

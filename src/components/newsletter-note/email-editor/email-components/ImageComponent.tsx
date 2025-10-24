@@ -57,6 +57,7 @@ const ImageUploader = ({ data, componentStyle }: ImageUploaderProps) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        zIndex: 1, // ✅ Z-index bajo para no interferir con BubbleMenu
       }}
     >
       {data.src ? (
@@ -108,7 +109,7 @@ const ImageUploader = ({ data, componentStyle }: ImageUploaderProps) => {
                 '& .MuiChip-label': {
                   padding: '0 6px',
                 },
-                zIndex: 10,
+                zIndex: 2,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
               }}
             />

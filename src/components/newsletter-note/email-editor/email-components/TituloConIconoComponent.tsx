@@ -5,6 +5,7 @@ import { Box } from '@mui/material';
 import IconPicker from '../icon-picker';
 import ComponentWithToolbar from './ComponentWithToolbar';
 import TituloConIcono from '../components/TituloConIcono';
+import AIAssistantModal from '../ai-menu/AIAssistantModal';
 
 import type { EmailComponentProps } from './types';
 
@@ -21,6 +22,7 @@ const TituloConIconoComponent = ({
   totalComponents,
 }: EmailComponentProps) => {
   const [showIconPickerTitulo, setShowIconPickerTitulo] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,6 +58,19 @@ const TituloConIconoComponent = ({
     });
   };
 
+  const handleAIClick = () => {
+    setShowAIModal(true);
+  };
+
+  const handleAIModalClose = () => {
+    setShowAIModal(false);
+  };
+
+  const handleApplyAIResult = (newText: string) => {
+    updateComponentContent(component.id, newText);
+    setShowAIModal(false);
+  };
+
   return (
     <Box
       onClick={handleClick}
@@ -69,9 +84,11 @@ const TituloConIconoComponent = ({
         index={index}
         totalComponents={totalComponents}
         componentId={component.id}
+        componentType="tituloConIcono"
         moveComponent={moveComponent}
         removeComponent={removeComponent}
         onClick={handleClick}
+        onAIClick={handleAIClick}
       >
         <Box sx={{ overflow: 'visible' }}>
           <TituloConIcono
@@ -103,6 +120,14 @@ const TituloConIconoComponent = ({
           currentIcon={component.props?.icon || 'mdi:chart-line'}
         />
       )}
+
+      {/* Modal de Asistente de IA */}
+      <AIAssistantModal
+        open={showAIModal}
+        onClose={handleAIModalClose}
+        selectedText={component.content || ''}
+        onApply={handleApplyAIResult}
+      />
     </Box>
   );
 };

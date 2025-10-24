@@ -15,6 +15,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import FontFamily from '@tiptap/extension-font-family';
 import { useEditor, BubbleMenu, EditorContent } from '@tiptap/react';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import { DOMSerializer } from '@tiptap/pm/model';
 
 import {
   Box,
@@ -23,6 +24,7 @@ import {
   Button,
   Tooltip,
   Popover,
+  Snackbar,
   TextField,
   IconButton,
   DialogTitle,
@@ -31,6 +33,7 @@ import {
 } from '@mui/material';
 
 import TextColorPicker from './email-editor/color-picker/TextColorPicker';
+import AIAssistantModal from './email-editor/ai-menu/AIAssistantModal';
 
 interface SimpleTipTapEditorProps {
   content: string;
@@ -46,6 +49,8 @@ interface SimpleTipTapEditorProps {
   backgroundColor?: string;
   onBackgroundColorChange?: (color: string) => void;
   onTextColorChange?: (color: string) => void;
+  // Nueva prop para controlar si se muestra el botón de IA
+  showAIButton?: boolean;
 }
 
 // ⚡ ULTRA-OPTIMIZACIÓN: Cache global de extensiones
@@ -153,6 +158,7 @@ export default function SimpleTipTapEditor({
   backgroundColor = '#e3f2fd',
   onBackgroundColorChange,
   onTextColorChange,
+  showAIButton = true, // Por defecto true para mantener compatibilidad
 }: SimpleTipTapEditorProps) {
   const editorRef = useRef<any>(null);
   const isUpdatingContent = useRef(false);
@@ -169,6 +175,11 @@ export default function SimpleTipTapEditor({
   // Estados para el color de fondo (usado en categorías)
   const [bgColorAnchorEl, setBgColorAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedBgColor, setSelectedBgColor] = useState(backgroundColor);
+
+  // Estados para IA Modal
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [selectedTextHTML, setSelectedTextHTML] = useState<string>('');
+  const [selectedRange, setSelectedRange] = useState<{ from: number; to: number } | null>(null);
 
   // Funciones para el BubbleMenu
   const handleCreateLink = () => {
@@ -249,6 +260,55 @@ export default function SimpleTipTapEditor({
     if (onBackgroundColorChange) {
       onBackgroundColorChange(color);
     }
+  };
+
+  // Funciones para IA Modal
+  const handleAIClick = () => {
+    if (!editor) return;
+
+    // Obtener el rango de selección actual
+    const { from, to } = editor.state.selection;
+    if (from === to) {
+      // No hay texto seleccionado
+      return;
+    }
+
+    // Guardar el rango
+    setSelectedRange({ from, to });
+
+    // Obtener el HTML del fragmento seleccionado
+    const fragment = editor.state.doc.cut(from, to);
+    const serializer = DOMSerializer.fromSchema(editor.schema);
+    const tempDiv = document.createElement('div');
+    tempDiv.appendChild(serializer.serializeFragment(fragment.content));
+    const htmlContent = tempDiv.innerHTML;
+
+    setSelectedTextHTML(htmlContent);
+    setShowAIModal(true);
+  };
+
+  const handleAIModalClose = () => {
+    setShowAIModal(false);
+    setSelectedTextHTML('');
+    setSelectedRange(null);
+  };
+
+  const handleApplyAIResult = (newText: string) => {
+    if (!editor || !selectedRange) return;
+
+    const { from, to } = selectedRange;
+
+    // Reemplazar el texto seleccionado con el resultado
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from, to })
+      .deleteSelection()
+      .insertContent(newText)
+      .run();
+
+    // Limpiar estados
+    handleAIModalClose();
   };
 
   // ⚡ ULTRA-OPTIMIZACIÓN: Memoizar extensiones con cache global
@@ -494,7 +554,9 @@ export default function SimpleTipTapEditor({
               updateDelay={50}
               tippyOptions={{
                 duration: 100,
-                zIndex: 9999,
+                zIndex: 1200,
+                interactive: true,
+                appendTo: () => document.body,
                 onHide: () => {
                   // No ocultar si hay un popover abierto
                   if (Boolean(colorAnchorEl) || Boolean(bgColorAnchorEl) || showLinkDialog) {
@@ -506,11 +568,23 @@ export default function SimpleTipTapEditor({
               }}
               shouldShow={({ from, to }) =>
                 // Mostrar cuando hay texto seleccionado O cuando hay un popover/dialog abierto
-                from !== to || Boolean(colorAnchorEl) || Boolean(bgColorAnchorEl) || showLinkDialog
+                // Ocultar cuando el modal de IA está abierto
+                !showAIModal &&
+                (from !== to ||
+                  Boolean(colorAnchorEl) ||
+                  Boolean(bgColorAnchorEl) ||
+                  showLinkDialog)
               }
             >
               <Paper
                 elevation={3}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
                 sx={{
                   display: 'flex',
                   gap: 0.5,
@@ -518,6 +592,9 @@ export default function SimpleTipTapEditor({
                   bgcolor: 'background.paper',
                   borderRadius: 1,
                   minWidth: 'auto',
+                  pointerEvents: 'auto',
+                  position: 'relative',
+                  zIndex: 1200,
                 }}
               >
                 {/* Botón de formato negrita */}
@@ -635,8 +712,14 @@ export default function SimpleTipTapEditor({
                 <Tooltip title={editor.isActive('link') ? 'Editar enlace' : 'Crear enlace'}>
                   <IconButton
                     size="small"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={editor.isActive('link') ? handleEditLink : handleCreateLink}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      editor.isActive('link') ? handleEditLink() : handleCreateLink();
+                    }}
                     sx={{
                       bgcolor: editor.isActive('link') ? 'grey.300' : 'transparent',
                       color: editor.isActive('link') ? 'black' : 'inherit',
@@ -651,14 +734,46 @@ export default function SimpleTipTapEditor({
                   <Tooltip title="Quitar enlace">
                     <IconButton
                       size="small"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={handleRemoveLink}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveLink();
+                      }}
                       sx={{
                         color: 'error.main',
                         '&:hover': { bgcolor: 'error.50' },
                       }}
                     >
                       <Icon icon="mdi:link-off" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+
+                {/* Separador para IA */}
+                {showAIButton && <Box sx={{ width: 1, bgcolor: 'divider', mx: 0.5 }} />}
+
+                {/* Botón de IA */}
+                {showAIButton && (
+                  <Tooltip title="Asistente de IA">
+                    <IconButton
+                      size="small"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAIClick();
+                      }}
+                      sx={{
+                        color: 'primary.main',
+                        '&:hover': { bgcolor: 'primary.lighter' },
+                      }}
+                    >
+                      <Icon icon="mdi:magic-staff" />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -782,6 +897,14 @@ export default function SimpleTipTapEditor({
                 </Box>
               </Popover>
             )}
+
+            {/* Modal de Asistente de IA */}
+            <AIAssistantModal
+              open={showAIModal}
+              onClose={handleAIModalClose}
+              selectedText={selectedTextHTML}
+              onApply={handleApplyAIResult}
+            />
           </>
         )}
       </Box>
@@ -800,6 +923,8 @@ export default function SimpleTipTapEditor({
       bgColorAnchorEl,
       selectedBgColor,
       showBackgroundColorPicker,
+      showAIModal,
+      selectedTextHTML,
     ]
   );
 

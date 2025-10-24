@@ -78,6 +78,7 @@ const MemoizedButtonEditor = memo(
       onSelectionUpdate={onSelectionUpdate}
       showToolbar={false}
       style={editorStyle}
+      showAIButton={false}
     />
   ),
   (prevProps, nextProps) =>

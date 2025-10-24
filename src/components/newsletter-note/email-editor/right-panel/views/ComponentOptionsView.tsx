@@ -4,6 +4,7 @@ import type React from 'react';
 import type { PostStatus } from 'src/types/post';
 import type { EmailComponent } from 'src/types/saved-note';
 
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 
 import {
@@ -38,6 +39,7 @@ import TextWithIconOptions from '../TextWithIconOptions';
 import NoteContainerOptions from '../NoteContainerOptions';
 import RespaldadoPorOptions from '../RespaldadoPorOptions';
 import TituloConIconoOptions from '../TituloConIconoOptions';
+import AIAssistantModal from '../../ai-menu/AIAssistantModal';
 import NewsletterFooterOptions from '../NewsletterFooterOptions';
 import ChartOptions from '../../email-components/options/ChartOptions';
 import NewsletterFooterReusableOptions from '../NewsletterFooterReusableOptions';
@@ -228,6 +230,28 @@ export default function ComponentOptionsView({
   setOpenDeleteDialog,
   handleDeleteNote,
 }: ComponentOptionsViewProps) {
+  // Estados para el modal de IA
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiModalContent, setAiModalContent] = useState('');
+
+  // Función para abrir el modal de IA con el contenido del componente
+  const handleOpenAIModal = () => {
+    if (!selectedComponent) return;
+
+    // Obtener el contenido del componente
+    const content = selectedComponent.content || '';
+    setAiModalContent(content);
+    setShowAIModal(true);
+  };
+
+  // Función para aplicar el resultado de la IA al componente
+  const handleApplyAIResult = (newText: string) => {
+    if (selectedComponentId) {
+      updateComponentContent(selectedComponentId, newText);
+    }
+    setShowAIModal(false);
+  };
+
   return (
     <Box
       sx={(theme) => ({
@@ -378,13 +402,13 @@ export default function ComponentOptionsView({
               )}
 
               {/* Tab IA para todos los componentes (excepto algunos específicos) */}
-              {componentType !== 'divider' &&
+              {/* {componentType !== 'divider' &&
                 componentType !== 'spacer' &&
                 componentType !== 'noteContainer' && (
                   <ToggleButton value={componentType === 'herramientas' ? 2 : 1} aria-label="ia">
                     🤖 IA
                   </ToggleButton>
-                )}
+                )} */}
             </ToggleButtonGroup>
           </Box>
 
@@ -663,15 +687,25 @@ export default function ComponentOptionsView({
                     <Typography variant="caption" sx={{ fontWeight: 600, mb: 1 }}>
                       Opciones para texto:
                     </Typography>
+
+                    {/* Botón principal para abrir el modal de IA */}
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       size="small"
-                      disabled
+                      onClick={handleOpenAIModal}
                       startIcon={<Icon icon="mdi:magic-staff" />}
-                      sx={{ justifyContent: 'flex-start' }}
+                      sx={{
+                        justifyContent: 'flex-start',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #5568d3 0%, #63408a 100%)',
+                        },
+                      }}
                     >
-                      Reescribir con IA
+                      Asistente de IA
                     </Button>
+
+                    {/* Botones deshabilitados para referencia futura */}
                     <Button
                       variant="outlined"
                       size="small"
@@ -855,6 +889,14 @@ export default function ComponentOptionsView({
               </Button>
             </DialogActions>
           </Dialog>
+
+          {/* Modal de Asistente de IA */}
+          <AIAssistantModal
+            open={showAIModal}
+            onClose={() => setShowAIModal(false)}
+            selectedText={aiModalContent}
+            onApply={handleApplyAIResult}
+          />
         </>
       )}
     </Box>

@@ -233,6 +233,7 @@ export default function TituloConIcono({
                 fontWeight: 'bold',
                 fontSize: '1.2rem',
               }}
+              showAIButton
             />
           </Box>
         ) : (

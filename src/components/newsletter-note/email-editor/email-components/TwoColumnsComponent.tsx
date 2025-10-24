@@ -326,6 +326,7 @@ const TwoColumnsComponent = ({
           outline: 'none',
           textAlign: 'center',
         }}
+        showAIButton={false}
       />
     </Box>
   );

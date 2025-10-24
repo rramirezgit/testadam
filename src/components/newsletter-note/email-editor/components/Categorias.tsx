@@ -179,6 +179,7 @@ export default function Categorias({
                       onCategoriaUpdate(categoria.id, 'colorTexto', color);
                     }
                   }}
+                  showAIButton={false}
                 />
               </Box>
             ) : (

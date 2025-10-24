@@ -4,9 +4,10 @@ import type { Article } from 'src/store/PostStore';
 
 import { Icon } from '@iconify/react';
 
-import { Box, Grid, Button, Typography } from '@mui/material';
+import { Box, Grid, Button } from '@mui/material';
 
 import ContentCard from './content-card';
+import { EmptyContent } from '../empty-content';
 
 interface NotesGridProps {
   notes: Article[];
@@ -34,7 +35,7 @@ export default function NotesGrid({
           textAlign: 'center',
         }}
       >
-        <Icon
+        {/* <Icon
           icon="mdi:note-outline"
           width={64}
           height={64}
@@ -53,7 +54,25 @@ export default function NotesGrid({
           onClick={onCreateNew}
         >
           Create New Template
-        </Button>
+        </Button> */}
+        <EmptyContent
+          imgUrl="/assets/icons/empty/ic-notes.svg"
+          title="No hay notas guardadas"
+          description="Crea tu primera nota de educación haciendo click en el botón de abajo."
+          action={
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{
+                marginTop: '16px',
+              }}
+              startIcon={<Icon icon="mdi:plus" />}
+              onClick={onCreateNew}
+            >
+              Create New Template
+            </Button>
+          }
+        />
       </Box>
     );
   }
