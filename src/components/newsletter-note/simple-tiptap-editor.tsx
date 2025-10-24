@@ -9,13 +9,13 @@ import { Icon } from '@iconify/react';
 import Link from '@tiptap/extension-link';
 import Color from '@tiptap/extension-color';
 import StarterKit from '@tiptap/starter-kit';
+import { DOMSerializer } from '@tiptap/pm/model';
 import Underline from '@tiptap/extension-underline';
 import TextStyle from '@tiptap/extension-text-style';
 import TextAlign from '@tiptap/extension-text-align';
 import FontFamily from '@tiptap/extension-font-family';
 import { useEditor, BubbleMenu, EditorContent } from '@tiptap/react';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-import { DOMSerializer } from '@tiptap/pm/model';
 
 import {
   Box,
@@ -24,7 +24,6 @@ import {
   Button,
   Tooltip,
   Popover,
-  Snackbar,
   TextField,
   IconButton,
   DialogTitle,
@@ -32,8 +31,8 @@ import {
   DialogActions,
 } from '@mui/material';
 
-import TextColorPicker from './email-editor/color-picker/TextColorPicker';
 import AIAssistantModal from './email-editor/ai-menu/AIAssistantModal';
+import TextColorPicker from './email-editor/color-picker/TextColorPicker';
 
 interface SimpleTipTapEditorProps {
   content: string;
@@ -315,6 +314,7 @@ export default function SimpleTipTapEditor({
   const extensions = useMemo(() => getExtensions(), []);
 
   // ⚡ ULTRA-OPTIMIZACIÓN: Debouncing ultra-agresivo para onChange
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedOnChange = useCallback(
     globalDebouncer.debounce(
       'content-change',
@@ -331,6 +331,7 @@ export default function SimpleTipTapEditor({
   );
 
   // ⚡ ULTRA-OPTIMIZACIÓN: Throttling ultra-ligero para selección
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const throttledSelectionUpdate = useCallback(
     globalDebouncer.debounce(
       'selection-update',
@@ -718,7 +719,11 @@ export default function SimpleTipTapEditor({
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      editor.isActive('link') ? handleEditLink() : handleCreateLink();
+                      if (editor.isActive('link')) {
+                        handleEditLink();
+                      } else {
+                        handleCreateLink();
+                      }
                     }}
                     sx={{
                       bgcolor: editor.isActive('link') ? 'grey.300' : 'transparent',

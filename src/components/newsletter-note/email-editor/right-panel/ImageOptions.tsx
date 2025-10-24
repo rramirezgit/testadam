@@ -28,6 +28,7 @@ import {
 import GeneralColorPicker from 'src/components/newsletter-note/general-color-picker';
 
 import ImageCropDialog from './ImageCropDialog';
+import ImageSourceModal from './ImageSourceModal';
 import { useImageUpload } from './useImageUpload';
 import { isBase64Image } from '../utils/imageValidation';
 import { validateFileSize, convertImageToOptimalFormat } from './imgPreview';
@@ -44,6 +45,8 @@ const ImageOptions = ({
   // Estados para imagen
   const [tempImage, setTempImage] = useState<string>('');
   const [showCropDialog, setShowCropDialog] = useState(false);
+  const [showSourceModal, setShowSourceModal] = useState(false);
+  const [openAITab, setOpenAITab] = useState(false);
   const [adjustImageCrop, setAdjustImageCrop] = useState(true);
 
   // Estados para upload automático
@@ -54,12 +57,12 @@ const ImageOptions = ({
   // Hook para subida de imágenes
   const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
 
-  // Auto-trigger file picker si no hay imagen al seleccionar el componente
+  // Auto-trigger modal de selección si no hay imagen al seleccionar el componente
   useEffect(() => {
     const currentImageSrc = selectedComponent.props?.src;
     if (selectedComponentId && (!currentImageSrc || currentImageSrc === '')) {
       const timer = setTimeout(() => {
-        fileInputRef.current?.click();
+        setShowSourceModal(true);
       }, 100);
       return () => clearTimeout(timer);
     }
@@ -142,7 +145,20 @@ const ImageOptions = ({
   };
 
   const handleSelectImage = () => {
-    fileInputRef.current?.click();
+    setShowSourceModal(true);
+  };
+
+  const handleSelectFromPC = () => {
+    setShowSourceModal(false);
+    setTimeout(() => {
+      fileInputRef.current?.click();
+    }, 100);
+  };
+
+  const handleGenerateWithAI = () => {
+    setShowSourceModal(false);
+    setOpenAITab(true);
+    setShowCropDialog(true);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -597,16 +613,26 @@ const ImageOptions = ({
         onChange={handleFileChange}
       />
 
+      {/* Modal de selección de origen */}
+      <ImageSourceModal
+        open={showSourceModal}
+        onClose={() => setShowSourceModal(false)}
+        onSelectFromPC={handleSelectFromPC}
+        onGenerateWithAI={handleGenerateWithAI}
+      />
+
       {/* Dialog de crop */}
       <ImageCropDialog
         open={showCropDialog}
         onClose={() => {
           setShowCropDialog(false);
           setTempImage('');
+          setOpenAITab(false);
         }}
         onSave={handleSaveCroppedImage}
         initialImage={tempImage}
         currentAspectRatio={undefined}
+        initialTab={openAITab ? 'ai' : 'edit'}
       />
     </>
   );

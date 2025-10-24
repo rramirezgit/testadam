@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 
 import ImageCropDialog from './ImageCropDialog';
+import ImageSourceModal from './ImageSourceModal';
 import { useImageUpload } from './useImageUpload';
 import { isBase64Image } from '../utils/imageValidation';
 import { validateFileSize, convertImageToOptimalFormat } from './imgPreview';
@@ -39,6 +40,8 @@ const GalleryOptions = ({
   updateComponentProps,
 }: GalleryOptionsProps) => {
   const [showCropDialog, setShowCropDialog] = useState(false);
+  const [showSourceModal, setShowSourceModal] = useState(false);
+  const [openAITab, setOpenAITab] = useState(false);
   const [tempImageForCrop, setTempImageForCrop] = useState('');
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
   const [isLoadingForEdit, setIsLoadingForEdit] = useState(false);
@@ -122,7 +125,25 @@ const GalleryOptions = ({
 
   // Manejar selección de archivo
   const handleSelectImage = (imageIndex: number) => {
-    imageFileInputRefs[imageIndex].current?.click();
+    setEditingImageIndex(imageIndex);
+    setShowSourceModal(true);
+  };
+
+  // Manejar selección desde PC
+  const handleSelectFromPC = () => {
+    setShowSourceModal(false);
+    if (editingImageIndex !== null) {
+      setTimeout(() => {
+        imageFileInputRefs[editingImageIndex].current?.click();
+      }, 100);
+    }
+  };
+
+  // Manejar generación con IA
+  const handleGenerateWithAI = () => {
+    setShowSourceModal(false);
+    setOpenAITab(true);
+    setShowCropDialog(true);
   };
 
   // Manejar cambio de archivo
@@ -561,6 +582,17 @@ const GalleryOptions = ({
         />
       ))}
 
+      {/* Modal de selección de origen */}
+      <ImageSourceModal
+        open={showSourceModal}
+        onClose={() => {
+          setShowSourceModal(false);
+          setEditingImageIndex(null);
+        }}
+        onSelectFromPC={handleSelectFromPC}
+        onGenerateWithAI={handleGenerateWithAI}
+      />
+
       {/* Dialog de crop */}
       <ImageCropDialog
         open={showCropDialog}
@@ -568,10 +600,12 @@ const GalleryOptions = ({
           setShowCropDialog(false);
           setTempImageForCrop('');
           setEditingImageIndex(null);
+          setOpenAITab(false);
         }}
         onSave={handleSaveCroppedImage}
         initialImage={tempImageForCrop}
         currentAspectRatio={undefined}
+        initialTab={openAITab ? 'ai' : 'edit'}
       />
     </Box>
   );

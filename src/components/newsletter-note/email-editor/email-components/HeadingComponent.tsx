@@ -3,8 +3,8 @@ import React, { memo, useRef, useMemo, useState, useCallback } from 'react';
 import { Box } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
-import SimpleTipTapEditor from '../../simple-tiptap-editor';
 import AIAssistantModal from '../ai-menu/AIAssistantModal';
+import SimpleTipTapEditor from '../../simple-tiptap-editor';
 
 import type { EmailComponentProps } from './types';
 

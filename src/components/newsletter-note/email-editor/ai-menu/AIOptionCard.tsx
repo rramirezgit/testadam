@@ -1,11 +1,11 @@
 'use client';
 
-import { Icon } from '@iconify/react';
 import type React from 'react';
-
-import { Card, CardContent, Typography, Box, alpha } from '@mui/material';
-
 import type { AIOption } from 'src/types/magic-write';
+
+import { Icon } from '@iconify/react';
+
+import { Box, Card, alpha, Typography, CardContent } from '@mui/material';
 
 interface AIOptionCardProps {
   option: AIOption;

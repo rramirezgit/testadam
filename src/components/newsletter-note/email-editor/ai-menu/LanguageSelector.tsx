@@ -1,9 +1,10 @@
 'use client';
 
-import { Icon } from '@iconify/react';
 import type React from 'react';
 
-import { Menu, Box, Typography, Card, alpha } from '@mui/material';
+import { Icon } from '@iconify/react';
+
+import { Box, Menu, Card, alpha, Typography } from '@mui/material';
 
 import { SUPPORTED_LANGUAGES } from 'src/types/magic-write';
 

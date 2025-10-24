@@ -206,6 +206,7 @@ export interface ImageCropDialogProps {
   onSave: (croppedImage: string) => void;
   initialImage: string;
   currentAspectRatio?: number;
+  initialTab?: 'edit' | 'ai';
 }
 
 export interface CropRatio {

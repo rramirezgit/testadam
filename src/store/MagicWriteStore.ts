@@ -1,11 +1,11 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-
 import type {
   MagicWriteAction,
   MagicWriteRequest,
   MagicWriteResponse,
 } from 'src/types/magic-write';
+
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 
 import { createAxiosInstance } from 'src/utils/axiosInstance';
 

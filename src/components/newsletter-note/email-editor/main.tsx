@@ -710,7 +710,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         objData: objDataString,
         objDataWeb: objDataWebString,
         configPost: JSON.stringify(configPostObject),
-        origin: 'MICHIN',
+        origin: 'ADAC',
         highlight: noteData.highlight,
       };
 
@@ -1491,7 +1491,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           objData: objDataString,
           objDataWeb: objDataWebString,
           configPost: JSON.stringify(configPostObject),
-          origin: 'MICHIN',
+          origin: 'ADAC',
           highlight: noteData.highlight,
           contentTypeId: noteData.contentTypeId,
           audienceId: noteData.audienceId || null,

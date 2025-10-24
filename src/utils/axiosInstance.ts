@@ -118,4 +118,11 @@ export const endpoints = {
   magicWrite: {
     process: '/api/v1/magic-write',
   },
+  // Media AI endpoints
+  mediaAi: {
+    generate: '/api/v1/media-ai/generate',
+    status: (id: string) => `/api/v1/media-ai/status/${id}`,
+    history: '/api/v1/media-ai/history',
+    delete: (id: string) => `/api/v1/media-ai/${id}`,
+  },
 };
