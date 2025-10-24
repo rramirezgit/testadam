@@ -22,6 +22,7 @@ interface NewsletterFooterOptionsProps {
   selectedComponent: any;
   updateComponentProps: (id: string, props: Record<string, any>) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
+  isViewOnly?: boolean;
 }
 
 export default function NewsletterFooterOptions({
@@ -29,6 +30,7 @@ export default function NewsletterFooterOptions({
   selectedComponent,
   updateComponentProps,
   updateComponentStyle,
+  isViewOnly = false,
 }: NewsletterFooterOptionsProps) {
   const props = selectedComponent?.props || {};
 

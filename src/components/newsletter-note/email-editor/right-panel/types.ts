@@ -127,6 +127,8 @@ export interface RightPanelProps {
   newsletterStatus?: string;
   currentNewsletterId?: string | null;
   onNewsletterUpdate?: () => void;
+  // Prop para modo view-only
+  isViewOnly?: boolean;
 }
 
 export interface ListStyleOptionsProps {

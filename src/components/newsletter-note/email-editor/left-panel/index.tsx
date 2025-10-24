@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-import { Box, TextField, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, TextField, Typography, ToggleButton, ToggleButtonGroup } from '@mui/material';
 
 import NotesLibrary from './components/NotesLibrary';
 import TemplateModal from './components/TemplateModal';
@@ -59,6 +59,8 @@ export default function LeftPanel({
   loadingNotes = false,
   onInjectNote = () => {},
   onRefreshNotes = () => {},
+  // Prop para modo view-only
+  isViewOnly = false,
 }: LeftPanelProps) {
   const [activeTab, setActiveTab] = React.useState<'content' | 'notes'>('content');
   // Si hay defaultTemplate o initialNote, no mostrar el modal; si no hay ninguno, mostrarlo
@@ -106,68 +108,95 @@ export default function LeftPanel({
         }),
       })}
     >
-      <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', p: 1, flexShrink: 0 }}>
-        <ToggleButtonGroup
-          value={activeTab}
-          exclusive
-          onChange={handleTabChange}
-          aria-label="Opciones de panel"
-          size="small"
-          color="primary"
+      {/* Mostrar mensaje de solo lectura si está en modo view-only */}
+      {isViewOnly ? (
+        <Box
           sx={{
-            mb: 1,
-            width: '100%',
-            border: 'none',
-            '& .MuiToggleButton-root': {
-              flex: 1,
-              fontSize: { xs: '0.65rem', sm: '0.75rem' },
-              padding: { xs: '4px 6px', sm: '6px 8px' },
-            },
+            p: 3,
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
           }}
         >
-          <ToggleButton value="content" aria-label="content">
-            Elementos
-          </ToggleButton>
-          {isNewsletterMode && (
-            <ToggleButton value="notes" aria-label="notes">
-              Notas
-            </ToggleButton>
-          )}
-        </ToggleButtonGroup>
-      </Box>
-
-      {activeTab === 'content' && (
-        <>
-          {/* Búsqueda de componentes */}
-          <Box sx={{ px: 1, pb: 1, flexShrink: 0 }}>
-            <TextField
-              label="Buscar componentes"
-              variant="outlined"
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              fullWidth
-            />
-          </Box>
-
-          {/* Lista de componentes */}
-          <Box sx={{ flexGrow: 1, overflow: 'auto', px: 1 }}>
-            <ComponentCategories
-              isNewsletterMode={isNewsletterMode}
-              expandedCategories={expandedCategories}
-              setExpandedCategories={setExpandedCategories}
-              addComponent={addComponent}
-              enabledComponents={enabledComponents}
-            />
-          </Box>
-        </>
-      )}
-
-      {/* Tab de Notas para Newsletter */}
-      {activeTab === 'notes' && isNewsletterMode && (
-        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-          <NotesLibrary onInjectNote={onInjectNote} />
+          <Typography variant="h6" gutterBottom>
+            Solo Lectura
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '250px' }}>
+            Este newsletter ha sido enviado y no puede ser editado. Para realizar cambios, crea una
+            copia en borrador.
+          </Typography>
         </Box>
+      ) : (
+        <>
+          <Box
+            sx={{ width: '100%', display: 'flex', justifyContent: 'center', p: 1, flexShrink: 0 }}
+          >
+            <ToggleButtonGroup
+              value={activeTab}
+              exclusive
+              onChange={handleTabChange}
+              aria-label="Opciones de panel"
+              size="small"
+              color="primary"
+              sx={{
+                mb: 1,
+                width: '100%',
+                border: 'none',
+                '& .MuiToggleButton-root': {
+                  flex: 1,
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                  padding: { xs: '4px 6px', sm: '6px 8px' },
+                },
+              }}
+            >
+              <ToggleButton value="content" aria-label="content">
+                Elementos
+              </ToggleButton>
+              {isNewsletterMode && (
+                <ToggleButton value="notes" aria-label="notes">
+                  Notas
+                </ToggleButton>
+              )}
+            </ToggleButtonGroup>
+          </Box>
+
+          {activeTab === 'content' && (
+            <>
+              {/* Búsqueda de componentes */}
+              <Box sx={{ px: 1, pb: 1, flexShrink: 0 }}>
+                <TextField
+                  label="Buscar componentes"
+                  variant="outlined"
+                  size="small"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  fullWidth
+                />
+              </Box>
+
+              {/* Lista de componentes */}
+              <Box sx={{ flexGrow: 1, overflow: 'auto', px: 1 }}>
+                <ComponentCategories
+                  isNewsletterMode={isNewsletterMode}
+                  expandedCategories={expandedCategories}
+                  setExpandedCategories={setExpandedCategories}
+                  addComponent={addComponent}
+                  enabledComponents={enabledComponents}
+                />
+              </Box>
+            </>
+          )}
+
+          {/* Tab de Notas para Newsletter */}
+          {activeTab === 'notes' && isNewsletterMode && (
+            <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+              <NotesLibrary onInjectNote={onInjectNote} />
+            </Box>
+          )}
+        </>
       )}
 
       {/* MODAL DE SELECCIÓN DE PLANTILLAS */}

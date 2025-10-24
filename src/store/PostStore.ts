@@ -10,6 +10,7 @@ import type {
   SendEmailData,
   UpdatePostData,
   CreatePostData,
+  NewsletterFilters,
 } from 'src/types/post';
 
 import { create } from 'zustand';
@@ -96,7 +97,8 @@ interface PostState {
   // Newsletter operations
   createNewsletter: (subject: string, newsletterData: any) => Promise<any>;
   updateNewsletter: (id: string, newsletterData: any) => Promise<any>;
-  findAllNewsletters: (status?: string) => Promise<any[]>;
+  deleteNewsletter: (id: string) => Promise<boolean>;
+  findAllNewsletters: (filters?: NewsletterFilters) => Promise<any[]>;
   findNewsletterById: (id: string) => Promise<any>;
   approveNewsletter: (id: string) => Promise<boolean>;
   rejectNewsletter: (id: string) => Promise<boolean>;
@@ -155,8 +157,12 @@ const usePostStore = create<PostState>()(
             const params = new URLSearchParams();
             if (filters) {
               Object.entries(filters).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
-                  params.append(key, String(value));
+                // Solo agregar el parámetro si tiene un valor válido
+                if (value !== undefined && value !== null && value !== '') {
+                  // Para booleanos, siempre agregar incluso si es false
+                  if (typeof value === 'boolean' || value !== false) {
+                    params.append(key, String(value));
+                  }
                 }
               });
             }
@@ -623,16 +629,54 @@ const usePostStore = create<PostState>()(
           }
         },
 
-        findAllNewsletters: async (status?: string) => {
+        deleteNewsletter: async (id: string) => {
           try {
-            console.log('🔄 findAllNewsletters called', { status });
+            console.log('🔄 deleteNewsletter called:', { id });
             set({ loading: true, error: null });
             const axiosInstance = createAxiosInstance();
 
-            // Construir la URL con el parámetro status si se proporciona
-            const url = status
-              ? `${endpoints.newsletter.findAll}?status=${status}`
-              : endpoints.newsletter.findAll;
+            await axiosInstance.delete(endpoints.newsletter.delete(id));
+
+            console.log('✅ Newsletter eliminado exitosamente');
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('❌ Error eliminando newsletter:', {
+              error,
+              errorMessage: error.response?.data?.message,
+              errorStatus: error.response?.status,
+              errorData: error.response?.data,
+            });
+            const errorMessage = error.response?.data?.message || 'Error al eliminar el newsletter';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return false;
+          }
+        },
+
+        findAllNewsletters: async (filters?: NewsletterFilters) => {
+          try {
+            console.log('🔄 findAllNewsletters called', { filters });
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            // Construir query parameters
+            const params = new URLSearchParams();
+            if (filters) {
+              Object.entries(filters).forEach(([key, value]) => {
+                // Solo agregar el parámetro si tiene un valor válido
+                if (value !== undefined && value !== null && value !== '') {
+                  // Para booleanos, siempre agregar incluso si es false
+                  if (typeof value === 'boolean' || value !== false) {
+                    params.append(key, String(value));
+                  }
+                }
+              });
+            }
+
+            const url = `${endpoints.newsletter.findAll}${params.toString() ? `?${params.toString()}` : ''}`;
 
             const response = await axiosInstance.get(url);
 
@@ -642,7 +686,7 @@ const usePostStore = create<PostState>()(
             console.log('✅ Newsletters obtenidos exitosamente:', {
               responseStatus: response.status,
               newslettersCount: newsletters.length,
-              status,
+              filters,
               responseData: response.data,
               newsletters,
             });
@@ -949,5 +993,6 @@ export type {
   SendEmailData,
   UpdatePostData,
   CreatePostData,
+  NewsletterFilters,
   SendNewsletterData,
 } from 'src/types/post';

@@ -85,14 +85,19 @@ const ComponentWithToolbar = memo(
     index,
     totalComponents,
     componentId,
+    componentType,
     moveComponent,
     removeComponent,
     children,
     onClick,
+    isViewOnly = false,
   }: ComponentWithToolbarProps) => {
-    const showToolbar = isSelected;
+    const showToolbar = isSelected && !isViewOnly;
+    // noteContainer tiene su propio borde, no agregar borde adicional
+    const isNoteContainer = componentType === 'noteContainer';
 
     const handleClick = (e: React.MouseEvent) => {
+      if (isViewOnly) return;
       e.stopPropagation();
       onClick(e);
     };
@@ -101,12 +106,17 @@ const ComponentWithToolbar = memo(
       <Box
         sx={{
           position: 'relative',
-          border: isSelected ? '2px dashed #1976d2' : '2px dashed transparent',
+          // No agregar borde para noteContainer ya que tiene su propio estilo
+          border:
+            !isNoteContainer && isSelected && !isViewOnly
+              ? '2px dashed #1976d2'
+              : '2px dashed transparent',
           borderRadius: '8px',
           transition: 'border-color 0.2s ease',
-          cursor: 'pointer',
+          cursor: isViewOnly ? 'default' : 'pointer',
           '&:hover': {
-            borderColor: isSelected ? '#1976d2' : '#e0e0e0',
+            borderColor:
+              isViewOnly || isNoteContainer ? 'transparent' : isSelected ? '#1976d2' : '#e0e0e0',
           },
         }}
         onClick={handleClick}

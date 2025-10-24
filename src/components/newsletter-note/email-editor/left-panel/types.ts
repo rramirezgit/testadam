@@ -68,4 +68,6 @@ export interface LeftPanelProps {
   loadingNotes?: boolean;
   onInjectNote?: (noteId: string) => void;
   onRefreshNotes?: () => void;
+  // Prop para modo view-only
+  isViewOnly?: boolean;
 }

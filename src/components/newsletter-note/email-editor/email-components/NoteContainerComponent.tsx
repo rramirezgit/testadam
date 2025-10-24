@@ -156,6 +156,7 @@ export default function NoteContainerComponent({
             //   }}
             // >
             <EmailComponentRenderer
+              key={containedComponent.id}
               component={containedComponent}
               index={index}
               isSelected={containedComponent.id === selectedComponentId}

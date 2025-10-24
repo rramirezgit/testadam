@@ -1,31 +1,32 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-
 'use client';
 
 import type { Article, PostStatus, PostFilters } from 'src/store/PostStore';
 
 import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   Box,
   Tab,
   Tabs,
-  Chip,
+  Grid,
+  Card,
   Modal,
   Paper,
   Button,
-  Dialog,
   Select,
   Divider,
   Checkbox,
   MenuItem,
+  Skeleton,
   TextField,
   Typography,
   InputLabel,
   Pagination,
   IconButton,
   FormControl,
+  CardContent,
   InputAdornment,
   CircularProgress,
   FormControlLabel,
@@ -33,11 +34,12 @@ import {
 
 import { usePosts } from 'src/hooks/use-posts';
 
+import { buildQueryString } from 'src/utils/url-utils';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import NotesGrid from 'src/components/newsletter-note/notes-grid';
-import EmailEditor from 'src/components/newsletter-note/email-editor';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 // Importar templates disponibles
 import { emailTemplates } from 'src/components/newsletter-note/email-editor/data/email-templates';
@@ -66,43 +68,119 @@ const TABS: Tab[] = [
   },
 ];
 
+// Componente Skeleton para las cards de notas
+function NoteCardSkeleton() {
+  return (
+    <Card
+      sx={{
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: 3,
+        position: 'relative',
+        height: '182px',
+      }}
+    >
+      {/* Skeleton de imagen de fondo */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
+      </Box>
+
+      {/* Contenido flotante sobre la imagen */}
+      <CardContent
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          pt: 1,
+          pb: 1,
+          px: 2,
+          bgcolor: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(10px)',
+          borderTopLeftRadius: '12px',
+          borderTopRightRadius: '12px',
+        }}
+      >
+        {/* Primera línea: Fecha/Hora y Chip */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 0.5,
+          }}
+        >
+          {/* Skeletons de fecha y hora */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Skeleton variant="text" width={90} height={20} />
+            <Skeleton variant="text" width={60} height={20} />
+          </Box>
+
+          {/* Skeleton de chip y menú */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Skeleton variant="rounded" width={80} height={24} />
+            <Skeleton variant="circular" width={20} height={20} />
+          </Box>
+        </Box>
+
+        {/* Segunda línea: Título */}
+        <Skeleton variant="text" width="80%" height={28} />
+      </CardContent>
+    </Card>
+  );
+}
+
+// Componente que muestra la grilla de skeletons
+function NotesGridSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <Grid container spacing={3}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+          <NoteCardSkeleton />
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
+
 export default function NotesView() {
-  const [openEditor, setOpenEditor] = useState(false);
-  const [currentNote, setCurrentNote] = useState<Article | null>(null);
-  const [tab, setTab] = useState('draft');
-  const [searchTerm, setSearchTerm] = useState('');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('title') || '');
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [openFiltersModal, setOpenFiltersModal] = useState(false);
 
   // Nuevo estado para filtro de templates
   const [selectedTemplate, setSelectedTemplate] = useState<string>('all');
-  const [showTemplateFilter, setShowTemplateFilter] = useState(false);
 
-  // Estados para filtros avanzados
-  const [filters, setFilters] = useState({
-    origin: '',
-    startDate: '',
-    endDate: '',
-    highlight: false,
-    perPage: 20,
-    page: 1,
+  // Estados para filtros - Inicializar desde URL
+  const [filters, setFilters] = useState<PostFilters>({
+    status: (searchParams.get('status')?.toUpperCase() as PostStatus) || 'DRAFT',
+    page: Number(searchParams.get('page')) || 1,
+    perPage: Number(searchParams.get('perPage')) || 20,
+    origin: searchParams.get('origin') || '',
+    startDate: searchParams.get('startDate') || '',
+    endDate: searchParams.get('endDate') || '',
+    title: searchParams.get('title') || '',
+    usedInNewsletter: searchParams.get('usedInNewsletter') === 'true' || undefined,
+    highlight: searchParams.get('highlight') === 'true' || undefined,
+    orderBy: searchParams.get('orderBy') || '',
+    categoryId: searchParams.get('categoryId') || '',
+    subcategoryId: searchParams.get('subcategoryId') || '',
+    contentTypeId: searchParams.get('contentTypeId') || '',
+    ...(selectedTemplate !== 'all' && { templateType: selectedTemplate }),
   });
 
-  // Configurar filtros basados en el tab actual y template seleccionado
-  const currentFilters: PostFilters = {
-    status: tab.toUpperCase() as PostStatus,
-    page: filters.page,
-    perPage: filters.perPage,
-    ...(searchTerm && { title: searchTerm }),
-    ...(filters.origin && { origin: filters.origin }),
-    ...(filters.startDate && { startDate: filters.startDate }),
-    ...(filters.endDate && { endDate: filters.endDate }),
-    ...(filters.highlight && { highlight: filters.highlight }),
-    ...(selectedTemplate !== 'all' && { templateType: selectedTemplate }),
-  };
-
   // Use PostStore
-  const { loading, posts, meta, error, removePost, refreshPosts } = usePosts(currentFilters);
+  const { loading, posts, meta, error, removePost } = usePosts(filters);
 
   // Convertir posts de Article a SavedNote para compatibilidad
   const notes = posts;
@@ -115,13 +193,14 @@ export default function NotesView() {
       }
 
       const newTimeout = setTimeout(() => {
-        setSearchTerm(value);
-        setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on search
+        const newFilters = { ...filters, title: value, page: 1 };
+        setFilters(newFilters);
+        router.push(`/dashboard/notes?${buildQueryString(newFilters)}`);
       }, 500);
 
       setSearchTimeout(newTimeout);
     },
-    [searchTimeout]
+    [searchTimeout, filters, router]
   );
 
   // Limpiar timeout al desmontar
@@ -134,25 +213,12 @@ export default function NotesView() {
     [searchTimeout]
   );
 
-  // Refrescar cuando se cierra el editor
-  useEffect(() => {
-    if (!openEditor) {
-      refreshPosts();
-    }
-  }, [openEditor, refreshPosts]);
-
   const handleOpenEditor = (note?: Article) => {
     if (note) {
-      setCurrentNote(note);
+      router.push(`/edit/note/${note.id}`);
     } else {
-      setCurrentNote(null);
+      router.push('/new/note');
     }
-    setOpenEditor(true);
-  };
-
-  const handleCloseEditor = () => {
-    setOpenEditor(false);
-    setCurrentNote(null);
   };
 
   const handleDeleteNote = async (noteId: string) => {
@@ -161,48 +227,65 @@ export default function NotesView() {
 
   const handleChangeTab = (event: React.SyntheticEvent, newValue: string) => {
     console.log('🔄 Cambiando tab a:', newValue);
-    setTab(newValue);
-    setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on tab change
+    const newFilters = { ...filters, status: newValue.toUpperCase() as PostStatus, page: 1 };
+    setFilters(newFilters);
+    router.push(`/dashboard/notes?${buildQueryString(newFilters)}`);
   };
 
   const handleTemplateChange = (templateId: string) => {
     console.log('🔄 Cambiando template a:', templateId);
     setSelectedTemplate(templateId);
-    setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on template change
+    // Aquí podrías agregar lógica para filtrar por template si es necesario
+    const newFilters = { ...filters, page: 1 };
+    setFilters(newFilters);
+    router.push(`/dashboard/notes?${buildQueryString(newFilters)}`);
   };
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    setFilters((prev) => ({ ...prev, page }));
+    const newFilters = { ...filters, page };
+    setFilters(newFilters);
+    router.push(`/dashboard/notes?${buildQueryString(newFilters)}`);
   };
 
   const handleFilterChange = (key: string, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 })); // Reset page on filter change
+    const newFilters = { ...filters, [key]: value, page: 1 };
+    setFilters(newFilters);
+    router.push(`/dashboard/notes?${buildQueryString(newFilters)}`);
   };
 
   const handleClearFilters = () => {
-    setFilters({
+    const newFilters: PostFilters = {
+      status: filters.status,
+      perPage: 20,
+      page: 1,
       origin: '',
       startDate: '',
       endDate: '',
-      highlight: false,
-      perPage: 20,
-      page: 1,
-    });
+      title: '',
+      usedInNewsletter: undefined,
+      highlight: undefined,
+      orderBy: '',
+      categoryId: '',
+      subcategoryId: '',
+      contentTypeId: '',
+    };
+    setFilters(newFilters);
     setSearchTerm('');
     setSelectedTemplate('all');
+    router.push(`/dashboard/notes?${buildQueryString(newFilters)}`);
   };
 
   // Agregar useEffect para debug de filtros
   useEffect(() => {
-    console.log('📊 Filtros actuales:', currentFilters);
-  }, [currentFilters]);
+    console.log('📊 Filtros actuales:', filters);
+  }, [filters]);
 
   return (
     <DashboardContent>
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
           heading="Notas"
-          subheading="Crea, personaliza y publica tus notas en ADAC"
+          subheading="Crea, personaliza y publica tus notas en MICHIN"
           sx={{ mb: { xs: 3, md: 5 } }}
         />
 
@@ -210,7 +293,7 @@ export default function NotesView() {
           sx={{
             gap: 3,
             display: 'flex',
-            mb: { xs: 3, md: 5 },
+            mb: { xs: 3, md: 2 },
             justifyContent: 'space-between',
             flexDirection: { xs: 'column', sm: 'row' },
             alignItems: { xs: 'flex-end', sm: 'center' },
@@ -220,12 +303,19 @@ export default function NotesView() {
             <TextField
               placeholder="Buscar notas..."
               name="search-note"
-              onChange={(e) => handleSearch(e.target.value)}
-              sx={{ flex: 1 }}
+              variant="filled"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                handleSearch(e.target.value);
+              }}
+              sx={{
+                flex: 1,
+              }}
               slotProps={{
                 input: {
                   startAdornment: (
-                    <InputAdornment position="start">
+                    <InputAdornment position="start" sx={{ mt: 0 }}>
                       <Iconify icon="eva:search-fill" sx={{ ml: 1, color: 'text.disabled' }} />
                     </InputAdornment>
                   ),
@@ -243,12 +333,15 @@ export default function NotesView() {
             <IconButton
               onClick={() => setOpenFiltersModal(true)}
               sx={{
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
+                border: 'none',
+                borderColor: 'none',
+                height: '50px',
+                width: '50px',
+                borderRadius: '8px',
+                background: '#F1F2FF',
               }}
             >
-              <Iconify icon="solar:settings-bold" />
+              <Iconify icon="solar:settings-bold" sx={{ color: '#6950E8' }} />
             </IconButton>
           </Box>
 
@@ -278,7 +371,7 @@ export default function NotesView() {
         </Box>
 
         {/* Filtro de Templates - Nueva sección prominente */}
-        <Box sx={{ mb: 3 }}>
+        {/* <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Filtrar por Template
           </Typography>
@@ -304,21 +397,23 @@ export default function NotesView() {
               />
             ))}
           </Box>
-        </Box>
+        </Box> */}
 
         {/* Filtro de Estado - Ahora secundario */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary' }}>
-            Estado de las notas
-          </Typography>
           <Tabs
-            value={tab}
+            color="primary"
+            value={filters.status?.toLowerCase() || 'draft'}
             onChange={handleChangeTab}
             sx={{
               '& .MuiTab-root': {
-                minHeight: '40px',
-                fontSize: '0.875rem',
                 textTransform: 'none',
+              },
+              '& .MuiTab-root.Mui-selected': {
+                color: 'primary.main',
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: 'primary.main',
               },
             }}
           >
@@ -335,10 +430,7 @@ export default function NotesView() {
         )}
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress />
-            <Typography sx={{ ml: 2 }}>Cargando tus notas...</Typography>
-          </Box>
+          <NotesGridSkeleton count={filters.perPage || 6} />
         ) : (
           <NotesGrid
             notes={notes}
@@ -494,15 +586,6 @@ export default function NotesView() {
             </Box>
           </Paper>
         </Modal>
-
-        {/* Email Editor Dialog */}
-        <Dialog fullScreen open={openEditor} onClose={handleCloseEditor}>
-          <EmailEditor
-            onClose={handleCloseEditor}
-            initialNote={currentNote}
-            excludeTemplates={['newsletter']}
-          />
-        </Dialog>
       </Box>
     </DashboardContent>
   );

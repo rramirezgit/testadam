@@ -89,7 +89,7 @@ const MuiFilledInput: Components<Theme>['MuiFilledInput'] = {
   styleOverrides: {
     root: ({ theme }) => ({
       borderRadius: theme.shape.borderRadius,
-      backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+      backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.04),
       '&:hover': { backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.16) },
       [`&.${filledInputClasses.focused}`]: {
         backgroundColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.16),
@@ -102,6 +102,12 @@ const MuiFilledInput: Components<Theme>['MuiFilledInput'] = {
       },
       [`&.${filledInputClasses.disabled}`]: {
         backgroundColor: theme.vars.palette.action.disabledBackground,
+      },
+      [`& .${filledInputClasses.input}`]: {
+        padding: theme.spacing(2),
+      },
+      [`& .MuiInputAdornment-root`]: {
+        marginTop: '0px !important',
       },
     }),
   },

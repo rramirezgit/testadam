@@ -50,12 +50,12 @@ export function HydrationMonitor() {
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
 
-    window.history.pushState = function (...args) {
+    window.history.pushState = (...args) => {
       console.log('📍 HISTORY PUSH STATE:', args[2]);
       return originalPushState.apply(this, args);
     };
 
-    window.history.replaceState = function (...args) {
+    window.history.replaceState = (...args) => {
       console.log('📍 HISTORY REPLACE STATE:', args[2]);
       return originalReplaceState.apply(this, args);
     };

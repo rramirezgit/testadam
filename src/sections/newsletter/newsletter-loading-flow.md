@@ -96,7 +96,7 @@ const TABS: Tab[] = [
   { label: 'Borradores', value: 'DRAFT' },
   { label: 'Review', value: 'REVIEW' },
   { label: 'Aprobados', value: 'APPROVED' },
-  { label: 'ADAC', value: 'PUBLISHED' },
+  { label: 'Michin', value: 'PUBLISHED' },
 ];
 ```
 

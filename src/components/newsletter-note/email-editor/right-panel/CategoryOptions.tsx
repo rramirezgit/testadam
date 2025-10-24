@@ -146,11 +146,6 @@ export default function CategoryOptions({
             Has alcanzado el límite de 6 categorías. Elimina alguna para agregar nuevas.
           </Alert>
         )}
-
-        <Alert severity="info" sx={{ mt: 2 }}>
-          💡 Haz clic en cualquier categoría para editar su texto directamente. Usa el botón × para
-          eliminarla.
-        </Alert>
       </Box>
 
       <Divider sx={{ my: 3 }} />

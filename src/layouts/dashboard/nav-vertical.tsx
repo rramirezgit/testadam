@@ -1,7 +1,7 @@
 import type { Breakpoint } from '@mui/material/styles';
 import type { NavSectionProps } from 'src/components/nav-section';
 
-import { varAlpha, mergeClasses } from 'minimal-shared/utils';
+import { mergeClasses } from 'minimal-shared/utils';
 
 import Box from '@mui/material/Box';
 import { styled } from '@mui/material/styles';
@@ -41,8 +41,8 @@ export function NavVertical({
   const renderNavVertical = () => (
     <>
       {slots?.topArea ?? (
-        <Box sx={{ pl: 3.5, pt: 2.5, pb: 1 }}>
-          <Logo />
+        <Box sx={{ pt: 0, pb: 1 }}>
+          <Logo width={180} height={64} />
         </Box>
       )}
 
@@ -51,7 +51,7 @@ export function NavVertical({
           data={data}
           cssVars={cssVars}
           checkPermissions={checkPermissions}
-          sx={{ px: 2, flex: '1 1 auto' }}
+          sx={{ flex: '1 1 auto' }}
         />
 
         {/* {slots?.bottomArea ?? <NavUpgrade />} */}
@@ -63,7 +63,7 @@ export function NavVertical({
     <>
       {slots?.topArea ?? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2.5 }}>
-          <Logo />
+          <Logo width={70} height={64} mini />
         </Box>
       )}
 
@@ -75,7 +75,7 @@ export function NavVertical({
           (theme) => ({
             ...theme.mixins.hideScrollY,
             pb: 2,
-            px: 0.5,
+            px: 0,
             flex: '1 1 auto',
             overflowY: 'auto',
           }),
@@ -117,14 +117,27 @@ const NavRoot = styled('div', {
   ({ isNavMini, layoutQuery = 'md', theme }) => ({
     top: 0,
     left: 0,
-    height: '100%',
     display: 'none',
     position: 'fixed',
     flexDirection: 'column',
     zIndex: 'var(--layout-nav-zIndex)',
-    backgroundColor: 'var(--layout-nav-bg)',
     width: isNavMini ? 'var(--layout-nav-mini-width)' : 'var(--layout-nav-vertical-width)',
-    borderRight: `1px solid var(--layout-nav-border-color, ${varAlpha(theme.vars.palette.grey['500Channel'], 0.12)})`,
+    maxWidth: '232px',
+    borderRadius: '24px',
+    boxShadow: `
+      0 4px 20px rgba(0, 0, 0, 0.1),
+      0 1px 4px rgba(0, 0, 0, 0.01)
+    `,
+    margin: '16px',
+    height: 'calc(100vh - 32px)',
+    padding: isNavMini ? '4px' : '24px 16px',
+    '&::before': {
+      ...theme.mixins.borderGradient({
+        padding: '2px',
+        color: `linear-gradient(to bottom left, #FFFFFF, #C6C6FF61)`,
+      }),
+      pointerEvents: 'none',
+    },
     transition: theme.transitions.create(['width'], {
       easing: 'var(--layout-transition-easing)',
       duration: 'var(--layout-transition-duration)',

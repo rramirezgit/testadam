@@ -56,6 +56,7 @@ interface EmailEditorMainProps {
   initialNote?: SavedNote | null;
   isNewsletterMode?: boolean;
   onSave?: (note: SavedNote) => void;
+  onSaveRedirect?: (id: string) => void; // Callback para redirección después de guardar
   // Nuevas props para newsletter
   newsletterNotes?: NewsletterNote[];
   onNewsletterNotesChange?: (notes: NewsletterNote[]) => void;
@@ -82,6 +83,13 @@ interface EmailEditorMainProps {
   initialCoverImageUrl?: string;
   newsletterStatus?: string;
   onNewsletterUpdate?: () => void;
+  // Props para modo view-only
+  isViewOnly?: boolean;
+  onCreateCopy?: () => void;
+  // Props para preview HTML
+  showPreview?: boolean;
+  onTogglePreview?: () => void;
+  newsletterHtmlPreview?: string;
 }
 
 export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
@@ -89,6 +97,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   defaultTemplate,
   excludeTemplates = [],
   onSave,
+  onSaveRedirect,
   savedNotes = [],
   onSaveNote,
   onClose = () => {},
@@ -117,6 +126,13 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   initialCoverImageUrl = '',
   newsletterStatus = '',
   onNewsletterUpdate = () => {},
+  // Props para modo view-only
+  isViewOnly = false,
+  onCreateCopy = () => {},
+  // Props para preview HTML
+  showPreview = false,
+  onTogglePreview = () => {},
+  newsletterHtmlPreview = '',
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
@@ -166,6 +182,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   const [showNewsletterPreview, setShowNewsletterPreview] = useState<boolean>(false);
   const [newsletterHtml, setNewsletterHtml] = useState<string>('');
   const [generatingNewsletterHtml, setGeneratingNewsletterHtml] = useState<boolean>(false);
+  const [generatedPreviewHtml, setGeneratedPreviewHtml] = useState<string>('');
 
   // Estados de diseño
   const [emailBackground, setEmailBackground] = useState<string>('#ffffff');
@@ -255,7 +272,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     textColor: '#333333',
     alignment: 'center',
     useGradient: true,
-    gradientColors: ['#FFF9CE', '#E2E5FA'],
+    gradientColors: ['#287FA9', '#1E2B62'], //['#FFF9CE', '#E2E5FA'],
     gradientDirection: 135,
     showLogo: true,
     showBanner: false,
@@ -283,7 +300,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     backgroundColor: '#f5f5f5',
     textColor: '#666666',
     useGradient: false,
-    gradientColors: ['#f5f5f5', '#e0e0e0'],
+    gradientColors: ['#287FA9', '#1E2B62'], // ['#f5f5f5', '#e0e0e0'],
     gradientDirection: 180,
     showSocial: true,
     showAddress: true,
@@ -334,6 +351,20 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   const noteData = useNoteData();
   const textFormatting = useTextFormatting();
   const resizablePanels = useResizablePanels();
+
+  // Obtener los componentes activos
+  const getActiveComponents = useCallback(
+    () => emailComponents.getActiveComponents(activeTemplate, activeVersion),
+    [emailComponents, activeTemplate, activeVersion]
+  );
+
+  // Actualizar los componentes activos
+  const updateActiveComponents = useCallback(
+    (components: any[]) => {
+      emailComponents.updateActiveComponents(activeTemplate, activeVersion, components);
+    },
+    [emailComponents, activeTemplate, activeVersion]
+  );
 
   // Hook para cargar post específico si es edición
   const { loading: loadingPost, post: currentPost } = usePost(noteData.currentNoteId);
@@ -466,6 +497,100 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     setShowNewsletterPreview(!showNewsletterPreview);
   }, [showNewsletterPreview]);
 
+  // NUEVA FUNCIÓN: Generar HTML del preview
+  const handleGeneratePreviewHtml = useCallback(async () => {
+    try {
+      const currentHeader = newsletterHeader || defaultNewsletterHeader;
+      const currentFooter = newsletterFooter || defaultNewsletterFooter;
+
+      console.log('🔄 Generando Preview HTML...');
+
+      // Obtener todos los componentes activos
+      const activeComponents = getActiveComponents();
+
+      console.log('📦 Preview - All components:', {
+        totalComponents: activeComponents.length,
+        componentTypes: activeComponents.map((c) => ({ id: c.id, type: c.type })),
+      });
+
+      // Importar la función de renderizado
+      const { renderComponentToHtml } = await import('../html-generators/index');
+
+      // Construir el HTML procesando todos los componentes en orden
+      let contentHtml = '';
+
+      activeComponents.forEach((component) => {
+        if (component.type === 'noteContainer') {
+          // Renderizar noteContainer con sus componentes internos
+          const noteBorderWidth = component.props?.containerBorderWidth ?? 1;
+          const noteBorderColor = component.props?.containerBorderColor ?? '#e0e0e0';
+          const noteBorderRadius = component.props?.containerBorderRadius ?? 12;
+          const notePadding = component.props?.containerPadding ?? 10;
+          const noteMaxWidth = component.props?.containerMaxWidth ?? 560;
+
+          contentHtml += `<div class="note-section">`;
+          contentHtml += `<div style="max-width: ${noteMaxWidth}px; margin: 0 auto; padding: ${notePadding}px; border-radius: ${noteBorderRadius}px; border: ${noteBorderWidth}px solid ${noteBorderColor}; margin-bottom: 24px;">`;
+
+          // Renderizar componentes internos
+          const componentsData = component.props?.componentsData || [];
+          componentsData.forEach((innerComponent: any) => {
+            contentHtml += renderComponentToHtml(innerComponent);
+          });
+
+          contentHtml += `</div></div>`;
+        } else {
+          // Renderizar componente suelto directamente
+          contentHtml += `<div style="margin-bottom: 16px;">`;
+          contentHtml += renderComponentToHtml(component);
+          contentHtml += `</div>`;
+        }
+      });
+
+      // Importar y usar el generador de template
+      const { generateNewsletterTemplate } = await import(
+        '../html-generators/templates/newsletter.template'
+      );
+
+      const html = generateNewsletterTemplate(
+        newsletterTitle || 'Newsletter',
+        newsletterDescription || '',
+        contentHtml,
+        currentHeader,
+        currentFooter
+      );
+
+      setGeneratedPreviewHtml(html);
+      console.log('✅ Preview HTML generado:', {
+        componentsCount: activeComponents.length,
+        htmlLength: html.length,
+        htmlPreview: html.substring(0, 200) + '...',
+      });
+    } catch (error) {
+      console.error('❌ Error generando preview HTML:', error);
+    }
+  }, [
+    getActiveComponents,
+    newsletterHeader,
+    newsletterFooter,
+    defaultNewsletterHeader,
+    defaultNewsletterFooter,
+    newsletterTitle,
+    newsletterDescription,
+  ]);
+
+  // Auto-generar preview cuando cambian las notas o se activa el preview
+  useEffect(() => {
+    if (showPreview && isNewsletterMode) {
+      handleGeneratePreviewHtml();
+    }
+  }, [showPreview, isNewsletterMode, handleGeneratePreviewHtml]);
+
+  // Wrapper para onTogglePreview que también genera el HTML
+  const handleTogglePreviewWrapper = useCallback(() => {
+    handleGeneratePreviewHtml();
+    onTogglePreview();
+  }, [handleGeneratePreviewHtml, onTogglePreview]);
+
   const handleHeaderChange = (newHeader: NewsletterHeader) => {
     const currentHeader = newsletterHeader || defaultNewsletterHeader;
     const currentFooter = newsletterFooter || defaultNewsletterFooter;
@@ -585,7 +710,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         objData: objDataString,
         objDataWeb: objDataWebString,
         configPost: JSON.stringify(configPostObject),
-        origin: 'ADAC',
+        origin: 'MICHIN',
         highlight: noteData.highlight,
       };
 
@@ -689,20 +814,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       console.log('🔄 Change detection reset after save');
     }
   }, [noteData.isEditingExistingNote, createAutoSaveData]);
-
-  // Obtener los componentes activos
-  const getActiveComponents = useCallback(
-    () => emailComponents.getActiveComponents(activeTemplate, activeVersion),
-    [emailComponents, activeTemplate, activeVersion]
-  );
-
-  // Actualizar los componentes activos
-  const updateActiveComponents = useCallback(
-    (components: any[]) => {
-      emailComponents.updateActiveComponents(activeTemplate, activeVersion, components);
-    },
-    [emailComponents, activeTemplate, activeVersion]
-  );
 
   // ⚡ Optimización: Actualizar el contenido de un componente con sincronización
   const updateComponentContent = useCallback(
@@ -1000,45 +1111,55 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       });
 
       if (isNewsletterMode) {
-        // Para newsletters, usar los componentes activos que incluyen noteContainer
+        // Para newsletters, procesar todos los componentes activos en orden
         console.log('📝 Generando HTML para newsletter con componentes activos...');
         const activeComponents = getActiveComponents();
 
-        // Filtrar solo los noteContainer para convertirlos a NewsletterNote[]
-        const noteContainers = activeComponents.filter((comp) => comp.type === 'noteContainer');
-
-        console.log('📦 Note containers found:', {
+        console.log('📦 All components for sending:', {
           totalComponents: activeComponents.length,
-          noteContainersCount: noteContainers.length,
-          noteContainerIds: noteContainers.map((n) => ({ id: n.id, title: n.props?.noteTitle })),
+          componentTypes: activeComponents.map((c) => ({ id: c.id, type: c.type })),
         });
 
-        // Convertir noteContainers a NewsletterNote[] para el generador
-        const convertedNotes: any[] = noteContainers.map((container, index) => ({
-          noteId: container.id,
-          order: index,
-          noteData: {
-            id: container.id,
-            title: container.props?.noteTitle || 'Nota sin título',
-            objData: JSON.stringify(container.props?.componentsData || []),
-            objDataWeb: '[]',
-            configNote: '{}',
-          },
-        }));
-
-        console.log('🔄 Converted notes for generator:', {
-          convertedNotesCount: convertedNotes.length,
-          notesTitles: convertedNotes.map((n) => n.noteData.title),
-        });
-
-        const { generateNewsletterHtml: generateNewsletterHtmlFn } = await import(
-          '../newsletter-html-generator'
+        // Importar funciones necesarias
+        const { renderComponentToHtml } = await import('../html-generators/index');
+        const { generateNewsletterTemplate } = await import(
+          '../html-generators/templates/newsletter.template'
         );
 
-        const generatedNewsletterHtml = generateNewsletterHtmlFn(
+        // Construir el HTML procesando todos los componentes en orden
+        let contentHtml = '';
+
+        activeComponents.forEach((component) => {
+          if (component.type === 'noteContainer') {
+            // Renderizar noteContainer con sus componentes internos
+            const noteContainerBorderWidth = component.props?.containerBorderWidth ?? 1;
+            const noteContainerBorderColor = component.props?.containerBorderColor ?? '#e0e0e0';
+            const noteContainerBorderRadius = component.props?.containerBorderRadius ?? 12;
+            const noteContainerPadding = component.props?.containerPadding ?? 10;
+            const noteContainerMaxWidth = component.props?.containerMaxWidth ?? 560;
+
+            contentHtml += `<div class="note-section">`;
+            contentHtml += `<div style="max-width: ${noteContainerMaxWidth}px; margin: 0 auto; padding: ${noteContainerPadding}px; border-radius: ${noteContainerBorderRadius}px; border: ${noteContainerBorderWidth}px solid ${noteContainerBorderColor}; margin-bottom: 24px;">`;
+
+            // Renderizar componentes internos
+            const componentsData = component.props?.componentsData || [];
+            componentsData.forEach((innerComponent: any) => {
+              contentHtml += renderComponentToHtml(innerComponent);
+            });
+
+            contentHtml += `</div></div>`;
+          } else {
+            // Renderizar componente suelto directamente
+            contentHtml += `<div style="margin-bottom: 16px;">`;
+            contentHtml += renderComponentToHtml(component);
+            contentHtml += `</div>`;
+          }
+        });
+
+        const generatedNewsletterHtml = generateNewsletterTemplate(
           newsletterTitle || 'Newsletter',
           newsletterDescription || '',
-          convertedNotes,
+          contentHtml,
           newsletterHeader || {
             title: 'Newsletter',
             subtitle: '',
@@ -1060,6 +1181,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         );
 
         console.log('✅ HTML de newsletter generado:', {
+          componentsCount: activeComponents.length,
           htmlLength: generatedNewsletterHtml.length,
           htmlPreview: generatedNewsletterHtml.substring(0, 200) + '...',
         });
@@ -1369,7 +1491,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           objData: objDataString,
           objDataWeb: objDataWebString,
           configPost: JSON.stringify(configPostObject),
-          origin: 'ADAC',
+          origin: 'MICHIN',
           highlight: noteData.highlight,
           contentTypeId: noteData.contentTypeId,
           audienceId: noteData.audienceId || null,
@@ -1386,6 +1508,11 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         if (result) {
           noteData.setCurrentNoteId(result.id);
           noteData.setIsEditingExistingNote(true);
+
+          // Redirigir a la ruta de edición si se proporciona el callback
+          if (onSaveRedirect) {
+            onSaveRedirect(result.id);
+          }
         }
       }
 
@@ -2006,13 +2133,13 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         return selectedComponentId;
       }
 
-      // Verificar si es un componente de nota del newsletter (formato: noteId-componentId)
+      // Verificar si el componente existe en el array activo con su ID completo
       const components = getActiveComponents();
       const component = components.find((c) => c.id === selectedComponentId);
 
-      if (component && component.props?.isNoteContainer) {
-        // Es un contenedor de nota, usar el ID completo
-        console.log('✅ Es un contenedor de nota, usando ID completo:', selectedComponentId);
+      if (component) {
+        // Si encontramos el componente con su ID completo, usarlo directamente
+        console.log('✅ Componente encontrado con ID completo:', selectedComponentId);
         return selectedComponentId;
       }
 
@@ -2022,8 +2149,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         return selectedComponentId;
       }
 
-      // Es un componente dentro de una nota del newsletter (formato: noteId-componentId)
-      // Solo procesar si NO es un componente inyectado
+      // Si no se encontró, puede ser un componente dentro de una nota
+      // (formato antiguo: noteId-componentId)
       const firstDashIndex = selectedComponentId.indexOf('-');
       const componentId = selectedComponentId.substring(firstDashIndex + 1);
       console.log('🔄 Componente de newsletter, extrayendo ID:', componentId);
@@ -2510,286 +2637,358 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         // Nuevas props para el status del newsletter y actualización
         newsletterStatus={newsletterStatus}
         onNewsletterUpdate={onNewsletterUpdate}
+        // Props para modo view-only
+        isViewOnly={isViewOnly}
+        onCreateCopy={onCreateCopy}
+        // Props para preview HTML
+        showPreview={showPreview}
+        onTogglePreview={handleTogglePreviewWrapper}
       />
 
       {/* Contenedor principal */}
-      <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
-        {/* Panel izquierdo - Componentes */}
+      {(() => {
+        console.log('🔍 Preview Debug:', {
+          showPreview,
+          activeTemplate,
+          isViewOnly,
+          shouldShowPreview: showPreview && activeTemplate === 'newsletter',
+        });
+        return null;
+      })()}
+      {showPreview && activeTemplate === 'newsletter' ? (
+        // Preview centrado sin paneles laterales
         <Box
-          sx={(theme) => ({
-            width: `${resizablePanels.leftPanelWidth}px`,
-            minWidth: `${resizablePanels.MIN_PANEL_WIDTH}px`,
-            maxWidth: `${resizablePanels.MAX_PANEL_WIDTH}px`,
-            flexShrink: 0,
-            padding: '16px',
-            paddingTop: '0px',
-            background: 'transparent',
-            position: 'relative',
-          })}
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            width: '100%',
+            height: '100%',
+            overflow: 'auto',
+            p: 3,
+            backgroundColor: '#f5f5f5',
+          }}
         >
-          <LeftPanel
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            expandedCategories={expandedCategories}
-            setExpandedCategories={setExpandedCategories}
-            addComponent={addComponent}
-            emailTemplates={emailTemplates}
-            activeTemplate={activeTemplate}
-            setActiveTemplate={handleTemplateChange}
-            defaultTemplate={defaultTemplate}
-            excludeTemplates={excludeTemplates}
-            initialNote={initialNote}
-            generatingEmail={generatingEmail}
-            handleGenerateEmailHtml={handleGenerateEmailHtml}
-            activeVersion={activeVersion}
-            setActiveVersion={handleVersionChange}
-            enabledComponents={enabledComponents}
-            // Nuevas props para newsletter
-            isNewsletterMode={isNewsletterMode}
-            newsletterNotes={newsletterNotes}
-            onAddNewsletterNote={handleAddNewsletterNote}
-            onEditNote={handleEditNoteFromLibrary}
-            // Nuevas props para notas disponibles
-            availableNotes={availableNotes}
-            loadingNotes={loadingNotes}
-            onInjectNote={injectNoteIntoNewsletter}
-            onRefreshNotes={loadAvailableNotes}
-          />
-
-          {/* Barra de redimensionado izquierda */}
           <Box
-            onMouseDown={resizablePanels.handleMouseDownLeft}
             sx={{
-              position: 'absolute',
-              top: 0,
-              right: 12,
-              width: '4px',
-              height: '100%',
-              cursor: 'col-resize',
-              backgroundColor: 'transparent',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.1)',
-              },
-              zIndex: 1,
+              width: '100%',
+              maxWidth: '800px',
+              backgroundColor: 'white',
+              boxShadow: 3,
+              borderRadius: 1,
             }}
-          />
+          >
+            <iframe
+              srcDoc={generatedPreviewHtml || newsletterHtmlPreview}
+              style={{
+                width: '100%',
+                height: 'calc(100vh - 150px)',
+                border: 'none',
+              }}
+              title="Newsletter Preview"
+            />
+          </Box>
         </Box>
-
-        {/* Área central - Editor de email */}
-        <Box sx={{ flexGrow: 1, overflow: 'auto', backgroundColor: 'transparent' }} ref={editorRef}>
-          {/* Visualización de los componentes del email */}
-          <EmailContent
-            getActiveComponents={getActiveComponents}
-            selectedComponentId={selectedComponentId}
-            setSelectedComponentId={setSelectedComponentId}
-            onComponentSelect={handleComponentSelect}
-            updateComponentContent={updateComponentContent}
-            updateComponentProps={updateComponentProps}
-            updateComponentStyle={updateComponentStyle}
-            handleSelectionUpdate={textFormatting.handleSelectionUpdate}
-            moveComponent={moveComponent}
-            removeComponent={removeComponent}
-            addComponent={addComponent}
-            addListItem={addListItem}
-            removeListItem={removeListItem}
-            updateListItem={updateListItem}
-            editMode={editMode}
-            selectedBanner={selectedBanner}
-            bannerOptions={bannerOptions}
-            emailBackground={emailBackground}
-            showGradient={showGradient}
-            gradientColors={gradientColors}
-            onContainerClick={handleContainerSelect}
-            isContainerSelected={isContainerSelected}
-            containerBorderWidth={activeVersion === 'web' ? 0 : containerBorderWidth}
-            containerBorderColor={activeVersion === 'web' ? 'transparent' : containerBorderColor}
-            containerBorderRadius={activeVersion === 'web' ? 0 : containerBorderRadius}
-            containerPadding={activeVersion === 'web' ? 0 : containerPadding}
-            containerMaxWidth={activeVersion === 'web' ? undefined : containerMaxWidth}
-            activeTemplate={activeTemplate}
-            activeVersion={activeVersion}
-            // Nuevas props para newsletter
-            isNewsletterMode={isNewsletterMode}
-            newsletterNotes={newsletterNotes}
-            onMoveNewsletterNote={handleMoveNewsletterNote}
-            onRemoveNewsletterNote={handleRemoveNewsletterNote}
-            onEditNewsletterNote={handleEditNoteFromLibrary}
-            // Nuevas props para preview HTML
-            showNewsletterPreview={showNewsletterPreview}
-            newsletterHtml={newsletterHtml}
-            // Nuevas funciones para editar componentes de newsletter
-            updateNewsletterNoteComponentContent={updateNewsletterNoteComponentContent}
-            updateNewsletterNoteComponentProps={updateNewsletterNoteComponentProps}
-            updateNewsletterNoteComponentStyle={updateNewsletterNoteComponentStyle}
-            moveNewsletterNoteComponent={moveNewsletterNoteComponent}
-            removeNewsletterNoteComponent={removeNewsletterNoteComponent}
-            // Props para componentes de newsletter (header y footer)
-            newsletterHeader={newsletterHeader || defaultNewsletterHeader}
-            newsletterFooter={newsletterFooter || defaultNewsletterFooter}
-            onNewsletterHeaderUpdate={(header) =>
-              onNewsletterConfigChange({
-                header,
-                footer: newsletterFooter || defaultNewsletterFooter,
-              })
-            }
-            onNewsletterFooterUpdate={(footer) =>
-              onNewsletterConfigChange({
-                header: newsletterHeader || defaultNewsletterHeader,
-                footer,
-              })
-            }
-            removeNoteContainer={removeNoteContainer}
-            onColumnSelect={handleColumnSelect}
-            selectedColumn={selectedColumn}
-          />
-        </Box>
-
-        {/* Panel derecho - Formato y estilo */}
-        <Box
-          sx={(theme) => ({
-            width: `${resizablePanels.rightPanelWidth}px`,
-            minWidth: `${resizablePanels.MIN_PANEL_WIDTH}px`,
-            maxWidth: `${resizablePanels.MAX_PANEL_WIDTH}px`,
-            flexShrink: 0,
-            padding: '16px',
-            paddingTop: '0px',
-            background: 'transparent',
-            position: 'relative',
-          })}
-        >
-          {/* Barra de redimensionado derecha */}
+      ) : (
+        // Editor normal con paneles laterales
+        <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
+          {/* Panel izquierdo - Componentes */}
           <Box
-            onMouseDown={resizablePanels.handleMouseDownRight}
-            sx={{
-              position: 'absolute',
-              top: 0,
-              width: '4px',
-              height: '100%',
-              cursor: 'col-resize',
-              backgroundColor: 'transparent',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.1)',
-              },
-              zIndex: 1,
-            }}
-          />
+            sx={(theme) => ({
+              width: `${resizablePanels.leftPanelWidth}px`,
+              minWidth: `${resizablePanels.MIN_PANEL_WIDTH}px`,
+              maxWidth: `${resizablePanels.MAX_PANEL_WIDTH}px`,
+              flexShrink: 0,
+              padding: '16px',
+              paddingTop: '0px',
+              background: 'transparent',
+              position: 'relative',
+            })}
+          >
+            <LeftPanel
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              expandedCategories={expandedCategories}
+              setExpandedCategories={setExpandedCategories}
+              addComponent={addComponent}
+              emailTemplates={emailTemplates}
+              activeTemplate={activeTemplate}
+              setActiveTemplate={handleTemplateChange}
+              defaultTemplate={defaultTemplate}
+              excludeTemplates={excludeTemplates}
+              initialNote={initialNote}
+              generatingEmail={generatingEmail}
+              handleGenerateEmailHtml={handleGenerateEmailHtml}
+              activeVersion={activeVersion}
+              setActiveVersion={handleVersionChange}
+              enabledComponents={enabledComponents}
+              // Nuevas props para newsletter
+              isNewsletterMode={isNewsletterMode}
+              newsletterNotes={newsletterNotes}
+              onAddNewsletterNote={handleAddNewsletterNote}
+              onEditNote={handleEditNoteFromLibrary}
+              // Nuevas props para notas disponibles
+              availableNotes={availableNotes}
+              loadingNotes={loadingNotes}
+              onInjectNote={injectNoteIntoNewsletter}
+              onRefreshNotes={loadAvailableNotes}
+              // Prop para modo view-only
+              isViewOnly={isViewOnly}
+            />
 
-          <RightPanel
-            selectedComponentId={getComponentIdForPanel()}
-            setSelectedComponentId={setSelectedComponentId}
-            rightPanelTab={rightPanelTab}
-            setRightPanelTab={setRightPanelTab}
-            getActiveComponents={
-              isNewsletterMode ? getActiveComponentsForPanel : getActiveComponents
-            }
-            updateComponentProps={(id, props) => updateComponentForPanel('props', id, props)}
-            updateComponentStyle={(id, style) => updateComponentForPanel('style', id, style)}
-            updateComponentContent={(id, content) =>
-              updateComponentForPanel('content', id, content)
-            }
-            selectedColor={textFormatting.selectedColor}
-            setSelectedColor={textFormatting.setSelectedColor}
-            selectedFont={textFormatting.selectedFont}
-            setSelectedFont={textFormatting.setSelectedFont}
-            selectedFontSize={textFormatting.selectedFontSize}
-            setSelectedFontSize={textFormatting.setSelectedFontSize}
-            selectedFontWeight={textFormatting.selectedFontWeight}
-            setSelectedFontWeight={textFormatting.setSelectedFontWeight}
-            selectedAlignment={textFormatting.selectedAlignment}
-            textFormat={textFormatting.textFormat}
-            applyTextFormat={textFormatting.applyTextFormat}
-            applyTextAlignment={(alignment) =>
-              textFormatting.applyTextAlignment(
-                alignment,
-                selectedComponentId,
-                updateComponentStyle
-              )
-            }
-            applyTextColor={(color) =>
-              textFormatting.applyTextColor(color, selectedComponentId, updateComponentStyle)
-            }
-            applyFontSize={(size) =>
-              textFormatting.applyFontSize(size, selectedComponentId, updateComponentStyle)
-            }
-            applyFontFamily={(font) =>
-              textFormatting.applyFontFamily(font, selectedComponentId, updateComponentStyle)
-            }
-            emailBackground={emailBackground}
-            setEmailBackground={setEmailBackground}
-            selectedBanner={selectedBanner}
-            setSelectedBanner={setSelectedBanner}
-            showGradient={showGradient}
-            setShowGradient={setShowGradient}
-            gradientColors={gradientColors}
-            setGradientColors={setGradientColors}
-            bannerOptions={bannerOptions}
-            setSelectedAlignment={textFormatting.setSelectedAlignment}
-            hasTextSelection={textFormatting.hasTextSelection}
-            listStyle={listStyle}
-            updateListStyle={updateListStyle}
-            listColor={listColor}
-            updateListColor={updateListColor}
-            convertTextToList={handleConvertTextToList}
-            setShowIconPicker={setShowIconPicker}
-            isContainerSelected={isContainerSelected}
-            setIsContainerSelected={setIsContainerSelected}
-            containerBorderWidth={containerBorderWidth}
-            setContainerBorderWidth={setContainerBorderWidth}
-            containerBorderColor={containerBorderColor}
-            setContainerBorderColor={setContainerBorderColor}
-            containerBorderRadius={containerBorderRadius}
-            setContainerBorderRadius={setContainerBorderRadius}
-            containerPadding={containerPadding}
-            setContainerPadding={setContainerPadding}
-            containerMaxWidth={containerMaxWidth}
-            setContainerMaxWidth={setContainerMaxWidth}
-            activeTemplate={activeTemplate}
-            activeVersion={activeVersion}
-            currentNoteId={noteData.currentNoteId}
-            noteTitle={noteData.noteTitle}
-            setNoteTitle={noteData.setNoteTitle}
-            noteDescription={noteData.noteDescription}
-            setNoteDescription={noteData.setNoteDescription}
-            noteCoverImageUrl={noteData.noteCoverImageUrl}
-            setNoteCoverImageUrl={noteData.setNoteCoverImageUrl}
-            noteStatus={noteData.noteStatus}
-            setNoteStatus={noteData.setNoteStatus}
-            updateStatus={noteData.updateStatus}
-            contentTypeId={noteData.contentTypeId}
-            setContentTypeId={noteData.setContentTypeId}
-            audienceId={noteData.audienceId}
-            setAudienceId={noteData.setAudienceId}
-            categoryId={noteData.categoryId}
-            setCategoryId={noteData.setCategoryId}
-            subcategoryId={noteData.subcategoryId}
-            setSubcategoryId={noteData.setSubcategoryId}
-            selectedColumn={selectedColumn}
-            injectComponentsToNewsletter={injectComponentsToNewsletter}
-            removeNoteContainer={removeNoteContainer}
-            showValidationErrors={showValidationErrors}
-            highlight={noteData.highlight}
-            setHighlight={noteData.setHighlight}
-            // Props para newsletter
-            isNewsletterMode={isNewsletterMode}
-            newsletterTitle={newsletterTitle}
-            onNewsletterTitleChange={(title) =>
-              onNewsletterInfoChange({ title, description: newsletterDescription })
-            }
-            newsletterDescription={newsletterDescription}
-            onNewsletterDescriptionChange={(description) =>
-              onNewsletterInfoChange({ title: newsletterTitle, description })
-            }
-            newsletterHeader={newsletterHeader || defaultNewsletterHeader}
-            newsletterFooter={newsletterFooter || defaultNewsletterFooter}
-            onHeaderChange={handleHeaderChange}
-            onFooterChange={handleFooterChange}
-            onNewsletterConfigChange={onNewsletterConfigChange}
-            newsletterStatus={newsletterStatus}
-            currentNewsletterId={currentNewsletterId}
-            onNewsletterUpdate={onNewsletterUpdate}
-          />
+            {/* Barra de redimensionado izquierda */}
+            <Box
+              onMouseDown={resizablePanels.handleMouseDownLeft}
+              sx={{
+                position: 'absolute',
+                top: 0,
+                right: 12,
+                width: '4px',
+                height: '100%',
+                cursor: 'col-resize',
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+                zIndex: 1,
+              }}
+            />
+          </Box>
+
+          {/* Área central - Editor de email */}
+          <Box
+            sx={{ flexGrow: 1, overflow: 'auto', backgroundColor: 'transparent' }}
+            ref={editorRef}
+          >
+            {/* Visualización de los componentes del email */}
+            <EmailContent
+              getActiveComponents={getActiveComponents}
+              selectedComponentId={selectedComponentId}
+              setSelectedComponentId={isViewOnly ? () => {} : setSelectedComponentId}
+              onComponentSelect={isViewOnly ? () => {} : handleComponentSelect}
+              updateComponentContent={isViewOnly ? () => {} : updateComponentContent}
+              updateComponentProps={isViewOnly ? () => {} : updateComponentProps}
+              updateComponentStyle={isViewOnly ? () => {} : updateComponentStyle}
+              handleSelectionUpdate={isViewOnly ? () => {} : textFormatting.handleSelectionUpdate}
+              moveComponent={isViewOnly ? () => {} : moveComponent}
+              removeComponent={isViewOnly ? () => {} : removeComponent}
+              addComponent={isViewOnly ? () => {} : addComponent}
+              addListItem={isViewOnly ? () => {} : addListItem}
+              removeListItem={isViewOnly ? () => {} : removeListItem}
+              updateListItem={isViewOnly ? () => {} : updateListItem}
+              editMode={isViewOnly ? false : editMode}
+              isViewOnly={isViewOnly}
+              selectedBanner={selectedBanner}
+              bannerOptions={bannerOptions}
+              emailBackground={emailBackground}
+              showGradient={showGradient}
+              gradientColors={gradientColors}
+              onContainerClick={handleContainerSelect}
+              isContainerSelected={isContainerSelected}
+              containerBorderWidth={activeVersion === 'web' ? 0 : containerBorderWidth}
+              containerBorderColor={activeVersion === 'web' ? 'transparent' : containerBorderColor}
+              containerBorderRadius={activeVersion === 'web' ? 0 : containerBorderRadius}
+              containerPadding={activeVersion === 'web' ? 0 : containerPadding}
+              containerMaxWidth={activeVersion === 'web' ? undefined : containerMaxWidth}
+              activeTemplate={activeTemplate}
+              activeVersion={activeVersion}
+              // Nuevas props para newsletter
+              isNewsletterMode={isNewsletterMode}
+              newsletterNotes={newsletterNotes}
+              onMoveNewsletterNote={isViewOnly ? () => {} : handleMoveNewsletterNote}
+              onRemoveNewsletterNote={isViewOnly ? () => {} : handleRemoveNewsletterNote}
+              onEditNewsletterNote={isViewOnly ? () => {} : handleEditNoteFromLibrary}
+              // Nuevas props para preview HTML
+              showNewsletterPreview={showNewsletterPreview}
+              newsletterHtml={newsletterHtml}
+              // Nuevas funciones para editar componentes de newsletter
+              updateNewsletterNoteComponentContent={
+                isViewOnly ? () => {} : updateNewsletterNoteComponentContent
+              }
+              updateNewsletterNoteComponentProps={
+                isViewOnly ? () => {} : updateNewsletterNoteComponentProps
+              }
+              updateNewsletterNoteComponentStyle={
+                isViewOnly ? () => {} : updateNewsletterNoteComponentStyle
+              }
+              moveNewsletterNoteComponent={isViewOnly ? () => {} : moveNewsletterNoteComponent}
+              removeNewsletterNoteComponent={isViewOnly ? () => {} : removeNewsletterNoteComponent}
+              // Props para componentes de newsletter (header y footer)
+              newsletterHeader={newsletterHeader || defaultNewsletterHeader}
+              newsletterFooter={newsletterFooter || defaultNewsletterFooter}
+              onNewsletterHeaderUpdate={
+                isViewOnly
+                  ? () => {}
+                  : (header) =>
+                      onNewsletterConfigChange({
+                        header,
+                        footer: newsletterFooter || defaultNewsletterFooter,
+                      })
+              }
+              onNewsletterFooterUpdate={
+                isViewOnly
+                  ? () => {}
+                  : (footer) =>
+                      onNewsletterConfigChange({
+                        header: newsletterHeader || defaultNewsletterHeader,
+                        footer,
+                      })
+              }
+              removeNoteContainer={isViewOnly ? () => {} : removeNoteContainer}
+              onColumnSelect={isViewOnly ? () => {} : handleColumnSelect}
+              selectedColumn={selectedColumn}
+            />
+          </Box>
+
+          {/* Panel derecho - Formato y estilo */}
+          <Box
+            sx={(theme) => ({
+              width: `${resizablePanels.rightPanelWidth}px`,
+              minWidth: `${resizablePanels.MIN_PANEL_WIDTH}px`,
+              maxWidth: `${resizablePanels.MAX_PANEL_WIDTH}px`,
+              flexShrink: 0,
+              padding: '16px',
+              paddingTop: '0px',
+              background: 'transparent',
+              position: 'relative',
+            })}
+          >
+            {/* Barra de redimensionado derecha */}
+            <Box
+              onMouseDown={resizablePanels.handleMouseDownRight}
+              sx={{
+                position: 'absolute',
+                top: 0,
+                width: '4px',
+                height: '100%',
+                cursor: 'col-resize',
+                backgroundColor: 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                },
+                zIndex: 1,
+              }}
+            />
+
+            <RightPanel
+              selectedComponentId={getComponentIdForPanel()}
+              setSelectedComponentId={setSelectedComponentId}
+              rightPanelTab={rightPanelTab}
+              setRightPanelTab={setRightPanelTab}
+              getActiveComponents={
+                isNewsletterMode ? getActiveComponentsForPanel : getActiveComponents
+              }
+              updateComponentProps={(id, props) => updateComponentForPanel('props', id, props)}
+              updateComponentStyle={(id, style) => updateComponentForPanel('style', id, style)}
+              updateComponentContent={(id, content) =>
+                updateComponentForPanel('content', id, content)
+              }
+              selectedColor={textFormatting.selectedColor}
+              setSelectedColor={textFormatting.setSelectedColor}
+              selectedFont={textFormatting.selectedFont}
+              setSelectedFont={textFormatting.setSelectedFont}
+              selectedFontSize={textFormatting.selectedFontSize}
+              setSelectedFontSize={textFormatting.setSelectedFontSize}
+              selectedFontWeight={textFormatting.selectedFontWeight}
+              setSelectedFontWeight={textFormatting.setSelectedFontWeight}
+              selectedAlignment={textFormatting.selectedAlignment}
+              textFormat={textFormatting.textFormat}
+              applyTextFormat={textFormatting.applyTextFormat}
+              applyTextAlignment={(alignment) =>
+                textFormatting.applyTextAlignment(
+                  alignment,
+                  selectedComponentId,
+                  updateComponentStyle
+                )
+              }
+              applyTextColor={(color) =>
+                textFormatting.applyTextColor(color, selectedComponentId, updateComponentStyle)
+              }
+              applyFontSize={(size) =>
+                textFormatting.applyFontSize(size, selectedComponentId, updateComponentStyle)
+              }
+              applyFontFamily={(font) =>
+                textFormatting.applyFontFamily(font, selectedComponentId, updateComponentStyle)
+              }
+              emailBackground={emailBackground}
+              setEmailBackground={setEmailBackground}
+              selectedBanner={selectedBanner}
+              setSelectedBanner={setSelectedBanner}
+              showGradient={showGradient}
+              setShowGradient={setShowGradient}
+              gradientColors={gradientColors}
+              setGradientColors={setGradientColors}
+              bannerOptions={bannerOptions}
+              setSelectedAlignment={textFormatting.setSelectedAlignment}
+              hasTextSelection={textFormatting.hasTextSelection}
+              listStyle={listStyle}
+              updateListStyle={updateListStyle}
+              listColor={listColor}
+              updateListColor={updateListColor}
+              convertTextToList={handleConvertTextToList}
+              setShowIconPicker={setShowIconPicker}
+              isContainerSelected={isContainerSelected}
+              setIsContainerSelected={setIsContainerSelected}
+              containerBorderWidth={containerBorderWidth}
+              setContainerBorderWidth={setContainerBorderWidth}
+              containerBorderColor={containerBorderColor}
+              setContainerBorderColor={setContainerBorderColor}
+              containerBorderRadius={containerBorderRadius}
+              setContainerBorderRadius={setContainerBorderRadius}
+              containerPadding={containerPadding}
+              setContainerPadding={setContainerPadding}
+              containerMaxWidth={containerMaxWidth}
+              setContainerMaxWidth={setContainerMaxWidth}
+              activeTemplate={activeTemplate}
+              activeVersion={activeVersion}
+              currentNoteId={noteData.currentNoteId}
+              noteTitle={noteData.noteTitle}
+              setNoteTitle={noteData.setNoteTitle}
+              noteDescription={noteData.noteDescription}
+              setNoteDescription={noteData.setNoteDescription}
+              noteCoverImageUrl={noteData.noteCoverImageUrl}
+              setNoteCoverImageUrl={noteData.setNoteCoverImageUrl}
+              noteStatus={noteData.noteStatus}
+              setNoteStatus={noteData.setNoteStatus}
+              updateStatus={noteData.updateStatus}
+              contentTypeId={noteData.contentTypeId}
+              setContentTypeId={noteData.setContentTypeId}
+              audienceId={noteData.audienceId}
+              setAudienceId={noteData.setAudienceId}
+              categoryId={noteData.categoryId}
+              setCategoryId={noteData.setCategoryId}
+              subcategoryId={noteData.subcategoryId}
+              setSubcategoryId={noteData.setSubcategoryId}
+              selectedColumn={selectedColumn}
+              injectComponentsToNewsletter={injectComponentsToNewsletter}
+              removeNoteContainer={removeNoteContainer}
+              showValidationErrors={showValidationErrors}
+              highlight={noteData.highlight}
+              setHighlight={noteData.setHighlight}
+              // Props para newsletter
+              isNewsletterMode={isNewsletterMode}
+              newsletterTitle={newsletterTitle}
+              onNewsletterTitleChange={(title) =>
+                onNewsletterInfoChange({ title, description: newsletterDescription })
+              }
+              newsletterDescription={newsletterDescription}
+              onNewsletterDescriptionChange={(description) =>
+                onNewsletterInfoChange({ title: newsletterTitle, description })
+              }
+              newsletterHeader={newsletterHeader || defaultNewsletterHeader}
+              newsletterFooter={newsletterFooter || defaultNewsletterFooter}
+              onHeaderChange={handleHeaderChange}
+              onFooterChange={handleFooterChange}
+              onNewsletterConfigChange={onNewsletterConfigChange}
+              newsletterStatus={newsletterStatus}
+              currentNewsletterId={currentNewsletterId}
+              onNewsletterUpdate={onNewsletterUpdate}
+              // Prop para modo view-only
+              isViewOnly={isViewOnly}
+            />
+          </Box>
         </Box>
-      </Box>
+      )}
 
       {/* Diálogo de vista previa */}
       <CustomDialog

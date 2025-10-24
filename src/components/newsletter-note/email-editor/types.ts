@@ -116,4 +116,11 @@ export interface EmailEditorProps {
   // Props para el flujo de aprobación/programación
   newsletterStatus?: string;
   onNewsletterUpdate?: () => void;
+  // Props para modo view-only
+  isViewOnly?: boolean;
+  onCreateCopy?: () => void;
+  // Props para preview HTML
+  showPreview?: boolean;
+  onTogglePreview?: () => void;
+  newsletterHtmlPreview?: string;
 }

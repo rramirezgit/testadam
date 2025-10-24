@@ -186,6 +186,21 @@ export interface PostFilters {
   usedInNewsletter?: boolean;
   orderBy?: string;
   newsletterId?: string;
+  categoryId?: string;
+  subcategoryId?: string;
+  contentTypeId?: string;
+}
+
+export interface NewsletterFilters {
+  page?: number;
+  perPage?: number;
+  status?: string;
+  createdStartDate?: string;
+  createdEndDate?: string;
+  scheduledStartDate?: string;
+  scheduledEndDate?: string;
+  subject?: string;
+  orderBy?: string;
 }
 
 // Datos para envío de test

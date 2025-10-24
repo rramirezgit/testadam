@@ -24,12 +24,14 @@ interface NewsletterFooterReusableOptionsProps {
   selectedComponent: any;
   updateComponentProps: (id: string, props: Record<string, any>) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
+  isViewOnly?: boolean;
 }
 
 const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsProps> = ({
   selectedComponent,
   updateComponentProps,
   updateComponentStyle,
+  isViewOnly = false,
 }) => {
   const props = selectedComponent?.props || {};
 
@@ -68,6 +70,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
             fullWidth
             size="small"
             placeholder="Tu Empresa"
+            disabled={isViewOnly}
           />
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -78,6 +81,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
               checked={props.showAddress || true}
               onChange={(e) => updateProp('showAddress', e.target.checked)}
               size="small"
+              disabled={isViewOnly}
             />
           </Box>
 
@@ -91,6 +95,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
               rows={2}
               size="small"
               placeholder="Calle, Ciudad, País"
+              disabled={isViewOnly}
             />
           )}
 
@@ -102,6 +107,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
             fullWidth
             size="small"
             placeholder="contacto@tuempresa.com"
+            disabled={isViewOnly}
           />
 
           <TextField
@@ -111,6 +117,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
             fullWidth
             size="small"
             placeholder="#unsubscribe"
+            disabled={isViewOnly}
           />
         </Box>
       </Box>
@@ -131,6 +138,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
                 checked={props.showLogo || false}
                 onChange={(e) => updateProp('showLogo', e.target.checked)}
                 size="small"
+                disabled={isViewOnly}
               />
             }
             label="Mostrar Logo"
@@ -145,6 +153,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
                 placeholder={CONFIG.defaultLogoUrl}
                 fullWidth
                 size="small"
+                disabled={isViewOnly}
               />
               <Box>
                 <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
@@ -157,6 +166,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
                   max={100}
                   step={0.1}
                   valueLabelDisplay="auto"
+                  disabled={isViewOnly}
                 />
               </Box>
             </>
@@ -174,13 +184,21 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <SimpleTipTapEditor
-            content={props.footerText || ''}
-            onChange={(content) => updateProp('footerText', content)}
-            showToolbar
-            placeholder="Este correo electrónico se le envió como miembro registrado..."
-            style={{ minHeight: '100px' }}
-          />
+          <Box
+            sx={{
+              position: 'relative',
+              pointerEvents: isViewOnly ? 'none' : 'auto',
+              opacity: isViewOnly ? 0.6 : 1,
+            }}
+          >
+            <SimpleTipTapEditor
+              content={props.footerText || ''}
+              onChange={(content) => updateProp('footerText', content)}
+              showToolbar
+              placeholder="Este correo electrónico se le envió como miembro registrado..."
+              style={{ minHeight: '100px' }}
+            />
+          </Box>
         </Box>
       </Box>
 
@@ -215,6 +233,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
                 checked={props.useGradient || false}
                 onChange={(e) => updateProp('useGradient', e.target.checked)}
                 size="small"
+                disabled={isViewOnly}
               />
             </Box>
 
@@ -227,7 +246,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
                   <ColorPicker
                     color={props.gradientColors?.[0] || '#f5f5f5'}
                     onChange={(color) => {
-                      const colors = props.gradientColors || ['#f5f5f5', '#e0e0e0'];
+                      const colors = props.gradientColors || ['#287FA9', '#1E2B62']; // ['#f5f5f5', '#e0e0e0'];
                       updateProp('gradientColors', [color, colors[1]]);
                     }}
                   />
@@ -239,7 +258,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
                   <ColorPicker
                     color={props.gradientColors?.[1] || '#e0e0e0'}
                     onChange={(color) => {
-                      const colors = props.gradientColors || ['#f5f5f5', '#e0e0e0'];
+                      const colors = props.gradientColors || ['#287FA9', '#1E2B62']; // ['#f5f5f5', '#e0e0e0'];
                       updateProp('gradientColors', [colors[0], color]);
                     }}
                   />
@@ -256,6 +275,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
                     step={45}
                     marks
                     size="small"
+                    disabled={isViewOnly}
                   />
                 </Box>
               </Box>
@@ -285,6 +305,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
               step={4}
               marks
               size="small"
+              disabled={isViewOnly}
             />
           </Box>
 
@@ -301,6 +322,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
               step={1}
               marks
               size="small"
+              disabled={isViewOnly}
             />
           </Box>
         </Box>
@@ -324,6 +346,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
               checked={props.showSocial || false}
               onChange={(e) => updateProp('showSocial', e.target.checked)}
               size="small"
+              disabled={isViewOnly}
             />
           </Box>
 
@@ -359,6 +382,7 @@ const NewsletterFooterReusableOptions: React.FC<NewsletterFooterReusableOptionsP
                       fullWidth
                       size="small"
                       placeholder="/usuario"
+                      disabled={isViewOnly}
                       InputProps={{
                         startAdornment: iconUrl && (
                           <InputAdornment position="start">

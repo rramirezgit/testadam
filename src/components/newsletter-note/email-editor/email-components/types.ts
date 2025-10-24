@@ -26,10 +26,12 @@ export interface ComponentWithToolbarProps {
   index: number;
   totalComponents: number;
   componentId: string;
+  componentType?: string;
   moveComponent: (id: string, direction: 'up' | 'down') => void;
   removeComponent: (id: string) => void;
   children: React.ReactNode;
   onClick: (e: React.MouseEvent) => void;
+  isViewOnly?: boolean;
 }
 
 // Tipo para categoría

@@ -88,7 +88,7 @@ const designTemplates: DesignTemplate[] = [
       backgroundColor: '#f5f5f5',
       textColor: '#666666',
       useGradient: false,
-      gradientColors: ['#f5f5f5', '#e0e0e0'],
+      gradientColors: ['#287FA9', '#1E2B62'], // ['#f5f5f5', '#e0e0e0'],
       gradientDirection: 0,
     },
   },
@@ -701,7 +701,7 @@ export default function NewsletterDesignSystem({
                   sx={{
                     backgroundColor: footer.backgroundColor,
                     background: footer.useGradient
-                      ? `linear-gradient(${footer.gradientDirection || 180}deg, ${(footer.gradientColors || ['#f5f5f5', '#e0e0e0']).join(', ')})`
+                      ? `linear-gradient(${footer.gradientDirection || 180}deg, ${(footer.gradientColors || ['#287FA9', '#1E2B62']).join(', ')})`
                       : footer.backgroundColor,
                     color: footer.textColor,
                     textAlign: 'center',

@@ -1,11 +1,17 @@
 import axios from 'axios';
 
+import { CONFIG } from 'src/global-config';
+
 import { getStorage } from '../hooks/use-local-storage';
 
-export const createAxiosInstance = () => {
+interface AxiosInstanceProps {
+  isIA?: boolean;
+}
+
+export const createAxiosInstance = ({ isIA = false }: AxiosInstanceProps = {}) => {
   const accessToken = getStorage('AUTH_TOKEN');
   const instance = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || '',
+    baseURL: isIA ? CONFIG.serverUrlIA : CONFIG.serverUrl,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
@@ -90,6 +96,7 @@ export const endpoints = {
     findAll: '/newsletters',
     findById: (id: string) => `/newsletters/${id}`,
     update: (id: string) => `/newsletters/${id}`,
+    delete: (id: string) => `/newsletters/${id}`,
     send: (id: string) => `/newsletters/${id}/send`,
     sendForReview: (id: string) => `/newsletters/${id}/send-for-review`,
     requestApproval: (id: string) => `/newsletters/${id}/request-approval`,

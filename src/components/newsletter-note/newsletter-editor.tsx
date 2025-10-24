@@ -9,7 +9,8 @@ import type { Newsletter, NewsletterNote } from 'src/types/newsletter';
 
 import { v4 as uuidv4 } from 'uuid';
 import { Icon } from '@iconify/react';
-import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import { Box, Button, Dialog, Typography, IconButton } from '@mui/material';
 
@@ -84,6 +85,7 @@ interface NewsletterEditorProps {
   onClose: () => void;
   initialNewsletter?: Newsletter | null;
   defaultTemplate?: string;
+  onSaveRedirect?: (id: string) => void; // Callback para redirección después de guardar
 }
 
 // Interfaz para tracking de ediciones de notas
@@ -98,6 +100,7 @@ export default function NewsletterEditor({
   onClose,
   initialNewsletter,
   defaultTemplate,
+  onSaveRedirect,
 }: NewsletterEditorProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -132,6 +135,9 @@ export default function NewsletterEditor({
   // Estado para los componentes iniciales del newsletter
   const [initialComponents, setInitialComponents] = useState<any[] | null>(null);
 
+  // Estado para preview HTML
+  const [showPreview, setShowPreview] = useState(false);
+
   // Estados para configuración del newsletter
   const [header, setHeader] = useState<NewsletterHeader>({
     title: '',
@@ -143,7 +149,7 @@ export default function NewsletterEditor({
     textColor: '#333333',
     alignment: 'center',
     useGradient: true,
-    gradientColors: ['#FFF9CE', '#E2E5FA'],
+    gradientColors: ['#287FA9', '#1E2B62'], //['#FFF9CE', '#E2E5FA'],
     gradientDirection: 135,
     showLogo: true,
     showBanner: false,
@@ -182,7 +188,7 @@ export default function NewsletterEditor({
     showLogo: true,
     logo: CONFIG.defaultLogoUrl,
     logoHeight: 40.218,
-    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de ADAC. El uso del servicio y del sitio web está sujeto a nuestros <a href="#" style="color: #1976d2;">Términos de uso</a> y <a href="#" style="color: #1976d2;">Declaración de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir mas estos emails <a href="#unsubscribe" style="color: #1976d2;">Unsubscribe</a></p>`,
+    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de Michin. El uso del servicio y del sitio web está sujeto a nuestros <a href="#" style="color: #1976d2;">Términos de uso</a> y <a href="#" style="color: #1976d2;">Declaración de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir mas estos emails <a href="#unsubscribe" style="color: #1976d2;">Unsubscribe</a></p>`,
   });
 
   // Use Zustand store
@@ -201,7 +207,17 @@ export default function NewsletterEditor({
     findById: findPostById,
     loading: loadingPosts,
     findNewsletterById,
+    createNewsletter: createNewsletterBackend,
   } = usePostStore();
+
+  // Router for navigation
+  const router = useRouter();
+
+  // Generar HTML del newsletter para preview
+  const newsletterHtmlPreview = useMemo(
+    () => generateFullNewsletterHtml(title, description, selectedNotes, header, footer),
+    [title, description, selectedNotes, header, footer]
+  );
 
   // State for backend notes
   const [backendNotes, setBackendNotes] = useState<any[]>([]);
@@ -381,6 +397,74 @@ export default function NewsletterEditor({
     }
   };
 
+  // Detectar si el newsletter está en modo view-only
+  const isViewOnly = newsletterStatus === 'SENDED';
+
+  console.log('🔍 Newsletter Status Debug:', {
+    newsletterStatus,
+    isViewOnly,
+    showPreview,
+    computedShowPreview: isViewOnly || showPreview,
+  });
+
+  // Función para crear una copia del newsletter
+  const handleCreateCopy = async () => {
+    try {
+      showSnackbar('Creando copia del newsletter...', 'info');
+
+      // 1. Generar HTML del newsletter actual
+      const newsletterHtml = generateFullNewsletterHtml(
+        title,
+        description,
+        selectedNotes,
+        header,
+        footer
+      );
+
+      // 2. Crear nuevo newsletter con estado DRAFT
+      const copyPayload = {
+        subject: `Copia - ${title}`,
+        content: newsletterHtml,
+        description,
+        notesCount: selectedNotes.length,
+        notes: selectedNotes.map((note) => ({
+          noteId: note.noteId,
+          order: note.order,
+          title: note.noteData.title,
+        })),
+        configuration: {
+          header,
+          footer,
+        },
+        status: 'DRAFT',
+        coverImageUrl,
+      };
+
+      // 3. Llamar a createNewsletter del backend
+      const result = await createNewsletterBackend(copyPayload.subject, copyPayload);
+
+      // 4. Redirigir a editar la copia
+      if (result && result.id) {
+        showSnackbar('Copia creada exitosamente en estado DRAFT', 'success');
+
+        // Usar router si está disponible
+        if (router) {
+          setTimeout(() => {
+            router.push(`/edit/newsletter/${result.id}`);
+          }, 1000);
+        } else {
+          // Fallback si no hay router
+          setTimeout(() => {
+            window.location.href = `/edit/newsletter/${result.id}`;
+          }, 1000);
+        }
+      }
+    } catch (error) {
+      console.error('Error creando copia:', error);
+      showSnackbar('Error al crear la copia del newsletter', 'error');
+    }
+  };
+
   const handleSaveNote = (updatedNote: SavedNote) => {
     if (isCreatingNewNote) {
       const newNewsletterNote: NewsletterNote = {
@@ -491,6 +575,14 @@ export default function NewsletterEditor({
         updateNewsletter(newsletter);
       } else {
         addNewsletter(newsletter);
+
+        // Redirigir a la ruta de edición si se proporciona el callback
+        if (onSaveRedirect) {
+          setTimeout(() => {
+            onSaveRedirect(newsletterId);
+          }, 500);
+          return; // Salir temprano para no llamar onClose
+        }
       }
 
       showSnackbar(
@@ -641,6 +733,14 @@ export default function NewsletterEditor({
         }}
         newsletterStatus={newsletterStatus}
         onNewsletterUpdate={handleNewsletterUpdate}
+        isViewOnly={isViewOnly}
+        onCreateCopy={handleCreateCopy}
+        showPreview={isViewOnly || showPreview}
+        onTogglePreview={() => {
+          setShowPreview(!showPreview);
+          // El HTML ya se genera automáticamente via useMemo en línea 217-220
+        }}
+        newsletterHtmlPreview={newsletterHtmlPreview}
       />
 
       {/* Note Editor Dialog */}

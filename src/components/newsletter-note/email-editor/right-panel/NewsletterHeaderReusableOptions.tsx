@@ -21,12 +21,14 @@ interface NewsletterHeaderReusableOptionsProps {
   selectedComponent: any;
   updateComponentProps: (id: string, props: Record<string, any>) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
+  isViewOnly?: boolean;
 }
 
 const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsProps> = ({
   selectedComponent,
   updateComponentProps,
   updateComponentStyle,
+  isViewOnly = false,
 }) => {
   const props = selectedComponent?.props || {};
 
@@ -57,6 +59,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
             onChange={(e) => updateProp('title', e.target.value)}
             fullWidth
             size="small"
+            disabled={isViewOnly}
           />
 
           <TextField
@@ -67,6 +70,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
             multiline
             rows={2}
             size="small"
+            disabled={isViewOnly}
           />
         </Box>
       </Box>
@@ -92,6 +96,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
               onChange={(_, value) => value && updateProp('alignment', value)}
               size="small"
               fullWidth
+              disabled={isViewOnly}
             >
               <ToggleButton value="left">
                 <Icon icon="mdi:format-align-left" />
@@ -126,6 +131,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                 checked={props.useGradient || false}
                 onChange={(e) => updateProp('useGradient', e.target.checked)}
                 size="small"
+                disabled={isViewOnly}
               />
             </Box>
 
@@ -138,7 +144,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                   <ColorPicker
                     color={props.gradientColors?.[0] || '#FFF9CE'}
                     onChange={(color) => {
-                      const colors = props.gradientColors || ['#FFF9CE', '#E2E5FA'];
+                      const colors = props.gradientColors || ['#287FA9', '#1E2B62']; // ['#FFF9CE', '#E2E5FA'];
                       updateProp('gradientColors', [color, colors[1]]);
                     }}
                   />
@@ -150,7 +156,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                   <ColorPicker
                     color={props.gradientColors?.[1] || '#E2E5FA'}
                     onChange={(color) => {
-                      const colors = props.gradientColors || ['#FFF9CE', '#E2E5FA'];
+                      const colors = props.gradientColors || ['#287FA9', '#1E2B62']; // ['#FFF9CE', '#E2E5FA'];
                       updateProp('gradientColors', [colors[0], color]);
                     }}
                   />
@@ -167,6 +173,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                     step={45}
                     marks
                     size="small"
+                    disabled={isViewOnly}
                   />
                 </Box>
               </Box>
@@ -196,6 +203,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
               step={8}
               marks
               size="small"
+              disabled={isViewOnly}
             />
           </Box>
         </Box>
@@ -219,6 +227,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
               checked={props.showLogo || false}
               onChange={(e) => updateProp('showLogo', e.target.checked)}
               size="small"
+              disabled={isViewOnly}
             />
           </Box>
 
@@ -231,6 +240,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                 fullWidth
                 size="small"
                 placeholder="https://ejemplo.com/logo.png"
+                disabled={isViewOnly}
               />
 
               <TextField
@@ -240,6 +250,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                 fullWidth
                 size="small"
                 placeholder="Descripción del logo"
+                disabled={isViewOnly}
               />
 
               <Box>
@@ -254,6 +265,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                   step={10}
                   marks
                   size="small"
+                  disabled={isViewOnly}
                 />
               </Box>
             </>
@@ -279,6 +291,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
               checked={props.showBanner || false}
               onChange={(e) => updateProp('showBanner', e.target.checked)}
               size="small"
+              disabled={isViewOnly}
             />
           </Box>
 
@@ -290,6 +303,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
               fullWidth
               size="small"
               placeholder="https://ejemplo.com/banner.jpg"
+              disabled={isViewOnly}
             />
           )}
         </Box>
@@ -313,6 +327,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
               checked={props.sponsor?.enabled || false}
               onChange={(e) => updateSponsorProp('enabled', e.target.checked)}
               size="small"
+              disabled={isViewOnly}
             />
           </Box>
 
@@ -325,6 +340,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                 fullWidth
                 size="small"
                 placeholder="Juntos con"
+                disabled={isViewOnly}
               />
 
               <TextField
@@ -334,6 +350,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                 fullWidth
                 size="small"
                 placeholder="https://ejemplo.com/sponsor.png"
+                disabled={isViewOnly}
               />
 
               <TextField
@@ -343,6 +360,7 @@ const NewsletterHeaderReusableOptions: React.FC<NewsletterHeaderReusableOptionsP
                 fullWidth
                 size="small"
                 placeholder="Logo del sponsor"
+                disabled={isViewOnly}
               />
             </>
           )}

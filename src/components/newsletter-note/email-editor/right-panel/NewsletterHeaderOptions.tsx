@@ -37,7 +37,7 @@ export default function NewsletterHeaderOptions({
   };
 
   const handleGradientColorChange = (index: number, color: string) => {
-    const newColors = [...(props.gradientColors || ['#FFF9CE', '#E2E5FA'])];
+    const newColors = [...(props.gradientColors || ['#287FA9', '#1E2B62'])]; // ; || ['#FFF9CE', '#E2E5FA'])]
     newColors[index] = color;
     handlePropChange('gradientColors', newColors);
   };

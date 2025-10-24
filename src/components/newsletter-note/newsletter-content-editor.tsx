@@ -231,7 +231,7 @@ export default function NewsletterContentEditor({
     backgroundColor: '#f5f5f5',
     textColor: '#666666',
     useGradient: false,
-    gradientColors: ['#f5f5f5', '#e0e0e0'],
+    gradientColors: ['#287FA9', '#1E2B62'], // ['#f5f5f5', '#e0e0e0'],
     gradientDirection: 180,
     showSocial: true,
     showAddress: true,
@@ -240,7 +240,7 @@ export default function NewsletterContentEditor({
     showLogo: true,
     logo: CONFIG.defaultLogoUrl,
     logoHeight: 40.218,
-    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de ADAC. El uso del servicio y del sitio web está sujeto a nuestros <a href="#" style="color: #1976d2;">Términos de uso</a> y <a href="#" style="color: #1976d2;">Declaración de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir mas estos emails <a href="#unsubscribe" style="color: #1976d2;">Unsubscribe</a></p>`,
+    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de MICHIN. El uso del servicio y del sitio web está sujeto a nuestros <a href="#" style="color: #1976d2;">Términos de uso</a> y <a href="#" style="color: #1976d2;">Declaración de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir mas estos emails <a href="#unsubscribe" style="color: #1976d2;">Unsubscribe</a></p>`,
   });
 
   // Design settings

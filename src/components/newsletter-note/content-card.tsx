@@ -9,19 +9,24 @@ import type { Newsletter } from 'src/types/newsletter';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Icon } from '@iconify/react';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
 import {
   Box,
   Card,
   Chip,
+  Menu,
   Alert,
   Button,
+  Divider,
   Snackbar,
+  MenuItem,
   Typography,
   IconButton,
   CardContent,
-  CardActions,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 
 import usePostStore from 'src/store/PostStore';
@@ -29,13 +34,16 @@ import usePostStore from 'src/store/PostStore';
 interface ContentCardProps {
   content: Article | Newsletter;
   type: 'note' | 'newsletter';
-  onOpen: (content: Article | Newsletter) => void;
+  onOpen?: (content: Article | Newsletter) => void;
   onDelete: (contentId: string) => void;
 }
 
 export default function ContentCard({ content, type, onOpen, onDelete }: ContentCardProps) {
+  const router = useRouter();
   const [fecha, setFecha] = useState<string>('');
   const [hora, setHora] = useState<string>('');
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const menuOpen = Boolean(anchorEl);
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -63,6 +71,31 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
     setNotification((prev) => ({ ...prev, open: false }));
   };
 
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = (event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    setAnchorEl(null);
+  };
+
+  const handleDuplicate = (event: React.MouseEvent) => {
+    handleMenuClose(event);
+    showNotification('Función en desarrollo', 'info');
+  };
+
+  const handleRename = (event: React.MouseEvent) => {
+    handleMenuClose(event);
+    showNotification('Función en desarrollo', 'info');
+  };
+
+  const handleRequestApproval = (event: React.MouseEvent) => {
+    handleMenuClose(event);
+    showNotification('Función en desarrollo', 'info');
+  };
+
   // Función para calcular tiempo restante para newsletters programados
   const getTimeRemaining = (scheduleDate: string) => {
     const now = new Date().getTime();
@@ -85,7 +118,7 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
       try {
         const dateCreated = content.createdAt;
         if (dateCreated) {
-          setFecha(format(new Date(dateCreated), "dd 'de' MMMM yyyy", { locale: es }));
+          setFecha(format(new Date(dateCreated), 'dd MMM yyyy', { locale: es }));
           setHora(format(new Date(dateCreated), 'hh:mm a'));
         }
       } catch (error) {
@@ -105,167 +138,216 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
   // Obtener imagen de portada
   const getCoverImage = () => (content as Article).coverImageUrl;
 
-  // Obtener badge de origen/tipo
-  const getOriginBadge = () => {
-    if (type === 'note') {
-      const note = content as Article;
-      if (note.origin === 'IA') {
-        return (
-          <Chip
-            label="IA"
-            size="small"
-            sx={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              bgcolor: 'primary.main',
-              color: 'common.white',
-            }}
-          />
-        );
-      }
-    } else {
-      return (
-        <Chip
-          label="Newsletter"
-          size="small"
-          icon={<Icon icon="mdi:email-newsletter" width={14} />}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            bgcolor: 'success.main',
-            color: 'common.white',
-          }}
-        />
-      );
-    }
-    return null;
-  };
-
-  // Obtener status badge
-  const getStatusBadge = () => {
+  // Obtener label de status
+  const getStatusLabel = () => {
     const status = content.status || 'DRAFT';
-    const statusColors: Record<string, string> = {
-      DRAFT: 'default',
-      REVIEW: 'warning',
-      APPROVED: 'info',
-      PUBLISHED: 'success',
-      REJECTED: 'error',
+    const statusLabels: Record<string, string> = {
+      DRAFT: 'Borrador',
+      REVIEW: 'Revisión',
+      APPROVED: 'Aprobado',
+      PUBLISHED: 'Publicado',
+      REJECTED: 'Rechazado',
+      SCHEDULED: 'Programado',
     };
 
-    return (
-      <Chip
-        label={status}
-        size="small"
-        color={statusColors[status] as any}
-        sx={{
-          position: 'absolute',
-          top: 8,
-          right: 48,
-          textTransform: 'capitalize',
-        }}
-      />
-    );
+    return statusLabels[status] || status;
   };
 
   const coverImage = getCoverImage();
 
+  const handleCardClick = () => {
+    if (onOpen) {
+      onOpen(content);
+    } else {
+      // Navegación por defecto
+      if (type === 'newsletter') {
+        router.push(`/edit/newsletter/${content.id}`);
+      } else {
+        router.push(`/edit/note/${content.id}`);
+      }
+    }
+  };
+
   return (
     <Card
-      onClick={() => onOpen(content)}
+      onClick={handleCardClick}
       sx={{
-        borderRadius: 2,
+        borderRadius: '8px',
         cursor: 'pointer',
         overflow: 'hidden',
         boxShadow: 3,
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
+        height: '182px', // Altura fija de la card
         transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-        },
       }}
     >
-      {/* Cabecera con imagen */}
-      <Box sx={{ position: 'relative' }}>
-        <Box
-          sx={{
-            height: 140,
-            bgcolor: 'grey.300',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {coverImage ? (
-            <img
-              src={coverImage}
-              alt="Cover"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <Icon
-              icon={type === 'newsletter' ? 'mdi:email-newsletter' : 'mdi:note-outline'}
-              width={48}
-              height={48}
-              style={{ opacity: 0.5, color: type === 'newsletter' ? 'white' : undefined }}
-            />
-          )}
-        </Box>
-
-        {/* Badge de origen/tipo */}
-        {getOriginBadge()}
-
-        {/* Badge de status */}
-        {getStatusBadge()}
-
-        {/* Menú de acciones */}
-        <IconButton
-          size="small"
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            bgcolor: 'rgba(255,255,255,0.8)',
-            '&:hover': {
-              bgcolor: 'rgba(255,255,255,0.95)',
-            },
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <Icon icon="mdi:dots-vertical" />
-        </IconButton>
+      {/* Imagen de fondo - ocupa toda la card */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          bgcolor: 'grey.300',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {coverImage ? (
+          <img
+            src={coverImage}
+            alt="Cover"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <Icon
+            icon={type === 'newsletter' ? 'mdi:email-newsletter' : 'mdi:note-outline'}
+            width={48}
+            height={48}
+            style={{ opacity: 0.5, color: type === 'newsletter' ? 'white' : undefined }}
+          />
+        )}
       </Box>
 
-      {/* Contenido */}
-      <CardContent sx={{ flexGrow: 1 }}>
-        <Typography variant="subtitle1" gutterBottom noWrap fontWeight={600}>
-          {getTitle()}
-        </Typography>
+      {/* Contenido flotante sobre la imagen */}
+      <CardContent
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          pt: 1,
+          pb: 1,
+          px: 2,
+          bgcolor: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(10px)',
+          borderTopLeftRadius: '12px',
+          borderTopRightRadius: '12px',
+        }}
+      >
+        {/* Primera línea: Fecha/Hora a la izquierda, Chip Estado + Menú a la derecha */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
-            color: 'text.secondary',
-            mt: 0.5,
-            '& svg': { fontSize: 16, opacity: 0.7, mr: 0.5 },
+            justifyContent: 'space-between',
+            mb: 0.5,
           }}
         >
-          <Icon icon="mdi:calendar" />
-          <Typography variant="caption" noWrap sx={{ mr: 1 }}>
-            {fecha}
-          </Typography>
-          <Icon icon="mdi:clock-outline" />
-          <Typography variant="caption" noWrap>
-            {hora}
-          </Typography>
+          {/* Fecha y hora */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              color: 'text.secondary',
+              '& svg': { fontSize: 16, opacity: 0.7, mr: 0.5 },
+            }}
+          >
+            <Icon icon="mdi:calendar" />
+            <Typography variant="caption" noWrap sx={{ mr: 2 }}>
+              {fecha}
+            </Typography>
+            <Icon icon="mdi:clock-outline" />
+            <Typography variant="caption" noWrap>
+              {hora}
+            </Typography>
+          </Box>
+
+          {/* Chip de estado + Menú de tres puntos */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              label={getStatusLabel()}
+              size="small"
+              sx={{
+                bgcolor: 'rgba(255, 255, 255, 0.95)',
+                color: 'text.secondary',
+                fontWeight: 500,
+                fontSize: '0.75rem',
+                border: '1px solid',
+                borderColor: 'divider',
+                height: 24,
+              }}
+            />
+            <IconButton
+              size="small"
+              onClick={handleMenuOpen}
+              sx={{
+                p: 0.5,
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <Icon icon="mdi:dots-vertical" width={20} />
+            </IconButton>
+
+            {/* Menú contextual */}
+            <Menu
+              anchorEl={anchorEl}
+              open={menuOpen}
+              onClose={handleMenuClose}
+              anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MenuItem
+                onClick={(e) => {
+                  handleMenuClose(e);
+                  handleCardClick();
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="mdi:eye-outline" width={20} />
+                </ListItemIcon>
+                <ListItemText>Ver detalles</ListItemText>
+              </MenuItem>
+
+              {type === 'newsletter' && (
+                <MenuItem onClick={handleRequestApproval}>
+                  <ListItemIcon>
+                    <Icon icon="mdi:check-circle-outline" width={20} />
+                  </ListItemIcon>
+                  <ListItemText>Solicitar aprobación</ListItemText>
+                </MenuItem>
+              )}
+
+              <MenuItem onClick={handleDuplicate}>
+                <ListItemIcon>
+                  <Icon icon="mdi:content-copy" width={20} />
+                </ListItemIcon>
+                <ListItemText>Duplicar</ListItemText>
+              </MenuItem>
+
+              <MenuItem onClick={handleRename}>
+                <ListItemIcon>
+                  <Icon icon="mdi:pencil-outline" width={20} />
+                </ListItemIcon>
+                <ListItemText>Renombrar</ListItemText>
+              </MenuItem>
+
+              <Divider />
+
+              <MenuItem
+                onClick={(e) => {
+                  handleMenuClose(e);
+                  onDelete(content.id);
+                }}
+              >
+                <ListItemIcon>
+                  <Icon icon="mdi:delete-outline" width={20} color="error" />
+                </ListItemIcon>
+                <ListItemText sx={{ color: 'error.main' }}>Eliminar</ListItemText>
+              </MenuItem>
+            </Menu>
+          </Box>
         </Box>
+
+        {/* Segunda línea: Título */}
+        <Typography variant="subtitle1" noWrap fontWeight={600}>
+          {getTitle()}
+        </Typography>
 
         {/* Información de newsletter programado */}
         {type === 'newsletter' &&
@@ -334,21 +416,6 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
             </Box>
           )}
       </CardContent>
-
-      {/* Acciones */}
-      <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
-        <Button
-          size="small"
-          color="error"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(content.id);
-          }}
-          startIcon={<Icon icon="mdi:delete-outline" />}
-        >
-          Eliminar
-        </Button>
-      </CardActions>
 
       {/* Snackbar para notificaciones */}
       <Snackbar

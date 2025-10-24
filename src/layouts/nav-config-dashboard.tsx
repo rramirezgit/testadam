@@ -39,6 +39,8 @@ const ICONS = {
   analytics: icon('ic-analytics'),
   dashboard: icon('ic-dashboard'),
   parameter: icon('ic-parameter'),
+  comunicado: icon('ic-comunicado'),
+  bloqueWeb: icon('ic-bloque-web'),
 };
 
 // ----------------------------------------------------------------------
@@ -62,10 +64,10 @@ export const navData: NavSectionProps['data'] = [
    * Overview
    */
   {
-    subheader: 'Overview',
+    subheader: 'Contenido',
     items: [
-      { title: 'Newsletter', path: paths.dashboard.newsletter.list, icon: ICONS.analytics },
-      { title: 'Notas', path: paths.dashboard.notes.list, icon: ICONS.analytics },
+      { title: 'Comunicados', path: paths.dashboard.newsletter.list, icon: ICONS.comunicado },
+      { title: 'Bloques web', path: paths.dashboard.notes.list, icon: ICONS.bloqueWeb },
       // { title: 'Educación', path: paths.dashboard.educacion.list, icon: ICONS.course },
     ],
   },

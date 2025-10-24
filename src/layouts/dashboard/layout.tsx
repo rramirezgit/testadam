@@ -216,6 +216,7 @@ export function DashboardLayout({
       cssVars={{ ...dashboardLayoutVars(theme), ...navVars.layout, ...cssVars }}
       sx={[
         {
+          background: `linear-gradient(224deg, rgba(249, 249, 247, 0.60) 0%, rgba(216, 223, 255) 180.25%)`,
           [`& .${layoutClasses.sidebarContainer}`]: {
             [theme.breakpoints.up(layoutQuery)]: {
               pl: isNavMini ? 'var(--layout-nav-mini-width)' : 'var(--layout-nav-vertical-width)',

@@ -70,12 +70,12 @@ export const ColorSystem: React.FC<ColorSystemProps> = ({ className }) => {
     selectedPalette,
     setPalette,
     customColors,
-    updateCustomColor,
+    // updateCustomColor,
     generateHarmony,
     checkAccessibility,
-    selectedCategory,
-    setSelectedCategory,
-    categories,
+    // selectedCategory,
+    // setSelectedCategory,
+    // categories,
   } = useColorPalette();
 
   const [harmonyType, setHarmonyType] = useState<ColorHarmonyType>('complementary');

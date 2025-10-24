@@ -1,44 +1,44 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 'use client';
 
 import type { Newsletter } from 'src/types/newsletter';
 
 import Image from 'next/image';
-import { Icon } from '@iconify/react';
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   Box,
   Tab,
   Grid,
   Tabs,
+  Card,
   Modal,
   Paper,
   Button,
-  Dialog,
   Select,
   Divider,
-  Checkbox,
   MenuItem,
+  Skeleton,
   TextField,
   Typography,
   InputLabel,
   Pagination,
   IconButton,
   FormControl,
+  CardContent,
   InputAdornment,
   CircularProgress,
-  FormControlLabel,
 } from '@mui/material';
 
-import usePostStore from 'src/store/PostStore';
+import { buildQueryString } from 'src/utils/url-utils';
+
 import { DashboardContent } from 'src/layouts/dashboard/content';
+import usePostStore, { type NewsletterFilters } from 'src/store/PostStore';
 
 import { Iconify } from 'src/components/iconify';
-import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import { EmptyContent } from 'src/components/empty-content';
 import ContentCard from 'src/components/newsletter-note/content-card';
-import NewsletterEditor from 'src/components/newsletter-note/newsletter-editor';
+import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 type Tab = {
   label: string;
@@ -70,43 +70,127 @@ const TABS: Tab[] = [
     label: 'Enviados',
     value: 'SENDED',
   },
-  {
-    label: 'Eliminados',
-    value: 'DELETED',
-  },
+  // {
+  //   label: 'Eliminados',
+  //   value: 'DELETED',
+  // },
 ];
 
+// Componente Skeleton para las cards de newsletters
+function NewsletterCardSkeleton() {
+  return (
+    <Card
+      sx={{
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: 3,
+        position: 'relative',
+        height: '182px',
+      }}
+    >
+      {/* Skeleton de imagen de fondo */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <Skeleton variant="rectangular" width="100%" height="100%" animation="wave" />
+      </Box>
+
+      {/* Contenido flotante sobre la imagen */}
+      <CardContent
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          pt: 1,
+          pb: 1,
+          px: 2,
+          bgcolor: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(10px)',
+          borderTopLeftRadius: '12px',
+          borderTopRightRadius: '12px',
+        }}
+      >
+        {/* Primera línea: Fecha/Hora y Chip */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 0.5,
+          }}
+        >
+          {/* Skeletons de fecha y hora */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Skeleton variant="text" width={90} height={20} />
+            <Skeleton variant="text" width={60} height={20} />
+          </Box>
+
+          {/* Skeleton de chip y menú */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Skeleton variant="rounded" width={80} height={24} />
+            <Skeleton variant="circular" width={20} height={20} />
+          </Box>
+        </Box>
+
+        {/* Segunda línea: Título */}
+        <Skeleton variant="text" width="80%" height={28} />
+      </CardContent>
+    </Card>
+  );
+}
+
+// Componente que muestra la grilla de skeletons
+function NewslettersGridSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <Grid container spacing={3}>
+      {Array.from({ length: count }).map((_, index) => (
+        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+          <NewsletterCardSkeleton />
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
+
 export default function NewsletterView() {
-  const [openNewsletterEditor, setOpenNewsletterEditor] = useState(false);
-  const [currentNewsletter, setCurrentNewsletter] = useState<Newsletter | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('DRAFT');
-  const [searchTerm, setSearchTerm] = useState('');
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [openFiltersModal, setOpenFiltersModal] = useState(false);
 
-  // Estados para filtros avanzados
-  const [filters, setFilters] = useState({
-    origin: '',
-    startDate: '',
-    endDate: '',
-    highlight: false,
-    perPage: 20,
-    page: 1,
+  // Estados para filtros avanzados - Usar NewsletterFilters
+  const [filters, setFilters] = useState<NewsletterFilters>({
+    status: searchParams.get('status') || 'DRAFT',
+    perPage: Number(searchParams.get('perPage')) || 20,
+    page: Number(searchParams.get('page')) || 1,
+    createdStartDate: searchParams.get('createdStartDate') || '',
+    createdEndDate: searchParams.get('createdEndDate') || '',
+    scheduledStartDate: searchParams.get('scheduledStartDate') || '',
+    scheduledEndDate: searchParams.get('scheduledEndDate') || '',
+    subject: searchParams.get('subject') || '',
+    orderBy: searchParams.get('orderBy') || '',
   });
 
   // Use PostStore directly
-  const { findAllNewsletters, delete: deleteNewsletter } = usePostStore();
+  const { findAllNewsletters, deleteNewsletter } = usePostStore();
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
 
-  // Load saved newsletters on component mount and when tab changes
+  // Load saved newsletters on component mount and when filters change
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Cargando datos de newsletters con status:', tab);
+        console.log('🔄 Cargando datos de newsletters con filtros:', filters);
 
-        const newslettersData = await findAllNewsletters(tab);
+        const newslettersData = await findAllNewsletters(filters);
         setNewsletters(newslettersData);
 
         console.log('✅ Datos de newsletters cargados exitosamente');
@@ -130,42 +214,23 @@ export default function NewsletterView() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [findAllNewsletters, tab]);
-
-  // Refresh data when editors are closed
-  useEffect(() => {
-    const refreshData = async () => {
-      if (!openNewsletterEditor) {
-        try {
-          console.log('🔄 Refrescando datos después de cerrar editor...');
-          const newslettersData = await findAllNewsletters();
-          setNewsletters(newslettersData);
-          console.log('✅ Datos refrescados exitosamente');
-        } catch (error) {
-          console.error('❌ Error refrescando datos:', error);
-        }
-      }
-    };
-
-    refreshData();
-  }, [openNewsletterEditor, findAllNewsletters]);
+  }, [findAllNewsletters, filters]);
 
   const handleOpenNewsletterEditor = (newsletter?: Newsletter) => {
     if (newsletter) {
-      setCurrentNewsletter(newsletter);
+      router.push(`/edit/newsletter/${newsletter.id}`);
     } else {
-      setCurrentNewsletter(null);
+      router.push('/new/newsletter');
     }
-    setOpenNewsletterEditor(true);
   };
 
-  const handleCloseNewsletterEditor = () => {
-    setOpenNewsletterEditor(false);
-    setCurrentNewsletter(null);
-  };
-
-  const handleDeleteNewsletter = (newsletterId: string) => {
-    deleteNewsletter(newsletterId);
+  const handleDeleteNewsletter = async (newsletterId: string) => {
+    const success = await deleteNewsletter(newsletterId);
+    if (success) {
+      // Recargar la lista de newsletters después de eliminar
+      const newslettersData = await findAllNewsletters(filters);
+      setNewsletters(newslettersData);
+    }
   };
 
   // Manejar búsqueda con debounce
@@ -176,13 +241,14 @@ export default function NewsletterView() {
       }
 
       const newTimeout = setTimeout(() => {
-        setSearchTerm(value);
-        setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on search
+        const newFilters = { ...filters, subject: value, page: 1 };
+        setFilters(newFilters);
+        router.push(`/dashboard/newsletter?${buildQueryString(newFilters)}`);
       }, 500);
 
       setSearchTimeout(newTimeout);
     },
-    [searchTimeout]
+    [searchTimeout, filters, router]
   );
 
   // Limpiar timeout al desmontar
@@ -197,28 +263,37 @@ export default function NewsletterView() {
 
   const handleChangeTab = (event: React.SyntheticEvent, newValue: string) => {
     console.log('🔄 Cambiando tab a:', newValue);
-    setTab(newValue);
-    setFilters((prev) => ({ ...prev, page: 1 })); // Reset page on tab change
+    const newFilters = { ...filters, status: newValue, page: 1 };
+    setFilters(newFilters);
+    router.push(`/dashboard/newsletter?${buildQueryString(newFilters)}`);
   };
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, page: number) => {
-    setFilters((prev) => ({ ...prev, page }));
+    const newFilters = { ...filters, page };
+    setFilters(newFilters);
+    router.push(`/dashboard/newsletter?${buildQueryString(newFilters)}`);
   };
 
   const handleFilterChange = (key: string, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 })); // Reset page on filter change
+    const newFilters = { ...filters, [key]: value, page: 1 };
+    setFilters(newFilters);
+    router.push(`/dashboard/newsletter?${buildQueryString(newFilters)}`);
   };
 
   const handleClearFilters = () => {
-    setFilters({
-      origin: '',
-      startDate: '',
-      endDate: '',
-      highlight: false,
+    const newFilters: NewsletterFilters = {
+      status: filters.status,
       perPage: 20,
       page: 1,
-    });
-    setSearchTerm('');
+      createdStartDate: '',
+      createdEndDate: '',
+      scheduledStartDate: '',
+      scheduledEndDate: '',
+      subject: '',
+      orderBy: '',
+    };
+    setFilters(newFilters);
+    router.push(`/dashboard/newsletter?${buildQueryString(newFilters)}`);
   };
 
   return (
@@ -233,7 +308,7 @@ export default function NewsletterView() {
           sx={{
             gap: 3,
             display: 'flex',
-            mb: { xs: 3, md: 5 },
+            mb: { xs: 3, md: 2 },
             justifyContent: 'space-between',
             flexDirection: { xs: 'column', sm: 'row' },
             alignItems: { xs: 'flex-end', sm: 'center' },
@@ -243,6 +318,7 @@ export default function NewsletterView() {
             <TextField
               placeholder="Buscar newsletters..."
               name="search-newsletter"
+              variant="filled"
               onChange={(e) => handleSearch(e.target.value)}
               sx={{ flex: 1 }}
               slotProps={{
@@ -266,9 +342,12 @@ export default function NewsletterView() {
             <IconButton
               onClick={() => setOpenFiltersModal(true)}
               sx={{
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
+                border: 'none',
+                borderColor: 'none',
+                height: '50px',
+                width: '50px',
+                borderRadius: '8px',
+                background: '#F1F2FF',
               }}
             >
               <Iconify icon="solar:settings-bold" />
@@ -307,13 +386,17 @@ export default function NewsletterView() {
         {/* Filtro de Estado */}
         <Box sx={{ mb: 3 }}>
           <Tabs
-            value={tab}
+            value={filters.status}
             onChange={handleChangeTab}
             sx={{
               '& .MuiTab-root': {
-                minHeight: '40px',
-                fontSize: '0.875rem',
                 textTransform: 'none',
+              },
+              '& .MuiTab-root.Mui-selected': {
+                color: 'primary.main',
+              },
+              '& .MuiTabs-indicator': {
+                backgroundColor: 'primary.main',
               },
             }}
           >
@@ -324,9 +407,7 @@ export default function NewsletterView() {
         </Box>
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <Typography>Loading your newsletters...</Typography>
-          </Box>
+          <NewslettersGridSkeleton count={filters.perPage || 6} />
         ) : newsletters.length === 0 ? (
           <Box
             sx={{
@@ -338,59 +419,37 @@ export default function NewsletterView() {
               textAlign: 'center',
             }}
           >
-            <Icon
-              icon="mdi:email-newsletter"
-              style={{ fontSize: 64, marginBottom: 16, opacity: 0.5 }}
+            <EmptyContent
+              imgUrl="/assets/icons/empty/ic-notes.svg"
+              title="Aún no tienes comunicados creados."
+              description="Comienza creando una nuevo comunicado para ver tus resultados aquí."
+              action={
+                <Button
+                  variant="contained"
+                  color="primary"
+                  sx={{
+                    marginTop: '16px',
+                  }}
+                  startIcon={<Iconify icon="mingcute:add-line" />}
+                  onClick={() => handleOpenNewsletterEditor()}
+                >
+                  Crear Newsletter
+                </Button>
+              }
             />
-            <Typography variant="h5" gutterBottom>
-              No newsletters yet
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 500 }}>
-              Create your first newsletter by combining your email templates.
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<Icon icon="mdi:plus" />}
-              onClick={() => handleOpenNewsletterEditor()}
-            >
-              Create New Newsletter
-            </Button>
           </Box>
         ) : (
           <Grid container spacing={3}>
-            {newsletters
-              .filter((newsletter) => {
-                // Filtrar newsletters según el tab activo
-                switch (tab) {
-                  case 'DRAFT':
-                    return newsletter.status === 'DRAFT' || !newsletter.status;
-                  case 'PENDING_APPROVAL':
-                    return newsletter.status === 'PENDING_APPROVAL';
-                  case 'APPROVED':
-                    return newsletter.status === 'APPROVED';
-                  case 'REJECTED':
-                    return newsletter.status === 'REJECTED';
-                  case 'SCHEDULED':
-                    return newsletter.status === 'SCHEDULED';
-                  case 'SENDED':
-                    return newsletter.status === 'SENDED';
-                  case 'DELETED':
-                    return newsletter.status === 'DELETED';
-                  default:
-                    return true;
-                }
-              })
-              .map((newsletter) => (
-                <Grid key={newsletter.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <ContentCard
-                    content={newsletter}
-                    type="newsletter"
-                    onOpen={handleOpenNewsletterEditor}
-                    onDelete={handleDeleteNewsletter}
-                  />
-                </Grid>
-              ))}
+            {newsletters.map((newsletter) => (
+              <Grid key={newsletter.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <ContentCard
+                  content={newsletter}
+                  type="newsletter"
+                  onOpen={handleOpenNewsletterEditor}
+                  onDelete={handleDeleteNewsletter}
+                />
+              </Grid>
+            ))}
           </Grid>
         )}
 
@@ -442,20 +501,6 @@ export default function NewsletterView() {
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {/* Origen */}
-              <FormControl fullWidth>
-                <InputLabel>Origen</InputLabel>
-                <Select
-                  value={filters.origin}
-                  label="Origen"
-                  onChange={(e) => handleFilterChange('origin', e.target.value)}
-                >
-                  <MenuItem value="">Todos</MenuItem>
-                  <MenuItem value="IA">IA</MenuItem>
-                  <MenuItem value="ADAC">ADAC</MenuItem>
-                </Select>
-              </FormControl>
-
               {/* Elementos por página */}
               <FormControl fullWidth>
                 <InputLabel>Elementos por página</InputLabel>
@@ -471,37 +516,68 @@ export default function NewsletterView() {
                 </Select>
               </FormControl>
 
-              {/* Fechas */}
+              {/* Fechas de Creación */}
+              <Typography variant="subtitle2" sx={{ mt: 1 }}>
+                Fecha de Creación
+              </Typography>
               <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                 <TextField
                   type="date"
-                  label="Fecha de inicio"
-                  value={filters.startDate}
-                  onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                  label="Desde"
+                  value={filters.createdStartDate}
+                  onChange={(e) => handleFilterChange('createdStartDate', e.target.value)}
                   fullWidth
                   InputLabelProps={{ shrink: true }}
                 />
 
                 <TextField
                   type="date"
-                  label="Fecha de fin"
-                  value={filters.endDate}
-                  onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                  label="Hasta"
+                  value={filters.createdEndDate}
+                  onChange={(e) => handleFilterChange('createdEndDate', e.target.value)}
                   fullWidth
                   InputLabelProps={{ shrink: true }}
                 />
               </Box>
 
-              {/* Destacados */}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filters.highlight}
-                    onChange={(e) => handleFilterChange('highlight', e.target.checked)}
-                  />
-                }
-                label="Solo newsletters destacados"
-              />
+              {/* Fechas de Programación */}
+              <Typography variant="subtitle2" sx={{ mt: 1 }}>
+                Fecha de Programación
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  type="date"
+                  label="Desde"
+                  value={filters.scheduledStartDate}
+                  onChange={(e) => handleFilterChange('scheduledStartDate', e.target.value)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+
+                <TextField
+                  type="date"
+                  label="Hasta"
+                  value={filters.scheduledEndDate}
+                  onChange={(e) => handleFilterChange('scheduledEndDate', e.target.value)}
+                  fullWidth
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
+
+              {/* Orden */}
+              <FormControl fullWidth>
+                <InputLabel>Ordenar por</InputLabel>
+                <Select
+                  value={filters.orderBy}
+                  label="Ordenar por"
+                  onChange={(e) => handleFilterChange('orderBy', e.target.value)}
+                >
+                  <MenuItem value="">Por defecto</MenuItem>
+                  <MenuItem value="subject">Asunto</MenuItem>
+                  <MenuItem value="createdAt">Fecha de creación</MenuItem>
+                  <MenuItem value="scheduledAt">Fecha programada</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
 
             <Divider sx={{ my: 3 }} />
@@ -516,15 +592,6 @@ export default function NewsletterView() {
             </Box>
           </Paper>
         </Modal>
-
-        {/* Newsletter Editor Dialog */}
-        <Dialog fullScreen open={openNewsletterEditor} onClose={handleCloseNewsletterEditor}>
-          <NewsletterEditor
-            onClose={handleCloseNewsletterEditor}
-            initialNewsletter={currentNewsletter}
-            defaultTemplate="newsletter"
-          />
-        </Dialog>
       </Box>
     </DashboardContent>
   );

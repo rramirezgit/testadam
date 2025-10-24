@@ -1,6 +1,9 @@
 import { paths } from 'src/routes/paths';
 
 import packageJson from '../package.json';
+import { getNewsletterThemes } from './config/newsletter-config';
+
+import type { NewsletterTheme } from './config/newsletter-config';
 
 // ----------------------------------------------------------------------
 
@@ -12,6 +15,8 @@ export type ConfigValue = {
   emptyImageUrl: string;
   isStaticExport: boolean;
   defaultLogoUrl: string;
+  defaultThemesNewsletter: NewsletterTheme[];
+  serverUrlIA: string;
   auth: {
     method: 'jwt' | 'amplify' | 'firebase' | 'auth0';
     skip: boolean;
@@ -37,10 +42,12 @@ export const CONFIG: ConfigValue = {
   appName: 'Adam Pro',
   appVersion: packageJson.version,
   serverUrl: process.env.NEXT_PUBLIC_API_URL ?? '',
+  serverUrlIA: process.env.NEXT_PUBLIC_SERVER_URL_IA ?? '',
   assetsDir: process.env.NEXT_PUBLIC_ASSETS_DIR ?? '',
   isStaticExport: JSON.parse(process.env.BUILD_STATIC_EXPORT ?? 'false'),
   emptyImageUrl: process.env.NEXT_PUBLIC_EMPTY_IMG ?? '',
   defaultLogoUrl: process.env.NEXT_PUBLIC_LOGO_NEWS ?? '',
+  defaultThemesNewsletter: getNewsletterThemes(),
   /**
    * Auth
    * @method jwt | amplify | firebase | supabase | auth0

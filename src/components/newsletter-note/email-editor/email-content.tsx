@@ -14,7 +14,6 @@ import { CONFIG, SOCIAL_ICONS } from 'src/global-config';
 import EmailList from './email-list';
 import SimpleTipTapEditor from '../simple-tiptap-editor';
 import EmailComponentRenderer from './email-component-renderer';
-import ComponentWithToolbar from './email-components/ComponentWithToolbar';
 
 import type { NewsletterNote, NewsletterHeader, NewsletterFooter } from './types';
 
@@ -91,6 +90,8 @@ interface EmailContentProps {
   removeNoteContainer?: (containerId: string) => void;
   // Prop para la columna seleccionada
   selectedColumn?: 'left' | 'right';
+  // Prop para modo view-only
+  isViewOnly?: boolean;
 }
 
 // Componente para el header del newsletter
@@ -436,6 +437,8 @@ const EmailContent = memo(
     removeNoteContainer = () => {},
     // Prop para la columna seleccionada
     selectedColumn = 'left',
+    // Prop para modo view-only
+    isViewOnly = false,
   }: EmailContentProps) => {
     // Memoizar los componentes para evitar recálculos innecesarios
     const components = useMemo(() => getActiveComponents(), [getActiveComponents]);
@@ -549,66 +552,43 @@ const EmailContent = memo(
                   }),
           }}
         >
-          {components.map((component, index) => {
-            if (component.type === 'noteContainer') {
-              return (
-                <ComponentWithToolbar
-                  key={component.id}
-                  isSelected={selectedComponentId === component.id}
-                  index={index}
-                  totalComponents={components.length}
-                  componentId={component.id}
-                  moveComponent={moveComponent}
-                  removeComponent={removeComponent}
-                  onClick={() => {
-                    setSelectedComponentId(component.id);
-                    onComponentSelect(component.id);
-                  }}
-                >
-                  <EmailComponentRenderer
-                    component={component}
-                    index={index}
-                    isSelected={selectedComponentId === component.id}
-                    onSelect={() => {
-                      setSelectedComponentId(component.id);
-                      onComponentSelect(component.id);
-                    }}
-                    updateComponentContent={updateComponentContent}
-                    updateComponentProps={updateComponentProps}
-                    handleSelectionUpdate={handleSelectionUpdate}
-                    moveComponent={moveComponent}
-                    removeComponent={removeComponent}
-                    totalComponents={components.length}
-                    getActiveComponents={getActiveComponents}
-                    onComponentSelect={onComponentSelect}
-                    selectedComponentId={selectedComponentId}
-                  />
-                </ComponentWithToolbar>
-              );
-            }
-            // Renderizado normal para otros componentes
-            return (
-              <EmailComponentRenderer
-                key={component.id}
-                component={component}
-                index={index}
-                isSelected={selectedComponentId === component.id}
-                onSelect={() => {
-                  setSelectedComponentId(component.id);
-                  onComponentSelect(component.id);
-                }}
-                updateComponentContent={updateComponentContent}
-                updateComponentProps={updateComponentProps}
-                handleSelectionUpdate={handleSelectionUpdate}
-                moveComponent={moveComponent}
-                removeComponent={removeComponent}
-                totalComponents={components.length}
-                getActiveComponents={getActiveComponents}
-                onComponentSelect={onComponentSelect}
-                selectedComponentId={selectedComponentId}
-              />
-            );
-          })}
+          {/* Los componentes ya tienen ComponentWithToolbar integrado, no envolver dos veces */}
+          {components.map((component, index) => (
+            <EmailComponentRenderer
+              key={component.id}
+              component={component}
+              index={index}
+              isSelected={selectedComponentId === component.id}
+              onSelect={() => {
+                console.log('🟢 Component onSelect:', component.id, component.type);
+                setSelectedComponentId(component.id);
+                onComponentSelect(component.id);
+              }}
+              updateComponentContent={updateComponentContent}
+              updateComponentProps={updateComponentProps}
+              updateComponentStyle={updateComponentStyle}
+              handleSelectionUpdate={handleSelectionUpdate}
+              moveComponent={moveComponent}
+              removeComponent={removeComponent}
+              totalComponents={components.length}
+              getActiveComponents={getActiveComponents}
+              onComponentSelect={onComponentSelect}
+              selectedComponentId={selectedComponentId}
+              // Props adicionales para noteContainer
+              {...(component.type === 'noteContainer' && {
+                removeNoteContainer,
+                updateNewsletterNoteComponentContent,
+                updateNewsletterNoteComponentProps,
+                updateNewsletterNoteComponentStyle,
+                moveNewsletterNoteComponent,
+                removeNewsletterNoteComponent,
+                onMoveNewsletterNote,
+                onRemoveNewsletterNote,
+                onEditNewsletterNote,
+                isNewsletterMode,
+              })}
+            />
+          ))}
         </Box>
       </Box>
     );

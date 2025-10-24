@@ -79,6 +79,12 @@ interface EditorHeaderProps {
   // Nuevas props para el status del newsletter y actualización
   newsletterStatus?: string;
   onNewsletterUpdate?: () => void;
+  // Props para modo view-only
+  isViewOnly?: boolean;
+  onCreateCopy?: () => void;
+  // Props para preview HTML
+  showPreview?: boolean;
+  onTogglePreview?: () => void;
 }
 
 export default function EditorHeader({
@@ -117,6 +123,10 @@ export default function EditorHeader({
   showNotification = () => {},
   newsletterStatus = '',
   onNewsletterUpdate = () => {},
+  isViewOnly = false,
+  onCreateCopy = () => {},
+  showPreview = false,
+  onTogglePreview = () => {},
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
@@ -904,42 +914,71 @@ export default function EditorHeader({
                 })()}
               />
 
-              {/* Botón de guardar newsletter */}
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ height: '42px' }}
-                startIcon={<Icon icon="material-symbols:save" />}
-                onClick={handleSaveNewsletter}
-                disabled={saving}
-              >
-                Guardar
-              </Button>
+              {/* Botón de toggle Preview/Editor - Solo en template newsletter editable */}
+              {activeTemplate === 'newsletter' && !isViewOnly && (
+                <Button
+                  variant="outlined"
+                  startIcon={<Icon icon={showPreview ? 'mdi:code-tags' : 'mdi:eye'} />}
+                  onClick={onTogglePreview}
+                  sx={{ height: '42px', mr: 1 }}
+                >
+                  {showPreview ? 'Editor' : 'Preview'}
+                </Button>
+              )}
 
-              {/* Botón de enviar newsletter */}
-              <Tooltip
-                title={
-                  !currentNewsletterId || currentNewsletterId.trim() === ''
-                    ? 'Debes guardar el newsletter antes de enviarlo'
-                    : ''
-                }
-              >
-                <span>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    endIcon={<Icon icon="mdi:chevron-down" />}
-                    sx={{ backgroundColor: '#4f46e5', height: '42px' }}
-                    onClick={handleSendMenuClick}
-                    disabled={!currentNewsletterId || currentNewsletterId.trim() === ''}
-                    aria-controls={openSendMenu ? 'send-menu-newsletter' : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={openSendMenu ? 'true' : undefined}
-                  >
-                    Enviar
-                  </Button>
-                </span>
-              </Tooltip>
+              {/* Botón de guardar newsletter - Ocultar en modo view-only */}
+              {!isViewOnly && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  sx={{ height: '42px' }}
+                  startIcon={<Icon icon="material-symbols:save" />}
+                  onClick={handleSaveNewsletter}
+                  disabled={saving}
+                >
+                  Guardar
+                </Button>
+              )}
+
+              {/* Botón de crear copia - Solo en modo view-only */}
+              {isViewOnly && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  sx={{ height: '42px' }}
+                  startIcon={<Icon icon="eva:copy-fill" />}
+                  onClick={onCreateCopy}
+                >
+                  Crear Copia
+                </Button>
+              )}
+
+              {/* Botón de enviar newsletter - Ocultar en modo view-only */}
+              {!isViewOnly && (
+                <Tooltip
+                  title={
+                    !currentNewsletterId || currentNewsletterId.trim() === ''
+                      ? 'Debes guardar el newsletter antes de enviarlo'
+                      : ''
+                  }
+                >
+                  <span>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      endIcon={<Icon icon="mdi:chevron-down" />}
+                      sx={{ backgroundColor: '#4f46e5', height: '42px' }}
+                      onClick={handleSendMenuClick}
+                      disabled={!currentNewsletterId || currentNewsletterId.trim() === ''}
+                      aria-controls={openSendMenu ? 'send-menu-newsletter' : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={openSendMenu ? 'true' : undefined}
+                    >
+                      Enviar
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
 
               {/* Menú de envío para newsletter */}
               <Menu
