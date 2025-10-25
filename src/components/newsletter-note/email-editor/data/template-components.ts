@@ -404,7 +404,7 @@ export const newsComponentsWeb: EmailComponent[] = [
     type: 'image',
     content: '',
     props: {
-      src: '',
+      src: CONFIG.emptyImageUrl,
       alt: 'Imagen principal de la noticia',
     },
   },

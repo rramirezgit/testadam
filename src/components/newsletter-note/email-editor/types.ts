@@ -124,3 +124,51 @@ export interface EmailEditorProps {
   onTogglePreview?: () => void;
   newsletterHtmlPreview?: string;
 }
+
+// Tipos para el análisis editorial
+export interface EditorialAnalysisError {
+  numero: number;
+  tipo: string;
+  severidad: 'CRÍTICO' | 'MODERADO' | 'MENOR';
+  problema: string;
+  correccion: string;
+  ubicacion: string;
+  explicacion: string;
+  categoria: string;
+}
+
+export interface EditorialAnalysisSummary {
+  titulo: string;
+  evaluacion: string;
+  recomendaciones: string;
+  puede_publicar: boolean;
+  errores_criticos: number;
+  errores_moderados: number;
+  errores_menores: number;
+}
+
+export interface EditorialAnalysisStatistics {
+  tiempo_analisis: string;
+  palabras_analizadas: number;
+  parrafos_revisados: number;
+  tiempo_analisis_ms: number;
+  timestamp: string;
+}
+
+export interface EditorialAnalysisOpinion {
+  score: number;
+  estado: string;
+  titulo: string;
+  subtitulo: string;
+  errores: EditorialAnalysisError[];
+  resumen: EditorialAnalysisSummary;
+  estadisticas: EditorialAnalysisStatistics;
+}
+
+export interface EditorialAnalysisResponse {
+  score: number;
+  estado: string;
+  puede_publicar: boolean;
+  tiempo_analisis_ms: number;
+  opinion: EditorialAnalysisOpinion;
+}

@@ -10,7 +10,7 @@ import { Box, Card, alpha, Typography, CardContent } from '@mui/material';
 interface AIOptionCardProps {
   option: AIOption;
   categoryColor: string;
-  onClick: (event?: React.MouseEvent<HTMLElement>) => void;
+  onClick: () => void;
   disabled?: boolean;
 }
 
@@ -21,7 +21,7 @@ const AIOptionCard: React.FC<AIOptionCardProps> = ({
   disabled = false,
 }) => (
   <Card
-    onClick={disabled ? undefined : (e) => onClick(e)}
+    onClick={disabled ? undefined : onClick}
     sx={{
       cursor: disabled ? 'not-allowed' : 'pointer',
       opacity: disabled ? 0.6 : 1,

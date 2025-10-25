@@ -3,7 +3,6 @@ import { Icon } from '@iconify/react';
 
 import {
   Box,
-  Chip,
   Dialog,
   Button,
   Typography,
@@ -58,13 +57,6 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
           <Typography variant="h6" fontWeight="600">
             Tienes cambios sin guardar
           </Typography>
-          <Chip
-            label={`${changeCount} cambio${changeCount !== 1 ? 's' : ''} pendiente${changeCount !== 1 ? 's' : ''}`}
-            size="small"
-            color="warning"
-            variant="outlined"
-            sx={{ mt: 0.5 }}
-          />
         </Box>
       </Box>
     </DialogTitle>
@@ -81,7 +73,6 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
         variant="outlined"
         startIcon={<Icon icon="mdi:pencil" />}
         sx={{
-          borderRadius: 2,
           textTransform: 'none',
           fontWeight: 500,
         }}
@@ -95,7 +86,6 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
         color="error"
         startIcon={<Icon icon="mdi:close-circle" />}
         sx={{
-          borderRadius: 2,
           textTransform: 'none',
           fontWeight: 500,
         }}
@@ -109,7 +99,6 @@ export const UnsavedChangesDialog: React.FC<UnsavedChangesDialogProps> = ({
         color="primary"
         startIcon={<Icon icon="mdi:content-save" />}
         sx={{
-          borderRadius: 2,
           textTransform: 'none',
           fontWeight: 600,
           boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)',

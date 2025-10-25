@@ -2643,6 +2643,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         // Props para preview HTML
         showPreview={showPreview}
         onTogglePreview={handleTogglePreviewWrapper}
+        newsletterHtmlPreview={generatedPreviewHtml || newsletterHtmlPreview}
       />
 
       {/* Contenedor principal */}

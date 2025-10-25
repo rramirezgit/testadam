@@ -125,4 +125,8 @@ export const endpoints = {
     history: '/api/v1/media-ai/history',
     delete: (id: string) => `/api/v1/media-ai/${id}`,
   },
+  // SEO endpoints
+  seo: {
+    analyzeEditorial: '/api/seo/analyze-editorial-html',
+  },
 };

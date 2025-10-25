@@ -35,6 +35,7 @@ import {
 import usePostStore from 'src/store/PostStore';
 
 import SendTestDialog from './send-test-dialog';
+import EditorialAnalysisModal from './components/EditorialAnalysisModal';
 
 interface EditorHeaderProps {
   onClose: () => void;
@@ -85,6 +86,7 @@ interface EditorHeaderProps {
   // Props para preview HTML
   showPreview?: boolean;
   onTogglePreview?: () => void;
+  newsletterHtmlPreview?: string;
 }
 
 export default function EditorHeader({
@@ -127,6 +129,7 @@ export default function EditorHeader({
   onCreateCopy = () => {},
   showPreview = false,
   onTogglePreview = () => {},
+  newsletterHtmlPreview = '',
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
@@ -135,6 +138,9 @@ export default function EditorHeader({
   // Estado para el menú de envío
   const [sendMenuAnchor, setSendMenuAnchor] = useState<null | HTMLElement>(null);
   const openSendMenu = Boolean(sendMenuAnchor);
+
+  // Estado para el modal de análisis editorial
+  const [openEditorialAnalysis, setOpenEditorialAnalysis] = useState(false);
 
   // Estado para el modal de prueba
   const [openTestDialog, setOpenTestDialog] = useState(false);
@@ -926,6 +932,19 @@ export default function EditorHeader({
                 </Button>
               )}
 
+              {/* Botón de Revisión Editorial - Solo visible en modo preview */}
+              {activeTemplate === 'newsletter' && showPreview && (
+                <Button
+                  variant="outlined"
+                  startIcon={<Icon icon="mdi:file-document-check" />}
+                  onClick={() => setOpenEditorialAnalysis(true)}
+                  sx={{ height: '42px', mr: 1 }}
+                  color="secondary"
+                >
+                  Revisión
+                </Button>
+              )}
+
               {/* Botón de guardar newsletter - Ocultar en modo view-only */}
               {!isViewOnly && (
                 <Button
@@ -1295,6 +1314,14 @@ export default function EditorHeader({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal de Análisis Editorial */}
+      <EditorialAnalysisModal
+        open={openEditorialAnalysis}
+        onClose={() => setOpenEditorialAnalysis(false)}
+        newsletterTitle={newsletterTitle}
+        newsletterHtmlContent={newsletterHtmlPreview}
+      />
     </>
   );
 }

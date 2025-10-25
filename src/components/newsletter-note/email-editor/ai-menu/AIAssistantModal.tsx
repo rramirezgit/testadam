@@ -46,15 +46,10 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
   const { processMagicWrite, loading, error } = useMagicWriteStore();
   const [resultText, setResultText] = useState<string | null>(null);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
-  const [languageSelectorAnchor, setLanguageSelectorAnchor] = useState<HTMLElement | null>(null);
 
-  const handleOptionClick = async (
-    action: MagicWriteAction,
-    event?: React.MouseEvent<HTMLElement>
-  ) => {
+  const handleOptionClick = async (action: MagicWriteAction) => {
     // Si es traducir, mostrar selector de idioma
-    if (action === 'traducir' && event) {
-      setLanguageSelectorAnchor(event.currentTarget);
+    if (action === 'traducir') {
       setShowLanguageSelector(true);
       return;
     }
@@ -69,7 +64,6 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
 
   const handleLanguageSelect = async (language: string) => {
     setShowLanguageSelector(false);
-    setLanguageSelectorAnchor(null);
 
     // Procesar traducción
     setResultText(null);
@@ -89,7 +83,6 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
   const handleClose = () => {
     setResultText(null);
     setShowLanguageSelector(false);
-    setLanguageSelectorAnchor(null);
     onClose();
   };
 
@@ -204,9 +197,7 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                           key={option.id}
                           option={option}
                           categoryColor={category.color}
-                          onClick={(e?: React.MouseEvent<HTMLElement>) =>
-                            handleOptionClick(option.id, e)
-                          }
+                          onClick={() => handleOptionClick(option.id)}
                           disabled={loading}
                         />
                       ))}
@@ -241,12 +232,8 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
 
       {/* Selector de idiomas */}
       <LanguageSelector
-        anchorEl={languageSelectorAnchor}
         open={showLanguageSelector}
-        onClose={() => {
-          setShowLanguageSelector(false);
-          setLanguageSelectorAnchor(null);
-        }}
+        onClose={() => setShowLanguageSelector(false)}
         onSelectLanguage={handleLanguageSelect}
       />
     </>
