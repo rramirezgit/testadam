@@ -10,7 +10,6 @@ import {
   Alert,
   Button,
   Tooltip,
-  Skeleton,
   TextField,
   Typography,
   IconButton,
@@ -276,25 +275,13 @@ export default function ImageAiGenerator({ onImageGenerated, userId }: ImageAiGe
       {isGenerating && !hasPreview && (
         <Card elevation={1} sx={{ p: 3, borderRadius: 2 }}>
           <Stack spacing={2} alignItems="center">
-            <CircularProgress size={60} />
+            <CircularProgress size={50} />
             <Typography variant="h6" color="primary">
               {getStatusMessage()}
             </Typography>
             <Typography variant="body2" color="text.secondary" textAlign="center">
               Esto puede tomar entre 10-30 segundos
             </Typography>
-            <Stack direction="row" spacing={1} sx={{ width: '100%', justifyContent: 'center' }}>
-              {[...Array(3)].map((_, i) => (
-                <Skeleton
-                  key={i}
-                  variant="rectangular"
-                  width={100}
-                  height={100}
-                  sx={{ borderRadius: 1 }}
-                  animation="wave"
-                />
-              ))}
-            </Stack>
           </Stack>
         </Card>
       )}

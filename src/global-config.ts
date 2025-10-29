@@ -7,6 +7,8 @@ import type { NewsletterTheme } from './config/newsletter-config';
 
 // ----------------------------------------------------------------------
 
+export type Platform = 'ADAC' | 'MICHIN';
+
 export type ConfigValue = {
   appName: string;
   appVersion: string;
@@ -17,6 +19,7 @@ export type ConfigValue = {
   defaultLogoUrl: string;
   defaultThemesNewsletter: NewsletterTheme[];
   serverUrlIA: string;
+  platform: Platform;
   auth: {
     method: 'jwt' | 'amplify' | 'firebase' | 'auth0';
     skip: boolean;
@@ -48,6 +51,7 @@ export const CONFIG: ConfigValue = {
   emptyImageUrl: process.env.NEXT_PUBLIC_EMPTY_IMG ?? '',
   defaultLogoUrl: process.env.NEXT_PUBLIC_LOGO_NEWS ?? '',
   defaultThemesNewsletter: getNewsletterThemes(),
+  platform: (process.env.NEXT_PUBLIC_PLATFORM as Platform) ?? 'ADAC',
   /**
    * Auth
    * @method jwt | amplify | firebase | supabase | auth0
@@ -89,6 +93,18 @@ export const CONFIG: ConfigValue = {
     domain: process.env.NEXT_PUBLIC_AUTH0_DOMAIN ?? '',
     callbackUrl: process.env.NEXT_PUBLIC_AUTH0_CALLBACK_URL ?? '',
   },
+};
+
+// ----------------------------------------------------------------------
+
+/**
+ * MICHIN Platform Default Values
+ * Used when creating/editing notes in MICHIN platform
+ */
+export const MICHIN_DEFAULTS = {
+  categoryId: '666bb07ce9af1709095b27bb',
+  subcategoryId: '666bb082e9af1709095b27dc',
+  contentTypeId: '685b669ff73d025e8c926a76',
 };
 
 // ----------------------------------------------------------------------

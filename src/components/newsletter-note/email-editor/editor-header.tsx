@@ -33,6 +33,9 @@ import {
 } from '@mui/material';
 
 import usePostStore from 'src/store/PostStore';
+import useAiGenerationStore from 'src/store/AiGenerationStore';
+
+import { AnimateBorder } from 'src/components/animate/animate-border';
 
 import SendTestDialog from './send-test-dialog';
 import EditorialAnalysisModal from './components/EditorialAnalysisModal';
@@ -87,6 +90,11 @@ interface EditorHeaderProps {
   showPreview?: boolean;
   onTogglePreview?: () => void;
   newsletterHtmlPreview?: string;
+  // Prop para botón de IA
+  onAIGenerateClick?: () => void;
+  // Props para análisis editorial de notas
+  noteTitle?: string;
+  noteHtmlPreview?: string;
 }
 
 export default function EditorHeader({
@@ -130,6 +138,9 @@ export default function EditorHeader({
   showPreview = false,
   onTogglePreview = () => {},
   newsletterHtmlPreview = '',
+  onAIGenerateClick,
+  noteTitle = '',
+  noteHtmlPreview = '',
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
@@ -155,6 +166,9 @@ export default function EditorHeader({
   const [scheduleDate, setScheduleDate] = useState('');
   const [approverEmails] = useState(['97.rramirez@gmail.com']); // Email predeterminado
 
+  // Estado para el diálogo de confirmación de salida con IA generando
+  const [openExitConfirmDialog, setOpenExitConfirmDialog] = useState(false);
+
   const theme = useTheme();
 
   // Hook del store
@@ -168,6 +182,9 @@ export default function EditorHeader({
     requestNewsletterApproval,
     sendNewsletterForReview,
   } = usePostStore();
+
+  // Hook del store de IA para mostrar estado de generación
+  const { loading: aiGenerating, progress: aiProgress, cancelGeneration } = useAiGenerationStore();
 
   // Necesitamos acceder a los componentes del newsletter desde el editor
   // Esta función debería ser pasada como prop desde el componente padre
@@ -254,6 +271,27 @@ export default function EditorHeader({
     },
     [currentNewsletterId, newsletterStatus, saving]
   );
+
+  // Función para manejar el cierre del editor
+  const handleClose = useCallback(() => {
+    // Si está generando con IA, mostrar confirmación
+    if (aiGenerating) {
+      setOpenExitConfirmDialog(true);
+    } else {
+      // Si no está generando, cerrar directamente
+      onClose();
+    }
+  }, [aiGenerating, onClose]);
+
+  // Función para confirmar salida y cancelar generación de IA
+  const handleConfirmExit = useCallback(() => {
+    // Cancelar la generación de IA
+    cancelGeneration();
+    // Cerrar el diálogo de confirmación
+    setOpenExitConfirmDialog(false);
+    // Cerrar el editor
+    onClose();
+  }, [cancelGeneration, onClose]);
 
   // Abrir el menú de transferencia
   const handleTransferMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -699,7 +737,10 @@ export default function EditorHeader({
             }),
           }}
         >
-          <IconButton onClick={onClose} sx={{ borderRadius: '8px', border: '1px solid #C4CDD520' }}>
+          <IconButton
+            onClick={handleClose}
+            sx={{ borderRadius: '8px', border: '1px solid #C4CDD520' }}
+          >
             <Icon icon="mingcute:left-line" />
           </IconButton>
           <Typography
@@ -920,28 +961,28 @@ export default function EditorHeader({
                 })()}
               />
 
-              {/* Botón de toggle Preview/Editor - Solo en template newsletter editable */}
-              {activeTemplate === 'newsletter' && !isViewOnly && (
+              {/* Botón de toggle Preview/Editor - En modo newsletter */}
+              {!isViewOnly && (
                 <Button
                   variant="outlined"
                   startIcon={<Icon icon={showPreview ? 'mdi:code-tags' : 'mdi:eye'} />}
                   onClick={onTogglePreview}
-                  sx={{ height: '42px', mr: 1 }}
+                  sx={{ height: '42px' }}
                 >
                   {showPreview ? 'Editor' : 'Preview'}
                 </Button>
               )}
 
               {/* Botón de Revisión Editorial - Solo visible en modo preview */}
-              {activeTemplate === 'newsletter' && showPreview && (
+              {showPreview && (
                 <Button
                   variant="outlined"
                   startIcon={<Icon icon="mdi:file-document-check" />}
                   onClick={() => setOpenEditorialAnalysis(true)}
-                  sx={{ height: '42px', mr: 1 }}
+                  sx={{ height: '42px' }}
                   color="secondary"
                 >
-                  Revisión
+                  Revisión con IA
                 </Button>
               )}
 
@@ -1081,6 +1122,141 @@ export default function EditorHeader({
                           : 'Borrador'
                 }
               />
+
+              {/* Botón de toggle Preview/Editor - Solo para templates con versión newsletter */}
+              {(activeTemplate === 'news' ||
+                activeTemplate === 'market' ||
+                activeTemplate === 'skillup' ||
+                activeTemplate === 'howto') &&
+                activeVersion === 'newsletter' &&
+                !isViewOnly && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<Icon icon={showPreview ? 'mdi:code-tags' : 'mdi:eye'} />}
+                    onClick={onTogglePreview}
+                    sx={{ height: '42px' }}
+                  >
+                    {showPreview ? 'Editor' : 'Preview'}
+                  </Button>
+                )}
+
+              {/* Botón de Revisión Editorial - Solo visible en modo preview */}
+              {showPreview && (
+                <Button
+                  variant="outlined"
+                  startIcon={<Icon icon="mdi:file-document-check" />}
+                  onClick={() => setOpenEditorialAnalysis(true)}
+                  sx={{ height: '42px' }}
+                  color="secondary"
+                >
+                  Revisión con IA
+                </Button>
+              )}
+
+              {/* Botón de Generar con IA - Solo para notas de tipo news y estados editables */}
+              {!isViewOnly &&
+                activeTemplate === 'news' &&
+                ['DRAFT', 'REVIEW', 'REJECTED'].includes(noteStatus) &&
+                onAIGenerateClick && (
+                  <Box
+                    sx={{
+                      position: 'relative',
+                      display: 'inline-block',
+                    }}
+                  >
+                    {aiGenerating ? (
+                      // Botón con animación cuando está generando - CLICKEABLE para reabrir modal
+                      <Tooltip title="Haz clic para ver el progreso detallado">
+                        <Box>
+                          <AnimateBorder
+                            duration={3}
+                            slotProps={{
+                              primaryBorder: {
+                                width: '2px',
+                                size: 120,
+                                sx: {
+                                  color: '#8B45FF',
+                                },
+                              },
+                              outlineColor: 'rgba(139, 69, 255, 0.2)',
+                            }}
+                            sx={{
+                              borderRadius: '8px',
+                              overflow: 'visible',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Button
+                              variant="outlined"
+                              onClick={onAIGenerateClick}
+                              sx={{
+                                height: '42px',
+                                minWidth: '160px',
+                                borderColor: '#8B45FF',
+                                color: '#8B45FF',
+                                background:
+                                  'linear-gradient(135deg, rgba(139, 69, 255, 0.08) 0%, rgba(117, 0, 225, 0.08) 100%)',
+                                '&:hover': {
+                                  borderColor: '#7500E1',
+                                  background:
+                                    'linear-gradient(135deg, rgba(139, 69, 255, 0.12) 0%, rgba(117, 0, 225, 0.12) 100%)',
+                                },
+                              }}
+                              startIcon={
+                                <Icon icon="svg-spinners:blocks-shuffle-3" width={20} height={20} />
+                              }
+                            >
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'flex-start',
+                                  gap: 0.25,
+                                }}
+                              >
+                                <Typography
+                                  variant="caption"
+                                  sx={{ fontSize: '0.75rem', lineHeight: 1 }}
+                                >
+                                  Generando...
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ fontSize: '0.65rem', lineHeight: 1, opacity: 0.7 }}
+                                >
+                                  {aiProgress}%
+                                </Typography>
+                              </Box>
+                            </Button>
+                          </AnimateBorder>
+                        </Box>
+                      </Tooltip>
+                    ) : (
+                      // Botón normal
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        sx={{
+                          height: '42px',
+                          borderColor: '#8B45FF',
+                          color: '#8B45FF',
+                          background:
+                            'linear-gradient(135deg, rgba(139, 69, 255, 0.05) 0%, rgba(117, 0, 225, 0.05) 100%)',
+                          '&:hover': {
+                            borderColor: '#7500E1',
+                            background:
+                              'linear-gradient(135deg, rgba(139, 69, 255, 0.1) 0%, rgba(117, 0, 225, 0.1) 100%)',
+                          },
+                        }}
+                        startIcon={<Icon icon="mdi:magic-staff" />}
+                        onClick={onAIGenerateClick}
+                      >
+                        IA
+                      </Button>
+                    )}
+                  </Box>
+                )}
+
               <Button
                 variant="contained"
                 color="primary"
@@ -1319,9 +1495,52 @@ export default function EditorHeader({
       <EditorialAnalysisModal
         open={openEditorialAnalysis}
         onClose={() => setOpenEditorialAnalysis(false)}
-        newsletterTitle={newsletterTitle}
-        newsletterHtmlContent={newsletterHtmlPreview}
+        newsletterTitle={isNewsletterMode ? newsletterTitle : noteTitle}
+        newsletterHtmlContent={isNewsletterMode ? newsletterHtmlPreview : noteHtmlPreview}
       />
+
+      {/* Diálogo de confirmación de salida con IA generando */}
+      <Dialog
+        open={openExitConfirmDialog}
+        onClose={() => setOpenExitConfirmDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Icon icon="mdi:alert-circle" color="#FF9800" width={24} height={24} />
+            <Typography variant="h6">Generación de IA en Progreso</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ py: 1 }}>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Actualmente se está generando contenido con IA ({aiProgress}% completado).
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Si sales ahora, perderás todo el progreso y la generación se cancelará
+              automáticamente.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setOpenExitConfirmDialog(false)}
+            variant="contained"
+            sx={{ minWidth: 120 }}
+          >
+            Continuar Generando
+          </Button>
+          <Button
+            onClick={handleConfirmExit}
+            variant="outlined"
+            color="error"
+            sx={{ minWidth: 120 }}
+          >
+            Salir y Cancelar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

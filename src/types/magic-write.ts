@@ -23,6 +23,8 @@ export interface MagicWriteRequest {
   action: MagicWriteAction;
   text: string;
   language?: string; // Solo para traducción
+  userId?: string; // NUEVO
+  plan?: string | null; // NUEVO
 }
 
 // Response de la API

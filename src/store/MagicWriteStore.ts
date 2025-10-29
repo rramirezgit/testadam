@@ -9,6 +9,8 @@ import { devtools } from 'zustand/middleware';
 
 import { createAxiosInstance } from 'src/utils/axiosInstance';
 
+import useAuthStore from './AuthStore';
+
 interface MagicWriteState {
   loading: boolean;
   error: string | null;
@@ -47,6 +49,13 @@ const useMagicWriteStore = create<MagicWriteState>()(
             action,
             text,
           };
+
+          // NUEVO: Obtener userId y plan desde AuthStore
+          const authState = useAuthStore.getState();
+          if (authState.user?.id) {
+            requestData.userId = authState.user.id;
+            requestData.plan = authState?.user?.plan?.name || null;
+          }
 
           // Solo agregar language si la acción es traducir
           if (action === 'traducir' && language) {

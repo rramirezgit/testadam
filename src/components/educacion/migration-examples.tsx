@@ -304,7 +304,7 @@ export function ExampleBoxMigrationExample() {
   const [content, setContent] = useState(
     'Este es un ejemplo práctico de cómo aplicar los conceptos aprendidos.'
   );
-  const [boxTitle, setBoxTitle] = useState('Ejemplo práctico');
+  const [boxTitle] = useState('Ejemplo práctico');
 
   return (
     <Card>

@@ -518,6 +518,18 @@ export const useEmailComponents = () => {
 
   // Función para cargar componentes del post
   const loadPostComponents = useCallback((templateType: string, objData: any, objDataWeb: any) => {
+    // Validar que objData sea un array antes de cargarlo
+    if (!Array.isArray(objData)) {
+      console.error('loadPostComponents: objData no es un array válido', objData);
+      return;
+    }
+
+    // Validar objDataWeb si existe
+    if (objDataWeb && !Array.isArray(objDataWeb)) {
+      console.error('loadPostComponents: objDataWeb no es un array válido', objDataWeb);
+      objDataWeb = null; // Ignorar objDataWeb inválido
+    }
+
     switch (templateType) {
       case 'blank':
         setBlankComponents(objData);

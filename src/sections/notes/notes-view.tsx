@@ -349,6 +349,7 @@ export default function NotesView() {
             <Button
               variant="contained"
               color="primary"
+              onClick={() => router.push('/new/note?mode=ai')}
               sx={{
                 height: '50px',
                 background: 'linear-gradient(90deg, #4DBCFB 0%, #DD26FD 100%)',
@@ -422,12 +423,12 @@ export default function NotesView() {
             ))}
           </Tabs>
         </Box>
-
+        {/* 
         {error && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <Typography color="error">Error al cargar las notas: {error}</Typography>
           </Box>
-        )}
+        )} */}
 
         {loading ? (
           <NotesGridSkeleton count={filters.perPage || 6} />

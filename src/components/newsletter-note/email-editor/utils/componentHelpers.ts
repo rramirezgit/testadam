@@ -324,11 +324,22 @@ export function getBaseComponentId(injectedId: string): string {
 
 // Nueva función para filtrar componentes inyectados
 export function filterInjectedComponents(components: EmailComponent[]): EmailComponent[] {
+  // Validar que components sea un array antes de procesarlo
+  if (!Array.isArray(components)) {
+    console.error('filterInjectedComponents: components no es un array válido', components);
+    return [];
+  }
   return components.filter((component) => !isInjectedComponent(component.id));
 }
 
 // Nueva función para obtener solo componentes inyectados
 export function getInjectedComponents(components: EmailComponent[]): EmailComponent[] {
+  // Validar que components sea un array antes de procesarlo
+  if (!Array.isArray(components)) {
+    console.error('getInjectedComponents: components no es un array válido', components);
+    return [];
+  }
+
   const injectedComponents: EmailComponent[] = [];
 
   components.forEach((component) => {
@@ -351,6 +362,12 @@ export function getInjectedComponents(components: EmailComponent[]): EmailCompon
 
 // Nueva función para debugging de componentes
 export function debugComponents(components: EmailComponent[], label: string = 'Components'): void {
+  // Validar que components sea un array antes de procesarlo
+  if (!Array.isArray(components)) {
+    console.error(`🔍 ${label} Debug: components no es un array válido`, components);
+    return;
+  }
+
   console.log(`🔍 ${label} Debug:`, {
     totalComponents: components.length,
     componentTypes: components.map((c) => ({ id: c.id, type: c.type })),

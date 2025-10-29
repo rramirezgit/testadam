@@ -4,6 +4,7 @@ import type { NoteData, PostStatus, LoadNoteData } from 'src/types/post';
 import { useState, useCallback } from 'react';
 
 import usePostStore from 'src/store/PostStore';
+import { CONFIG, MICHIN_DEFAULTS } from 'src/global-config';
 
 import { POST_STATUS } from 'src/types/post';
 
@@ -46,11 +47,17 @@ export const useNoteData = (): UseNoteDataHook => {
   const [isEditingExistingNote, setIsEditingExistingNote] = useState<boolean>(false);
   const [openSaveDialog, setOpenSaveDialog] = useState<boolean>(false);
 
-  // Nuevos estados de metadata
-  const [contentTypeId, setContentTypeId] = useState<string>('');
+  // Nuevos estados de metadata - Usar defaults de MICHIN si aplica
+  const [contentTypeId, setContentTypeId] = useState<string>(
+    CONFIG.platform === 'MICHIN' ? MICHIN_DEFAULTS.contentTypeId : ''
+  );
   const [audienceId, setAudienceId] = useState<string>('');
-  const [categoryId, setCategoryId] = useState<string>('');
-  const [subcategoryId, setSubcategoryId] = useState<string>('');
+  const [categoryId, setCategoryId] = useState<string>(
+    CONFIG.platform === 'MICHIN' ? MICHIN_DEFAULTS.categoryId : ''
+  );
+  const [subcategoryId, setSubcategoryId] = useState<string>(
+    CONFIG.platform === 'MICHIN' ? MICHIN_DEFAULTS.subcategoryId : ''
+  );
 
   // Estado highlight
   const [highlight, setHighlight] = useState<boolean>(false);

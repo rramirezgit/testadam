@@ -314,7 +314,7 @@ export default function NoteConfigurationView({
                   sx={{ mb: 2 }}
                 />
 
-                {/* Checkbox Destacar - Solo en modo normal */}
+                {/* Checkbox Destacar - Visible en ambas plataformas */}
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -505,7 +505,7 @@ export default function NoteConfigurationView({
               </FormControl>
             )}
 
-            {/* Configuración específica - Solo en modo normal, NO en newsletter */}
+            {/* Configuración específica - Visible en ambas plataformas, modo normal, NO en newsletter */}
             {!isNewsletterMode && (
               <>
                 <Chip
@@ -521,11 +521,11 @@ export default function NoteConfigurationView({
                   sx={{ mb: 2 }}
                   error={showValidationErrors && !contentTypeId}
                 >
-                  <InputLabel>Tipo de contenido *</InputLabel>
+                  <InputLabel>{`Tipo de contenido${CONFIG.platform === 'ADAC' ? ' *' : ''}`}</InputLabel>
                   <Select
                     variant="filled"
                     value={contentTypeId}
-                    label="Tipo de contenido *"
+                    label={`Tipo de contenido${CONFIG.platform === 'ADAC' ? ' *' : ''}`}
                     sx={{
                       '& .Mui-disabled': {
                         backgroundColor: 'background.neutral',
@@ -550,36 +550,38 @@ export default function NoteConfigurationView({
                   )}
                 </FormControl>
 
-                {/* Audiencia */}
-                <FormControl fullWidth sx={{ mb: 2 }} error={showValidationErrors && !audienceId}>
-                  <InputLabel>Audiencia *</InputLabel>
-                  <Select
-                    variant="filled"
-                    value={audienceId}
-                    label="Audiencia *"
-                    sx={{
-                      '& .Mui-disabled': {
-                        backgroundColor: 'background.neutral',
-                      },
-                    }}
-                    onChange={(e) => setAudienceId(e.target.value)}
-                    disabled={loadingMetadata}
-                  >
-                    <MenuItem value="">
-                      <em>Seleccionar</em>
-                    </MenuItem>
-                    {audiences.map((audience) => (
-                      <MenuItem key={audience.id} value={audience.id}>
-                        {audience.name}
+                {/* Audiencia - Solo visible en ADAC */}
+                {CONFIG.platform === 'ADAC' && (
+                  <FormControl fullWidth sx={{ mb: 2 }} error={showValidationErrors && !audienceId}>
+                    <InputLabel>Audiencia *</InputLabel>
+                    <Select
+                      variant="filled"
+                      value={audienceId}
+                      label="Audiencia *"
+                      sx={{
+                        '& .Mui-disabled': {
+                          backgroundColor: 'background.neutral',
+                        },
+                      }}
+                      onChange={(e) => setAudienceId(e.target.value)}
+                      disabled={loadingMetadata}
+                    >
+                      <MenuItem value="">
+                        <em>Seleccionar</em>
                       </MenuItem>
-                    ))}
-                  </Select>
-                  {showValidationErrors && !audienceId && (
-                    <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
-                      ⚠️ La audiencia es obligatoria
-                    </Typography>
-                  )}
-                </FormControl>
+                      {audiences.map((audience) => (
+                        <MenuItem key={audience.id} value={audience.id}>
+                          {audience.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {showValidationErrors && !audienceId && (
+                      <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                        ⚠️ La audiencia es obligatoria
+                      </Typography>
+                    )}
+                  </FormControl>
+                )}
 
                 {/* Categoría */}
                 <FormControl
@@ -588,11 +590,11 @@ export default function NoteConfigurationView({
                   disabled={!contentTypeId}
                   error={showValidationErrors && contentTypeId && !categoryId}
                 >
-                  <InputLabel>Categoría *</InputLabel>
+                  <InputLabel>{`Categoría${CONFIG.platform === 'ADAC' ? ' *' : ''}`}</InputLabel>
                   <Select
                     variant="filled"
                     value={categoryId}
-                    label="Categoría *"
+                    label={`Categoría${CONFIG.platform === 'ADAC' ? ' *' : ''}`}
                     sx={{
                       '& .Mui-disabled': {
                         backgroundColor: 'background.neutral',
@@ -629,11 +631,11 @@ export default function NoteConfigurationView({
                   disabled={!categoryId}
                   error={showValidationErrors && categoryId && !subcategoryId}
                 >
-                  <InputLabel>Subcategoría *</InputLabel>
+                  <InputLabel>{`Subcategoría${CONFIG.platform === 'ADAC' ? ' *' : ''}`}</InputLabel>
                   <Select
                     variant="filled"
                     value={subcategoryId}
-                    label="Subcategoría *"
+                    label={`Subcategoría${CONFIG.platform === 'ADAC' ? ' *' : ''}`}
                     sx={{
                       '& .Mui-disabled': {
                         backgroundColor: 'background.neutral',
@@ -662,30 +664,30 @@ export default function NoteConfigurationView({
                     </Typography>
                   )}
                 </FormControl>
-
-                {/* Botón para eliminar la nota (solo si está guardada) */}
-                {currentNoteId && (
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    color="error"
-                    startIcon={<Icon icon="mdi:delete-outline" />}
-                    onClick={() => setOpenDeleteDialog(true)}
-                    sx={{
-                      backgroundColor: 'rgba(255, 72, 66, 0.08)',
-                      color: 'error.main',
-                      border: 'none',
-                      height: 48,
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 72, 66, 0.16)',
-                        borderColor: 'error.main',
-                      },
-                    }}
-                  >
-                    Eliminar nota
-                  </Button>
-                )}
               </>
+            )}
+
+            {/* Botón para eliminar la nota (solo si está guardada) - En ambas plataformas */}
+            {currentNoteId && !isNewsletterMode && (
+              <Button
+                fullWidth
+                variant="outlined"
+                color="error"
+                startIcon={<Icon icon="mdi:delete-outline" />}
+                onClick={() => setOpenDeleteDialog(true)}
+                sx={{
+                  backgroundColor: 'rgba(255, 72, 66, 0.08)',
+                  color: 'error.main',
+                  border: 'none',
+                  height: 48,
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 72, 66, 0.16)',
+                    borderColor: 'error.main',
+                  },
+                }}
+              >
+                Eliminar nota
+              </Button>
             )}
           </Box>
         )}

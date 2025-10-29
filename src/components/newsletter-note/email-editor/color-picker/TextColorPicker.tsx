@@ -16,7 +16,6 @@ interface TextColorPickerProps {
 }
 
 const TextColorPicker: React.FC<TextColorPickerProps> = ({ selectedColor, applyTextColor }) => {
-  const [openModal, setOpenModal] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { customColors, addCustomColor, removeCustomColor } = useCustomColors(); // Usar el hook
 

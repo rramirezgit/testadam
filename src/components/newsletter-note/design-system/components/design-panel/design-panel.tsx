@@ -53,11 +53,7 @@ const TemplatesTab = ({ onUpdateNewsletter }: any) => {
   );
 };
 
-const ColorsTab = () => {
-  const { applyColorPalette } = useDesignState();
-
-  return <ColorSystem />;
-};
+const ColorsTab = () => <ColorSystem />;
 
 const TypographyTab = () => <TypographySystem />;
 
@@ -117,7 +113,7 @@ export const DesignPanel: React.FC<DesignPanelProps> = ({
   const [activeTab, setActiveTab] = useState<DesignTab>('templates');
 
   // Design System Hooks
-  const { designState, canUndo, canRedo, undo, redo, hasUnsavedChanges } = useDesignState();
+  const { canUndo, canRedo, undo, redo, hasUnsavedChanges } = useDesignState();
 
   const { templateStats } = useTemplateManager();
   const { paletteStats } = useColorPalette();

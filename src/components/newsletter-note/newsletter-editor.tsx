@@ -86,6 +86,7 @@ interface NewsletterEditorProps {
   initialNewsletter?: Newsletter | null;
   defaultTemplate?: string;
   onSaveRedirect?: (id: string) => void; // Callback para redirección después de guardar
+  aiGeneratedData?: any; // Datos generados por IA (objData, objDataWeb)
 }
 
 // Interfaz para tracking de ediciones de notas
@@ -101,6 +102,7 @@ export default function NewsletterEditor({
   initialNewsletter,
   defaultTemplate,
   onSaveRedirect,
+  aiGeneratedData,
 }: NewsletterEditorProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -137,6 +139,16 @@ export default function NewsletterEditor({
 
   // Estado para preview HTML
   const [showPreview, setShowPreview] = useState(false);
+
+  // Cargar datos generados por IA si existen
+  useEffect(() => {
+    if (aiGeneratedData && aiGeneratedData.objData && aiGeneratedData.objDataWeb) {
+      console.log('📦 Cargando datos generados por IA:', aiGeneratedData);
+      // En el futuro, aquí se podría procesar el objData para convertirlo en notas del newsletter
+      // Por ahora, simplemente notificar que se recibieron los datos
+      showSnackbar('Contenido generado con IA cargado exitosamente', 'success');
+    }
+  }, [aiGeneratedData]);
 
   // Estados para configuración del newsletter
   const [header, setHeader] = useState<NewsletterHeader>({

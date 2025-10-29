@@ -123,6 +123,8 @@ export interface EmailEditorProps {
   showPreview?: boolean;
   onTogglePreview?: () => void;
   newsletterHtmlPreview?: string;
+  // Prop para modo creación con IA
+  isAICreation?: boolean;
 }
 
 // Tipos para el análisis editorial

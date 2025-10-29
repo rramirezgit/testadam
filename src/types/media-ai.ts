@@ -32,6 +32,7 @@ export interface GenerateImageRequest {
   type: MediaAiType;
   userId?: string;
   resolution?: MediaAiResolution;
+  plan?: string | null; // NUEVO
 }
 
 export interface GenerateImageResponse {
@@ -47,4 +48,3 @@ export interface MediaAiHistoryResponse {
   data: MediaAiGeneration[];
   total: number;
 }
-

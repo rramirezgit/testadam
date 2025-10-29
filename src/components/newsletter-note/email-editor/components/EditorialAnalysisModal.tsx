@@ -239,7 +239,7 @@ export default function EditorialAnalysisModal({
             textTransform="uppercase"
             letterSpacing={0.5}
           >
-            Newsletter
+            Titulo
           </Typography>
           <Typography variant="body1" fontWeight={500} sx={{ mt: 0.5 }}>
             {newsletterTitle || 'Sin título'}

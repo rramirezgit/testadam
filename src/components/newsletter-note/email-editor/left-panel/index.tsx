@@ -61,11 +61,14 @@ export default function LeftPanel({
   onRefreshNotes = () => {},
   // Prop para modo view-only
   isViewOnly = false,
+  // Prop para modo creación con IA
+  isAICreation = false,
+  onInjectAIData = () => {},
 }: LeftPanelProps) {
   const [activeTab, setActiveTab] = React.useState<'content' | 'notes'>('content');
-  // Si hay defaultTemplate o initialNote, no mostrar el modal; si no hay ninguno, mostrarlo
+  // Si hay defaultTemplate, initialNote, o ya hay un template activo (no 'blank'), no mostrar el modal
   const [openTemplateModal, setOpenTemplateModal] = React.useState(
-    !defaultTemplate && !initialNote
+    !defaultTemplate && !initialNote && activeTemplate === 'blank'
   );
 
   const handleTabChange = (
@@ -207,6 +210,8 @@ export default function LeftPanel({
         activeTemplate={activeTemplate}
         onTemplateSelect={handleTemplateSelect}
         excludeTemplates={excludeTemplates}
+        isAICreation={isAICreation}
+        onInjectAIData={onInjectAIData}
       />
     </Box>
   );

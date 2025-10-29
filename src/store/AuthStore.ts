@@ -5,16 +5,60 @@ import { setStorage } from 'src/hooks/use-local-storage';
 
 import { endpoints, createAxiosInstance } from 'src/utils/axiosInstance';
 
+// Nueva interfaz para la respuesta del profile
+interface ProfileResponse {
+  user: AuthUser;
+  subscriber: Subscriber | null;
+  onboarding: Onboarding | null;
+}
+
+interface Subscriber {
+  id: string;
+  email: string;
+  origin: string;
+  active: boolean;
+  emailVerified: boolean;
+  verificationToken: string;
+  isBlacklisted: boolean;
+  createdAt: string;
+}
+
+interface Onboarding {
+  // Agregar campos según estructura (actualmente null en ejemplo)
+  [key: string]: any;
+}
+
+interface Plan {
+  id: string;
+  name: string;
+}
+
+// Actualizar AuthUser con nuevos campos
 interface AuthUser {
+  // Campos principales del nuevo endpoint
+  id?: string; // ID de MongoDB
+  email?: string;
+  name?: string;
+  avatar?: string;
+  idAuth0?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  planId?: string | null;
+  plan?: Plan | null;
+
+  // Aliases para compatibilidad con código existente
+  displayName?: string; // Mapeado desde name
+  photoURL?: string; // Mapeado desde avatar
+
+  // Campos legacy de Auth0 (mantener por compatibilidad)
   sub?: string;
   nickname?: string;
-  name?: string;
   picture?: string;
-  email?: string;
   email_verified?: boolean;
   updated_at?: string;
-  displayName?: string; // Alias para name para compatibilidad
-  photoURL?: string; // Alias para picture para compatibilidad
 }
 
 interface AuthState {
@@ -22,6 +66,8 @@ interface AuthState {
   isAuthenticated: boolean;
   accessToken: string | null;
   user: AuthUser | null;
+  subscriber: Subscriber | null;
+  onboarding: Onboarding | null;
   error: string | null;
 
   setLoading: (loading: boolean) => void;
@@ -30,7 +76,7 @@ interface AuthState {
   logout: () => void;
   checkAuth: () => boolean;
   fetchUserProfile: () => Promise<void>;
-  getUserInfo: () => Promise<void>;
+  getUserInfo: () => Promise<AuthUser | null>;
 }
 
 // Crear una instancia de store con funciones memoizadas
@@ -51,21 +97,24 @@ const useAuthStore = create<AuthState>()(
             set({ loading: true });
             const axiosInstance = createAxiosInstance();
 
-            const response = await axiosInstance.get(endpoints.user.profile);
+            // CAMBIO: Nuevo endpoint
+            const response = await axiosInstance.get<ProfileResponse>(endpoints.user.profile);
 
             if (response.data) {
-              const userInfo = response.data;
+              const { user, subscriber, onboarding } = response.data;
+              // Mapear aliases para compatibilidad
+              user.displayName = user.name;
+              user.photoURL = user.avatar;
 
-              // Añadir aliases para compatibilidad con la interfaz existente
-              userInfo.displayName = userInfo.name;
-              userInfo.photoURL = userInfo.picture;
-
+              // Guardar todo en el store
               set({
-                user: userInfo,
+                user,
+                subscriber,
+                onboarding,
                 loading: false,
               });
 
-              return userInfo;
+              return user;
             }
 
             set({ loading: false });
@@ -89,6 +138,8 @@ const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           accessToken: null,
           user: null,
+          subscriber: null,
+          onboarding: null,
           error: null,
 
           setLoading: (loading: boolean) => set({ loading }),
@@ -180,6 +231,8 @@ const useAuthStore = create<AuthState>()(
               isAuthenticated: false,
               accessToken: null,
               user: null,
+              subscriber: null,
+              onboarding: null,
               error: null,
             });
             console.log('Sesión cerrada con éxito - todos los datos eliminados');

@@ -956,8 +956,8 @@ const usePostStore = create<PostState>()(
         storage: createJSONStorage(() => localStorage),
         // Solo persistir datos no sensibles
         partialize: (state) => ({
-          posts: state.posts,
-          meta: state.meta,
+          // posts: state.posts,
+          // meta: state.meta,
           // No persistir currentPost para evitar datos obsoletos
         }),
       }

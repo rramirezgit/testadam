@@ -39,6 +39,7 @@ import { Iconify } from 'src/components/iconify';
 import { EmptyContent } from 'src/components/empty-content';
 import ContentCard from 'src/components/newsletter-note/content-card';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import AINewsletterModal from 'src/components/newsletter-note/ai-creation/AINewsletterModal';
 
 type Tab = {
   label: string;
@@ -165,6 +166,7 @@ export default function NewsletterView() {
   const [loading, setLoading] = useState(true);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
   const [openFiltersModal, setOpenFiltersModal] = useState(false);
+  const [openAIModal, setOpenAIModal] = useState(false);
 
   // Estados para filtros avanzados - Usar NewsletterFilters
   const [filters, setFilters] = useState<NewsletterFilters>({
@@ -358,6 +360,7 @@ export default function NewsletterView() {
             <Button
               variant="contained"
               color="primary"
+              onClick={() => setOpenAIModal(true)}
               sx={{
                 height: '50px',
                 background: 'linear-gradient(90deg, #4DBCFB 0%, #DD26FD 100%)',
@@ -592,6 +595,9 @@ export default function NewsletterView() {
             </Box>
           </Paper>
         </Modal>
+
+        {/* Modal de IA para crear newsletter */}
+        <AINewsletterModal open={openAIModal} onClose={() => setOpenAIModal(false)} />
       </Box>
     </DashboardContent>
   );

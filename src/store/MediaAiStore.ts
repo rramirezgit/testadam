@@ -10,6 +10,8 @@ import { devtools } from 'zustand/middleware';
 
 import { endpoints, createAxiosInstance } from 'src/utils/axiosInstance';
 
+import useAuthStore from './AuthStore';
+
 interface MediaAiState {
   loading: boolean;
   error: string | null;
@@ -61,9 +63,10 @@ const useMediaAiStore = create<MediaAiState>()(
             type: 'IMAGE',
             resolution,
           };
-
-          if (userId) {
-            requestBody.userId = userId;
+          const authState = useAuthStore.getState();
+          if (authState.user?.id) {
+            requestBody.userId = authState.user.id;
+            requestBody.plan = authState.user?.plan?.name || null;
           }
 
           const response = await axiosInstance.post<GenerateImageResponse>(

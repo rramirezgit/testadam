@@ -239,24 +239,8 @@ const GalleryOptions = ({
   if (selectedImageIndex === null || selectedImageIndex === undefined) {
     return (
       <Box sx={{ p: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-          <Icon icon="mdi:view-grid" fontSize={24} />
-          <Typography variant="h6">Opciones de Galería</Typography>
-        </Stack>
-
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Typography variant="body2" gutterBottom>
-            Haz clic en una imagen de la galería en el editor para comenzar a editarla.
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            💡 Tip: Haz clic en una posición vacía para subir una nueva imagen
-          </Typography>
-        </Alert>
-
-        <Divider sx={{ my: 3 }} />
-
         {/* Configuración global siempre visible */}
-        <Card elevation={1} sx={{ p: 2, borderRadius: 2, bgcolor: 'grey.50' }}>
+        <Card elevation={1} sx={{ borderRadius: 2, bgcolor: 'grey.50' }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
             <Icon icon="mdi:tune" fontSize={20} />
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>

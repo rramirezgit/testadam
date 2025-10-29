@@ -42,19 +42,25 @@ export function generateNewsletterTemplate(
   title: string,
   description: string,
   notesHtmlContent: string,
-  header: HeaderConfig,
-  footer: FooterConfig
+  header: HeaderConfig | null,
+  footer: FooterConfig | null
 ): string {
-  // ✅ Estilos de fondo del header
-  let headerBackgroundStyle = `background-color: ${header.backgroundColor};`;
-  if (header.useGradient && header.gradientColors && header.gradientColors.length >= 2) {
-    headerBackgroundStyle = `background: linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]});`;
+  // ✅ Estilos de fondo del header (solo si existe)
+  let headerBackgroundStyle = '';
+  if (header) {
+    headerBackgroundStyle = `background-color: ${header.backgroundColor};`;
+    if (header.useGradient && header.gradientColors && header.gradientColors.length >= 2) {
+      headerBackgroundStyle = `background: linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]});`;
+    }
   }
 
-  // ✅ Estilos de fondo del footer
-  let footerBackgroundStyle = `background-color: ${footer.backgroundColor};`;
-  if (footer.useGradient && footer.gradientColors && footer.gradientColors.length >= 2) {
-    footerBackgroundStyle = `background: linear-gradient(${footer.gradientDirection || 180}deg, ${footer.gradientColors[0]}, ${footer.gradientColors[1]});`;
+  // ✅ Estilos de fondo del footer (solo si existe)
+  let footerBackgroundStyle = '';
+  if (footer) {
+    footerBackgroundStyle = `background-color: ${footer.backgroundColor};`;
+    if (footer.useGradient && footer.gradientColors && footer.gradientColors.length >= 2) {
+      footerBackgroundStyle = `background: linear-gradient(${footer.gradientDirection || 180}deg, ${footer.gradientColors[0]}, ${footer.gradientColors[1]});`;
+    }
   }
 
   return `<!DOCTYPE html>
@@ -76,6 +82,9 @@ export function generateNewsletterTemplate(
       background-color: #ffffff;
     }
     
+    ${
+      header
+        ? `
     /* Header */
     .email-header {
       ${headerBackgroundStyle}
@@ -99,6 +108,9 @@ export function generateNewsletterTemplate(
       margin: 0;
       opacity: 0.85;
       font-weight: 400;
+    }
+    `
+        : ''
     }
     
     /* Content */
@@ -130,6 +142,9 @@ export function generateNewsletterTemplate(
     }
     
     /* Footer */
+    ${
+      footer
+        ? `
     .email-footer {
       ${footerBackgroundStyle}
       color: ${footer.textColor};
@@ -180,6 +195,9 @@ export function generateNewsletterTemplate(
     .footer-unsubscribe a:hover {
       text-decoration: underline;
     }
+    `
+        : ''
+    }
     
     /* Responsive */
     @media screen and (max-width: 600px) {
@@ -197,6 +215,9 @@ export function generateNewsletterTemplate(
     <tr>
       <td>
         <div class="email-container">
+          ${
+            header
+              ? `
           <!-- Header -->
           <table ${tableAttrs()} width="100%" style="margin-bottom: 24px;">
             <tr>
@@ -216,6 +237,9 @@ export function generateNewsletterTemplate(
               </td>
             </tr>
           </table>
+          `
+              : ''
+          }
           
           <!-- Content -->
           <table ${tableAttrs()} width="100%">
@@ -226,6 +250,9 @@ export function generateNewsletterTemplate(
             </tr>
           </table>
           
+          ${
+            footer
+              ? `
           <!-- Footer -->
           <table ${tableAttrs()} width="100%">
             <tr>
@@ -254,6 +281,9 @@ export function generateNewsletterTemplate(
               </td>
             </tr>
           </table>
+          `
+              : ''
+          }
         </div>
       </td>
     </tr>

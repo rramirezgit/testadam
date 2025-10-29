@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-import { Box, Chip, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 
 // Editores
 import SimpleTipTapEditor from './simple-tiptap-editor';
@@ -58,30 +58,6 @@ export default function SimpleTipTapEditorWithFlags({
 
     // Mantener compatibilidad total con API original
     onChange(htmlContent);
-  };
-
-  // Renderizar información de debug en desarrollo
-  const renderDebugInfo = () => {
-    if (!showDebugInfo || process.env.NODE_ENV !== 'development') {
-      return null;
-    }
-
-    return (
-      <Box sx={{ mb: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
-        <Typography variant="caption" color="text.secondary">
-          SimpleTiptapEditor:
-        </Typography>
-        <Chip
-          size="small"
-          label={useUnifiedSimpleTiptapEditor ? 'Unificado' : 'Original'}
-          color={useUnifiedSimpleTiptapEditor ? 'success' : 'default'}
-          variant="outlined"
-        />
-        {enableMetadata && (
-          <Chip size="small" label="Metadata ON" color="info" variant="outlined" />
-        )}
-      </Box>
-    );
   };
 
   return (

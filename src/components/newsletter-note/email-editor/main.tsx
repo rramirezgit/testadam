@@ -6,13 +6,25 @@ import type React from 'react';
 import type { PostStatus } from 'src/store/PostStore';
 import type { SavedNote, EmailComponent } from 'src/types/saved-note';
 
+import { Icon } from '@iconify/react';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Button } from '@mui/material';
+import {
+  Box,
+  Alert,
+  Button,
+  Dialog,
+  Typography,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 
 import { usePost } from 'src/hooks/use-posts';
 
+import { CONFIG } from 'src/global-config';
 import usePostStore from 'src/store/PostStore';
+import useAiGenerationStore from 'src/store/AiGenerationStore';
 
 import LeftPanel from './left-panel';
 import RightPanel from './right-panel';
@@ -21,6 +33,7 @@ import EditorHeader from './editor-header';
 import EmailContent from './email-content';
 import { CustomDialog } from './ui/custom-dialog';
 import { useNoteData } from './hooks/useNoteData';
+import AINoteModal from '../ai-creation/AINoteModal';
 import { CustomSnackbar } from './ui/custom-snackbar';
 import { bannerOptions } from './data/banner-options';
 import { emailTemplates } from './data/email-templates';
@@ -90,6 +103,10 @@ interface EmailEditorMainProps {
   showPreview?: boolean;
   onTogglePreview?: () => void;
   newsletterHtmlPreview?: string;
+  // Prop para modo creación con IA
+  isAICreation?: boolean;
+  // Callback para recibir datos generados por IA
+  onAIDataGenerated?: (data: { objData: EmailComponent[]; objDataWeb: EmailComponent[] }) => void;
 }
 
 export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
@@ -133,6 +150,9 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   showPreview = false,
   onTogglePreview = () => {},
   newsletterHtmlPreview = '',
+  // Prop para modo creación con IA
+  isAICreation = false,
+  onAIDataGenerated,
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
@@ -183,6 +203,14 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   const [newsletterHtml, setNewsletterHtml] = useState<string>('');
   const [generatingNewsletterHtml, setGeneratingNewsletterHtml] = useState<boolean>(false);
   const [generatedPreviewHtml, setGeneratedPreviewHtml] = useState<string>('');
+
+  // ESTADOS PARA GENERACIÓN CON IA
+  const [showAIModal, setShowAIModal] = useState<boolean>(false);
+  const [showAIConfirmDialog, setShowAIConfirmDialog] = useState<boolean>(false);
+
+  // ESTADO PARA ERROR DE NOTA MAL FORMADA
+  const [showDataErrorDialog, setShowDataErrorDialog] = useState<boolean>(false);
+  const [dataErrorMessage, setDataErrorMessage] = useState<string>('');
 
   // Estados de diseño
   const [emailBackground, setEmailBackground] = useState<string>('#ffffff');
@@ -519,44 +547,71 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       // Construir el HTML procesando todos los componentes en orden
       let contentHtml = '';
 
-      activeComponents.forEach((component) => {
-        if (component.type === 'noteContainer') {
-          // Renderizar noteContainer con sus componentes internos
-          const noteBorderWidth = component.props?.containerBorderWidth ?? 1;
-          const noteBorderColor = component.props?.containerBorderColor ?? '#e0e0e0';
-          const noteBorderRadius = component.props?.containerBorderRadius ?? 12;
-          const notePadding = component.props?.containerPadding ?? 10;
-          const noteMaxWidth = component.props?.containerMaxWidth ?? 560;
+      // Si es nota individual, envolver todo en un contenedor con estilos
+      if (!isNewsletterMode && activeComponents.length > 0) {
+        contentHtml += `<div class="note-section">`;
+        contentHtml += `<div style="max-width: ${containerMaxWidth}px; margin: 0 auto; padding: ${containerPadding}px; border-radius: ${containerBorderRadius}px; border: ${containerBorderWidth}px solid ${containerBorderColor}; margin-bottom: 24px; background-color: #ffffff;">`;
 
-          contentHtml += `<div class="note-section">`;
-          contentHtml += `<div style="max-width: ${noteMaxWidth}px; margin: 0 auto; padding: ${notePadding}px; border-radius: ${noteBorderRadius}px; border: ${noteBorderWidth}px solid ${noteBorderColor}; margin-bottom: 24px;">`;
-
-          // Renderizar componentes internos
-          const componentsData = component.props?.componentsData || [];
-          componentsData.forEach((innerComponent: any) => {
-            contentHtml += renderComponentToHtml(innerComponent);
-          });
-
-          contentHtml += `</div></div>`;
-        } else {
-          // Renderizar componente suelto directamente
-          contentHtml += `<div style="margin-bottom: 16px;">`;
+        // Renderizar todos los componentes dentro del contenedor
+        activeComponents.forEach((component) => {
           contentHtml += renderComponentToHtml(component);
-          contentHtml += `</div>`;
-        }
-      });
+        });
+
+        contentHtml += `</div></div>`;
+      } else {
+        // Para newsletters, mantener la lógica actual con noteContainers
+        activeComponents.forEach((component) => {
+          if (component.type === 'noteContainer') {
+            // Renderizar noteContainer con sus componentes internos
+            const noteBorderWidth = component.props?.containerBorderWidth ?? 1;
+            const noteBorderColor = component.props?.containerBorderColor ?? '#e0e0e0';
+            const noteBorderRadius = component.props?.containerBorderRadius ?? 12;
+            const notePadding = component.props?.containerPadding ?? 10;
+            const noteMaxWidth = component.props?.containerMaxWidth ?? 560;
+
+            contentHtml += `<div class="note-section">`;
+            contentHtml += `<div style="max-width: ${noteMaxWidth}px; margin: 0 auto; padding: ${notePadding}px; border-radius: ${noteBorderRadius}px; border: ${noteBorderWidth}px solid ${noteBorderColor}; margin-bottom: 24px;">`;
+
+            // Renderizar componentes internos
+            const componentsData = component.props?.componentsData || [];
+            componentsData.forEach((innerComponent: any) => {
+              contentHtml += renderComponentToHtml(innerComponent);
+            });
+
+            contentHtml += `</div></div>`;
+          } else {
+            // Renderizar componente suelto directamente
+            contentHtml += `<div style="margin-bottom: 16px;">`;
+            contentHtml += renderComponentToHtml(component);
+            contentHtml += `</div>`;
+          }
+        });
+      }
 
       // Importar y usar el generador de template
       const { generateNewsletterTemplate } = await import(
         '../html-generators/templates/newsletter.template'
       );
 
+      // Usar título y descripción de la nota si no es modo newsletter
+      const previewTitle = isNewsletterMode
+        ? newsletterTitle || 'Newsletter'
+        : noteData.noteTitle || 'Nota sin título';
+
+      const previewDescription = isNewsletterMode
+        ? newsletterDescription || ''
+        : noteData.noteDescription || '';
+
+      // Solo incluir header y footer en modo newsletter
+      const htmlHeader = isNewsletterMode ? currentHeader : null;
+      const htmlFooter = isNewsletterMode ? currentFooter : null;
+
       const html = generateNewsletterTemplate(
-        newsletterTitle || 'Newsletter',
-        newsletterDescription || '',
+        previewTitle,
+        previewDescription,
         contentHtml,
-        currentHeader,
-        currentFooter
+        htmlHeader,
+        htmlFooter
       );
 
       setGeneratedPreviewHtml(html);
@@ -576,14 +631,22 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     defaultNewsletterFooter,
     newsletterTitle,
     newsletterDescription,
+    isNewsletterMode,
+    noteData.noteTitle,
+    noteData.noteDescription,
+    containerMaxWidth,
+    containerPadding,
+    containerBorderRadius,
+    containerBorderWidth,
+    containerBorderColor,
   ]);
 
   // Auto-generar preview cuando cambian las notas o se activa el preview
   useEffect(() => {
-    if (showPreview && isNewsletterMode) {
+    if (showPreview && (isNewsletterMode || activeVersion === 'newsletter')) {
       handleGeneratePreviewHtml();
     }
-  }, [showPreview, isNewsletterMode, handleGeneratePreviewHtml]);
+  }, [showPreview, isNewsletterMode, activeVersion]);
 
   // Wrapper para onTogglePreview que también genera el HTML
   const handleTogglePreviewWrapper = useCallback(() => {
@@ -735,7 +798,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       initialDataRef.current = createAutoSaveData();
       console.log('📊 Initial data set for change detection');
     }
-  }, [noteData.isEditingExistingNote, createAutoSaveData]);
+  }, [noteData.isEditingExistingNote]);
 
   // Función para detectar si hay cambios
   const checkForChanges = useCallback(() => {
@@ -813,7 +876,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       setChangeCount(0);
       console.log('🔄 Change detection reset after save');
     }
-  }, [noteData.isEditingExistingNote, createAutoSaveData]);
+  }, [noteData.isEditingExistingNote]);
 
   // ⚡ Optimización: Actualizar el contenido de un componente con sincronización
   const updateComponentContent = useCallback(
@@ -1044,6 +1107,78 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     },
     [versionSync, activeTemplate]
   );
+
+  // Función para inyectar datos generados por IA
+  const handleInjectAIData = useCallback(
+    (data: {
+      objData: EmailComponent[];
+      objDataWeb: EmailComponent[];
+      title?: string;
+      description?: string;
+      coverImageUrl?: string;
+      origin?: string;
+    }) => {
+      console.log('🤖 Inyectando datos de IA:', data);
+
+      // Actualizar la versión newsletter con objData
+      emailComponents.updateActiveComponents(activeTemplate, 'newsletter', data.objData);
+
+      // Actualizar la versión web con objDataWeb
+      emailComponents.updateActiveComponents(activeTemplate, 'web', data.objDataWeb);
+
+      // Actualizar título si viene en los datos de IA
+      if (data.title) {
+        noteData.setNoteTitle(data.title);
+      }
+
+      // Actualizar descripción si viene en los datos de IA
+      if (data.description) {
+        noteData.setNoteDescription(data.description);
+      }
+
+      // Actualizar imagen de portada si viene en los datos de IA
+      if (data.coverImageUrl) {
+        noteData.setNoteCoverImageUrl(data.coverImageUrl);
+      }
+
+      // Notificar al callback externo si existe
+      if (onAIDataGenerated) {
+        onAIDataGenerated(data);
+      }
+
+      showNotification('Contenido generado con IA cargado exitosamente', 'success');
+    },
+    [onAIDataGenerated, emailComponents, activeTemplate, noteData]
+  );
+
+  // Función para manejar click en botón IA del header
+  const handleAIGenerateClick = useCallback(() => {
+    // Verificar si ya está generando (para reabrir el modal y ver progreso)
+    const { loading: isGenerating } = useAiGenerationStore.getState();
+
+    if (isGenerating) {
+      // Si está generando, abrir modal directamente para ver progreso
+      setShowAIModal(true);
+      return;
+    }
+
+    // Si no está generando, verificar si hay contenido
+    const components = getActiveComponents();
+
+    // Si ya hay contenido, mostrar diálogo de confirmación
+    if (components && components.length > 0) {
+      setShowAIConfirmDialog(true);
+    } else {
+      // Si no hay contenido, abrir modal directamente
+      setShowAIModal(true);
+    }
+  }, [getActiveComponents]);
+
+  // Función para confirmar generación con IA (reemplazar contenido)
+  const handleConfirmAIGeneration = useCallback(() => {
+    setShowAIConfirmDialog(false);
+    setShowAIModal(true);
+  }, []);
 
   // Función para generar el HTML del email
   const handleGenerateEmailHtml = useCallback(async () => {
@@ -1381,7 +1516,9 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         return;
       }
 
-      // Validar campos de metadata obligatorios
+      // Validar campos de metadata obligatorios según plataforma
+      // ADAC: contentTypeId, audienceId, categoryId, subcategoryId
+      // MICHIN: contentTypeId, categoryId, subcategoryId (NO audienceId)
       if (!noteData.contentTypeId) {
         showNotification('El tipo de contenido es obligatorio', 'error');
         setSavingNote(false);
@@ -1389,7 +1526,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         return;
       }
 
-      if (!noteData.audienceId) {
+      // audienceId solo es obligatorio en ADAC
+      if (CONFIG.platform === 'ADAC' && !noteData.audienceId) {
         showNotification('La audiencia es obligatoria', 'error');
         setSavingNote(false);
         setIsContainerSelected(true);
@@ -1469,11 +1607,21 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           configPost: JSON.stringify(configPostObject),
           content: '', // Campo requerido por el backend (puede estar vacío)
           highlight: noteData.highlight,
-          // ✅ Incluir campos de metadata que pueden ser editados
-          contentTypeId: noteData.contentTypeId,
-          audienceId: noteData.audienceId || null,
-          categoryId: noteData.categoryId || null,
-          subcategoryId: noteData.subcategoryId || null,
+          // ✅ Incluir campos de metadata según plataforma
+          // ADAC: incluye audienceId
+          // MICHIN: NO incluye audienceId
+          ...(CONFIG.platform === 'ADAC'
+            ? {
+                contentTypeId: noteData.contentTypeId,
+                audienceId: noteData.audienceId || null,
+                categoryId: noteData.categoryId || null,
+                subcategoryId: noteData.subcategoryId || null,
+              }
+            : {
+                contentTypeId: noteData.contentTypeId,
+                categoryId: noteData.categoryId || null,
+                subcategoryId: noteData.subcategoryId || null,
+              }),
         };
 
         console.log('📝 Actualizando post existente:', {
@@ -1493,11 +1641,21 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           configPost: JSON.stringify(configPostObject),
           origin: 'ADAC',
           highlight: noteData.highlight,
-          contentTypeId: noteData.contentTypeId,
-          audienceId: noteData.audienceId || null,
-          // El backend espera valores singulares, no arrays
-          categoryId: noteData.categoryId || null,
-          subcategoryId: noteData.subcategoryId || null,
+          // ✅ Incluir campos de metadata según plataforma
+          // ADAC: incluye audienceId
+          // MICHIN: NO incluye audienceId
+          ...(CONFIG.platform === 'ADAC'
+            ? {
+                contentTypeId: noteData.contentTypeId,
+                audienceId: noteData.audienceId || null,
+                categoryId: noteData.categoryId || null,
+                subcategoryId: noteData.subcategoryId || null,
+              }
+            : {
+                contentTypeId: noteData.contentTypeId,
+                categoryId: noteData.categoryId || null,
+                subcategoryId: noteData.subcategoryId || null,
+              }),
         };
 
         console.log('📝 Creando post nuevo:', {
@@ -1711,7 +1869,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       console.log('🖼️ Cargando coverImageUrl inicial del newsletter:', initialCoverImageUrl);
       noteData.setNoteCoverImageUrl(initialCoverImageUrl);
     }
-  }, [isNewsletterMode, initialCoverImageUrl, noteData]);
+  }, [isNewsletterMode, initialCoverImageUrl]);
 
   // Cargar datos del post cuando se edite una nota existente
   useEffect(() => {
@@ -1741,9 +1899,21 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       if (currentPost.objData) {
         try {
           const objDataParsed = JSON.parse(currentPost.objData);
+
+          // Validar que objDataParsed sea un array válido
+          if (!Array.isArray(objDataParsed)) {
+            throw new Error('objData no es un array válido');
+          }
+
           const objDataWebParsed = currentPost.objDataWeb
             ? JSON.parse(currentPost.objDataWeb)
             : null;
+
+          // Validar objDataWeb si existe
+          if (objDataWebParsed && !Array.isArray(objDataWebParsed)) {
+            throw new Error('objDataWeb no es un array válido');
+          }
+
           const configPost = currentPost.configPost ? JSON.parse(currentPost.configPost) : {};
 
           // Cargar los componentes según el template
@@ -1774,7 +1944,16 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           setContainerMaxWidth(configPost.containerMaxWidth ?? 560);
         } catch (error) {
           console.error('Error parsing post data:', error);
+          setDataErrorMessage(
+            'No se puede procesar esta nota. Los datos están mal formados o incompletos.'
+          );
+          setShowDataErrorDialog(true);
         }
+      } else {
+        // Si no hay objData en una nota existente, también es un error
+        console.error('La nota no tiene objData');
+        setDataErrorMessage('Esta nota no contiene datos de contenido. No se puede editar.');
+        setShowDataErrorDialog(true);
       }
     }
   }, [currentPost]);
@@ -2644,6 +2823,11 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         showPreview={showPreview}
         onTogglePreview={handleTogglePreviewWrapper}
         newsletterHtmlPreview={generatedPreviewHtml || newsletterHtmlPreview}
+        // Prop para botón de IA
+        onAIGenerateClick={handleAIGenerateClick}
+        // Props para análisis editorial de notas
+        noteTitle={noteData.noteTitle}
+        noteHtmlPreview={generatedPreviewHtml}
       />
 
       {/* Contenedor principal */}
@@ -2656,7 +2840,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         });
         return null;
       })()}
-      {showPreview && activeTemplate === 'newsletter' ? (
+      {showPreview && activeVersion === 'newsletter' ? (
         // Preview centrado sin paneles laterales
         <Box
           sx={{
@@ -2685,6 +2869,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
                 width: '100%',
                 height: 'calc(100vh - 150px)',
                 border: 'none',
+                padding: '16px',
               }}
               title="Newsletter Preview"
             />
@@ -2735,6 +2920,9 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               onRefreshNotes={loadAvailableNotes}
               // Prop para modo view-only
               isViewOnly={isViewOnly}
+              // Prop para modo creación con IA
+              isAICreation={isAICreation}
+              onInjectAIData={handleInjectAIData}
             />
 
             {/* Barra de redimensionado izquierda */}
@@ -2795,6 +2983,9 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               activeVersion={activeVersion}
               // Nuevas props para newsletter
               isNewsletterMode={isNewsletterMode}
+              // Props para mostrar skeleton durante generación
+              generatingEmail={generatingEmail}
+              generatingNewsletterHtml={generatingNewsletterHtml}
               newsletterNotes={newsletterNotes}
               onMoveNewsletterNote={isViewOnly ? () => {} : handleMoveNewsletterNote}
               onRemoveNewsletterNote={isViewOnly ? () => {} : handleRemoveNewsletterNote}
@@ -3084,6 +3275,98 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         onExitWithoutSaving={handleExitWithoutSaving}
         changeCount={changeCount}
       />
+
+      {/* AI Note Modal */}
+      <AINoteModal
+        open={showAIModal}
+        onClose={() => setShowAIModal(false)}
+        selectedTemplate={activeTemplate}
+        onInjectAIData={handleInjectAIData}
+      />
+
+      {/* Diálogo de confirmación para generar con IA */}
+      <Dialog
+        open={showAIConfirmDialog}
+        onClose={() => setShowAIConfirmDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <Icon icon="mdi:alert-circle-outline" width={28} color="#ff9800" />
+            <Typography variant="h6" fontWeight={600}>
+              Reemplazar contenido existente
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" paragraph>
+            Ya tienes contenido en esta nota. ¿Deseas reemplazarlo con el contenido generado por IA?
+          </Typography>
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            Esta acción no se puede deshacer. Se recomienda guardar tu trabajo actual antes de
+            continuar.
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setShowAIConfirmDialog(false)} color="inherit">
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmAIGeneration}
+            startIcon={<Icon icon="mdi:magic-staff" />}
+            sx={{
+              bgcolor: '#8B45FF',
+              '&:hover': { bgcolor: '#7500E1' },
+            }}
+          >
+            Sí, reemplazar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo de error de datos mal formados */}
+      <Dialog
+        open={showDataErrorDialog}
+        onClose={() => {
+          setShowDataErrorDialog(false);
+          onClose();
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <Icon icon="mdi:alert-circle" width={28} color="#f44336" />
+            <Typography variant="h6" fontWeight={600}>
+              Error al cargar la nota
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" paragraph>
+            {dataErrorMessage}
+          </Typography>
+          <Alert severity="error" sx={{ mt: 2 }}>
+            Esta nota no se puede procesar correctamente. Por favor, contacta al soporte técnico o
+            verifica que la nota fue creada correctamente.
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setShowDataErrorDialog(false);
+              onClose();
+            }}
+            color="primary"
+            fullWidth
+          >
+            Aceptar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

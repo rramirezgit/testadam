@@ -78,7 +78,7 @@ export const endpoints = {
     logout: '/auth/logout',
   },
   user: {
-    profile: '/auth/userinfo',
+    profile: '/auth/profile',
     updateProfile: '/user/profile',
   },
   post: {
@@ -128,5 +128,11 @@ export const endpoints = {
   // SEO endpoints
   seo: {
     analyzeEditorial: '/api/seo/analyze-editorial-html',
+  },
+  // AI endpoints (asíncrono con polling)
+  ai: {
+    generateNote: '/api/v1/ai/generate-note',
+    generateNewsletter: '/api/v1/ai/generate-newsletter',
+    checkStatus: (taskId: string) => `/api/v1/ai/status/${taskId}`,
   },
 };

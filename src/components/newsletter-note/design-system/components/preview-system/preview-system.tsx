@@ -131,7 +131,6 @@ export const PreviewSystem: React.FC<PreviewSystemProps> = ({ className }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const [previewType, setPreviewType] = useState<PreviewType>('newsletter');
   const [showFrame, setShowFrame] = useState(true);
-  const [showRulers, setShowRulers] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 

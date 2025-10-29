@@ -70,4 +70,8 @@ export interface LeftPanelProps {
   onRefreshNotes?: () => void;
   // Prop para modo view-only
   isViewOnly?: boolean;
+  // Prop para modo creación con IA
+  isAICreation?: boolean;
+  // Callback para inyectar datos generados por IA
+  onInjectAIData?: (data: { objData: any[]; objDataWeb: any[] }) => void;
 }

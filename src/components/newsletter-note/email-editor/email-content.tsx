@@ -7,7 +7,7 @@ import type { BannerOption } from 'src/components/newsletter-note/banner-selecto
 import { Icon } from '@iconify/react';
 import React, { memo, useMemo } from 'react';
 
-import { Box, Paper, Button, Typography } from '@mui/material';
+import { Box, Paper, Button, Skeleton, Typography } from '@mui/material';
 
 import { CONFIG, SOCIAL_ICONS } from 'src/global-config';
 
@@ -92,6 +92,9 @@ interface EmailContentProps {
   selectedColumn?: 'left' | 'right';
   // Prop para modo view-only
   isViewOnly?: boolean;
+  // Props para mostrar skeleton durante generación
+  generatingEmail?: boolean;
+  generatingNewsletterHtml?: boolean;
 }
 
 // Componente para el header del newsletter
@@ -439,6 +442,9 @@ const EmailContent = memo(
     selectedColumn = 'left',
     // Prop para modo view-only
     isViewOnly = false,
+    // Props para mostrar skeleton durante generación
+    generatingEmail = false,
+    generatingNewsletterHtml = false,
   }: EmailContentProps) => {
     // Memoizar los componentes para evitar recálculos innecesarios
     const components = useMemo(() => getActiveComponents(), [getActiveComponents]);
@@ -496,6 +502,102 @@ const EmailContent = memo(
       }
       return {};
     }, [selectedBanner, bannerOptions, showGradient, gradientColors, emailBackground]);
+
+    // Componente Skeleton para mostrar durante la generación
+    const renderSkeleton = () => (
+      <Box
+        sx={{
+          position: 'relative',
+          ...backgroundStyle,
+          minHeight: '500px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: containerMaxWidth || 600,
+            margin: '0 auto',
+            padding: `${containerPadding}px`,
+            width: '100%',
+          }}
+        >
+          {/* Header Skeleton */}
+          <Box sx={{ mb: 3 }}>
+            <Skeleton variant="rectangular" height={60} sx={{ borderRadius: 1, mb: 1 }} />
+            <Skeleton variant="text" width="40%" height={30} />
+          </Box>
+
+          {/* Content Skeletons */}
+          {[1, 2, 3, 4].map((item) => (
+            <Box key={item} sx={{ mb: 3 }}>
+              <Skeleton variant="text" width="30%" height={40} sx={{ mb: 1 }} />
+              <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 1, mb: 1 }} />
+              <Skeleton variant="text" width="100%" />
+              <Skeleton variant="text" width="90%" />
+              <Skeleton variant="text" width="95%" />
+            </Box>
+          ))}
+
+          {/* Image Skeleton */}
+          <Box sx={{ mb: 3 }}>
+            <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 1 }} />
+          </Box>
+
+          {/* Button Skeleton */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+            <Skeleton variant="rectangular" width={150} height={45} sx={{ borderRadius: 2 }} />
+          </Box>
+
+          {/* Footer Skeleton */}
+          <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+            <Skeleton variant="text" width="60%" height={25} sx={{ mx: 'auto', mb: 1 }} />
+            <Skeleton variant="text" width="40%" height={20} sx={{ mx: 'auto' }} />
+          </Box>
+        </Box>
+
+        {/* Loading overlay with text */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+            bgcolor: 'rgba(255, 255, 255, 0.95)',
+            padding: 3,
+            borderRadius: 2,
+            boxShadow: 3,
+            zIndex: 10,
+          }}
+        >
+          <Icon icon="mdi:loading" width={40} style={{ animation: 'spin 1s linear infinite' }} />
+          <Typography variant="body1" fontWeight={600}>
+            Generando preview HTML...
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Por favor espera un momento
+          </Typography>
+        </Box>
+
+        <style>
+          {`
+            @keyframes spin {
+              from {
+                transform: rotate(0deg);
+              }
+              to {
+                transform: rotate(360deg);
+              }
+            }
+          `}
+        </style>
+      </Box>
+    );
 
     // Memoizar renderBulletList
     const renderBulletList = useMemo(
@@ -592,6 +694,11 @@ const EmailContent = memo(
         </Box>
       </Box>
     );
+
+    // Mostrar skeleton si se está generando HTML
+    if (generatingEmail || generatingNewsletterHtml) {
+      return renderSkeleton();
+    }
 
     // Si está en modo newsletter, mostrar las notas del newsletter o preview HTML
     if (isNewsletterMode) {

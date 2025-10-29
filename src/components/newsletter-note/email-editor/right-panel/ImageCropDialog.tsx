@@ -221,7 +221,6 @@ export default function ImageCropDialog({
     >
       <AppBar position="static" color="default" elevation={0}>
         <Toolbar>
-          <Icon icon="mdi:image-edit" style={{ fontSize: 24, marginRight: 8 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {activeTab === 'edit' ? 'Editar imagen' : 'Generar imagen con IA'}
           </Typography>
