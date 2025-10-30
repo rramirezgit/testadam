@@ -288,6 +288,89 @@ export const breedingPrompts: PromptSuggestion[] = [
   },
 ];
 
+/**
+ * Prompts para Noticias Externas
+ */
+export const newsPrompts: PromptSuggestion[] = [
+  {
+    id: 'news-1',
+    category: 'Noticias',
+    title: 'Reescribir Noticia Externa',
+    prompt:
+      'Analiza y mejora la siguiente noticia adaptándola para nuestra audiencia de acuaristas marinos. Reescribe el contenido de manera profesional, clara y atractiva. Mejora la estructura, corrige errores, optimiza el lenguaje para SEO, y añade contexto relevante para acuaristas cuando sea apropiado. Mantén los hechos principales pero presenta la información de forma más engaging. \n\nNoticia original:\n\n{noticia_completa}',
+    variables: [
+      {
+        name: 'noticia_completa',
+        placeholder:
+          'Pega aquí el texto completo de la noticia externa que deseas mejorar y adaptar...',
+        description: 'Texto completo de la noticia externa',
+      },
+    ],
+    tags: ['noticia', 'externa', 'reescribir', 'mejorar', 'adaptar'],
+  },
+  {
+    id: 'news-2',
+    category: 'Noticias',
+    title: 'Noticia con Enfoque Específico',
+    prompt:
+      'Basándote en la siguiente noticia, crea una versión mejorada con énfasis en {enfoque_especifico}. Reestructura el contenido para destacar este aspecto, añade análisis profundo sobre el tema, incluye datos relevantes, y proporciona contexto adicional que sea valioso para los lectores interesados en este enfoque particular.\n\nNoticia original:\n\n{noticia_completa}',
+    variables: [
+      {
+        name: 'noticia_completa',
+        placeholder: 'Pega aquí el texto completo de la noticia externa...',
+        description: 'Texto completo de la noticia',
+      },
+      {
+        name: 'enfoque_especifico',
+        placeholder:
+          'ej: conservación marina, impacto económico, tecnología, investigación científica',
+        description: 'Aspecto específico a enfatizar',
+      },
+    ],
+    tags: ['noticia', 'enfoque', 'análisis', 'especializado'],
+  },
+  {
+    id: 'news-3',
+    category: 'Noticias',
+    title: 'Noticia Resumida y Mejorada',
+    prompt:
+      'Toma la siguiente noticia y crea una versión concisa, profesional y mejorada de aproximadamente {longitud_deseada} palabras. Extrae los puntos clave, mejora la redacción, estructura la información de forma clara con subtítulos apropiados, y asegúrate de que sea fácil de leer y comprender. Mantén los datos más importantes y elimina información redundante.\n\nNoticia original:\n\n{noticia_completa}',
+    variables: [
+      {
+        name: 'noticia_completa',
+        placeholder: 'Pega aquí el texto completo de la noticia que deseas resumir...',
+        description: 'Texto completo de la noticia',
+      },
+      {
+        name: 'longitud_deseada',
+        placeholder: 'ej: 300, 500, 800',
+        description: 'Número aproximado de palabras deseado',
+      },
+    ],
+    tags: ['noticia', 'resumen', 'conciso', 'mejorar'],
+  },
+  {
+    id: 'news-4',
+    category: 'Noticias',
+    title: 'Noticia con Perspectiva Local',
+    prompt:
+      'Reescribe la siguiente noticia internacional añadiendo una perspectiva local para {región_objetivo}. Explica cómo esta noticia afecta o se relaciona con la comunidad de acuaristas en esta región, menciona tiendas, organizaciones o eventos locales relevantes cuando sea apropiado, y adapta el tono y ejemplos para resonar con la audiencia local.\n\nNoticia original:\n\n{noticia_completa}',
+    variables: [
+      {
+        name: 'noticia_completa',
+        placeholder: 'Pega aquí el texto completo de la noticia internacional...',
+        description: 'Texto completo de la noticia',
+      },
+      {
+        name: 'región_objetivo',
+        placeholder: 'ej: México, Latinoamérica, Ciudad de México',
+        description: 'Región o audiencia objetivo',
+      },
+    ],
+    tags: ['noticia', 'local', 'regional', 'adaptación'],
+  },
+];
+
 // ============================================================================
 // FUNCIONES HELPER
 // ============================================================================
@@ -302,6 +385,7 @@ export function getAllPromptSuggestions(): PromptSuggestion[] {
     ...conservationPrompts,
     ...healthPrompts,
     ...breedingPrompts,
+    ...newsPrompts,
   ];
 }
 

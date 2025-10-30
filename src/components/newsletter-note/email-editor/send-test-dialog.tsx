@@ -36,6 +36,7 @@ export default function SendTestDialog({
   const [emailsLocal, setEmailsLocal] = useState<string[]>([]);
   const [success, setSuccess] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [sendError, setSendError] = useState<string>('');
 
   const theme = useTheme();
 
@@ -44,6 +45,7 @@ export default function SendTestDialog({
     setOpen(false);
     setEmailsLocal([]);
     setErrorsEmails([]);
+    setSendError('');
   };
 
   // Auto-cerrar el diálogo de éxito después de 3 segundos
@@ -92,12 +94,16 @@ export default function SendTestDialog({
     if (emailsLocal.length === 0) return;
 
     setLoading(true);
+    setSendError('');
     try {
       await onSendTest(emailsLocal);
       setSuccess(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error enviando prueba:', error);
-      // En caso de error, no mostrar success
+      
+      // Extraer el mensaje de error
+      const errorMessage = error?.message || 'Error al enviar la prueba';
+      setSendError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -150,6 +156,23 @@ export default function SendTestDialog({
                     {item}
                   </Box>
                 ))}
+                {sendError && (
+                  <Box
+                    sx={{
+                      margin: '10px auto',
+                      maxWidth: '100%',
+                      fontSize: '14px',
+                      color: 'error.main',
+                      backgroundColor: 'error.lighter',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid',
+                      borderColor: 'error.light',
+                    }}
+                  >
+                    {sendError}
+                  </Box>
+                )}
               </Box>
             </Box>
           </DialogContent>

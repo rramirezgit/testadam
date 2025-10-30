@@ -99,8 +99,6 @@ export function generateSingleNoteTemplate(
 <body>
   <div class="email-container">
     <div class="note-content">
-      ${noteTitle ? `<h1 class="note-title">${escapeHtml(noteTitle)}</h1>` : ''}
-      ${noteDescription ? `<p class="note-description">${escapeHtml(noteDescription)}</p>` : ''}
       <div class="components">
         ${componentsHtml}
       </div>

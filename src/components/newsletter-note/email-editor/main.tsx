@@ -107,6 +107,8 @@ interface EmailEditorMainProps {
   isAICreation?: boolean;
   // Callback para recibir datos generados por IA
   onAIDataGenerated?: (data: { objData: EmailComponent[]; objDataWeb: EmailComponent[] }) => void;
+  // Prop para guardar newsletter con lógica de modal (MICHIN)
+  onSaveNewsletter?: () => void | Promise<void>;
 }
 
 export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
@@ -153,6 +155,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   // Prop para modo creación con IA
   isAICreation = false,
   onAIDataGenerated,
+  // Prop para guardar newsletter con lógica de modal (MICHIN)
+  onSaveNewsletter,
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
@@ -2828,6 +2832,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         // Props para análisis editorial de notas
         noteTitle={noteData.noteTitle}
         noteHtmlPreview={generatedPreviewHtml}
+        // Prop para guardar newsletter con lógica de modal (MICHIN)
+        onSaveNewsletter={onSaveNewsletter}
       />
 
       {/* Contenedor principal */}

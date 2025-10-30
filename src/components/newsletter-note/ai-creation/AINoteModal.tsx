@@ -178,17 +178,7 @@ export default function AINoteModal({
       return 'El prompt es obligatorio';
     }
 
-    if (formState.prompt.length < 10) {
-      return 'El prompt debe tener al menos 10 caracteres';
-    }
-
-    if (formState.prompt.length > 2000) {
-      return 'El prompt no puede exceder 2000 caracteres';
-    }
-
-    if (formState.title && formState.title.length > 200) {
-      return 'El título no puede exceder 200 caracteres';
-    }
+    // Sin validaciones de longitud - se permite cualquier tamaño de prompt
 
     return null;
   };
@@ -385,7 +375,7 @@ export default function AINoteModal({
             value={formState.prompt}
             onChange={(e) => handleChange('prompt', e.target.value)}
             disabled={formState.status === 'generating'}
-            helperText={`${formState.prompt.length}/2000 caracteres`}
+            // helperText={`${formState.prompt.length}/2000 caracteres`}
           />
         </Box>
 

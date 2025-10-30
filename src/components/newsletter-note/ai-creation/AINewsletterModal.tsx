@@ -115,14 +115,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
       return `Tienes ${emptyPrompts} prompt(s) vacío(s). Completa todos los campos o reduce la cantidad de notas.`;
     }
 
-    for (let i = 0; i < formState.prompts.length; i += 1) {
-      if (formState.prompts[i].length < 10) {
-        return `El prompt ${i + 1} es demasiado corto. Mínimo 10 caracteres.`;
-      }
-      if (formState.prompts[i].length > 1000) {
-        return `El prompt ${i + 1} es demasiado largo. Máximo 1000 caracteres.`;
-      }
-    }
+    // Sin validaciones de longitud - se permite cualquier tamaño de prompt
 
     return null;
   };
@@ -294,7 +287,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
                   value={prompt}
                   onChange={(e) => handlePromptChange(index, e.target.value)}
                   disabled={formState.status === 'generating'}
-                  helperText={`${prompt.length}/1000 caracteres`}
+                  helperText={`${prompt.length} caracteres`}
                 />
               </CardContent>
             </Card>

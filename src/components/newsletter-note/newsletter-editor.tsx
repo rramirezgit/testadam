@@ -19,6 +19,7 @@ import { CONFIG } from 'src/global-config';
 import usePostStore from 'src/store/PostStore';
 
 import EmailEditor from './email-editor';
+import TargetStoresModal from './newsletter-editor/TargetStoresModal';
 import { generateNewsletterHtml as generateFullNewsletterHtml } from './newsletter-html-generator';
 
 import type { NewsletterHeader, NewsletterFooter } from './email-editor/types';
@@ -124,6 +125,11 @@ export default function NewsletterEditor({
   const [noteEditTrackers, setNoteEditTrackers] = useState<NoteEditTracker[]>([]);
   const [showSaveChangesDialog, setShowSaveChangesDialog] = useState(false);
   const [pendingSaveAction, setPendingSaveAction] = useState<(() => void) | null>(null);
+
+  // Estados para modal de targetStores (MICHIN)
+  const [showTargetStoresModal, setShowTargetStoresModal] = useState(false);
+  const [selectedTargetStores, setSelectedTargetStores] = useState<string[]>([]);
+  const [pendingNewsletterSave, setPendingNewsletterSave] = useState(false);
 
   // Estados para el menú de envío
   const [newsletterList, setNewsletterList] = useState<any[]>([]);
@@ -508,17 +514,18 @@ export default function NewsletterEditor({
     loadBackendNotes();
   };
 
-  const handleSaveNewsletter = async () => {
-    if (!title.trim()) {
-      showSnackbar('Por favor ingresa un título para el newsletter', 'error');
-      return;
-    }
+  // Función para confirmar targetStores y continuar con el guardado (MICHIN)
+  const handleConfirmTargetStores = async (stores: string[]) => {
+    setSelectedTargetStores(stores);
+    setShowTargetStoresModal(false);
+    setPendingNewsletterSave(false);
 
-    if (selectedNotes.length === 0) {
-      showSnackbar('Por favor agrega al menos una nota al newsletter', 'error');
-      return;
-    }
+    // Continuar con el guardado del newsletter
+    await proceedWithSave(stores);
+  };
 
+  // Función que ejecuta el guardado real del newsletter
+  const proceedWithSave = async (targetStores?: string[]) => {
     setIsSaving(true);
 
     try {
@@ -530,7 +537,7 @@ export default function NewsletterEditor({
         footer
       );
 
-      const newsletterPayload = {
+      const newsletterPayload: any = {
         subject: title,
         content: newsletterHtml,
         description,
@@ -550,69 +557,112 @@ export default function NewsletterEditor({
 
       console.log('Newsletter payload to send to backend:', newsletterPayload);
 
-      const sendNewsletterToBackend = async (payload: any) => {
-        console.log('📧 Enviando newsletter al backend...');
-        console.log('📄 Subject:', payload.subject);
-        console.log('📝 Content (HTML):', payload.content.substring(0, 200) + '...');
-        console.log('🔧 Configuration:', payload.configuration);
-        console.log('📊 Notes included:', payload.notesCount);
-
-        return { success: true, id: payload.id };
-      };
-
-      await sendNewsletterToBackend(newsletterPayload);
-
-      const newsletter: Newsletter = {
-        id: newsletterId,
-        subject: title,
-        description,
-        notes: selectedNotes,
-        createdAt: isEditingExisting
-          ? initialNewsletter?.createdAt || new Date().toISOString()
-          : new Date().toISOString(),
-        dateCreated: initialNewsletter?.dateCreated,
-        dateModified: new Date().toISOString(),
-        header,
-        footer: {
-          ...footer,
-          socialLinks: footer.socialLinks.map((link) => ({
-            platform: link.platform,
-            url: link.url,
-          })),
-        },
-        content: newsletterHtml,
-      };
-
-      if (isEditingExisting) {
-        updateNewsletter(newsletter);
-      } else {
-        addNewsletter(newsletter);
-
-        // Redirigir a la ruta de edición si se proporciona el callback
-        if (onSaveRedirect) {
-          setTimeout(() => {
-            onSaveRedirect(newsletterId);
-          }, 500);
-          return; // Salir temprano para no llamar onClose
-        }
+      // Si estamos creando (no editando) y estamos en MICHIN, agregar targetStores
+      if (
+        !isEditingExisting &&
+        CONFIG.platform === 'MICHIN' &&
+        targetStores &&
+        targetStores.length > 0
+      ) {
+        newsletterPayload.targetStores = targetStores;
+        console.log('🎯 TargetStores agregados al payload:', targetStores);
       }
 
-      showSnackbar(
-        `Newsletter ${isEditingExisting ? 'actualizado' : 'guardado'} exitosamente`,
-        'success'
-      );
+      // Si estamos creando un nuevo newsletter, usar createNewsletterBackend
+      if (!isEditingExisting) {
+        const savedNewsletter = await createNewsletterBackend(
+          title,
+          newsletterPayload,
+          CONFIG.platform === 'MICHIN' ? targetStores : undefined
+        );
 
-      setStoreSelectedNotes([]);
+        if (savedNewsletter && savedNewsletter.id) {
+          const newsletter: Newsletter = {
+            id: savedNewsletter.id,
+            subject: title,
+            description,
+            notes: selectedNotes,
+            createdAt: new Date().toISOString(),
+            dateCreated: new Date().toISOString(),
+            dateModified: new Date().toISOString(),
+            header,
+            footer: {
+              ...footer,
+              socialLinks: footer.socialLinks.map((link) => ({
+                platform: link.platform,
+                url: link.url,
+              })),
+            },
+            content: newsletterHtml,
+          };
 
-      setTimeout(() => {
+          addNewsletter(newsletter);
+
+          showSnackbar('Newsletter guardado exitosamente', 'success');
+
+          // Redirigir a la ruta de edición si se proporciona el callback
+          if (onSaveRedirect) {
+            setTimeout(() => {
+              onSaveRedirect(savedNewsletter.id);
+            }, 500);
+            return; // Salir temprano para no llamar onClose
+          }
+
+          onClose();
+        } else {
+          showSnackbar('Error: No se recibió ID del newsletter guardado', 'error');
+        }
+      } else {
+        // Actualización de newsletter existente (lógica original)
+        const newsletter: Newsletter = {
+          id: newsletterId,
+          subject: title,
+          description,
+          notes: selectedNotes,
+          createdAt: initialNewsletter?.createdAt || new Date().toISOString(),
+          dateCreated: initialNewsletter?.dateCreated,
+          dateModified: new Date().toISOString(),
+          header,
+          footer: {
+            ...footer,
+            socialLinks: footer.socialLinks.map((link) => ({
+              platform: link.platform,
+              url: link.url,
+            })),
+          },
+          content: newsletterHtml,
+        };
+
+        updateNewsletter(newsletter);
+        showSnackbar('Newsletter actualizado exitosamente', 'success');
         onClose();
-      }, 1500);
+      }
     } catch (error) {
-      console.error('Error saving newsletter:', error);
+      console.error('Error guardando newsletter:', error);
       showSnackbar('Error al guardar el newsletter', 'error');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSaveNewsletter = async () => {
+    if (!title.trim()) {
+      showSnackbar('Por favor ingresa un título para el newsletter', 'error');
+      return;
+    }
+
+    // NOTA: Ya no validamos selectedNotes.length porque en el modo newsletter actual,
+    // el contenido se maneja directamente en los componentes del editor, no en selectedNotes
+
+    // MICHIN: Verificar targetStores antes de guardar por primera vez
+    if (CONFIG.platform === 'MICHIN' && !isEditingExisting && selectedTargetStores.length === 0) {
+      setPendingNewsletterSave(true);
+      setShowTargetStoresModal(true);
+      return;
+    }
+
+    // Si ya tenemos targetStores o no es MICHIN, continuar directamente
+    await proceedWithSave(selectedTargetStores.length > 0 ? selectedTargetStores : undefined);
   };
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
@@ -753,6 +803,7 @@ export default function NewsletterEditor({
           // El HTML ya se genera automáticamente via useMemo en línea 217-220
         }}
         newsletterHtmlPreview={newsletterHtmlPreview}
+        onSaveNewsletter={handleSaveNewsletter}
       />
 
       {/* Note Editor Dialog */}
@@ -801,6 +852,19 @@ export default function NewsletterEditor({
         severity={snackbarSeverity}
         onClose={() => setOpenSnackbar(false)}
       />
+
+      {/* Modal para seleccionar targetStores (solo MICHIN) */}
+      {CONFIG.platform === 'MICHIN' && (
+        <TargetStoresModal
+          open={showTargetStoresModal}
+          onClose={() => {
+            setShowTargetStoresModal(false);
+            setPendingNewsletterSave(false);
+          }}
+          onConfirm={handleConfirmTargetStores}
+          selectedStores={selectedTargetStores}
+        />
+      )}
     </Box>
   );
 }

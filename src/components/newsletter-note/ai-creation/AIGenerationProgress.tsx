@@ -67,6 +67,11 @@ const STATUS_CONFIG: Record<
     color: '#f44336',
     bgColor: '#ffebee',
   },
+  FAILED: {
+    icon: 'solar:danger-circle-bold',
+    color: '#f44336',
+    bgColor: '#ffebee',
+  },
 };
 
 // ============================================================================
@@ -80,8 +85,14 @@ export default function AIGenerationProgress({
   onCancel,
   showCancel = true,
 }: AIGenerationProgressProps) {
-  const config = STATUS_CONFIG[status];
-  const displayMessage = message || TASK_STATUS_MESSAGES[status];
+  // Config con validación y fallback
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING;
+  const displayMessage = message || TASK_STATUS_MESSAGES[status] || 'Procesando...';
+
+  // Log de advertencia si el status no es válido
+  if (!STATUS_CONFIG[status]) {
+    console.warn('⚠️ AIGenerationProgress: Status no válido recibido:', status);
+  }
 
   return (
     <Card
@@ -217,21 +228,25 @@ export default function AIGenerationProgress({
           )}
 
           {/* Botón cancelar */}
-          {showCancel && onCancel && status !== 'COMPLETED' && status !== 'ERROR' && (
-            <Box display="flex" justifyContent="flex-end">
-              <Button
-                size="small"
-                color="inherit"
-                onClick={onCancel}
-                startIcon={<Icon icon="solar:close-circle-linear" />}
-              >
-                Cancelar
-              </Button>
-            </Box>
-          )}
+          {showCancel &&
+            onCancel &&
+            status !== 'COMPLETED' &&
+            status !== 'ERROR' &&
+            status !== 'FAILED' && (
+              <Box display="flex" justifyContent="flex-end">
+                <Button
+                  size="small"
+                  color="inherit"
+                  onClick={onCancel}
+                  startIcon={<Icon icon="solar:close-circle-linear" />}
+                >
+                  Cancelar
+                </Button>
+              </Box>
+            )}
 
           {/* Información de tiempo estimado */}
-          {status !== 'COMPLETED' && status !== 'ERROR' && (
+          {status !== 'COMPLETED' && status !== 'ERROR' && status !== 'FAILED' && (
             <Box textAlign="center">
               <Typography variant="caption" color="text.secondary">
                 Tiempo estimado: 2-3 minutos

@@ -18,7 +18,8 @@ export type TaskStatus =
   | 'GENERATING_WEB_CONTENT' // Generando contenido web extendido
   | 'GENERATING_NEWSLETTER_CONTENT' // Generando contenido newsletter resumido
   | 'COMPLETED' // Generación completada exitosamente
-  | 'ERROR'; // Error en el proceso
+  | 'ERROR' // Error en el proceso
+  | 'FAILED'; // Fallo en la generación (del backend)
 
 /**
  * Mapeo de estados a progreso (%)
@@ -30,6 +31,7 @@ export const TASK_PROGRESS_MAP: Record<TaskStatus, number> = {
   GENERATING_NEWSLETTER_CONTENT: 75,
   COMPLETED: 100,
   ERROR: 0,
+  FAILED: 0,
 };
 
 /**
@@ -42,6 +44,7 @@ export const TASK_STATUS_MESSAGES: Record<TaskStatus, string> = {
   GENERATING_NEWSLETTER_CONTENT: 'Generando contenido de newsletter...',
   COMPLETED: '¡Generación completada!',
   ERROR: 'Error en la generación',
+  FAILED: 'Generación fallida',
 };
 
 // ============================================================================
@@ -110,6 +113,10 @@ export interface TaskStatusResponse {
   createdAt: string;
   updatedAt: string;
   data?: GeneratedContentData;
+  error?: {
+    code: string;
+    message: string;
+  };
 }
 
 // ============================================================================

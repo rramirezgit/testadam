@@ -149,12 +149,20 @@ export async function pollUntilComplete(
         return parseGeneratedContent(statusResponse.data);
       }
 
-      // Si hay error
-      if (
-        statusResponse.status === 'ERROR' ||
-        (statusResponse.success === false && statusResponse.status === 'COMPLETED')
-      ) {
-        throw new Error(statusResponse.message || 'Error durante la generación');
+      // Si hay error o fallo explícito - DETENER POLLING
+      if (statusResponse.status === 'ERROR' || statusResponse.status === 'FAILED') {
+        console.log('❌ Generación falló, deteniendo polling');
+        const errorMsg =
+          statusResponse.error?.message || statusResponse.message || 'Error durante la generación';
+        throw new Error(errorMsg);
+      }
+
+      // Si está COMPLETED pero con success=false - DETENER POLLING
+      if (statusResponse.status === 'COMPLETED' && statusResponse.success === false) {
+        console.log('❌ Generación completada con error, deteniendo polling');
+        const errorMsg =
+          statusResponse.error?.message || statusResponse.message || 'Error durante la generación';
+        throw new Error(errorMsg);
       }
 
       // Esperar antes del siguiente intento
@@ -271,13 +279,7 @@ export function validateNoteRequest(request: GenerateNoteRequest): ValidationRes
     errors.push({ field: 'prompt', message: 'El prompt es obligatorio' });
   }
 
-  if (request.prompt && request.prompt.length < 10) {
-    errors.push({ field: 'prompt', message: 'El prompt debe tener al menos 10 caracteres' });
-  }
-
-  if (request.prompt && request.prompt.length > 2000) {
-    errors.push({ field: 'prompt', message: 'El prompt no puede exceder 2000 caracteres' });
-  }
+  // Sin validaciones de longitud - se permite cualquier tamaño de prompt
 
   // Validar título (opcional)
   if (request.title && request.title.length > 200) {

@@ -125,6 +125,8 @@ export interface EmailEditorProps {
   newsletterHtmlPreview?: string;
   // Prop para modo creación con IA
   isAICreation?: boolean;
+  // Función para guardar newsletter desde el header (con modal de targetStores)
+  onSaveNewsletter?: () => void | Promise<void>;
 }
 
 // Tipos para el análisis editorial

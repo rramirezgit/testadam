@@ -32,12 +32,14 @@ import {
   DialogContentText,
 } from '@mui/material';
 
+import { CONFIG } from 'src/global-config';
 import usePostStore from 'src/store/PostStore';
 import useAiGenerationStore from 'src/store/AiGenerationStore';
 
 import { AnimateBorder } from 'src/components/animate/animate-border';
 
 import SendTestDialog from './send-test-dialog';
+import TargetStoresModal from '../newsletter-editor/TargetStoresModal';
 import EditorialAnalysisModal from './components/EditorialAnalysisModal';
 
 interface EditorHeaderProps {
@@ -95,6 +97,8 @@ interface EditorHeaderProps {
   // Props para análisis editorial de notas
   noteTitle?: string;
   noteHtmlPreview?: string;
+  // Nueva prop para guardar newsletter con lógica de modal
+  onSaveNewsletter?: () => void | Promise<void>;
 }
 
 export default function EditorHeader({
@@ -141,6 +145,7 @@ export default function EditorHeader({
   onAIGenerateClick,
   noteTitle = '',
   noteHtmlPreview = '',
+  onSaveNewsletter,
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
@@ -168,6 +173,10 @@ export default function EditorHeader({
 
   // Estado para el diálogo de confirmación de salida con IA generando
   const [openExitConfirmDialog, setOpenExitConfirmDialog] = useState(false);
+
+  // Estados para el modal de targetStores (MICHIN)
+  const [showTargetStoresModal, setShowTargetStoresModal] = useState(false);
+  const [selectedTargetStores, setSelectedTargetStores] = useState<string[]>([]);
 
   const theme = useTheme();
 
@@ -353,9 +362,14 @@ export default function EditorHeader({
       //   await sendPostForReview(tempNote.id, emails, content);
       //   console.log('✅ Prueba de nota nueva enviada exitosamente');
       // }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error enviando prueba:', error);
-      throw error;
+
+      // Extraer el mensaje de error del backend
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Error al enviar la prueba';
+
+      throw new Error(errorMessage);
     }
   };
 
@@ -390,8 +404,14 @@ export default function EditorHeader({
         default:
           break;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error guardando newsletter antes de enviar:', error);
+
+      // Extraer el mensaje de error del backend
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Error al guardar el newsletter';
+
+      showNotification(errorMessage, 'error');
       handleSendMenuClose();
       // No abrir el diálogo si hubo error al guardar
     }
@@ -410,10 +430,24 @@ export default function EditorHeader({
       // Abrir el diálogo de prueba
       handleSendMenuClose();
       setOpenTestDialog(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error guardando nota antes de enviar:', error);
+
+      // Extraer el mensaje de error del backend
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Error al guardar la nota';
+
+      showNotification(errorMessage, 'error');
       handleSendMenuClose();
     }
+  };
+
+  // Función para confirmar targetStores (MICHIN)
+  const handleConfirmTargetStores = async (stores: string[]) => {
+    setSelectedTargetStores(stores);
+    setShowTargetStoresModal(false);
+    // Continuar con el guardado
+    await executeSaveNewsletter(stores);
   };
 
   // Función para guardar newsletter
@@ -430,6 +464,34 @@ export default function EditorHeader({
         onSave();
         return;
       }
+
+      // MICHIN: Verificar targetStores antes de guardar por primera vez
+      const isNewNewsletter = !currentNewsletterId || currentNewsletterId.trim() === '';
+      if (CONFIG.platform === 'MICHIN' && isNewNewsletter && selectedTargetStores.length === 0) {
+        console.log('🎯 Newsletter nuevo en MICHIN sin targetStores, mostrando modal...');
+        setShowTargetStoresModal(true);
+        return;
+      }
+
+      // Si ya tenemos targetStores o no es MICHIN, continuar directamente
+      await executeSaveNewsletter(
+        selectedTargetStores.length > 0 ? selectedTargetStores : undefined
+      );
+    } catch (error: any) {
+      console.error('❌ Error en handleSaveNewsletter:', error);
+
+      // Extraer el mensaje de error del backend
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Error al guardar el newsletter';
+
+      showNotification(errorMessage, 'error');
+    }
+  };
+
+  // Función que ejecuta el guardado real del newsletter
+  const executeSaveNewsletter = async (targetStores?: string[]) => {
+    try {
+      console.log('🔄 executeSaveNewsletter called con targetStores:', targetStores);
 
       // Generar HTML si no está disponible
       let content = htmlContent;
@@ -516,6 +578,11 @@ export default function EditorHeader({
         if (updateResult) {
           console.log('✅ Newsletter actualizado exitosamente:', updateResult);
           showNotification('Newsletter actualizado correctamente', 'success');
+
+          // Llamar al callback para actualizar el estado en el componente padre
+          if (onNewsletterUpdate) {
+            onNewsletterUpdate();
+          }
         } else {
           console.error('❌ Error al actualizar newsletter');
           throw new Error('Error al actualizar newsletter');
@@ -535,9 +602,10 @@ export default function EditorHeader({
           subject: createData.subject,
           contentLength: createData.content.length,
           coverImageUrl: createData.coverImageUrl,
+          targetStores,
         });
 
-        const result = await createNewsletter(subject, createData);
+        const result = await createNewsletter(subject, createData, targetStores);
 
         if (result && result.id) {
           console.log('✅ PASO 1 completado - Newsletter creado con ID:', result.id);
@@ -564,6 +632,11 @@ export default function EditorHeader({
           if (updateResult) {
             console.log('✅ PASO 2 completado - objData guardado exitosamente:', updateResult);
             showNotification('Newsletter guardado correctamente', 'success');
+
+            // Llamar al callback para actualizar el estado en el componente padre
+            if (onNewsletterUpdate) {
+              onNewsletterUpdate();
+            }
           } else {
             console.warn('⚠️ PASO 2 falló - Newsletter creado pero objData no guardado');
             showNotification('Newsletter creado, pero algunos datos no se guardaron', 'warning');
@@ -574,8 +647,14 @@ export default function EditorHeader({
           throw new Error('Error al crear newsletter');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error guardando newsletter:', error);
+
+      // Extraer el mensaje de error del backend
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Error al guardar el newsletter';
+
+      showNotification(errorMessage, 'error');
       throw error;
     }
   };
@@ -621,9 +700,14 @@ export default function EditorHeader({
 
       showNotification('Solicitud de aprobación enviada correctamente', 'success');
       setOpenApprovalDialog(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error al solicitar aprobación:', error);
-      showNotification('Error al solicitar aprobación', 'error');
+
+      // Extraer el mensaje de error del backend
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Error al solicitar aprobación';
+
+      showNotification(errorMessage, 'error');
     }
   };
 
@@ -659,9 +743,15 @@ export default function EditorHeader({
 
       showNotification('Newsletter enviado a todos los suscriptores', 'success');
       setOpenSendNowDialog(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error al enviar newsletter:', error);
-      showNotification('Error al enviar el newsletter', 'error');
+
+      // Extraer el mensaje de error del backend
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Error al enviar el newsletter';
+
+      showNotification(errorMessage, 'error');
+      setOpenSendNowDialog(false);
     }
   };
 
@@ -708,9 +798,14 @@ export default function EditorHeader({
       showNotification('Newsletter programado correctamente', 'success');
       setOpenScheduleDialog(false);
       setScheduleDate(''); // Limpiar fecha
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error al programar newsletter:', error);
-      showNotification('Error al programar el newsletter', 'error');
+
+      // Extraer el mensaje de error del backend
+      const errorMessage =
+        error?.response?.data?.message || error?.message || 'Error al programar el newsletter';
+
+      showNotification(errorMessage, 'error');
     }
   };
 
@@ -1541,6 +1636,16 @@ export default function EditorHeader({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal para seleccionar targetStores (solo MICHIN) */}
+      {CONFIG.platform === 'MICHIN' && (
+        <TargetStoresModal
+          open={showTargetStoresModal}
+          onClose={() => setShowTargetStoresModal(false)}
+          onConfirm={handleConfirmTargetStores}
+          selectedStores={selectedTargetStores}
+        />
+      )}
     </>
   );
 }

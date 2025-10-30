@@ -95,7 +95,7 @@ interface PostState {
   ) => Promise<boolean>;
 
   // Newsletter operations
-  createNewsletter: (subject: string, newsletterData: any) => Promise<any>;
+  createNewsletter: (subject: string, newsletterData: any, targetStores?: string[]) => Promise<any>;
   updateNewsletter: (id: string, newsletterData: any) => Promise<any>;
   deleteNewsletter: (id: string) => Promise<boolean>;
   findAllNewsletters: (filters?: NewsletterFilters) => Promise<any[]>;
@@ -549,21 +549,28 @@ const usePostStore = create<PostState>()(
           }
         },
 
-        createNewsletter: async (subject: string, newsletterData: any) => {
+        createNewsletter: async (subject: string, newsletterData: any, targetStores?: string[]) => {
           try {
             console.log('🔄 createNewsletter called:', {
               subject,
               newsletterData,
+              targetStores,
             });
 
             set({ loading: true, error: null });
             const axiosInstance = createAxiosInstance();
 
-            const sendData = {
+            const sendData: any = {
               subject,
               content: newsletterData.content,
               // ...newsletterData,
             };
+
+            // Agregar targetStores si están presentes (solo para MICHIN)
+            if (targetStores && targetStores.length > 0) {
+              sendData.targetStores = targetStores;
+              console.log('🎯 TargetStores incluidos en el POST:', targetStores);
+            }
 
             const response = await axiosInstance.post(endpoints.newsletter.create, sendData);
 
