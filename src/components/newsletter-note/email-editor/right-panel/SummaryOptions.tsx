@@ -64,7 +64,7 @@ export default function SummaryOptions({
   const summaryType: SummaryType = (component.props?.summaryType as SummaryType) || 'resumen';
   const typeConfig = SUMMARY_TYPES[summaryType];
 
-  const label = component.props?.label || typeConfig.label;
+  // const label = component.props?.label || typeConfig.label; // No usado actualmente
   const icon = component.props?.icon || typeConfig.icon;
   const textColor = component.props?.textColor || typeConfig.textColor;
   const backgroundColor = component.props?.backgroundColor || typeConfig.backgroundColor;
@@ -190,6 +190,11 @@ export default function SummaryOptions({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Box
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowIconPicker(true);
+              }}
               sx={{
                 p: 2,
                 border: '2px dashed #ddd',
@@ -200,6 +205,7 @@ export default function SummaryOptions({
                 width: 64,
                 height: 64,
                 bgcolor: 'grey.50',
+                cursor: 'pointer',
                 transition: 'all 0.2s',
                 '&:hover': {
                   borderColor: 'primary.main',
@@ -217,22 +223,29 @@ export default function SummaryOptions({
                   height: 24,
                   objectFit: 'contain',
                   display: 'block',
+                  pointerEvents: 'none',
                 }}
-                onError={(e) => {
-                  // Fallback si la imagen no carga
-                  e.currentTarget.style.display = 'none';
-                }}
+                // onError={(e) => {
+                //   // Fallback si la imagen no carga
+                //   e.currentTarget.style.display = 'none';
+                // }}
               />
             </Box>
             <Button
               variant="outlined"
               size="medium"
-              onClick={() => setShowIconPicker(true)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Abriendo IconPicker...'); // Debug
+                setShowIconPicker(true);
+              }}
               startIcon={<Icon icon="mdi:swap-horizontal" />}
               sx={{
                 borderRadius: 2,
                 textTransform: 'none',
                 fontWeight: 500,
+                flex: 1,
               }}
             >
               Cambiar Icono

@@ -27,6 +27,12 @@ export interface NewsletterNote {
   noteId: string;
   order: number;
   noteData: any; // SavedNote
+  // Metadata para tracking de notas generadas por IA
+  _aiMetadata?: {
+    taskId: string;
+    isSaved: boolean;
+    savedPostId?: string;
+  };
 }
 
 export interface NewsletterHeader {
@@ -125,6 +131,9 @@ export interface EmailEditorProps {
   newsletterHtmlPreview?: string;
   // Prop para modo creación con IA
   isAICreation?: boolean;
+  fromAI?: boolean;
+  aiTaskId?: string;
+  aiNewsletterId?: string;
   // Función para guardar newsletter desde el header (con modal de targetStores)
   onSaveNewsletter?: () => void | Promise<void>;
 }

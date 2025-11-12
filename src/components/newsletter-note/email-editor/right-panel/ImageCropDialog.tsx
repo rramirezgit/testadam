@@ -43,6 +43,8 @@ export default function ImageCropDialog({
   initialImage,
   currentAspectRatio,
   initialTab = 'edit',
+  userId,
+  plan,
 }: ImageCropDialogProps) {
   const imgRef = useRef<HTMLImageElement>(null);
 
@@ -265,7 +267,7 @@ export default function ImageCropDialog({
       <DialogContent sx={{ p: 3 }}>
         {activeTab === 'ai' ? (
           /* Modo IA - Generador de imágenes */
-          <ImageAiGenerator onImageGenerated={handleImageGenerated} userId={undefined} />
+          <ImageAiGenerator onImageGenerated={handleImageGenerated} userId={userId} />
         ) : (
           /* Modo Editar - Editor de imágenes tradicional */
           <Box

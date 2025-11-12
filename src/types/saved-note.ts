@@ -39,6 +39,12 @@ export interface EmailComponent {
     [key: string]: any;
   };
   style?: React.CSSProperties;
+  meta?: {
+    isDefaultContent?: boolean;
+    defaultContentSnapshot?: string;
+    defaultPropsSnapshot?: Record<string, any>;
+    defaultStyleSnapshot?: React.CSSProperties;
+  };
 }
 
 export interface ConfigNote {

@@ -1,6 +1,33 @@
+import type React from 'react';
 import type { EmailComponent } from 'src/types/saved-note';
 
 import { useState, useCallback } from 'react';
+
+const deepEqual = (a: any, b: any) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+const computeIsDefaultContent = (
+  meta: EmailComponent['meta'] | undefined,
+  nextContent: string,
+  nextProps: Record<string, any> | undefined,
+  nextStyle: React.CSSProperties | undefined
+): boolean => {
+  if (!meta) {
+    return false;
+  }
+
+  const contentSnapshot = meta.defaultContentSnapshot;
+  const propsSnapshot = meta.defaultPropsSnapshot;
+  const styleSnapshot = meta.defaultStyleSnapshot;
+
+  const contentMatches =
+    contentSnapshot !== undefined ? contentSnapshot === nextContent : false;
+  const propsMatches =
+    propsSnapshot !== undefined ? deepEqual(propsSnapshot, nextProps) : true;
+  const styleMatches =
+    styleSnapshot !== undefined ? deepEqual(styleSnapshot, nextStyle) : true;
+
+  return contentMatches && propsMatches && styleMatches;
+};
 
 interface UseVersionSyncProps {
   activeTemplate: string;
@@ -156,7 +183,12 @@ export const useVersionSync = ({
   const syncComponentUpdate = useCallback(
     (
       componentId: string,
-      updateData: { content?: string; props?: Record<string, any>; style?: React.CSSProperties }
+      updateData: {
+        content?: string;
+        props?: Record<string, any>;
+        style?: React.CSSProperties;
+        meta?: EmailComponent['meta'];
+      }
     ) => {
       if (!syncEnabled) return;
 
@@ -185,6 +217,23 @@ export const useVersionSync = ({
             if (updateData.style) {
               updatedComponent.style = { ...updatedComponent.style, ...updateData.style };
             }
+            const baseMeta =
+              updatedComponent.meta ?? {
+                isDefaultContent: false,
+                defaultContentSnapshot: updatedComponent.content,
+                defaultPropsSnapshot: updatedComponent.props,
+                defaultStyleSnapshot: updatedComponent.style,
+              };
+
+            updatedComponent.meta = {
+              ...baseMeta,
+              isDefaultContent: computeIsDefaultContent(
+                baseMeta,
+                updatedComponent.content,
+                updatedComponent.props,
+                updatedComponent.style
+              ),
+            };
             return updatedComponent;
           }
           return component;

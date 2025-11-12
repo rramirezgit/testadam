@@ -4,6 +4,7 @@
 import './tiptap-optimizations.css';
 
 import type React from 'react';
+import type { Editor } from '@tiptap/core';
 
 import { Icon } from '@iconify/react';
 import Link from '@tiptap/extension-link';
@@ -33,6 +34,7 @@ import {
 
 import AIAssistantModal from './email-editor/ai-menu/AIAssistantModal';
 import TextColorPicker from './email-editor/color-picker/TextColorPicker';
+import { DEFAULT_PLACEHOLDER_COLOR } from './email-editor/email-components/utils';
 
 interface SimpleTipTapEditorProps {
   content: string;
@@ -50,6 +52,9 @@ interface SimpleTipTapEditorProps {
   onTextColorChange?: (color: string) => void;
   // Nueva prop para controlar si se muestra el botón de IA
   showAIButton?: boolean;
+  isPlaceholder?: boolean;
+  placeholderColor?: string;
+  onEditorReady?: (editor: Editor | null) => void;
 }
 
 // ⚡ ULTRA-OPTIMIZACIÓN: Cache global de extensiones
@@ -158,6 +163,9 @@ export default function SimpleTipTapEditor({
   onBackgroundColorChange,
   onTextColorChange,
   showAIButton = true, // Por defecto true para mantener compatibilidad
+  isPlaceholder = false,
+  placeholderColor = DEFAULT_PLACEHOLDER_COLOR,
+  onEditorReady,
 }: SimpleTipTapEditorProps) {
   const editorRef = useRef<any>(null);
   const isUpdatingContent = useRef(false);
@@ -453,6 +461,12 @@ export default function SimpleTipTapEditor({
     }
   }, [editor]);
 
+  useEffect(() => {
+    if (onEditorReady) {
+      onEditorReady(editor);
+    }
+  }, [editor, onEditorReady]);
+
   // ⚡ ULTRA-OPTIMIZACIÓN: Cleanup optimizado
   useEffect(
     () => () => {
@@ -463,6 +477,9 @@ export default function SimpleTipTapEditor({
   );
 
   // ⚡ ULTRA-OPTIMIZACIÓN: Estilos memoizados con mejor especificidad
+  const shouldApplyPlaceholderColor =
+    isPlaceholder && !(style && typeof style.color === 'string' && style.color.trim().length > 0);
+
   const editorStyles = useMemo(
     () => ({
       '& .tiptap-editor-optimized': {
@@ -483,6 +500,7 @@ export default function SimpleTipTapEditor({
         // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Asegurar que no se rendericen elementos inválidos
         display: 'block',
         position: 'relative',
+        color: shouldApplyPlaceholderColor ? placeholderColor : undefined,
       },
       // ⚡ PREVENIR PROBLEMAS DE HIDRATACIÓN: Placeholder mejorado
       '& .ProseMirror p.is-editor-empty:first-child::before': {
@@ -527,7 +545,7 @@ export default function SimpleTipTapEditor({
         cursor: 'pointer',
       },
     }),
-    [showToolbar]
+    [showToolbar, shouldApplyPlaceholderColor, placeholderColor]
   );
 
   // ⚡ ULTRA-OPTIMIZACIÓN: Memoización del contenedor con prevención de hidratación
@@ -544,6 +562,7 @@ export default function SimpleTipTapEditor({
           width: '100%',
         }}
         sx={editorStyles}
+        data-placeholder-active={shouldApplyPlaceholderColor ? 'true' : undefined}
       >
         {isMounted && editor && (
           <>

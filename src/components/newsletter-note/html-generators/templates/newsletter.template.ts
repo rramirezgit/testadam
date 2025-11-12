@@ -38,12 +38,18 @@ export interface NewsletterNote {
   };
 }
 
+export interface ApprovalButtonsConfig {
+  newsletterId: string;
+  baseUrl: string;
+}
+
 export function generateNewsletterTemplate(
   title: string,
   description: string,
   notesHtmlContent: string,
   header: HeaderConfig | null,
-  footer: FooterConfig | null
+  footer: FooterConfig | null,
+  approvalButtons?: ApprovalButtonsConfig
 ): string {
   // ✅ Estilos de fondo del header (solo si existe)
   let headerBackgroundStyle = '';
@@ -277,6 +283,41 @@ export function generateNewsletterTemplate(
                 
                 <div style="color: ${footer.textColor}; font-size: 14px; line-height: 1.5;">
                   ${footer.footerText || ''}
+                </div>
+              </td>
+            </tr>
+          </table>
+          `
+              : ''
+          }
+          
+          ${
+            approvalButtons
+              ? `
+          <!-- Approval Buttons -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 40px;">
+            <tr>
+              <td style="padding: 0 30px;">
+                <div style="background-color: #f9fafb; padding: 32px; border-radius: 12px; text-align: center; border: 1px solid #e5e7eb;">
+                  <p style="font-size: 16px; color: #374151; margin: 0 0 24px 0; font-weight: 500;">
+                    ¿Deseas aprobar este newsletter?
+                  </p>
+                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                    <tr>
+                      <td style="padding: 0 8px;">
+                        <a href="${approvalButtons.baseUrl}/edit/newsletter/${approvalButtons.newsletterId}?action=approve" 
+                           style="display: inline-block; padding: 14px 32px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                          ✓ Aprobar
+                        </a>
+                      </td>
+                      <td style="padding: 0 8px;">
+                        <a href="${approvalButtons.baseUrl}/edit/newsletter/${approvalButtons.newsletterId}?action=reject" 
+                           style="display: inline-block; padding: 14px 32px; background-color: #ef4444; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                          ✕ Rechazar
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
                 </div>
               </td>
             </tr>

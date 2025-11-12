@@ -98,10 +98,6 @@ interface ComponentOptionsViewProps {
   bannerOptions: any[];
   setSelectedAlignment: (alignment: string) => void;
   hasTextSelection: boolean;
-  listStyle: string | undefined;
-  updateListStyle: (listId: string, listStyleType: string) => void;
-  listColor: string | undefined;
-  updateListColor: (listId: string, color: string) => void;
   convertTextToList: (componentId: string | null, listType: 'ordered' | 'unordered') => void;
   setShowIconPicker: (show: boolean) => void;
   isContainerSelected: boolean;
@@ -183,10 +179,6 @@ export default function ComponentOptionsView({
   bannerOptions,
   setSelectedAlignment,
   hasTextSelection,
-  listStyle,
-  updateListStyle,
-  listColor,
-  updateListColor,
   convertTextToList,
   setShowIconPicker,
   isContainerSelected,
@@ -337,6 +329,7 @@ export default function ComponentOptionsView({
           <Box
             sx={{
               p: 1,
+              display: 'none',
               borderBottom: 1,
               borderColor: 'divider',
               flexShrink: 0,
@@ -576,10 +569,6 @@ export default function ComponentOptionsView({
                     bannerOptions={bannerOptions}
                     setSelectedAlignment={setSelectedAlignment}
                     hasTextSelection={hasTextSelection}
-                    listStyle={listStyle}
-                    updateListStyle={updateListStyle}
-                    listColor={listColor}
-                    updateListColor={updateListColor}
                     convertTextToList={convertTextToList}
                     setShowIconPicker={setShowIconPicker}
                     isContainerSelected={isContainerSelected}

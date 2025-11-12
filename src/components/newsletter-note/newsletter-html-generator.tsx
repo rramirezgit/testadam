@@ -36,7 +36,8 @@ export function generateNewsletterHtml(
   description: string,
   selectedNotes: NewsletterNote[],
   header: HeaderConfig,
-  footer: FooterConfig
+  footer: FooterConfig,
+  approvalButtons?: { newsletterId: string; baseUrl: string }
 ): string {
   // ✅ Generar HTML de todas las notas usando los nuevos generadores modulares
   let notesHtml = '';
@@ -55,7 +56,11 @@ export function generateNewsletterHtml(
     notesHtml += `<div style="max-width: ${containerMaxWidth}px; margin: 0 auto; padding: ${containerPadding}px; border-radius: ${containerBorderRadius}px; border: ${containerBorderWidth}px solid ${containerBorderColor};">`;
 
     // Renderizar cada componente usando el sistema unificado
-    const objData = JSON.parse(note.objData);
+    // Verificar si objData ya es un objeto o es un string JSON
+    const objData = typeof note.objData === 'string' 
+      ? JSON.parse(note.objData) 
+      : note.objData;
+    
     objData.forEach((component: EmailComponent) => {
       notesHtml += renderComponentToHtml(component);
     });
@@ -65,7 +70,7 @@ export function generateNewsletterHtml(
   });
 
   // ✅ Usar el nuevo template modular
-  return generateNewsletterTemplate(title, description, notesHtml, header, footer);
+  return generateNewsletterTemplate(title, description, notesHtml, header, footer, approvalButtons);
 }
 
 /**

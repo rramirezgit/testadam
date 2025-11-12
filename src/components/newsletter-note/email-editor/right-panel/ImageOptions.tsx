@@ -25,6 +25,8 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
+import useAuthStore from 'src/store/AuthStore';
+
 import GeneralColorPicker from 'src/components/newsletter-note/general-color-picker';
 
 import ImageCropDialog from './ImageCropDialog';
@@ -40,6 +42,9 @@ const ImageOptions = ({
   selectedComponent,
   updateComponentProps,
 }: ImageOptionsProps) => {
+  // Obtener usuario autenticado
+  const user = useAuthStore((state) => state.user);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para imagen
@@ -633,6 +638,8 @@ const ImageOptions = ({
         initialImage={tempImage}
         currentAspectRatio={undefined}
         initialTab={openAITab ? 'ai' : 'edit'}
+        userId={user?.id}
+        plan={user?.plan?.name}
       />
     </>
   );

@@ -8,6 +8,7 @@ import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
 import ImageCropDialog from '../right-panel/ImageCropDialog';
 import { useImageUpload } from '../right-panel/useImageUpload';
+import { DEFAULT_PLACEHOLDER_COLOR, shouldUsePlaceholderColor } from './utils';
 import { validateFileSize, convertImageToOptimalFormat } from '../right-panel/imgPreview';
 
 import type { EmailComponentProps } from './types';
@@ -67,6 +68,13 @@ const TwoColumnsComponent = ({
   const fontSize = component.props?.fontSize || 14;
   const titleSize = component.props?.titleSize || 18;
   const columnPadding = component.props?.columnPadding || 16;
+
+  const placeholderActive = shouldUsePlaceholderColor(
+    component,
+    (component.style?.color as string | undefined) || textColor || titleColor
+  );
+  const displayTextColor = placeholderActive ? DEFAULT_PLACEHOLDER_COLOR : textColor;
+  const displayTitleColor = placeholderActive ? DEFAULT_PLACEHOLDER_COLOR : titleColor;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -254,7 +262,7 @@ const TwoColumnsComponent = ({
             '& .MuiInput-root': {
               fontSize: `${titleSize}px`,
               fontWeight: 'bold',
-              color: titleColor,
+              color: displayTitleColor,
             },
             '& .MuiInput-input': {
               textAlign: 'center',
@@ -274,7 +282,7 @@ const TwoColumnsComponent = ({
           startEditing(fieldKey, columnData.title, e);
         }}
         sx={{
-          color: titleColor,
+          color: displayTitleColor,
           fontSize: `${titleSize}px`,
           fontWeight: 'bold',
           mb: 1,
@@ -301,7 +309,7 @@ const TwoColumnsComponent = ({
     <Box
       onClick={(e) => handleColumnClick(columnKey, e)}
       sx={{
-        color: textColor,
+        color: displayTextColor,
         fontSize: `${fontSize}px`,
         lineHeight: 1.5,
         cursor: 'text',
@@ -309,7 +317,7 @@ const TwoColumnsComponent = ({
         position: 'relative',
         '& p': {
           margin: 0,
-          color: textColor,
+          color: displayTextColor,
         },
         '& p:empty::before': {
           content: '"Escribe el contenido aquí..."',
@@ -327,6 +335,8 @@ const TwoColumnsComponent = ({
           textAlign: 'center',
         }}
         showAIButton={false}
+        isPlaceholder={placeholderActive}
+        placeholderColor={DEFAULT_PLACEHOLDER_COLOR}
       />
     </Box>
   );

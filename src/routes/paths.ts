@@ -90,6 +90,10 @@ export const paths = {
     notes: {
       list: `${ROOTS.DASHBOARD}/notes`,
     },
+    new: {
+      note: `/new/note`,
+      newsletter: `/new/newsletter`,
+    },
     educacion: {
       list: `${ROOTS.DASHBOARD}/educacion`,
     },

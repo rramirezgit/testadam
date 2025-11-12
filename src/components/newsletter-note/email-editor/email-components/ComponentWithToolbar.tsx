@@ -5,7 +5,7 @@ import { Box, IconButton } from '@mui/material';
 
 import type { ComponentWithToolbarProps } from './types';
 
-// Toolbar con flechas arriba/abajo, botón eliminar y botón de IA
+// Toolbar con flechas arriba/abajo, botón eliminar, botón de IA y botón de guardar
 const ComponentToolbar = memo(
   ({
     componentId,
@@ -15,6 +15,8 @@ const ComponentToolbar = memo(
     moveComponent,
     removeComponent,
     onAIClick,
+    isAIGeneratedNote,
+    onSaveClick,
   }: {
     componentId: string;
     index: number;
@@ -23,6 +25,8 @@ const ComponentToolbar = memo(
     moveComponent: (id: string, direction: 'up' | 'down') => void;
     removeComponent: (id: string) => void;
     onAIClick?: () => void;
+    isAIGeneratedNote?: boolean;
+    onSaveClick?: () => void;
   }) => {
     const handleMoveUp = useCallback(() => {
       moveComponent(componentId, 'up');
@@ -46,6 +50,16 @@ const ComponentToolbar = memo(
       [onAIClick]
     );
 
+    const handleSaveClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (onSaveClick) {
+          onSaveClick();
+        }
+      },
+      [onSaveClick]
+    );
+
     // Mostrar botón de IA solo para párrafos, headings y títulos con icono
     const showAIButton =
       componentType && ['paragraph', 'heading', 'tituloConIcono'].includes(componentType);
@@ -66,6 +80,25 @@ const ComponentToolbar = memo(
           zIndex: 100,
         }}
       >
+        {/* Botón de guardar - solo para notas generadas por IA en newsletters */}
+        {isAIGeneratedNote && onSaveClick && (
+          <IconButton
+            size="small"
+            onClick={handleSaveClick}
+            sx={{
+              width: '28px',
+              height: '28px',
+              color: '#22c55e',
+              '&:hover': {
+                bgcolor: 'rgba(34, 197, 94, 0.08)',
+              },
+            }}
+            title="Guardar Nota"
+          >
+            <Icon icon="solar:diskette-bold" width={18} />
+          </IconButton>
+        )}
+
         {/* Botón de IA - solo para párrafos, headings y títulos */}
         {showAIButton && onAIClick && (
           <IconButton
@@ -129,10 +162,11 @@ const ComponentWithToolbar = memo(
     onClick,
     isViewOnly = false,
     onAIClick,
+    isAIGeneratedNote = false,
+    onSaveClick,
   }: ComponentWithToolbarProps) => {
     const showToolbar = isSelected && !isViewOnly;
     // noteContainer tiene su propio borde, no agregar borde adicional
-    const isNoteContainer = componentType === 'noteContainer';
 
     const handleClick = (e: React.MouseEvent) => {
       if (isViewOnly) return;
@@ -145,17 +179,14 @@ const ComponentWithToolbar = memo(
         sx={{
           position: 'relative',
           zIndex: 1,
+          mb: 2,
           // No agregar borde para noteContainer ya que tiene su propio estilo
-          border:
-            !isNoteContainer && isSelected && !isViewOnly
-              ? '2px dashed #1976d2'
-              : '2px dashed transparent',
+          border: isSelected && !isViewOnly ? '2px dashed #1976d2' : '2px dashed transparent',
           borderRadius: '8px',
           transition: 'border-color 0.2s ease',
           cursor: isViewOnly ? 'default' : 'pointer',
           '&:hover': {
-            borderColor:
-              isViewOnly || isNoteContainer ? 'transparent' : isSelected ? '#1976d2' : '#e0e0e0',
+            borderColor: isViewOnly ? 'transparent' : isSelected ? '#1976d2' : '#e0e0e0',
           },
         }}
         onClick={handleClick}
@@ -169,6 +200,8 @@ const ComponentWithToolbar = memo(
             moveComponent={moveComponent}
             removeComponent={removeComponent}
             onAIClick={onAIClick}
+            isAIGeneratedNote={isAIGeneratedNote}
+            onSaveClick={onSaveClick}
           />
         )}
         {children}

@@ -41,7 +41,7 @@ export default function LeftPanel({
     gallery: true,
     imageText: true,
     twoColumns: true,
-    chart: true,
+    chart: false,
     button: false,
     divider: true,
     spacer: false,

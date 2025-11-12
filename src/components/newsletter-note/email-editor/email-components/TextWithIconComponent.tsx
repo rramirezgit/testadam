@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import { Box, Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
+import { DEFAULT_PLACEHOLDER_COLOR, shouldUsePlaceholderColor } from './utils';
 
 import type { EmailComponentProps } from './types';
 
@@ -30,6 +31,13 @@ const TextWithIconComponent = ({
   const spacing = component.props?.spacing || 12;
   const borderRadius = component.props?.borderRadius || 8;
   const padding = component.props?.padding || 16;
+
+  const placeholderActive = shouldUsePlaceholderColor(
+    component,
+    (component.style?.color as string | undefined) || textColor || titleColor
+  );
+  const displayTitleColor = placeholderActive ? DEFAULT_PLACEHOLDER_COLOR : titleColor;
+  const displayTextColor = placeholderActive ? DEFAULT_PLACEHOLDER_COLOR : textColor;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -71,7 +79,7 @@ const TextWithIconComponent = ({
           <Typography
             variant="h6"
             sx={{
-              color: titleColor,
+              color: displayTitleColor,
               fontSize: `${titleSize}px`,
               fontWeight: 'bold',
               lineHeight: 1.2,
@@ -87,7 +95,7 @@ const TextWithIconComponent = ({
           <Typography
             variant="body1"
             sx={{
-              color: textColor,
+              color: displayTextColor,
               fontSize: `${fontSize}px`,
               lineHeight: 1.5,
               margin: 0,

@@ -85,7 +85,7 @@ const GalleryComponent = ({
       removeComponent={removeComponent}
       onClick={handleClick}
     >
-      <Box sx={{ mb: 2, ...(component.style || {}) }}>
+      <Box sx={{ ...(component.style || {}) }}>
         <Box
           sx={{
             display: 'grid',
@@ -104,7 +104,7 @@ const GalleryComponent = ({
                 borderRadius: `${borderRadius}px`,
                 overflow: 'hidden',
                 cursor: 'pointer',
-                border: isSelected && selectedImageIndex === idx ? '3px solid' : '1px solid',
+                border: isSelected && selectedImageIndex === idx ? '2px solid' : '1px solid',
                 borderColor: isSelected && selectedImageIndex === idx ? 'primary.main' : 'divider',
                 transition: 'all 0.2s ease',
                 backgroundColor: image.src ? 'transparent' : 'grey.100',
@@ -156,28 +156,6 @@ const GalleryComponent = ({
                   boxShadow: 1,
                 }}
               />
-
-              {/* Indicador de selección */}
-              {isSelected && selectedImageIndex === idx && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    backgroundColor: 'primary.main',
-                    borderRadius: '50%',
-                    width: 28,
-                    height: 28,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    boxShadow: 2,
-                  }}
-                >
-                  <Icon icon="mdi:check" fontSize={20} />
-                </Box>
-              )}
             </Box>
           ))}
         </Box>

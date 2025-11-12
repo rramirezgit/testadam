@@ -7,6 +7,7 @@ import { Box, TextField, Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
+import { DEFAULT_PLACEHOLDER_COLOR, shouldUsePlaceholderColor } from './utils';
 
 import type { EmailComponentProps } from './types';
 
@@ -98,11 +99,15 @@ const MemoizedSummaryEditor = memo(
     onContentChange,
     onSelectionUpdate,
     editorStyle,
+    isPlaceholder,
+    placeholderColor,
   }: {
     content: string;
     onContentChange?: (content: string) => void;
     onSelectionUpdate?: (editor: any) => void;
     editorStyle: React.CSSProperties;
+    isPlaceholder?: boolean;
+    placeholderColor?: string;
   }) => (
     <SimpleTipTapEditor
       content={content}
@@ -111,13 +116,17 @@ const MemoizedSummaryEditor = memo(
       showToolbar={false}
       style={editorStyle}
       showAIButton={false}
+      isPlaceholder={isPlaceholder}
+      placeholderColor={placeholderColor}
     />
   ),
   (prevProps, nextProps) =>
     prevProps.content === nextProps.content &&
     prevProps.onContentChange === nextProps.onContentChange &&
     prevProps.onSelectionUpdate === nextProps.onSelectionUpdate &&
-    JSON.stringify(prevProps.editorStyle) === JSON.stringify(nextProps.editorStyle)
+    JSON.stringify(prevProps.editorStyle) === JSON.stringify(nextProps.editorStyle) &&
+    prevProps.isPlaceholder === nextProps.isPlaceholder &&
+    prevProps.placeholderColor === nextProps.placeholderColor
 );
 
 MemoizedSummaryEditor.displayName = 'MemoizedSummaryEditor';
@@ -143,9 +152,15 @@ const SummaryComponent = memo(
     const summaryType: SummaryType = (component.props?.summaryType as SummaryType) || 'resumen';
     const typeConfig = SUMMARY_TYPES[summaryType];
 
-    const textColor = component.props?.textColor || typeConfig.textColor;
+    const baseTextColor = component.props?.textColor || typeConfig.textColor;
     const icon = component.props?.icon || typeConfig.icon;
     const label = component.props?.label || typeConfig.label;
+
+    const placeholderActive = shouldUsePlaceholderColor(
+      component,
+      (component.style?.color as string | undefined) || baseTextColor
+    );
+    const displayTextColor = placeholderActive ? DEFAULT_PLACEHOLDER_COLOR : baseTextColor;
 
     // ⚡ ULTRA-OPTIMIZACIÓN: Memoización de estilos con cache
     const containerStyles = useMemo(
@@ -169,12 +184,12 @@ const SummaryComponent = memo(
     // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos del contenido
     const contentBoxStyles = useMemo(
       () => ({
-        color: '#6c757d',
+        color: displayTextColor,
         fontSize: '15px',
         lineHeight: 1.6,
         '& p': {
           margin: 0,
-          color: '#6c757d',
+          color: displayTextColor,
         },
         '& p:empty::before': {
           content: '"Escribe el contenido aquí..."',
@@ -182,7 +197,7 @@ const SummaryComponent = memo(
           fontStyle: 'italic',
         },
       }),
-      []
+      [displayTextColor]
     );
 
     // ⚡ ULTRA-OPTIMIZAÇÃO: Callback memoizado con throttling integrado
@@ -333,10 +348,10 @@ const SummaryComponent = memo(
                   objectFit: 'contain',
                   display: 'block',
                 }}
-                onError={(e) => {
-                  // Fallback si la imagen no carga
-                  e.currentTarget.style.display = 'none';
-                }}
+                // onError={(e) => {
+                //   // Fallback si la imagen no carga
+                //   e.currentTarget.style.display = 'none';
+                // }}
               />
             </Box>
 
@@ -352,7 +367,7 @@ const SummaryComponent = memo(
                 size="small"
                 sx={{
                   '& .MuiInput-root': {
-                    color: textColor,
+                    color: displayTextColor,
                     fontWeight: 600,
                     fontSize: '16px',
                     letterSpacing: '-0.01em',
@@ -360,7 +375,7 @@ const SummaryComponent = memo(
                       borderBottom: 'none',
                     },
                     '&:after': {
-                      borderBottom: `2px solid ${textColor}`,
+                      borderBottom: `2px solid ${displayTextColor}`,
                     },
                     '&:hover:not(.Mui-disabled):before': {
                       borderBottom: 'none',
@@ -376,7 +391,7 @@ const SummaryComponent = memo(
                 variant="subtitle1"
                 onClick={handleLabelClick}
                 sx={{
-                  color: textColor,
+                  color: displayTextColor,
                   fontWeight: 600,
                   fontSize: '16px',
                   letterSpacing: '-0.01em',
@@ -403,6 +418,8 @@ const SummaryComponent = memo(
                 onContentChange={handleContentChange}
                 onSelectionUpdate={handleSelectionUpdateMemo}
                 editorStyle={editorStyle}
+                isPlaceholder={placeholderActive}
+                placeholderColor={DEFAULT_PLACEHOLDER_COLOR}
               />
             </Box>
           </Box>

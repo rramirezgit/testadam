@@ -8,6 +8,8 @@ interface SimpleEditableProps {
   listColor?: string;
   onKeyDown?: (e: React.KeyboardEvent) => void;
   'data-list-item'?: string;
+  isPlaceholder?: boolean;
+  placeholderColor?: string;
 }
 
 const SimpleEditable: React.FC<SimpleEditableProps> = ({
@@ -17,6 +19,8 @@ const SimpleEditable: React.FC<SimpleEditableProps> = ({
   listStyle,
   listColor,
   onKeyDown,
+  isPlaceholder = false,
+  placeholderColor = '#9CA3AF',
   ...props
 }) => {
   const [editing, setEditing] = useState(false);
@@ -46,11 +50,17 @@ const SimpleEditable: React.FC<SimpleEditableProps> = ({
     onChange(text);
   };
 
+  const shouldApplyPlaceholderColor =
+    isPlaceholder &&
+    !listColor &&
+    !(style && typeof style.color === 'string' && style.color.trim().length > 0);
+
   // Aplicar estilos específicos de lista si se proporcionan
   const combinedStyle = {
     ...style,
     ...(listStyle && { listStyleType: listStyle }),
     ...(listColor && { color: listColor }),
+    ...(shouldApplyPlaceholderColor && { color: placeholderColor }),
   };
 
   return editing ? (

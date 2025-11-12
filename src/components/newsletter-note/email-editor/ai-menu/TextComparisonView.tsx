@@ -2,7 +2,7 @@
 
 import type React from 'react';
 
-import { Box, Typography, Chip, Paper, Skeleton } from '@mui/material';
+import { Box, Chip, Paper, Skeleton, Typography } from '@mui/material';
 
 interface TextComparisonViewProps {
   originalText: string;

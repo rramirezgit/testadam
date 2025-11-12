@@ -2,9 +2,51 @@ import type { EmailComponent } from 'src/types/saved-note';
 
 import { CONFIG } from 'src/global-config';
 
+import { buildListHtml, normaliseListStyle } from '../email-components/utils';
+
 // Notion components
-export const notionComponents: EmailComponent[] = [
-  { id: 'heading-1', type: 'heading', content: 'Login', props: { level: 1 } },
+const withDefaultMeta = (component: EmailComponent): EmailComponent => {
+  if (component.type === 'bulletList') {
+    const listStyle = normaliseListStyle(component.props?.listStyle);
+    const items = component.props?.items || ['Elemento de lista'];
+    const content =
+      component.content && component.content.trim().length > 0
+        ? component.content
+        : buildListHtml(items, listStyle);
+
+    return {
+      ...component,
+      content,
+      meta: {
+        isDefaultContent: true,
+        defaultContentSnapshot: content,
+        defaultPropsSnapshot: component.props,
+        defaultStyleSnapshot: component.style,
+      },
+    };
+  }
+
+  return {
+    ...component,
+    meta: {
+      isDefaultContent: true,
+      defaultContentSnapshot: component.content,
+      defaultPropsSnapshot: component.props,
+      defaultStyleSnapshot: component.style,
+    },
+  };
+};
+
+const applyDefaultMeta = (components: EmailComponent[]): EmailComponent[] =>
+  components.map(withDefaultMeta);
+
+export const notionComponents: EmailComponent[] = applyDefaultMeta([
+  {
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Login',
+    props: { level: 1 },
+  },
   {
     id: 'paragraph-1',
     type: 'paragraph',
@@ -35,10 +77,15 @@ export const notionComponents: EmailComponent[] = [
     content: 'Hint: You can set a permanent password in Settings & members → My account.',
     props: {},
   },
-];
+]);
 
-export const notionComponentsWeb: EmailComponent[] = [
-  { id: 'heading-1-web', type: 'heading', content: 'Login to Your Account', props: { level: 1 } },
+export const notionComponentsWeb: EmailComponent[] = applyDefaultMeta([
+  {
+    id: 'heading-1-web',
+    type: 'heading',
+    content: 'Login to Your Account',
+    props: { level: 1 },
+  },
   {
     id: 'paragraph-1-web',
     type: 'paragraph',
@@ -78,28 +125,43 @@ export const notionComponentsWeb: EmailComponent[] = [
       'If you have any questions or need assistance, please contact our support team at support@example.com.',
     props: {},
   },
-];
+]);
 
 // Plaid components
-export const plaidComponents: EmailComponent[] = [
-  { id: 'heading-1', type: 'heading', content: 'Verify Your Identity', props: { level: 1 } },
+export const plaidComponents: EmailComponent[] = applyDefaultMeta([
+  {
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Verify Your Identity',
+    props: { level: 1 },
+  },
   {
     id: 'paragraph-1',
     type: 'paragraph',
     content: 'Enter the following code to finish linking Venmo.',
     props: {},
   },
-  { id: 'paragraph-2', type: 'paragraph', content: '144833', props: { isCode: true } },
-  { id: 'paragraph-3', type: 'paragraph', content: 'Not expecting this email?', props: {} },
+  {
+    id: 'paragraph-2',
+    type: 'paragraph',
+    content: '144833',
+    props: { isCode: true },
+  },
+  {
+    id: 'paragraph-3',
+    type: 'paragraph',
+    content: 'Not expecting this email?',
+    props: {},
+  },
   {
     id: 'paragraph-4',
     type: 'paragraph',
     content: 'Contact login@plaid.com if you did not request this code.',
     props: {},
   },
-];
+]);
 
-export const plaidComponentsWeb: EmailComponent[] = [
+export const plaidComponentsWeb: EmailComponent[] = applyDefaultMeta([
   { id: 'heading-1-web', type: 'heading', content: 'Verify Your Identity', props: { level: 1 } },
   {
     id: 'paragraph-1-web',
@@ -137,11 +199,16 @@ export const plaidComponentsWeb: EmailComponent[] = [
       'Thank you for trusting us with your financial information. We take your security seriously.',
     props: {},
   },
-];
+]);
 
 // Stripe components
-export const stripeComponents: EmailComponent[] = [
-  { id: 'heading-1', type: 'heading', content: 'Welcome to Stripe', props: { level: 1 } },
+export const stripeComponents: EmailComponent[] = applyDefaultMeta([
+  {
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Welcome to Stripe',
+    props: { level: 1 },
+  },
   {
     id: 'paragraph-1',
     type: 'paragraph',
@@ -156,12 +223,22 @@ export const stripeComponents: EmailComponent[] = [
       'You can view your payments and a variety of other information about your account right from your dashboard.',
     props: {},
   },
-  { id: 'button-1', type: 'button', content: 'View your Stripe Dashboard', props: {} },
+  {
+    id: 'button-1',
+    type: 'button',
+    content: 'View your Stripe Dashboard',
+    props: {},
+  },
   { id: 'divider-1', type: 'divider', content: '', props: {} },
-  { id: 'paragraph-3', type: 'paragraph', content: '— The Stripe team', props: {} },
-];
+  {
+    id: 'paragraph-3',
+    type: 'paragraph',
+    content: '— The Stripe team',
+    props: {},
+  },
+]);
 
-export const stripeComponentsWeb: EmailComponent[] = [
+export const stripeComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'heading-1-web',
     type: 'heading',
@@ -228,19 +305,34 @@ export const stripeComponentsWeb: EmailComponent[] = [
     props: {},
   },
   { id: 'paragraph-7-web', type: 'paragraph', content: '— The Stripe team', props: {} },
-];
+]);
 
 // Vercel components
-export const vercelComponents: EmailComponent[] = [
-  { id: 'heading-1', type: 'heading', content: 'Join Enigma on Vercel', props: { level: 1 } },
-  { id: 'paragraph-1', type: 'paragraph', content: 'Hello alanturing,', props: {} },
+export const vercelComponents: EmailComponent[] = applyDefaultMeta([
+  {
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Join Enigma on Vercel',
+    props: { level: 1 },
+  },
+  {
+    id: 'paragraph-1',
+    type: 'paragraph',
+    content: 'Hello alanturing,',
+    props: {},
+  },
   {
     id: 'paragraph-2',
     type: 'paragraph',
     content: 'Alan (alan.turing@example.com) has invited you to the Enigma team on Vercel.',
     props: {},
   },
-  { id: 'button-1', type: 'button', content: 'Join the team', props: {} },
+  {
+    id: 'button-1',
+    type: 'button',
+    content: 'Join the team',
+    props: {},
+  },
   {
     id: 'paragraph-3',
     type: 'paragraph',
@@ -248,9 +340,9 @@ export const vercelComponents: EmailComponent[] = [
       'This invitation was intended for alanturing. This invite was sent from 204.13.186.218 located in São Paulo, Brazil. If you were not expecting this invitation, you can ignore this email.',
     props: {},
   },
-];
+]);
 
-export const vercelComponentsWeb: EmailComponent[] = [
+export const vercelComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'heading-1-web',
     type: 'heading',
@@ -314,11 +406,11 @@ export const vercelComponentsWeb: EmailComponent[] = [
     content: 'Vercel Inc. • San Francisco, CA • Privacy Policy • Terms of Service',
     props: {},
   },
-];
+]);
 
 // News components
-export const newsComponents: EmailComponent[] = [
-  {
+export const newsComponents: EmailComponent[] = applyDefaultMeta([
+  withDefaultMeta({
     id: 'tituloConIcono-1',
     type: 'tituloConIcono',
     content: 'Título de la noticia',
@@ -331,8 +423,8 @@ export const newsComponents: EmailComponent[] = [
       colorDistribution: 0,
       textColor: '#E67E22',
     },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'image-1',
     type: 'image',
     content: '',
@@ -340,15 +432,20 @@ export const newsComponents: EmailComponent[] = [
       src: '',
       alt: 'Imagen de la noticia',
     },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'category-1',
     type: 'category',
     content: 'Tecnología',
     props: { color: '#e3f2fd', textColor: '#1565c0' },
-  },
-  { id: 'heading-1', type: 'heading', content: 'Título de la noticia', props: { level: 1 } },
-  {
+  }),
+  withDefaultMeta({
+    id: 'heading-1',
+    type: 'heading',
+    content: 'Título de la noticia',
+    props: { level: 1 },
+  }),
+  withDefaultMeta({
     id: 'respaldadoPor-1',
     type: 'respaldadoPor',
     content: 'Respaldado por texto',
@@ -363,8 +460,8 @@ export const newsComponents: EmailComponent[] = [
       propietarioNombre: 'Propietario',
       propietarioAvatarUrl: '',
     },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'summary-1',
     type: 'summary',
     content: 'Resumen breve de la noticia',
@@ -375,24 +472,24 @@ export const newsComponents: EmailComponent[] = [
       backgroundColor: '#f8f9fa',
       textColor: '#495057',
     },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'paragraph-1',
     type: 'paragraph',
     content:
       'Este es el contenido principal de la noticia en formato resumido para newsletter. Incluye los puntos más importantes y relevantes de manera concisa.',
     props: {},
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'paragraph-2',
     type: 'paragraph',
     content:
       'La versión newsletter está diseñada para ser breve y directa, permitiendo al lector obtener la información esencial rápidamente.',
     props: {},
-  },
-];
+  }),
+]);
 
-export const newsComponentsWeb: EmailComponent[] = [
+export const newsComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'heading-1-web',
     type: 'heading',
@@ -514,11 +611,11 @@ export const newsComponentsWeb: EmailComponent[] = [
       'Si te interesó esta noticia, también podrían interesarte nuestros artículos relacionados sobre inteligencia artificial y desarrollo web.',
     props: {},
   },
-];
+]);
 
 // Market components
-export const marketComponents: EmailComponent[] = [
-  {
+export const marketComponents: EmailComponent[] = applyDefaultMeta([
+  withDefaultMeta({
     id: 'tituloConIcono-1',
     type: 'tituloConIcono',
     content: 'Análisis de mercado',
@@ -531,8 +628,8 @@ export const marketComponents: EmailComponent[] = [
       colorDistribution: 0,
       textColor: '#27AE60',
     },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'gallery-1',
     type: 'gallery',
     content: '',
@@ -546,20 +643,20 @@ export const marketComponents: EmailComponent[] = [
       spacing: 8,
       borderRadius: 8,
     },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'category-1',
     type: 'category',
     content: 'Mercado',
     props: { color: '#e8f5e8', textColor: '#2e7d32' },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'heading-1',
     type: 'heading',
     content: 'Título del análisis de mercado',
     props: { level: 1 },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'respaldadoPor-1',
     type: 'respaldadoPor',
     content: 'Respaldado por texto',
@@ -574,8 +671,8 @@ export const marketComponents: EmailComponent[] = [
       propietarioNombre: 'Director',
       propietarioAvatarUrl: 'https://s3.amazonaws.com/s3.condoor.ai/adam/9a6ed0c855.webp',
     },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'summary-1',
     type: 'summary',
     content: 'Resumen ejecutivo del análisis de mercado',
@@ -586,24 +683,24 @@ export const marketComponents: EmailComponent[] = [
       backgroundColor: '#fff8e1',
       textColor: '#e65100',
     },
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'paragraph-1',
     type: 'paragraph',
     content:
       'Este análisis de mercado presenta los puntos clave y tendencias más relevantes del sector. Incluye datos actualizados y proyecciones basadas en investigación de mercado.',
     props: {},
-  },
-  {
+  }),
+  withDefaultMeta({
     id: 'paragraph-2',
     type: 'paragraph',
     content:
       'El formato newsletter proporciona una visión condensada pero completa de las oportunidades y desafíos del mercado actual.',
     props: {},
-  },
-];
+  }),
+]);
 
-export const marketComponentsWeb: EmailComponent[] = [
+export const marketComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'heading-1-web',
     type: 'heading',
@@ -738,10 +835,10 @@ export const marketComponentsWeb: EmailComponent[] = [
       'Este análisis forma parte de nuestros informes mensuales de mercado. Para acceder a análisis más específicos por sector, puedes consultar nuestro centro de recursos.',
     props: {},
   },
-];
+]);
 
 // Feature template components (solo versión de correo)
-export const featureComponents: EmailComponent[] = [
+export const featureComponents: EmailComponent[] = applyDefaultMeta([
   {
     id: 'tituloConIcono-1',
     type: 'tituloConIcono',
@@ -759,13 +856,13 @@ export const featureComponents: EmailComponent[] = [
   {
     id: 'imageText-1',
     type: 'imageText',
-    content: '',
+    content:
+      '<p>Interfaz intuitiva diseñada para que cualquier usuario pueda aprovechar al máximo todas las funcionalidades sin complicaciones.</p>',
     props: {
       imageUrl: CONFIG.emptyImageUrl,
       imageAlt: 'Característica 1',
-      title: 'Fácil de usar',
-      description:
-        'Interfaz intuitiva diseñada para que cualquier usuario pueda aprovechar al máximo todas las funcionalidades sin complicaciones.',
+      titleContent: '<p><strong>Fácil de usar</strong></p>',
+      layout: 'image-left',
       imageWidth: 35,
       spacing: 16,
       borderRadius: 8,
@@ -774,18 +871,23 @@ export const featureComponents: EmailComponent[] = [
       titleColor: '#1565c0',
       fontSize: 14,
       titleSize: 18,
+      padding: 16,
+      imageHeight: 'auto',
+      imageObjectFit: 'contain',
+      imageBackgroundColor: 'transparent',
+      imageContainerBackgroundColor: '',
     },
   },
   {
     id: 'imageText-2',
     type: 'imageText',
-    content: '',
+    content:
+      '<p>Protección de datos de nivel empresarial con cifrado de extremo a extremo y cumplimiento de los estándares internacionales de seguridad.</p>',
     props: {
       imageUrl: CONFIG.emptyImageUrl,
       imageAlt: 'Característica 2',
-      title: 'Altamente seguro',
-      description:
-        'Protección de datos de nivel empresarial con cifrado de extremo a extremo y cumplimiento de los estándares internacionales de seguridad.',
+      titleContent: '<p><strong>Altamente seguro</strong></p>',
+      layout: 'image-right',
       imageWidth: 35,
       spacing: 16,
       borderRadius: 8,
@@ -794,18 +896,23 @@ export const featureComponents: EmailComponent[] = [
       titleColor: '#1565c0',
       fontSize: 14,
       titleSize: 18,
+      padding: 16,
+      imageHeight: 'auto',
+      imageObjectFit: 'contain',
+      imageBackgroundColor: 'transparent',
+      imageContainerBackgroundColor: '',
     },
   },
   {
     id: 'imageText-3',
     type: 'imageText',
-    content: '',
+    content:
+      '<p>Nuestro equipo de expertos está disponible las 24 horas del día, los 7 días de la semana para ayudarte cuando lo necesites.</p>',
     props: {
       imageUrl: CONFIG.emptyImageUrl,
       imageAlt: 'Característica 3',
-      title: 'Soporte 24/7',
-      description:
-        'Nuestro equipo de expertos está disponible las 24 horas del día, los 7 días de la semana para ayudarte cuando lo necesites.',
+      titleContent: '<p><strong>Soporte 24/7</strong></p>',
+      layout: 'image-left',
       imageWidth: 35,
       spacing: 16,
       borderRadius: 8,
@@ -814,25 +921,30 @@ export const featureComponents: EmailComponent[] = [
       titleColor: '#1565c0',
       fontSize: 14,
       titleSize: 18,
+      padding: 16,
+      imageHeight: 'auto',
+      imageObjectFit: 'contain',
+      imageBackgroundColor: 'transparent',
+      imageContainerBackgroundColor: '',
     },
   },
-];
+]);
 
 // Newsletter template components (versión newsletter)
-export const newsletterComponents: EmailComponent[] = [];
+export const newsletterComponents: EmailComponent[] = applyDefaultMeta([]);
 
 // Newsletter template components (versión web)
-export const newsletterComponentsWeb: EmailComponent[] = [
+export const newsletterComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'heading-1-web',
     type: 'heading',
     content: 'prueba',
     props: { level: 1 },
   },
-];
+]);
 
 // Storyboard template components (solo web)
-export const storyboardComponents: EmailComponent[] = [
+export const storyboardComponents: EmailComponent[] = applyDefaultMeta([
   {
     id: 'heading-1',
     type: 'heading',
@@ -880,13 +992,15 @@ export const storyboardComponents: EmailComponent[] = [
       '<ul><li>Duración: 10 segundos</li><li>Transición: Fade in</li><li>Audio: Música de fondo suave</li></ul>',
     props: {},
   },
-];
+]);
 
 // Storyboard template components (versión web - igual que la normal)
-export const storyboardComponentsWeb: EmailComponent[] = storyboardComponents;
+export const storyboardComponentsWeb: EmailComponent[] = applyDefaultMeta([
+  ...storyboardComponents,
+]);
 
 // SkillUp template components (versión newsletter)
-export const skillupComponents: EmailComponent[] = [
+export const skillupComponents: EmailComponent[] = applyDefaultMeta([
   {
     id: 'tituloConIcono-1',
     type: 'tituloConIcono',
@@ -941,10 +1055,10 @@ export const skillupComponents: EmailComponent[] = [
       textColor: '#1565c0',
     },
   },
-];
+]);
 
 // SkillUp template components (versión web)
-export const skillupComponentsWeb: EmailComponent[] = [
+export const skillupComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'heading-1-web',
     type: 'heading',
@@ -1000,10 +1114,10 @@ export const skillupComponentsWeb: EmailComponent[] = [
       'En el segundo párrafo podemos expandir sobre los aspectos más técnicos o específicos del tema. La versión web permite un desarrollo más extenso y detallado de la información.',
     props: {},
   },
-];
+]);
 
 // HowTo template components (versión newsletter)
-export const howtoComponents: EmailComponent[] = [
+export const howtoComponents: EmailComponent[] = applyDefaultMeta([
   {
     id: 'tituloConIcono-1',
     type: 'tituloConIcono',
@@ -1058,10 +1172,10 @@ export const howtoComponents: EmailComponent[] = [
       textColor: '#6a1b9a',
     },
   },
-];
+]);
 
 // HowTo template components (versión web)
-export const howtoComponentsWeb: EmailComponent[] = [
+export const howtoComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'heading-1-web',
     type: 'heading',
@@ -1123,4 +1237,4 @@ export const howtoComponentsWeb: EmailComponent[] = [
       'Ahora que tienes todo listo, sigue estas instrucciones paso a paso para completar la tarea. Asegúrate de seguir cada paso en orden para obtener los mejores resultados.',
     props: {},
   },
-];
+]);

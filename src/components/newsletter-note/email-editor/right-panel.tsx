@@ -53,10 +53,6 @@ export default function RightPanel({
   bannerOptions,
   setSelectedAlignment,
   hasTextSelection,
-  listStyle,
-  updateListStyle,
-  listColor,
-  updateListColor,
   convertTextToList,
   setShowIconPicker,
   isContainerSelected,
@@ -111,6 +107,7 @@ export default function RightPanel({
   currentNewsletterId,
   onNewsletterUpdate = () => {},
   isViewOnly = false,
+  noteConfigurationViewRef,
 }: RightPanelProps) {
   // Hook para subida de imágenes
   const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
@@ -285,6 +282,7 @@ export default function RightPanel({
     return (
       <>
         <NoteConfigurationView
+          ref={noteConfigurationViewRef}
           containerTab={containerTab}
           setContainerTab={setContainerTab}
           isNewsletterMode={isNewsletterMode}
@@ -405,10 +403,6 @@ export default function RightPanel({
         bannerOptions={bannerOptions}
         setSelectedAlignment={setSelectedAlignment}
         hasTextSelection={hasTextSelection}
-        listStyle={listStyle}
-        updateListStyle={updateListStyle}
-        listColor={listColor}
-        updateListColor={updateListColor}
         convertTextToList={convertTextToList}
         setShowIconPicker={setShowIconPicker}
         isContainerSelected={isContainerSelected}

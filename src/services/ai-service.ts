@@ -23,11 +23,13 @@ import useAiGenerationStore from 'src/store/AiGenerationStore';
 
 /**
  * Configuración de polling
+ * NOTA: TaskManagerStore maneja el polling en background sin timeout
+ * Este config es solo para uso directo del servicio (no recomendado)
  */
 const POLLING_CONFIG = {
-  interval: 2500, // Consultar cada 2.5 segundos
-  maxDuration: 5 * 60 * 1000, // Máximo 5 minutos
-  maxAttempts: 120, // (5 min * 60 seg) / 2.5 seg = 120 intentos
+  interval: 20000, // Consultar cada 20 segundos
+  maxDuration: 60 * 60 * 1000, // Máximo 1 hora (muy generoso)
+  maxAttempts: 180, // (60 min * 60 seg) / 20 seg = 180 intentos
 };
 
 // ============================================================================
@@ -300,6 +302,33 @@ export function validateNoteRequest(request: GenerateNoteRequest): ValidationRes
 // ============================================================================
 // FUNCIONES AUXILIARES
 // ============================================================================
+
+/**
+ * Recupera tareas desde localStorage
+ * Filtra solo tareas no completadas/con error para reiniciar polling
+ *
+ * @returns Array de tareas pendientes/en progreso
+ */
+export function recoverTasksFromLocalStorage(): any[] {
+  try {
+    const stored = localStorage.getItem('ai-tasks');
+    if (!stored) return [];
+
+    const tasks = JSON.parse(stored);
+
+    // Filtrar solo tareas no completadas ni con error
+    const pendingTasks = tasks.filter(
+      (t: any) => t.status !== 'COMPLETED' && t.status !== 'ERROR' && t.status !== 'FAILED'
+    );
+
+    console.log('🔄 Recuperadas tareas desde localStorage:', pendingTasks.length);
+
+    return pendingTasks;
+  } catch (error) {
+    console.error('❌ Error al recuperar tareas desde localStorage:', error);
+    return [];
+  }
+}
 
 /**
  * Sleep helper para esperar entre polling

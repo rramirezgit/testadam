@@ -4,8 +4,6 @@ import { useCallback } from 'react';
 
 import Button from '@mui/material/Button';
 
-import { useRouter } from 'src/routes/hooks';
-
 import { CONFIG } from 'src/global-config';
 import useAuthStore from 'src/store/AuthStore';
 import usePostStore from 'src/store/PostStore';
@@ -29,8 +27,6 @@ type Props = ButtonProps & {
 };
 
 export function SignOutButton({ onClose, sx, ...other }: Props) {
-  const router = useRouter();
-
   const { checkUserSession } = useAuthContext();
 
   const { logout } = useAuthStore();
@@ -55,16 +51,18 @@ export function SignOutButton({ onClose, sx, ...other }: Props) {
 
       onClose?.();
 
-      // Redirigir al login después del logout
-      router.replace('/auth/login');
-
       // Mostrar mensaje de éxito
       toast.success('Sesión cerrada correctamente');
+
+      // Redirigir al login después del logout (forzar recarga completa)
+      window.location.href = '/auth/login';
     } catch (error) {
       console.error(error);
       toast.error('Error al cerrar sesión');
+      // Asegurar redirección incluso si hay error
+      window.location.href = '/auth/login';
     }
-  }, [checkUserSession, onClose, router, clearPosts, clearCurrentPost]);
+  }, [checkUserSession, onClose, clearPosts, clearCurrentPost]);
 
   const handleLogoutAuth0 = useCallback(async () => {
     try {
@@ -85,16 +83,18 @@ export function SignOutButton({ onClose, sx, ...other }: Props) {
 
       onClose?.();
 
-      // Redirigir al login y forzar recarga completa
-      router.replace('/auth/login');
-
       // Mostrar mensaje de éxito
       toast.success('Sesión cerrada correctamente');
+
+      // Redirigir al login y forzar recarga completa
+      window.location.href = '/auth/login';
     } catch (error) {
       console.error(error);
       toast.error('Error al cerrar sesión');
+      // Asegurar redirección incluso si hay error
+      window.location.href = '/auth/login';
     }
-  }, [onClose, router, logout, clearPosts, clearCurrentPost]);
+  }, [onClose, logout, clearPosts, clearCurrentPost]);
 
   return (
     <Button

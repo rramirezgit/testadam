@@ -18,6 +18,7 @@ import {
   Toolbar,
   Tooltip,
   MenuItem,
+  Checkbox,
   useTheme,
   TextField,
   Typography,
@@ -28,6 +29,8 @@ import {
   ListItemText,
   DialogContent,
   DialogActions,
+  CircularProgress,
+  FormControlLabel,
   ToggleButtonGroup,
   DialogContentText,
 } from '@mui/material';
@@ -36,11 +39,11 @@ import { CONFIG } from 'src/global-config';
 import usePostStore from 'src/store/PostStore';
 import useAiGenerationStore from 'src/store/AiGenerationStore';
 
-import { AnimateBorder } from 'src/components/animate/animate-border';
-
 import SendTestDialog from './send-test-dialog';
 import TargetStoresModal from '../newsletter-editor/TargetStoresModal';
 import EditorialAnalysisModal from './components/EditorialAnalysisModal';
+
+import type { NoteConfigurationField } from './right-panel/views/NoteConfigurationView';
 
 interface EditorHeaderProps {
   onClose: () => void;
@@ -69,7 +72,7 @@ interface EditorHeaderProps {
   setOpenSchedule?: (open: boolean) => void;
   setOpenSendSubs?: (open: boolean) => void;
   htmlContent?: string;
-  onGenerateHtml?: () => Promise<string>;
+  onGenerateHtml?: (options?: { includeApprovalButtons?: boolean }) => Promise<string>;
   // Nueva prop para el título del newsletter
   newsletterTitle?: string;
   // Nueva prop para obtener componentes activos
@@ -99,6 +102,7 @@ interface EditorHeaderProps {
   noteHtmlPreview?: string;
   // Nueva prop para guardar newsletter con lógica de modal
   onSaveNewsletter?: () => void | Promise<void>;
+  focusConfigurationField?: (field: NoteConfigurationField) => void;
 }
 
 export default function EditorHeader({
@@ -146,6 +150,7 @@ export default function EditorHeader({
   noteTitle = '',
   noteHtmlPreview = '',
   onSaveNewsletter,
+  focusConfigurationField,
 }: EditorHeaderProps) {
   // Estado para el menú de transferencia
   const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
@@ -169,7 +174,8 @@ export default function EditorHeader({
   const [openSendNowDialog, setOpenSendNowDialog] = useState(false);
   const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
-  const [approverEmails] = useState(['97.rramirez@gmail.com']); // Email predeterminado
+  const [selectedApproverEmails, setSelectedApproverEmails] = useState<string[]>([]);
+  const [loadingApproval, setLoadingApproval] = useState(false);
 
   // Estado para el diálogo de confirmación de salida con IA generando
   const [openExitConfirmDialog, setOpenExitConfirmDialog] = useState(false);
@@ -179,6 +185,9 @@ export default function EditorHeader({
   const [selectedTargetStores, setSelectedTargetStores] = useState<string[]>([]);
 
   const theme = useTheme();
+
+  // Correos disponibles para aprobación desde variable de entorno
+  const availableApproverEmails = CONFIG.approverEmails;
 
   // Hook del store
   const {
@@ -381,7 +390,12 @@ export default function EditorHeader({
       console.log('💾 Guardando newsletter antes de enviar...');
 
       // Primero guardar el newsletter
-      await handleSaveNewsletter();
+      const saved = await handleSaveNewsletter();
+
+      if (!saved) {
+        handleSendMenuClose();
+        return;
+      }
 
       console.log('✅ Newsletter guardado, abriendo diálogo de:', dialogType);
 
@@ -451,7 +465,7 @@ export default function EditorHeader({
   };
 
   // Función para guardar newsletter
-  const handleSaveNewsletter = async () => {
+  const handleSaveNewsletter = async (): Promise<boolean> => {
     try {
       console.log('🔄 handleSaveNewsletter called:', {
         isNewsletterMode,
@@ -462,7 +476,7 @@ export default function EditorHeader({
       if (!isNewsletterMode) {
         console.log('❌ No es modo newsletter, usando onSave');
         onSave();
-        return;
+        return true;
       }
 
       // MICHIN: Verificar targetStores antes de guardar por primera vez
@@ -470,13 +484,15 @@ export default function EditorHeader({
       if (CONFIG.platform === 'MICHIN' && isNewNewsletter && selectedTargetStores.length === 0) {
         console.log('🎯 Newsletter nuevo en MICHIN sin targetStores, mostrando modal...');
         setShowTargetStoresModal(true);
-        return;
+        return false;
       }
 
       // Si ya tenemos targetStores o no es MICHIN, continuar directamente
       await executeSaveNewsletter(
         selectedTargetStores.length > 0 ? selectedTargetStores : undefined
       );
+
+      return true;
     } catch (error: any) {
       console.error('❌ Error en handleSaveNewsletter:', error);
 
@@ -485,6 +501,8 @@ export default function EditorHeader({
         error?.response?.data?.message || error?.message || 'Error al guardar el newsletter';
 
       showNotification(errorMessage, 'error');
+
+      return false;
     }
   };
 
@@ -514,8 +532,8 @@ export default function EditorHeader({
 
       // Validar que el título sea obligatorio
       if (!newsletterTitle || !newsletterTitle.trim()) {
-        setOpenTitleErrorDialog(true);
-        return;
+        focusConfigurationField?.('newsletterTitle');
+        throw new Error('El título del newsletter es obligatorio');
       }
 
       const subject = newsletterTitle.trim();
@@ -662,19 +680,21 @@ export default function EditorHeader({
   // Handler para solicitar aprobación
   const handleRequestApproval = async () => {
     try {
+      setLoadingApproval(true);
       console.log('🔄 Solicitando aprobación del newsletter...');
 
       // Validar que el newsletter esté guardado
       if (!currentNewsletterId || currentNewsletterId.trim() === '') {
         showNotification('Debes guardar el newsletter antes de solicitar aprobación', 'error');
+        setLoadingApproval(false);
         return;
       }
 
       // Generar HTML si no está disponible
       let content = htmlContent;
       if (!content && onGenerateHtml) {
-        console.log('📝 Generando HTML para aprobación...');
-        content = await onGenerateHtml();
+        console.log('📝 Generando HTML para aprobación con botones...');
+        content = await onGenerateHtml({ includeApprovalButtons: true });
       }
 
       if (!content) {
@@ -685,7 +705,7 @@ export default function EditorHeader({
       // Enviar solicitud de aprobación con el endpoint correcto
       await requestNewsletterApproval(
         currentNewsletterId,
-        approverEmails,
+        selectedApproverEmails,
         newsletterTitle,
         content
       );
@@ -708,6 +728,8 @@ export default function EditorHeader({
         error?.response?.data?.message || error?.message || 'Error al solicitar aprobación';
 
       showNotification(errorMessage, 'error');
+    } finally {
+      setLoadingApproval(false);
     }
   };
 
@@ -1248,110 +1270,6 @@ export default function EditorHeader({
                 </Button>
               )}
 
-              {/* Botón de Generar con IA - Solo para notas de tipo news y estados editables */}
-              {!isViewOnly &&
-                activeTemplate === 'news' &&
-                ['DRAFT', 'REVIEW', 'REJECTED'].includes(noteStatus) &&
-                onAIGenerateClick && (
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      display: 'inline-block',
-                    }}
-                  >
-                    {aiGenerating ? (
-                      // Botón con animación cuando está generando - CLICKEABLE para reabrir modal
-                      <Tooltip title="Haz clic para ver el progreso detallado">
-                        <Box>
-                          <AnimateBorder
-                            duration={3}
-                            slotProps={{
-                              primaryBorder: {
-                                width: '2px',
-                                size: 120,
-                                sx: {
-                                  color: '#8B45FF',
-                                },
-                              },
-                              outlineColor: 'rgba(139, 69, 255, 0.2)',
-                            }}
-                            sx={{
-                              borderRadius: '8px',
-                              overflow: 'visible',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <Button
-                              variant="outlined"
-                              onClick={onAIGenerateClick}
-                              sx={{
-                                height: '42px',
-                                minWidth: '160px',
-                                borderColor: '#8B45FF',
-                                color: '#8B45FF',
-                                background:
-                                  'linear-gradient(135deg, rgba(139, 69, 255, 0.08) 0%, rgba(117, 0, 225, 0.08) 100%)',
-                                '&:hover': {
-                                  borderColor: '#7500E1',
-                                  background:
-                                    'linear-gradient(135deg, rgba(139, 69, 255, 0.12) 0%, rgba(117, 0, 225, 0.12) 100%)',
-                                },
-                              }}
-                              startIcon={
-                                <Icon icon="svg-spinners:blocks-shuffle-3" width={20} height={20} />
-                              }
-                            >
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'flex-start',
-                                  gap: 0.25,
-                                }}
-                              >
-                                <Typography
-                                  variant="caption"
-                                  sx={{ fontSize: '0.75rem', lineHeight: 1 }}
-                                >
-                                  Generando...
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  sx={{ fontSize: '0.65rem', lineHeight: 1, opacity: 0.7 }}
-                                >
-                                  {aiProgress}%
-                                </Typography>
-                              </Box>
-                            </Button>
-                          </AnimateBorder>
-                        </Box>
-                      </Tooltip>
-                    ) : (
-                      // Botón normal
-                      <Button
-                        variant="outlined"
-                        color="secondary"
-                        sx={{
-                          height: '42px',
-                          borderColor: '#8B45FF',
-                          color: '#8B45FF',
-                          background:
-                            'linear-gradient(135deg, rgba(139, 69, 255, 0.05) 0%, rgba(117, 0, 225, 0.05) 100%)',
-                          '&:hover': {
-                            borderColor: '#7500E1',
-                            background:
-                              'linear-gradient(135deg, rgba(139, 69, 255, 0.1) 0%, rgba(117, 0, 225, 0.1) 100%)',
-                          },
-                        }}
-                        startIcon={<Icon icon="mdi:magic-staff" />}
-                        onClick={onAIGenerateClick}
-                      >
-                        IA
-                      </Button>
-                    )}
-                  </Box>
-                )}
-
               <Button
                 variant="contained"
                 color="primary"
@@ -1508,27 +1426,54 @@ export default function EditorHeader({
       {/* Modal de Aprobación */}
       <Dialog
         open={openApprovalDialog}
-        onClose={() => setOpenApprovalDialog(false)}
+        onClose={() => !loadingApproval && setOpenApprovalDialog(false)}
         maxWidth="sm"
         fullWidth
       >
         <DialogTitle>Enviar para Aprobación</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            El newsletter será enviado al siguiente correo para su aprobación:
+            Selecciona los correos que recibirán la solicitud de aprobación:
           </Typography>
-          <TextField
-            fullWidth
-            value={approverEmails[0]}
-            disabled
-            label="Email del Aprobador"
-            sx={{ mb: 2 }}
-          />
+          <Stack spacing={1}>
+            {availableApproverEmails.map((email) => (
+              <FormControlLabel
+                key={email}
+                control={
+                  <Checkbox
+                    checked={selectedApproverEmails.includes(email)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedApproverEmails([...selectedApproverEmails, email]);
+                      } else {
+                        setSelectedApproverEmails(
+                          selectedApproverEmails.filter((existingEmail) => existingEmail !== email)
+                        );
+                      }
+                    }}
+                  />
+                }
+                label={email}
+              />
+            ))}
+          </Stack>
+          {selectedApproverEmails.length === 0 && (
+            <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+              Debes seleccionar al menos un correo
+            </Typography>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenApprovalDialog(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleRequestApproval}>
-            Enviar
+          <Button onClick={() => setOpenApprovalDialog(false)} disabled={loadingApproval}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleRequestApproval}
+            disabled={selectedApproverEmails.length === 0 || loadingApproval}
+            startIcon={loadingApproval ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {loadingApproval ? 'Enviando...' : 'Enviar'}
           </Button>
         </DialogActions>
       </Dialog>

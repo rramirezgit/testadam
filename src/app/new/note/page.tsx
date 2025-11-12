@@ -8,6 +8,8 @@ export default function NewNotePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isAIMode = searchParams.get('mode') === 'ai';
+  const fromAI = searchParams.get('fromAI') === 'true';
+  const taskId = searchParams.get('taskId');
 
   return (
     <EmailEditor
@@ -15,6 +17,8 @@ export default function NewNotePage() {
       initialNote={null}
       excludeTemplates={['newsletter']}
       isAICreation={isAIMode}
+      fromAI={fromAI}
+      aiTaskId={taskId || undefined}
     />
   );
 }

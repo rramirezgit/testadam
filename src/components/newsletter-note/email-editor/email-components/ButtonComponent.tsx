@@ -6,6 +6,7 @@ import { Button } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
+import { DEFAULT_PLACEHOLDER_COLOR, shouldUsePlaceholderColor } from './utils';
 
 import type { EmailComponentProps } from './types';
 
@@ -66,11 +67,15 @@ const MemoizedButtonEditor = memo(
     onContentChange,
     onSelectionUpdate,
     editorStyle,
+    isPlaceholder,
+    placeholderColor,
   }: {
     content: string;
     onContentChange?: (content: string) => void;
     onSelectionUpdate?: (editor: any) => void;
     editorStyle: React.CSSProperties;
+    isPlaceholder?: boolean;
+    placeholderColor?: string;
   }) => (
     <SimpleTipTapEditor
       content={content}
@@ -79,6 +84,8 @@ const MemoizedButtonEditor = memo(
       showToolbar={false}
       style={editorStyle}
       showAIButton={false}
+      isPlaceholder={isPlaceholder}
+      placeholderColor={placeholderColor}
     />
   ),
   (prevProps, nextProps) =>
@@ -86,7 +93,9 @@ const MemoizedButtonEditor = memo(
     prevProps.content === nextProps.content &&
     prevProps.onContentChange === nextProps.onContentChange &&
     prevProps.onSelectionUpdate === nextProps.onSelectionUpdate &&
-    JSON.stringify(prevProps.editorStyle) === JSON.stringify(nextProps.editorStyle)
+    JSON.stringify(prevProps.editorStyle) === JSON.stringify(nextProps.editorStyle) &&
+    prevProps.isPlaceholder === nextProps.isPlaceholder &&
+    prevProps.placeholderColor === nextProps.placeholderColor
 );
 
 MemoizedButtonEditor.displayName = 'MemoizedButtonEditor';
@@ -126,6 +135,11 @@ const ButtonComponent = memo(
         textAlign: 'center' as const,
       }),
       []
+    );
+
+    const placeholderActive = shouldUsePlaceholderColor(
+      component,
+      (component.style?.color as string | undefined) || editorStyle.color
     );
 
     // ⚡ ULTRA-OPTIMITZACIÓ: Callback memoizado con throttling integrado
@@ -217,6 +231,8 @@ const ButtonComponent = memo(
             onContentChange={handleContentChange}
             onSelectionUpdate={handleSelectionUpdateMemo}
             editorStyle={editorStyle}
+            isPlaceholder={placeholderActive}
+            placeholderColor={DEFAULT_PLACEHOLDER_COLOR}
           />
         </Button>
       </ComponentWithToolbar>

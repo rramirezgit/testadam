@@ -9,10 +9,14 @@ import {
   Button,
   Slider,
   Divider,
+  Tooltip,
   Skeleton,
   TextField,
   Typography,
+  IconButton,
 } from '@mui/material';
+
+import useAuthStore from 'src/store/AuthStore';
 
 import ImageCropDialog from './ImageCropDialog';
 import ImageSourceModal from './ImageSourceModal';
@@ -39,6 +43,9 @@ const GalleryOptions = ({
   selectedComponent,
   updateComponentProps,
 }: GalleryOptionsProps) => {
+  // Obtener usuario autenticado
+  const user = useAuthStore((state) => state.user);
+
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [openAITab, setOpenAITab] = useState(false);
@@ -71,11 +78,12 @@ const GalleryOptions = ({
     (_, idx) => images[idx] || { src: '', alt: `Imagen ${idx + 1}` }
   );
 
-  const spacing = selectedComponent.props?.spacing || 8;
-  const borderRadius = selectedComponent.props?.borderRadius || 8;
-
   // Obtener imagen seleccionada desde el componente
   const selectedImageIndex = selectedComponent.props?.selectedImageIndex ?? null;
+
+  // Valores reactivos de configuración global
+  const spacing = selectedComponent.props?.spacing ?? 8;
+  const borderRadius = selectedComponent.props?.borderRadius ?? 8;
 
   // Función para convertir URL de imagen a base64 usando endpoint
   const convertImageUrlToBase64 = async (imageUrl: string): Promise<string> => {
@@ -240,7 +248,7 @@ const GalleryOptions = ({
     return (
       <Box sx={{ p: 2 }}>
         {/* Configuración global siempre visible */}
-        <Card elevation={1} sx={{ borderRadius: 2, bgcolor: 'grey.50' }}>
+        <Card elevation={1} sx={{ borderRadius: 0, border: 'none', boxShadow: 'none' }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
             <Icon icon="mdi:tune" fontSize={20} />
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
@@ -260,7 +268,10 @@ const GalleryOptions = ({
               size="small"
               value={spacing}
               onChange={(_, value) => {
-                updateComponentProps(selectedComponentId!, { spacing: value as number });
+                updateComponentProps(selectedComponentId!, {
+                  ...selectedComponent.props,
+                  spacing: value as number,
+                });
               }}
               min={0}
               max={20}
@@ -285,7 +296,10 @@ const GalleryOptions = ({
               size="small"
               value={borderRadius}
               onChange={(_, value) => {
-                updateComponentProps(selectedComponentId!, { borderRadius: value as number });
+                updateComponentProps(selectedComponentId!, {
+                  ...selectedComponent.props,
+                  borderRadius: value as number,
+                });
               }}
               min={0}
               max={20}
@@ -370,54 +384,60 @@ const GalleryOptions = ({
                 }}
               >
                 {/* Botón Cambiar Imagen */}
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="small"
-                  startIcon={<Icon icon="mdi:image-plus" />}
-                  onClick={() => handleSelectImage(selectedImageIndex)}
-                  disabled={uploading || isLoadingForEdit}
-                  sx={{
-                    minWidth: 'auto',
-                    px: 2,
-                  }}
-                >
-                  Cambiar
-                </Button>
+                <Tooltip title="Cambiar imagen" arrow>
+                  <IconButton
+                    color="primary"
+                    onClick={() => handleSelectImage(selectedImageIndex)}
+                    disabled={uploading || isLoadingForEdit}
+                    sx={{
+                      backgroundColor: 'white',
+                      '&:hover': {
+                        backgroundColor: 'primary.light',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    <Icon icon="mdi:image-plus" width={24} />
+                  </IconButton>
+                </Tooltip>
 
                 {/* Botón Editar Imagen */}
                 {canEditCurrentImage && (
-                  <Button
-                    variant="contained"
-                    color="info"
-                    size="small"
-                    startIcon={<Icon icon="mdi:image-edit" />}
-                    onClick={() => handleEditImage(selectedImageIndex)}
-                    disabled={uploading || isLoadingForEdit}
-                    sx={{
-                      minWidth: 'auto',
-                      px: 2,
-                    }}
-                  >
-                    Editar
-                  </Button>
+                  <Tooltip title="Editar imagen" arrow>
+                    <IconButton
+                      color="info"
+                      onClick={() => handleEditImage(selectedImageIndex)}
+                      disabled={uploading || isLoadingForEdit}
+                      sx={{
+                        backgroundColor: 'white',
+                        '&:hover': {
+                          backgroundColor: 'info.light',
+                          color: 'white',
+                        },
+                      }}
+                    >
+                      <Icon icon="mdi:image-edit" width={24} />
+                    </IconButton>
+                  </Tooltip>
                 )}
 
                 {/* Botón Eliminar */}
-                <Button
-                  variant="contained"
-                  color="error"
-                  size="small"
-                  startIcon={<Icon icon="mdi:delete" />}
-                  onClick={() => handleDeleteImage(selectedImageIndex)}
-                  disabled={uploading || isLoadingForEdit}
-                  sx={{
-                    minWidth: 'auto',
-                    px: 2,
-                  }}
-                >
-                  Eliminar
-                </Button>
+                <Tooltip title="Eliminar imagen" arrow>
+                  <IconButton
+                    color="error"
+                    onClick={() => handleDeleteImage(selectedImageIndex)}
+                    disabled={uploading || isLoadingForEdit}
+                    sx={{
+                      backgroundColor: 'white',
+                      '&:hover': {
+                        backgroundColor: 'error.light',
+                        color: 'white',
+                      },
+                    }}
+                  >
+                    <Icon icon="mdi:delete" width={24} />
+                  </IconButton>
+                </Tooltip>
               </Box>
             </>
           )}
@@ -493,9 +513,8 @@ const GalleryOptions = ({
       <Divider sx={{ my: 3 }} />
 
       {/* Configuración global */}
-      <Card elevation={1} sx={{ p: 2, borderRadius: 2, bgcolor: 'grey.50' }}>
+      <Card elevation={1} sx={{ p: 2, borderRadius: 0, border: 'none', boxShadow: 'none' }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-          <Icon icon="mdi:tune" fontSize={20} />
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Configuración Global
           </Typography>
@@ -513,7 +532,10 @@ const GalleryOptions = ({
             size="small"
             value={spacing}
             onChange={(_, value) => {
-              updateComponentProps(selectedComponentId!, { spacing: value as number });
+              updateComponentProps(selectedComponentId!, {
+                ...selectedComponent.props,
+                spacing: value as number,
+              });
             }}
             min={0}
             max={20}
@@ -539,7 +561,10 @@ const GalleryOptions = ({
             size="small"
             value={borderRadius}
             onChange={(_, value) => {
-              updateComponentProps(selectedComponentId!, { borderRadius: value as number });
+              updateComponentProps(selectedComponentId!, {
+                ...selectedComponent.props,
+                borderRadius: value as number,
+              });
             }}
             min={0}
             max={20}
@@ -590,6 +615,8 @@ const GalleryOptions = ({
         initialImage={tempImageForCrop}
         currentAspectRatio={undefined}
         initialTab={openAITab ? 'ai' : 'edit'}
+        userId={user?.id}
+        plan={user?.plan?.name}
       />
     </Box>
   );

@@ -2,8 +2,13 @@ import React, { memo, useMemo, useCallback } from 'react';
 
 import { Box } from '@mui/material';
 
-import { getOrderedListMarker } from './utils';
 import ComponentWithToolbar from './ComponentWithToolbar';
+import {
+  buildListHtml,
+  normaliseListStyle,
+  DEFAULT_PLACEHOLDER_COLOR,
+  shouldUsePlaceholderColor,
+} from './utils';
 
 import type { EmailComponentProps } from './types';
 
@@ -28,20 +33,54 @@ const BulletListComponent = memo(
 
     // Memoizar las propiedades de la lista
     const listProps = useMemo(() => {
-      const items = component.props?.items || ['Item 1', 'Item 2', 'Item 3'];
-      const listStyle = component.props?.listStyle || 'disc';
-      const listColor = component.props?.listColor || '#000000';
+      const items = component.props?.items || ['Elemento de lista'];
+      const listStyle = normaliseListStyle(component.props?.listStyle);
+      const explicitListColor = component.props?.listColor;
+      const explicitTextColor = component.props?.textColor;
 
-      // Determinar si es una lista ordenada
-      const isOrderedList =
-        listStyle === 'decimal' ||
-        listStyle === 'lower-alpha' ||
-        listStyle === 'upper-alpha' ||
-        listStyle === 'lower-roman' ||
-        listStyle === 'upper-roman';
+      const defaultHtml = buildListHtml(items, listStyle);
+      const html =
+        component.content && component.content.trim().length > 0 ? component.content : defaultHtml;
 
-      return { items, listStyle, listColor, isOrderedList };
-    }, [component.props?.items, component.props?.listStyle, component.props?.listColor]);
+      const placeholderActive =
+        component.meta?.isDefaultContent &&
+        !!component.meta?.defaultContentSnapshot &&
+        component.meta.defaultContentSnapshot.trim() === html.trim();
+
+      const usePlaceholderColor = shouldUsePlaceholderColor(
+        component,
+        (component.style?.color as string | undefined) || explicitTextColor || explicitListColor
+      );
+
+      const displayTextColor =
+        explicitTextColor ||
+        (placeholderActive || usePlaceholderColor ? DEFAULT_PLACEHOLDER_COLOR : '#000000');
+
+      const displayListColor =
+        explicitListColor ||
+        (placeholderActive || usePlaceholderColor ? DEFAULT_PLACEHOLDER_COLOR : displayTextColor);
+
+      return { html, listStyle, displayListColor, displayTextColor };
+    }, [component]);
+
+    const { html, listStyle, displayListColor, displayTextColor } = listProps;
+
+    const listStyles = useMemo(
+      () => ({
+        '& ul, & ol': {
+          margin: 0,
+          paddingLeft: '1.5rem',
+          listStyleType: listStyle,
+        },
+        '& li': {
+          color: displayTextColor,
+        },
+        '& li::marker': {
+          color: displayListColor,
+        },
+      }),
+      [listStyle, displayListColor, displayTextColor]
+    );
 
     if (renderCustomContent) {
       return (
@@ -59,8 +98,6 @@ const BulletListComponent = memo(
       );
     }
 
-    const { items, listStyle, listColor, isOrderedList } = listProps;
-
     return (
       <ComponentWithToolbar
         isSelected={isSelected}
@@ -71,85 +108,7 @@ const BulletListComponent = memo(
         removeComponent={removeComponent}
         onClick={handleClick}
       >
-        <Box sx={{ pl: 2 }}>
-          {items.map((item, i) => (
-            <Box
-              key={i}
-              sx={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                mb: 1,
-              }}
-            >
-              {isOrderedList ? (
-                // Marcador para listas ordenadas - Estilo unificado con círculo y número
-                <Box
-                  sx={{
-                    minWidth: '24px',
-                    mr: 2,
-                    backgroundColor: listColor,
-                    borderRadius: '50%',
-                    color: 'white',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    height: '24px',
-                    width: '24px',
-                    lineHeight: '24px',
-                    textAlign: 'center',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {getOrderedListMarker(i + 1, listStyle)}
-                </Box>
-              ) : (
-                // Marcador para listas no ordenadas - Estilo unificado
-                <Box
-                  sx={{
-                    minWidth: '24px',
-                    mr: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {listStyle === 'disc' && (
-                    <Box
-                      sx={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: listColor,
-                      }}
-                    />
-                  )}
-                  {listStyle === 'circle' && (
-                    <Box
-                      sx={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        border: `1px solid ${listColor}`,
-                        backgroundColor: 'transparent',
-                      }}
-                    />
-                  )}
-                  {listStyle === 'square' && (
-                    <Box
-                      sx={{
-                        width: '8px',
-                        height: '8px',
-                        backgroundColor: listColor,
-                      }}
-                    />
-                  )}
-                </Box>
-              )}
-              <Box sx={{ flexGrow: 1 }}>{item}</Box>
-            </Box>
-          ))}
-        </Box>
+        <Box sx={{ pl: 2, ...listStyles }} dangerouslySetInnerHTML={{ __html: html }} />
       </ComponentWithToolbar>
     );
   }

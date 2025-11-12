@@ -197,7 +197,7 @@ const TextWithIconOptions = ({ component, updateComponentProps }: TextWithIconOp
 
       {/* Sección de Diseño */}
       <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-        🎨 Diseño
+        Diseño
       </Typography>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>

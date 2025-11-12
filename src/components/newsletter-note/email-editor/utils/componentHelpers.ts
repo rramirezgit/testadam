@@ -1,5 +1,7 @@
 import type { EmailComponent } from 'src/types/saved-note';
 
+import { buildListHtml } from '../email-components/utils';
+
 import type { ComponentType } from '../types';
 
 // Función para crear un nuevo componente
@@ -19,7 +21,7 @@ export const createNewComponent = (
           : type === 'button'
             ? 'Button Text'
             : type === 'bulletList'
-              ? 'List item'
+              ? buildListHtml(['Elemento de lista'], 'disc')
               : type === 'category'
                 ? 'Categoría'
                 : type === 'author'
@@ -43,7 +45,7 @@ export const createNewComponent = (
           : type === 'image'
             ? { src: '', alt: 'Placeholder image' }
             : type === 'bulletList'
-              ? { items: ['List item 1'], listStyle: 'disc', listColor: '#000000' }
+              ? { items: ['Elemento de lista'], listStyle: 'disc' }
               : type === 'summary'
                 ? {
                     summaryType: 'resumen',
@@ -127,7 +129,6 @@ export const createNewComponent = (
         : type === 'bulletList'
           ? {
               listStyleType: 'disc',
-              color: '#000000',
               marginLeft: '20px',
             }
           : type === 'newsletterHeaderReusable'
@@ -149,7 +150,15 @@ export const createNewComponent = (
               : {},
   };
 
-  return newComponent;
+  return {
+    ...newComponent,
+    meta: {
+      isDefaultContent: true,
+      defaultContentSnapshot: newComponent.content,
+      defaultPropsSnapshot: newComponent.props,
+      defaultStyleSnapshot: newComponent.style,
+    },
+  };
 };
 
 // Función para convertir párrafo a lista
@@ -173,18 +182,19 @@ export const convertTextToList = (
   const items = listItems.length > 0 ? listItems : [textContent];
 
   // Crear un nuevo componente de lista con el contenido limpio
+  const listStyle = listType === 'ordered' ? 'decimal' : 'disc';
+  const listHtml = buildListHtml(items, listStyle);
+
   const newListComponent: EmailComponent = {
     id: `bulletList-${Date.now()}${activeVersion === 'web' ? '-web' : ''}`,
     type: 'bulletList',
-    content: '',
+    content: listHtml,
     props: {
       items,
-      listStyle: listType === 'ordered' ? 'decimal' : 'disc',
-      listColor: '#000000',
+      listStyle,
     },
     style: {
-      listStyleType: listType === 'ordered' ? 'decimal' : 'disc',
-      color: '#000000',
+      listStyleType: listStyle,
       marginLeft: '20px',
     },
   };

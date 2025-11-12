@@ -5,6 +5,7 @@ import { Box } from '@mui/material';
 import ComponentWithToolbar from './ComponentWithToolbar';
 import AIAssistantModal from '../ai-menu/AIAssistantModal';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
+import { DEFAULT_PLACEHOLDER_COLOR, shouldUsePlaceholderColor } from './utils';
 
 import type { EmailComponentProps } from './types';
 
@@ -65,11 +66,15 @@ const MemoizedHeadingEditor = memo(
     onContentChange,
     onSelectionUpdate,
     editorStyle,
+    isPlaceholder,
+    placeholderColor,
   }: {
     content: string;
     onContentChange?: (content: string) => void;
     onSelectionUpdate?: (editor: any) => void;
     editorStyle: React.CSSProperties;
+    isPlaceholder?: boolean;
+    placeholderColor?: string;
   }) => (
     <SimpleTipTapEditor
       content={content}
@@ -78,6 +83,8 @@ const MemoizedHeadingEditor = memo(
       showToolbar={false}
       style={editorStyle}
       showAIButton
+      isPlaceholder={isPlaceholder}
+      placeholderColor={placeholderColor}
     />
   ),
   (prevProps, nextProps) =>
@@ -85,7 +92,9 @@ const MemoizedHeadingEditor = memo(
     prevProps.content === nextProps.content &&
     prevProps.onContentChange === nextProps.onContentChange &&
     prevProps.onSelectionUpdate === nextProps.onSelectionUpdate &&
-    JSON.stringify(prevProps.editorStyle) === JSON.stringify(nextProps.editorStyle)
+    JSON.stringify(prevProps.editorStyle) === JSON.stringify(nextProps.editorStyle) &&
+    prevProps.isPlaceholder === nextProps.isPlaceholder &&
+    prevProps.placeholderColor === nextProps.placeholderColor
 );
 
 MemoizedHeadingEditor.displayName = 'MemoizedHeadingEditor';
@@ -133,6 +142,11 @@ const HeadingComponent = memo(
       []
     );
 
+    const placeholderActive = shouldUsePlaceholderColor(
+      component,
+      component.style?.color as string | undefined
+    );
+
     // ⚡ ULTRA-OPTIMIZAÇÃO: Memoización de estilos del párrafo-título
     const boxStyles = useMemo(
       () => ({
@@ -148,12 +162,14 @@ const HeadingComponent = memo(
         paddingLeft: component.style?.paddingLeft || '0px',
         paddingRight: component.style?.paddingRight || '0px',
         lineHeight: component.style?.lineHeight || 1.2,
-        color: component.style?.color || 'text.primary',
+        color: placeholderActive
+          ? DEFAULT_PLACEHOLDER_COLOR
+          : component.style?.color || 'text.primary',
         textAlign: component.style?.textAlign || 'left',
         display: 'block',
         ...containerStyles,
       }),
-      [containerStyles, component.style] // Ya no dependemos del nivel
+      [containerStyles, component.style, placeholderActive] // Ya no dependemos del nivel
     );
 
     // ⚡ ULTRA-OPTIMIZAÇÃO: Callback memoizado con throttling integrado
@@ -260,6 +276,8 @@ const HeadingComponent = memo(
               onContentChange={handleContentChange}
               onSelectionUpdate={handleSelectionUpdateMemo}
               editorStyle={editorStyle}
+              isPlaceholder={placeholderActive}
+              placeholderColor={DEFAULT_PLACEHOLDER_COLOR}
             />
           </Box>
         </ComponentWithToolbar>

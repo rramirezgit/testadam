@@ -146,12 +146,37 @@ export default function NewsletterEditor({
   // Estado para preview HTML
   const [showPreview, setShowPreview] = useState(false);
 
+  // Estado para AI newsletter ID
+  const [aiNewsletterId, setAiNewsletterId] = useState<string | undefined>(undefined);
+
   // Cargar datos generados por IA si existen
   useEffect(() => {
-    if (aiGeneratedData && aiGeneratedData.objData && aiGeneratedData.objDataWeb) {
+    if (aiGeneratedData && aiGeneratedData.notes) {
       console.log('📦 Cargando datos generados por IA:', aiGeneratedData);
-      // En el futuro, aquí se podría procesar el objData para convertirlo en notas del newsletter
-      // Por ahora, simplemente notificar que se recibieron los datos
+
+      // Guardar el newsletterId de IA
+      setAiNewsletterId(aiGeneratedData.newsletterId);
+
+      // Convertir las notas de IA al formato NewsletterNote
+      const aiNotes: NewsletterNote[] = aiGeneratedData.notes.map((note: any) => ({
+        noteId: note.taskId, // Usar taskId como identificador temporal
+        order: note.order,
+        noteData: {
+          id: note.taskId,
+          title: note.title,
+          configNote: '{}',
+          objData: note.objData,
+          objDataWeb: note.objDataWeb,
+        },
+        // Metadata para tracking de IA
+        _aiMetadata: {
+          taskId: note.taskId,
+          isSaved: note.isSaved,
+          savedPostId: note.savedPostId,
+        },
+      }));
+
+      setSelectedNotes(aiNotes);
       showSnackbar('Contenido generado con IA cargado exitosamente', 'success');
     }
   }, [aiGeneratedData]);
@@ -787,6 +812,7 @@ export default function NewsletterEditor({
         setOpenSchedule={setOpenSchedule}
         setOpenSendSubs={setOpenSendSubs}
         initialComponents={initialComponents}
+        aiNewsletterId={aiNewsletterId}
         initialCoverImageUrl={coverImageUrl}
         onNewsletterIdChange={(newId: string) => {
           console.log('🆔 Newsletter ID actualizado:', newId);

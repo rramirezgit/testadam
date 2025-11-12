@@ -2,7 +2,6 @@
 
 import type { Article, PostStatus, PostFilters } from 'src/store/PostStore';
 
-import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -346,7 +345,7 @@ export default function NotesView() {
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
+            {/* <Button
               variant="contained"
               color="primary"
               onClick={() => router.push('/new/note?mode=ai')}
@@ -363,9 +362,9 @@ export default function NotesView() {
                 style={{ marginRight: '8px' }}
               />
               Crear con AI
-            </Button>
+            </Button> */}
             <Button variant="contained" color="primary" onClick={() => handleOpenEditor()}>
-              <Iconify icon="mingcute:add-line" style={{ marginRight: '8px' }} />
+              <Iconify icon="mingcute:add-line" style={{ marginRight: '8px', height: '45px' }} />
               Crear Nota
             </Button>
           </Box>

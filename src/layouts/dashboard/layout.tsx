@@ -3,6 +3,7 @@
 import type { Breakpoint } from '@mui/material/styles';
 import type { NavItemProps, NavSectionProps } from 'src/components/nav-section';
 
+import { useEffect } from 'react';
 import { merge } from 'es-toolkit';
 import { useBoolean } from 'minimal-shared/hooks';
 
@@ -11,7 +12,10 @@ import Alert from '@mui/material/Alert';
 import { useTheme } from '@mui/material/styles';
 import { iconButtonClasses } from '@mui/material/IconButton';
 
+import useTaskManagerStore from 'src/store/TaskManagerStore';
+
 import { Logo } from 'src/components/logo';
+import { AISpeedDial } from 'src/components/ai-speed-dial';
 import { useSettingsContext } from 'src/components/settings';
 
 import { useMockedUser } from 'src/auth/hooks';
@@ -67,6 +71,20 @@ export function DashboardLayout({
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 
   const navData = slotProps?.nav?.data ?? dashboardNavData;
+
+  // Recuperar tareas de IA al montar el layout
+  const recoverTasksFromStorage = useTaskManagerStore((state) => state.recoverTasksFromStorage);
+  const stopAllPolling = useTaskManagerStore((state) => state.stopAllPolling);
+
+  useEffect(() => {
+    // Recuperar tareas pendientes desde localStorage
+    recoverTasksFromStorage();
+
+    // Cleanup: detener todos los polling al desmontar
+    return () => {
+      stopAllPolling();
+    };
+  }, [recoverTasksFromStorage, stopAllPolling]);
 
   const isNavMini = settings.state.navLayout === 'mini';
   const isNavHorizontal = settings.state.navLayout === 'horizontal';
@@ -231,6 +249,8 @@ export function DashboardLayout({
       ]}
     >
       {renderMain()}
+      {/** @slot AI Speed Dial - Botón flotante para acciones de IA */}
+      <AISpeedDial />
     </LayoutSection>
   );
 }

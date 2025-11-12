@@ -1,5 +1,6 @@
 'use client';
 
+import { nanoid } from 'nanoid';
 import { Icon } from '@iconify/react';
 import { useState, useEffect } from 'react';
 
@@ -20,7 +21,10 @@ import {
   LinearProgress,
 } from '@mui/material';
 
-// import { generateNewsletter } from 'src/services/ai-service'; // TODO: Implementar generación de newsletters
+import useAuthStore from 'src/store/AuthStore';
+import useTaskManagerStore from 'src/store/TaskManagerStore';
+import { initiateNoteGeneration } from 'src/services/ai-service';
+
 import {
   getUniqueCategories,
   getPromptsByCategory,
@@ -38,6 +42,13 @@ const MIN_NOTES = 1;
 const MAX_NOTES = 10;
 
 export default function AINewsletterModal({ open, onClose }: AINewsletterModalProps) {
+  // Auth store para obtener userId y plan
+  const user = useAuthStore((state) => state.user);
+
+  // Task Manager Store
+  const addTask = useTaskManagerStore((state) => state.addTask);
+  const startPolling = useTaskManagerStore((state) => state.startPolling);
+
   // Estado del formulario
   const [formState, setFormState] = useState<NewsletterFormState>({
     notesCount: 3,
@@ -131,6 +142,14 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
       return;
     }
 
+    if (!user?.id) {
+      setFormState({
+        ...formState,
+        error: 'No se pudo obtener el ID del usuario',
+      });
+      return;
+    }
+
     setFormState({
       ...formState,
       status: 'generating',
@@ -139,36 +158,62 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
     });
 
     try {
-      // TODO: Implementar generación de newsletters con IA
-      console.error('⚠️ Generación de newsletters completos aún no implementada');
-      throw new Error(
-        'Funcionalidad en desarrollo. Por favor, use la generación de notas individuales.'
-      );
+      // Generar un ID único para este newsletter
+      const newsletterId = nanoid();
+      const validPrompts = formState.prompts.filter((p) => p.trim());
 
-      // // Llamar al servicio de IA
-      // const response = await generateNewsletter({
-      //   prompts: formState.prompts.filter((p) => p.trim()),
-      // });
+      console.log('🚀 Iniciando generación de newsletter con', validPrompts.length, 'notas');
+      console.log('📝 Newsletter ID:', newsletterId);
 
-      // // Verificar que la respuesta sea exitosa
-      // if (!response.success) {
-      //   throw new Error(response.error?.message || 'Error al generar el newsletter');
-      // }
+      // Iniciar generación de cada nota como tarea independiente
+      const taskPromises = validPrompts.map(async (prompt, index) => {
+        try {
+          // Iniciar generación en el backend (SIN newsletterId ni noteIndexInNewsletter)
+          const response = await initiateNoteGeneration({
+            prompt: prompt.trim(),
+            template: 'NEWS',
+            userId: user.id,
+            plan: user.plan?.name || null,
+          });
 
-      // // Guardar datos generados en sessionStorage para el editor
-      // sessionStorage.setItem(
-      //   'ai-newsletter-data',
-      //   JSON.stringify({
-      //     notes: response.data.notes,
-      //     metadata: response.data.metadata,
-      //     timestamp: new Date().toISOString(),
-      //   })
-      // );
+          // Crear tarea en el store (AQUÍ sí agregamos newsletterId e index para agrupar en frontend)
+          const task = {
+            taskId: response.taskId,
+            status: response.status,
+            progress: 0,
+            message: response.message,
+            prompt: prompt.trim(),
+            title: `Nota ${index + 1}`,
+            createdAt: new Date().toISOString(),
+            // Campos solo para uso del frontend
+            newsletterId,
+            noteIndexInNewsletter: index,
+          };
 
-      // // Redirigir al editor de newsletter
-      // router.push('/new/newsletter?aiGenerated=true');
+          // Agregar al store y comenzar polling
+          addTask(task);
+          startPolling(response.taskId);
+
+          console.log(`✅ Tarea ${index + 1}/${validPrompts.length} iniciada:`, response.taskId);
+
+          return response.taskId;
+        } catch (error: any) {
+          console.error(`❌ Error al iniciar tarea ${index + 1}:`, error);
+          throw error;
+        }
+      });
+
+      // Esperar a que todas las tareas se hayan iniciado
+      await Promise.all(taskPromises);
+
+      console.log('✅ Todas las tareas del newsletter iniciadas correctamente');
+
+      // Cerrar el modal inmediatamente
+      onClose();
+
+      // Las tareas aparecerán en el TasksDrawer agrupadas por newsletterId
     } catch (error: any) {
-      console.error('Error generando newsletter con IA:', error);
+      console.error('❌ Error generando newsletter con IA:', error);
       setFormState({
         ...formState,
         status: 'error',

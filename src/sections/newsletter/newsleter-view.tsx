@@ -2,7 +2,6 @@
 
 import type { Newsletter } from 'src/types/newsletter';
 
-import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -357,7 +356,7 @@ export default function NewsletterView() {
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
+            {/* <Button
               variant="contained"
               color="primary"
               onClick={() => setOpenAIModal(true)}
@@ -374,13 +373,13 @@ export default function NewsletterView() {
                 style={{ marginRight: '8px' }}
               />
               Crear con AI
-            </Button>
+            </Button> */}
             <Button
               variant="contained"
               color="primary"
               onClick={() => handleOpenNewsletterEditor()}
             >
-              <Iconify icon="mingcute:add-line" style={{ marginRight: '8px' }} />
+              <Iconify icon="mingcute:add-line" style={{ marginRight: '8px', height: '45px' }} />
               Crear Newsletter
             </Button>
           </Box>

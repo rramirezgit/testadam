@@ -24,6 +24,7 @@ import { usePost } from 'src/hooks/use-posts';
 
 import { CONFIG } from 'src/global-config';
 import usePostStore from 'src/store/PostStore';
+import useTaskManagerStore from 'src/store/TaskManagerStore';
 import useAiGenerationStore from 'src/store/AiGenerationStore';
 
 import LeftPanel from './left-panel';
@@ -31,6 +32,7 @@ import RightPanel from './right-panel';
 import IconPicker from './icon-picker';
 import EditorHeader from './editor-header';
 import EmailContent from './email-content';
+import SaveNoteModal from './SaveNoteModal';
 import { CustomDialog } from './ui/custom-dialog';
 import { useNoteData } from './hooks/useNoteData';
 import AINoteModal from '../ai-creation/AINoteModal';
@@ -57,6 +59,10 @@ import {
 } from './utils/componentHelpers';
 
 import type { ComponentType, NewsletterNote, NewsletterHeader, NewsletterFooter } from './types';
+import type {
+  NoteConfigurationField,
+  NoteConfigurationViewHandle,
+} from './right-panel/views/NoteConfigurationView';
 
 // Update the interface to include newsletter props
 interface EmailEditorMainProps {
@@ -109,7 +115,35 @@ interface EmailEditorMainProps {
   onAIDataGenerated?: (data: { objData: EmailComponent[]; objDataWeb: EmailComponent[] }) => void;
   // Prop para guardar newsletter con lógica de modal (MICHIN)
   onSaveNewsletter?: () => void | Promise<void>;
+  // Props para cargar nota desde AI background task
+  fromAI?: boolean;
+  aiTaskId?: string;
+  // Props para newsletters generados con IA
+  aiNewsletterId?: string;
 }
+
+const deepEqual = (a: any, b: any) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+const computeIsDefaultContent = (
+  meta: EmailComponent['meta'] | undefined,
+  nextContent: string,
+  nextProps: Record<string, any> | undefined,
+  nextStyle: React.CSSProperties | undefined
+): boolean => {
+  if (!meta) {
+    return false;
+  }
+
+  const contentSnapshot = meta.defaultContentSnapshot;
+  const propsSnapshot = meta.defaultPropsSnapshot;
+  const styleSnapshot = meta.defaultStyleSnapshot;
+
+  const contentMatches = contentSnapshot !== undefined ? contentSnapshot === nextContent : false;
+  const propsMatches = propsSnapshot !== undefined ? deepEqual(propsSnapshot, nextProps) : true;
+  const styleMatches = styleSnapshot !== undefined ? deepEqual(styleSnapshot, nextStyle) : true;
+
+  return contentMatches && propsMatches && styleMatches;
+};
 
 export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   initialTemplate = 'blank',
@@ -157,11 +191,18 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   onAIDataGenerated,
   // Prop para guardar newsletter con lógica de modal (MICHIN)
   onSaveNewsletter,
+  // Props para cargar nota desde AI background task
+  fromAI = false,
+  aiTaskId,
+  // Props para newsletters generados con IA
+  aiNewsletterId,
 }) => {
   // Estados básicos del editor
   const [activeTab, setActiveTab] = useState<string>('contenido');
-  // Si hay defaultTemplate, usarlo; sino usar initialTemplate
-  const [activeTemplate, setActiveTemplate] = useState<string>(defaultTemplate || initialTemplate);
+  // Si viene de IA, usar template 'news'; si hay defaultTemplate, usarlo; sino usar initialTemplate
+  const [activeTemplate, setActiveTemplate] = useState<string>(
+    fromAI ? 'news' : defaultTemplate || initialTemplate
+  );
   // ⚡ CRÍTICO: Si es modo newsletter, inicializar en 'newsletter', sino 'web'
   const [activeVersion, setActiveVersion] = useState<'newsletter' | 'web'>(
     isNewsletterMode ? 'newsletter' : 'web'
@@ -215,6 +256,18 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   // ESTADO PARA ERROR DE NOTA MAL FORMADA
   const [showDataErrorDialog, setShowDataErrorDialog] = useState<boolean>(false);
   const [dataErrorMessage, setDataErrorMessage] = useState<string>('');
+
+  // ESTADOS PARA GUARDAR NOTAS INDIVIDUALES DE IA EN NEWSLETTER
+  const [showSaveNoteModal, setShowSaveNoteModal] = useState<boolean>(false);
+  const [currentAINoteData, setCurrentAINoteData] = useState<{
+    taskId: string;
+    noteIndex: number;
+    objData: string;
+    objDataWeb: string;
+    title?: string;
+    description?: string;
+    coverImageUrl?: string;
+  } | null>(null);
 
   // Estados de diseño
   const [emailBackground, setEmailBackground] = useState<string>('#ffffff');
@@ -277,7 +330,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       gallery: true,
       imageText: true,
       twoColumns: true,
-      chart: true,
+      chart: false,
       button: false,
       divider: true,
       spacer: false,
@@ -340,13 +393,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     fontSize: 12,
   });
 
-  // Estados para lista
-  const [listStyle, setListStyle] = useState<'disc' | 'circle' | 'square' | 'decimal' | 'none'>(
-    'disc'
-  );
-
   // Estados adicionales que faltaban
-  const [listColor, setListColor] = useState('#000000');
   const [showIconPicker, setShowIconPicker] = useState(false);
 
   // Estados para diálogos y notificaciones
@@ -369,6 +416,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
 
   // Referencias
   const editorRef = useRef<HTMLDivElement>(null);
+  const noteConfigurationViewRef = useRef<NoteConfigurationViewHandle | null>(null);
 
   // PostStore integration
   const {
@@ -432,6 +480,78 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       }, 100);
     }
   }, [initialComponents, isNewsletterMode, activeTemplate]);
+
+  // Ref para rastrear si ya cargamos los datos de IA (evitar bucle infinito)
+  const aiDataLoadedRef = useRef(false);
+  const aiNotesInjectedRef = useRef(false);
+  const lastAiNewsletterIdRef = useRef<string | undefined>(undefined);
+
+  // Resetear el ref cuando cambia el aiNewsletterId
+  useEffect(() => {
+    if (aiNewsletterId !== lastAiNewsletterIdRef.current) {
+      aiNotesInjectedRef.current = false;
+      lastAiNewsletterIdRef.current = aiNewsletterId;
+    }
+  }, [aiNewsletterId]);
+
+  // Cargar datos de IA cuando se viene desde generación background
+  useEffect(() => {
+    if (fromAI && aiTaskId && !aiDataLoadedRef.current) {
+      console.log('🤖 Detectado modo fromAI con taskId:', aiTaskId);
+
+      // Buscar la tarea en TaskManagerStore
+      const getTaskById = useTaskManagerStore.getState().getTaskById;
+      const task = getTaskById(aiTaskId);
+
+      if (!task) {
+        console.warn('⚠️ No se encontró la tarea con taskId:', aiTaskId);
+        showNotification('No se encontró la generación de IA', 'error');
+        return;
+      }
+
+      if (task.status !== 'COMPLETED') {
+        console.warn('⚠️ La tarea no está completada:', task.status);
+        showNotification('La generación de IA aún no está completada', 'warning');
+        return;
+      }
+
+      if (!task.data) {
+        console.warn('⚠️ La tarea no tiene datos:', task);
+        showNotification('La generación de IA no tiene datos', 'error');
+        return;
+      }
+
+      // Inyectar los datos automáticamente
+      console.log('✅ Cargando datos de IA:', task.data);
+
+      // Actualizar información de la nota
+      noteData.setNoteTitle(task.data.title || task.title || 'Nota sin título');
+      noteData.setNoteDescription(task.data.description || '');
+      if (task.data.coverImageUrl) {
+        noteData.setNoteCoverImageUrl(task.data.coverImageUrl);
+      }
+
+      // Inyectar componentes (objData es para newsletter, objDataWeb es para web)
+      if (task.data.objData && task.data.objData.length > 0) {
+        emailComponents.updateActiveComponents(
+          activeTemplate,
+          'newsletter',
+          task.data.objData as any
+        );
+      }
+      if (task.data.objDataWeb && task.data.objDataWeb.length > 0) {
+        emailComponents.updateActiveComponents(activeTemplate, 'web', task.data.objDataWeb as any);
+      }
+
+      // Mostrar notificación de éxito
+      showNotification('✨ Datos de IA cargados exitosamente', 'success');
+
+      // Marcar que ya cargamos los datos
+      aiDataLoadedRef.current = true;
+
+      // NO eliminar la tarea aquí - se eliminará cuando el usuario guarde la nota
+    }
+  }, [fromAI, aiTaskId, activeTemplate]);
 
   // FUNCIONES PARA NEWSLETTER
   const handleAddNewsletterNote = useCallback(
@@ -905,17 +1025,43 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         return null;
       };
       const currentComponent = findComponentById(components);
-      if (currentComponent && currentComponent.content === content) {
+      if (!currentComponent) {
+        return;
+      }
+
+      if (currentComponent.content === content) {
         console.log('🔵 No changes detected, skipping update');
         return; // No hay cambios, evitar re-render
       }
 
       console.log('🟢 Content changed, updating component');
-      const updatedComponents = updateComponentInArrayRecursive(components, id, { content });
+      const baseMeta = currentComponent.meta ?? {
+        isDefaultContent: false,
+        defaultContentSnapshot: currentComponent.content,
+        defaultPropsSnapshot: currentComponent.props,
+        defaultStyleSnapshot: currentComponent.style,
+      };
+
+      const updatedMeta = {
+        ...baseMeta,
+        isDefaultContent: computeIsDefaultContent(
+          baseMeta,
+          content,
+          currentComponent.props,
+          currentComponent.style
+        ),
+      };
+
+      const updates: Partial<EmailComponent> = {
+        content,
+        meta: updatedMeta,
+      };
+
+      const updatedComponents = updateComponentInArrayRecursive(components, id, updates);
       updateActiveComponents(updatedComponents);
 
       // Sincronizar automáticamente si está habilitado
-      versionSync.syncComponentUpdate(id, { content });
+      versionSync.syncComponentUpdate(id, updates);
 
       // Notificar cambio detectado
       console.log('🔴 Notifying change: component-content-updated');
@@ -943,13 +1089,33 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       if (!component) return;
 
       const updatedProps = { ...component.props, ...props };
-      const updatedComponents = updateComponentInArrayRecursive(components, id, {
+      const baseMeta = component.meta ?? {
+        isDefaultContent: false,
+        defaultContentSnapshot: component.content,
+        defaultPropsSnapshot: component.props,
+        defaultStyleSnapshot: component.style,
+      };
+
+      const updatedMeta = {
+        ...baseMeta,
+        isDefaultContent: computeIsDefaultContent(
+          baseMeta,
+          component.content,
+          updatedProps,
+          component.style
+        ),
+      };
+
+      const updates: Partial<EmailComponent> = {
         props: updatedProps,
-      });
+        meta: updatedMeta,
+      };
+
+      const updatedComponents = updateComponentInArrayRecursive(components, id, updates);
       updateActiveComponents(updatedComponents);
 
       // Sincronizar automáticamente si está habilitado
-      versionSync.syncComponentUpdate(id, { props });
+      versionSync.syncComponentUpdate(id, updates);
 
       // Notificar al auto-guardado
       notifyChange('component-props-updated');
@@ -976,13 +1142,33 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       if (!component) return;
 
       const updatedStyle = { ...component.style, ...style };
-      const updatedComponents = updateComponentInArrayRecursive(components, id, {
+      const baseMeta = component.meta ?? {
+        isDefaultContent: false,
+        defaultContentSnapshot: component.content,
+        defaultPropsSnapshot: component.props,
+        defaultStyleSnapshot: component.style,
+      };
+
+      const updatedMeta = {
+        ...baseMeta,
+        isDefaultContent: computeIsDefaultContent(
+          baseMeta,
+          component.content,
+          component.props,
+          updatedStyle
+        ),
+      };
+
+      const updates: Partial<EmailComponent> = {
         style: updatedStyle,
-      });
+        meta: updatedMeta,
+      };
+
+      const updatedComponents = updateComponentInArrayRecursive(components, id, updates);
       updateActiveComponents(updatedComponents);
 
       // Sincronizar automáticamente si está habilitado
-      versionSync.syncComponentUpdate(id, { style });
+      versionSync.syncComponentUpdate(id, updates);
 
       // Notificar al auto-guardado
       notifyChange('component-style-updated');
@@ -1020,7 +1206,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
 
   // Nueva función para inyectar componentes al newsletter
   const injectComponentsToNewsletter = useCallback(
-    (components: EmailComponent[], noteTitle?: string) => {
+    (components: EmailComponent[], noteTitle?: string, aiMetadata?: any) => {
       const currentComponents = getActiveComponents();
       const timestamp = Date.now();
 
@@ -1049,6 +1235,11 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           containedComponents: newComponents.map((comp) => comp.id),
           // Almacenar los componentes completos en el contenedor
           componentsData: newComponents,
+          // Agregar metadata de IA si existe
+          ...(aiMetadata && {
+            _aiMetadata: aiMetadata._aiMetadata,
+            noteIndex: aiMetadata.noteIndex,
+          }),
         },
         style: {
           border: '2px solid #e0e0e0',
@@ -1069,6 +1260,90 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     },
     [activeTemplate, activeVersion, getActiveComponents, updateActiveComponents, notifyChange]
   );
+
+  // Cargar newsletter notes de AI usando injectComponentsToNewsletter
+  useEffect(() => {
+    if (
+      isNewsletterMode &&
+      newsletterNotes &&
+      newsletterNotes.length > 0 &&
+      aiNewsletterId &&
+      !aiNotesInjectedRef.current
+    ) {
+      console.log('🤖 Cargando notas de IA como componentes:', newsletterNotes);
+
+      // Marcar que ya empezamos a inyectar para evitar bucle infinito
+      aiNotesInjectedRef.current = true;
+
+      // Preparar todos los noteContainers antes de actualizar los componentes
+      const allNoteContainers: EmailComponent[] = [];
+
+      newsletterNotes.forEach((note, index) => {
+        try {
+          // Verificar si objData ya es un objeto o es un string JSON
+          const rawObjData = note.noteData?.objData || '[]';
+          const objData = typeof rawObjData === 'string' ? JSON.parse(rawObjData) : rawObjData;
+
+          const noteTitle = note.noteData?.title || `Nota ${index + 1}`;
+          const timestamp = Date.now() + index; // Asegurar IDs únicos
+
+          // Generar IDs únicos para los componentes de esta nota
+          const newComponents = objData.map((component: EmailComponent, idx: number) => ({
+            ...component,
+            id: `${component.id}-injected-${timestamp}-${idx}`,
+          }));
+
+          // Crear el contenedor para esta nota
+          const noteContainer: EmailComponent = {
+            id: `note-container-${timestamp}`,
+            type: 'noteContainer',
+            content: '',
+            props: {
+              noteTitle,
+              containerStyle: {
+                border: '2px solid #e0e0e0',
+                borderRadius: '12px',
+                padding: '20px',
+                margin: '20px 0',
+                backgroundColor: '#ffffff',
+                position: 'relative',
+              },
+              containedComponents: newComponents.map((comp) => comp.id),
+              componentsData: newComponents,
+              // Agregar metadata de IA
+              _aiMetadata: note._aiMetadata,
+              noteIndex: index,
+            },
+            style: {
+              border: '2px solid #e0e0e0',
+              borderRadius: '12px',
+              padding: '20px',
+              margin: '20px 0',
+              backgroundColor: '#ffffff',
+              position: 'relative',
+            },
+          };
+
+          allNoteContainers.push(noteContainer);
+
+          console.log(`✅ Nota ${index + 1} preparada: ${noteTitle}`, {
+            taskId: note._aiMetadata?.taskId,
+            isSaved: note._aiMetadata?.isSaved,
+          });
+        } catch (error) {
+          console.error(`❌ Error al preparar nota ${index + 1}:`, error);
+        }
+      });
+
+      // Actualizar todos los componentes de una sola vez
+      if (allNoteContainers.length > 0) {
+        emailComponents.updateActiveComponents(activeTemplate, 'newsletter', allNoteContainers);
+        console.log(
+          `✅ Todas las notas de IA han sido inyectadas: ${allNoteContainers.length} notas`
+        );
+      }
+    }
+  }, [isNewsletterMode, newsletterNotes, aiNewsletterId, activeTemplate, emailComponents]);
 
   // Eliminar un componente
   const removeComponent = useCallback(
@@ -1238,159 +1513,173 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   ]);
 
   // Función para generar HTML sin mostrar preview (para envío de pruebas)
-  const generateHtmlForSending = useCallback(async (): Promise<string> => {
-    try {
-      console.log('🔄 generateHtmlForSending called:', {
-        isNewsletterMode,
-        newsletterTitle,
-        newsletterDescription,
-        newsletterNotesCount: newsletterNotes.length,
-        newsletterHeader: !!newsletterHeader,
-        newsletterFooter: !!newsletterFooter,
-      });
-
-      if (isNewsletterMode) {
-        // Para newsletters, procesar todos los componentes activos en orden
-        console.log('📝 Generando HTML para newsletter con componentes activos...');
-        const activeComponents = getActiveComponents();
-
-        console.log('📦 All components for sending:', {
-          totalComponents: activeComponents.length,
-          componentTypes: activeComponents.map((c) => ({ id: c.id, type: c.type })),
+  const generateHtmlForSending = useCallback(
+    async (options?: { includeApprovalButtons?: boolean }): Promise<string> => {
+      try {
+        console.log('🔄 generateHtmlForSending called:', {
+          isNewsletterMode,
+          newsletterTitle,
+          newsletterDescription,
+          newsletterNotesCount: newsletterNotes.length,
+          newsletterHeader: !!newsletterHeader,
+          newsletterFooter: !!newsletterFooter,
+          includeApprovalButtons: options?.includeApprovalButtons,
         });
 
-        // Importar funciones necesarias
-        const { renderComponentToHtml } = await import('../html-generators/index');
-        const { generateNewsletterTemplate } = await import(
-          '../html-generators/templates/newsletter.template'
-        );
+        if (isNewsletterMode) {
+          // Para newsletters, procesar todos los componentes activos en orden
+          console.log('📝 Generando HTML para newsletter con componentes activos...');
+          const activeComponents = getActiveComponents();
 
-        // Construir el HTML procesando todos los componentes en orden
-        let contentHtml = '';
+          console.log('📦 All components for sending:', {
+            totalComponents: activeComponents.length,
+            componentTypes: activeComponents.map((c) => ({ id: c.id, type: c.type })),
+          });
 
-        activeComponents.forEach((component) => {
-          if (component.type === 'noteContainer') {
-            // Renderizar noteContainer con sus componentes internos
-            const noteContainerBorderWidth = component.props?.containerBorderWidth ?? 1;
-            const noteContainerBorderColor = component.props?.containerBorderColor ?? '#e0e0e0';
-            const noteContainerBorderRadius = component.props?.containerBorderRadius ?? 12;
-            const noteContainerPadding = component.props?.containerPadding ?? 10;
-            const noteContainerMaxWidth = component.props?.containerMaxWidth ?? 560;
+          // Importar funciones necesarias
+          const { renderComponentToHtml } = await import('../html-generators/index');
+          const { generateNewsletterTemplate } = await import(
+            '../html-generators/templates/newsletter.template'
+          );
 
-            contentHtml += `<div class="note-section">`;
-            contentHtml += `<div style="max-width: ${noteContainerMaxWidth}px; margin: 0 auto; padding: ${noteContainerPadding}px; border-radius: ${noteContainerBorderRadius}px; border: ${noteContainerBorderWidth}px solid ${noteContainerBorderColor}; margin-bottom: 24px;">`;
+          // Construir el HTML procesando todos los componentes en orden
+          let contentHtml = '';
 
-            // Renderizar componentes internos
-            const componentsData = component.props?.componentsData || [];
-            componentsData.forEach((innerComponent: any) => {
-              contentHtml += renderComponentToHtml(innerComponent);
-            });
+          activeComponents.forEach((component) => {
+            if (component.type === 'noteContainer') {
+              // Renderizar noteContainer con sus componentes internos
+              const noteContainerBorderWidth = component.props?.containerBorderWidth ?? 1;
+              const noteContainerBorderColor = component.props?.containerBorderColor ?? '#e0e0e0';
+              const noteContainerBorderRadius = component.props?.containerBorderRadius ?? 12;
+              const noteContainerPadding = component.props?.containerPadding ?? 10;
+              const noteContainerMaxWidth = component.props?.containerMaxWidth ?? 560;
 
-            contentHtml += `</div></div>`;
-          } else {
-            // Renderizar componente suelto directamente
-            contentHtml += `<div style="margin-bottom: 16px;">`;
-            contentHtml += renderComponentToHtml(component);
-            contentHtml += `</div>`;
-          }
-        });
+              contentHtml += `<div class="note-section">`;
+              contentHtml += `<div style="max-width: ${noteContainerMaxWidth}px; margin: 0 auto; padding: ${noteContainerPadding}px; border-radius: ${noteContainerBorderRadius}px; border: ${noteContainerBorderWidth}px solid ${noteContainerBorderColor}; margin-bottom: 24px;">`;
 
-        const generatedNewsletterHtml = generateNewsletterTemplate(
-          newsletterTitle || 'Newsletter',
-          newsletterDescription || '',
-          contentHtml,
-          newsletterHeader || {
-            title: 'Newsletter',
-            subtitle: '',
-            logo: '',
-            bannerImage: '',
-            backgroundColor: '#ffffff',
-            textColor: '#333333',
-            alignment: 'center',
-          },
-          newsletterFooter || {
-            companyName: 'Mi Empresa',
-            address: '',
-            contactEmail: '',
-            socialLinks: [],
-            unsubscribeLink: '',
-            backgroundColor: '#f5f5f5',
-            textColor: '#666666',
-          }
-        );
+              // Renderizar componentes internos
+              const componentsData = component.props?.componentsData || [];
+              componentsData.forEach((innerComponent: any) => {
+                contentHtml += renderComponentToHtml(innerComponent);
+              });
 
-        console.log('✅ HTML de newsletter generado:', {
-          componentsCount: activeComponents.length,
-          htmlLength: generatedNewsletterHtml.length,
-          htmlPreview: generatedNewsletterHtml.substring(0, 200) + '...',
-        });
+              contentHtml += `</div></div>`;
+            } else {
+              // Renderizar componente suelto directamente
+              contentHtml += `<div style="margin-bottom: 16px;">`;
+              contentHtml += renderComponentToHtml(component);
+              contentHtml += `</div>`;
+            }
+          });
 
-        return generatedNewsletterHtml;
-      } else {
-        // ✅ NUEVO: Para notas individuales, usar generateSingleNoteHtml (sin header y footer)
-        console.log('📝 Generando HTML para nota individual...');
-        const components = getActiveComponents();
-        const postData = currentPost; // Usar la variable ya existente del scope superior
+          // Preparar botones de aprobación si se solicita
+          const approvalButtonsConfig =
+            options?.includeApprovalButtons && currentNewsletterId
+              ? {
+                  newsletterId: currentNewsletterId,
+                  baseUrl: typeof window !== 'undefined' ? window.location.origin : '',
+                }
+              : undefined;
 
-        // Configuración del contenedor desde el panel derecho
-        // En versión web: sin bordes ni ancho máximo
-        // En versión newsletter: con bordes y ancho máximo
-        const containerConfig =
-          activeVersion === 'web'
-            ? {
-                borderWidth: 0,
-                borderColor: 'transparent',
-                borderRadius: 0,
-                padding: 0,
-                maxWidth: undefined,
-              }
-            : {
-                borderWidth: containerBorderWidth,
-                borderColor: containerBorderColor,
-                borderRadius: containerBorderRadius,
-                padding: containerPadding,
-                maxWidth: containerMaxWidth,
-              };
+          const generatedNewsletterHtml = generateNewsletterTemplate(
+            newsletterTitle || 'Newsletter',
+            newsletterDescription || '',
+            contentHtml,
+            newsletterHeader || {
+              title: 'Newsletter',
+              subtitle: '',
+              logo: '',
+              bannerImage: '',
+              backgroundColor: '#ffffff',
+              textColor: '#333333',
+              alignment: 'center',
+            },
+            newsletterFooter || {
+              companyName: 'Mi Empresa',
+              address: '',
+              contactEmail: '',
+              socialLinks: [],
+              unsubscribeLink: '',
+              backgroundColor: '#f5f5f5',
+              textColor: '#666666',
+            },
+            approvalButtonsConfig
+          );
 
-        const singleNoteHtml = generateSingleNoteHtml(
-          postData?.title || noteData.noteTitle || 'Nota',
-          postData?.description || noteData.noteDescription || '',
-          components,
-          containerConfig
-        );
+          console.log('✅ HTML de newsletter generado:', {
+            componentsCount: activeComponents.length,
+            htmlLength: generatedNewsletterHtml.length,
+            htmlPreview: generatedNewsletterHtml.substring(0, 200) + '...',
+          });
 
-        console.log('✅ HTML de nota individual generado:', {
-          htmlLength: singleNoteHtml.length,
-          htmlPreview: singleNoteHtml.substring(0, 200) + '...',
-          activeVersion,
-          containerConfig,
-        });
+          return generatedNewsletterHtml;
+        } else {
+          // ✅ NUEVO: Para notas individuales, usar generateSingleNoteHtml (sin header y footer)
+          console.log('📝 Generando HTML para nota individual...');
+          const components = getActiveComponents();
+          const postData = currentPost; // Usar la variable ya existente del scope superior
 
-        return singleNoteHtml;
+          // Configuración del contenedor desde el panel derecho
+          // En versión web: sin bordes ni ancho máximo
+          // En versión newsletter: con bordes y ancho máximo
+          const containerConfig =
+            activeVersion === 'web'
+              ? {
+                  borderWidth: 0,
+                  borderColor: 'transparent',
+                  borderRadius: 0,
+                  padding: 0,
+                  maxWidth: undefined,
+                }
+              : {
+                  borderWidth: containerBorderWidth,
+                  borderColor: containerBorderColor,
+                  borderRadius: containerBorderRadius,
+                  padding: containerPadding,
+                  maxWidth: containerMaxWidth,
+                };
+
+          const singleNoteHtml = generateSingleNoteHtml(
+            postData?.title || noteData.noteTitle || 'Nota',
+            postData?.description || noteData.noteDescription || '',
+            components,
+            containerConfig
+          );
+
+          console.log('✅ HTML de nota individual generado:', {
+            htmlLength: singleNoteHtml.length,
+            htmlPreview: singleNoteHtml.substring(0, 200) + '...',
+            activeVersion,
+            containerConfig,
+          });
+
+          return singleNoteHtml;
+        }
+      } catch (error) {
+        console.error('❌ Error generating HTML for sending:', error);
+        throw new Error('No se pudo generar el contenido HTML');
       }
-    } catch (error) {
-      console.error('❌ Error generating HTML for sending:', error);
-      throw new Error('No se pudo generar el contenido HTML');
-    }
-  }, [
-    isNewsletterMode,
-    newsletterTitle,
-    newsletterDescription,
-    newsletterNotes,
-    newsletterHeader,
-    newsletterFooter,
-    getActiveComponents,
-    noteData.noteTitle,
-    noteData.noteDescription,
-    currentPost,
-    activeVersion,
-    // Agregar las configuraciones del contenedor
-    containerBorderWidth,
-    containerBorderColor,
-    containerBorderRadius,
-    containerPadding,
-    containerMaxWidth,
-  ]);
+    },
+    [
+      isNewsletterMode,
+      newsletterTitle,
+      newsletterDescription,
+      newsletterNotes,
+      newsletterHeader,
+      newsletterFooter,
+      getActiveComponents,
+      noteData.noteTitle,
+      noteData.noteDescription,
+      currentPost,
+      activeVersion,
+      // Agregar las configuraciones del contenedor
+      containerBorderWidth,
+      containerBorderColor,
+      containerBorderRadius,
+      containerPadding,
+      containerMaxWidth,
+    ]
+  );
 
   // Función para manejar la selección del contenedor principal
   const handleContainerSelect = useCallback(() => {
@@ -1486,9 +1775,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         // Seleccionar el nuevo componente
         setSelectedComponentId(newListComponent.id);
 
-        // Actualizar los estados de estilo de lista
-        setListStyle(listType === 'ordered' ? 'decimal' : 'disc');
-
         showNotification('Párrafo convertido a lista', 'success');
       }
     },
@@ -1503,6 +1789,13 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     [convertTextToList]
   );
 
+  const focusOnConfigurationField = useCallback((field: NoteConfigurationField) => {
+    setRightPanelTab(0);
+    setIsContainerSelected(true);
+    setSelectedComponentId(null);
+    noteConfigurationViewRef.current?.focusField(field);
+  }, []);
+
   // Función para manejar el guardado de notas
   const handleSaveNote = useCallback(async () => {
     setSavingNote(true);
@@ -1514,9 +1807,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       // Validaciones
       if (!noteData.noteTitle.trim()) {
         showNotification('El título es obligatorio', 'error');
+        focusOnConfigurationField('noteTitle');
         setSavingNote(false);
-        // Asegurar que el panel derecho esté en la configuración de la nota
-        setIsContainerSelected(true);
         return;
       }
 
@@ -1525,30 +1817,30 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       // MICHIN: contentTypeId, categoryId, subcategoryId (NO audienceId)
       if (!noteData.contentTypeId) {
         showNotification('El tipo de contenido es obligatorio', 'error');
+        focusOnConfigurationField('contentType');
         setSavingNote(false);
-        setIsContainerSelected(true);
         return;
       }
 
       // audienceId solo es obligatorio en ADAC
       if (CONFIG.platform === 'ADAC' && !noteData.audienceId) {
         showNotification('La audiencia es obligatoria', 'error');
+        focusOnConfigurationField('audience');
         setSavingNote(false);
-        setIsContainerSelected(true);
         return;
       }
 
       if (!noteData.categoryId) {
         showNotification('La categoría es obligatoria', 'error');
+        focusOnConfigurationField('category');
         setSavingNote(false);
-        setIsContainerSelected(true);
         return;
       }
 
       if (!noteData.subcategoryId) {
         showNotification('La subcategoría es obligatoria', 'error');
+        focusOnConfigurationField('subcategory');
         setSavingNote(false);
-        setIsContainerSelected(true);
         return;
       }
 
@@ -1693,6 +1985,13 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
 
         // 🔄 NUEVO: Resetear detección de cambios después de guardar exitosamente
         resetChangeDetection();
+
+        // 🗑️ Eliminar tarea de IA si existe (cuando se guarda nota generada con IA)
+        if (aiTaskId) {
+          const removeTask = useTaskManagerStore.getState().removeTask;
+          removeTask(aiTaskId);
+          console.log('🗑️ Tarea de IA eliminada después de guardar:', aiTaskId);
+        }
       } else {
         throw new Error('No se pudo guardar la nota');
       }
@@ -1738,119 +2037,61 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     setShowUnsavedChangesDialog(false);
   }, []);
 
-  // Añadir función para agregar un elemento a la lista
-  const addListItem = useCallback(
-    (listId: string) => {
-      const components = getActiveComponents();
-      const component = components.find((comp) => comp.id === listId);
+  // Funciones para guardar notas individuales de AI en newsletters
+  const handleSaveAINote = useCallback(
+    (noteIndex: number, taskId: string) => {
+      console.log('💾 Intentando guardar nota AI:', { noteIndex, taskId });
 
-      if (component && component.type === 'bulletList') {
-        const items = component.props.items || [];
-        const updatedProps = {
-          ...component.props,
-          items: [...items, 'New list item'],
-        };
-
-        updateComponentProps(listId, updatedProps);
-        notifyChange('list-item-added');
+      // Buscar la nota en el newsletter por su índice
+      const note = newsletterNotes?.[noteIndex];
+      if (!note) {
+        console.error('❌ No se encontró la nota en el índice:', noteIndex);
+        showNotification('No se encontró la nota para guardar', 'error');
+        return;
       }
+
+      // Extraer los datos de la nota
+      const objData = note.noteData?.objData || '[]';
+      const objDataWeb = note.noteData?.objDataWeb || '[]';
+      const title = note.noteData?.title || '';
+
+      // Establecer los datos actuales para el modal
+      setCurrentAINoteData({
+        taskId,
+        noteIndex,
+        objData,
+        objDataWeb,
+        title,
+      });
+
+      // Abrir el modal
+      setShowSaveNoteModal(true);
     },
-    [getActiveComponents, updateComponentProps, notifyChange]
+    [newsletterNotes, showNotification]
   );
 
-  // Añadir función para eliminar un elemento de la lista
-  const removeListItem = useCallback(
-    (listId: string, itemIndex: number) => {
-      const components = getActiveComponents();
-      const component = components.find((comp) => comp.id === listId);
-
-      if (component && component.type === 'bulletList') {
-        const items = [...(component.props.items || [])];
-        if (items.length > 1) {
-          items.splice(itemIndex, 1);
-          const updatedProps = {
-            ...component.props,
-            items,
-          };
-
-          updateComponentProps(listId, updatedProps);
-          notifyChange('list-item-removed');
-        } else {
-          showNotification('La lista debe tener al menos un elemento', 'info');
-        }
+  const handleSaveNoteComplete = useCallback(
+    async (postId: string) => {
+      if (!currentAINoteData) {
+        console.error('❌ No hay datos de nota actual');
+        return;
       }
+
+      console.log('✅ Nota guardada exitosamente:', postId);
+
+      // Actualizar el TaskManagerStore
+      useTaskManagerStore.getState().updateTask(currentAINoteData.taskId, {
+        isSaved: true,
+        savedPostId: postId,
+      });
+
+      // Cerrar el modal y limpiar los datos actuales
+      setShowSaveNoteModal(false);
+      setCurrentAINoteData(null);
+
+      showNotification('Nota guardada exitosamente', 'success');
     },
-    [getActiveComponents, updateComponentProps, showNotification, notifyChange]
-  );
-
-  // Añadir función para actualizar un elemento de la lista
-  const updateListItem = useCallback(
-    (listId: string, itemIndex: number, content: string) => {
-      const components = getActiveComponents();
-      const component = components.find((comp) => comp.id === listId);
-
-      if (component && component.type === 'bulletList') {
-        const items = [...(component.props.items || [])];
-        items[itemIndex] = content;
-
-        const updatedProps = {
-          ...component.props,
-          items,
-        };
-
-        updateComponentProps(listId, updatedProps);
-        notifyChange('list-item-updated');
-      }
-    },
-    [getActiveComponents, updateComponentProps, notifyChange]
-  );
-
-  // Añadir función para cambiar el estilo de la lista
-  const updateListStyle = useCallback(
-    (listId: string, listStyleType: string) => {
-      // Actualizar el estilo visual del componente
-      updateComponentStyle(listId, { listStyleType });
-
-      // Actualizar las propiedades del componente
-      const components = getActiveComponents();
-      const component = components.find((comp) => comp.id === listId);
-
-      if (component && component.type === 'bulletList') {
-        const updatedProps = {
-          ...component.props,
-          listStyle: listStyleType,
-        };
-
-        updateComponentProps(listId, updatedProps);
-        setListStyle(listStyleType as any);
-        notifyChange('list-style-updated');
-      }
-    },
-    [getActiveComponents, updateComponentProps, updateComponentStyle, notifyChange]
-  );
-
-  // Añadir función para cambiar el color de los bullets
-  const updateListColor = useCallback(
-    (listId: string, color: string) => {
-      // Actualizar el estilo visual del componente
-      updateComponentStyle(listId, { color });
-
-      // Actualizar las propiedades del componente
-      const components = getActiveComponents();
-      const component = components.find((comp) => comp.id === listId);
-
-      if (component && component.type === 'bulletList') {
-        const updatedProps = {
-          ...component.props,
-          listColor: color,
-        };
-
-        updateComponentProps(listId, updatedProps);
-        setListColor(color);
-        notifyChange('list-color-updated');
-      }
-    },
-    [getActiveComponents, updateComponentProps, updateComponentStyle, notifyChange]
+    [currentAINoteData, showNotification]
   );
 
   // Cargar la nota inicial si existe
@@ -2834,6 +3075,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         noteHtmlPreview={generatedPreviewHtml}
         // Prop para guardar newsletter con lógica de modal (MICHIN)
         onSaveNewsletter={onSaveNewsletter}
+        focusConfigurationField={focusOnConfigurationField}
       />
 
       {/* Contenedor principal */}
@@ -2968,9 +3210,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               moveComponent={isViewOnly ? () => {} : moveComponent}
               removeComponent={isViewOnly ? () => {} : removeComponent}
               addComponent={isViewOnly ? () => {} : addComponent}
-              addListItem={isViewOnly ? () => {} : addListItem}
-              removeListItem={isViewOnly ? () => {} : removeListItem}
-              updateListItem={isViewOnly ? () => {} : updateListItem}
               editMode={isViewOnly ? false : editMode}
               isViewOnly={isViewOnly}
               selectedBanner={selectedBanner}
@@ -3035,6 +3274,9 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               removeNoteContainer={isViewOnly ? () => {} : removeNoteContainer}
               onColumnSelect={isViewOnly ? () => {} : handleColumnSelect}
               selectedColumn={selectedColumn}
+              // Props para guardar notas individuales de AI
+              aiNewsletterId={aiNewsletterId}
+              onSaveAINote={handleSaveAINote}
             />
           </Box>
 
@@ -3119,10 +3361,6 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               bannerOptions={bannerOptions}
               setSelectedAlignment={textFormatting.setSelectedAlignment}
               hasTextSelection={textFormatting.hasTextSelection}
-              listStyle={listStyle}
-              updateListStyle={updateListStyle}
-              listColor={listColor}
-              updateListColor={updateListColor}
               convertTextToList={handleConvertTextToList}
               setShowIconPicker={setShowIconPicker}
               isContainerSelected={isContainerSelected}
@@ -3183,6 +3421,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               onNewsletterUpdate={onNewsletterUpdate}
               // Prop para modo view-only
               isViewOnly={isViewOnly}
+              noteConfigurationViewRef={noteConfigurationViewRef}
             />
           </Box>
         </Box>
@@ -3373,6 +3612,25 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Modal para guardar notas individuales de AI */}
+      {currentAINoteData && (
+        <SaveNoteModal
+          open={showSaveNoteModal}
+          onClose={() => {
+            setShowSaveNoteModal(false);
+            setCurrentAINoteData(null);
+          }}
+          onSave={handleSaveNoteComplete}
+          initialData={{
+            title: currentAINoteData.title || '',
+            description: currentAINoteData.description || '',
+            coverImageUrl: currentAINoteData.coverImageUrl || '',
+            objData: currentAINoteData.objData,
+            objDataWeb: currentAINoteData.objDataWeb,
+          }}
+        />
+      )}
     </Box>
   );
 };

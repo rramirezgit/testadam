@@ -20,6 +20,7 @@ export type ConfigValue = {
   defaultThemesNewsletter: NewsletterTheme[];
   serverUrlIA: string;
   platform: Platform;
+  approverEmails: string[];
   auth: {
     method: 'jwt' | 'amplify' | 'firebase' | 'auth0';
     skip: boolean;
@@ -52,6 +53,11 @@ export const CONFIG: ConfigValue = {
   defaultLogoUrl: process.env.NEXT_PUBLIC_LOGO_NEWS ?? '',
   defaultThemesNewsletter: getNewsletterThemes(),
   platform: (process.env.NEXT_PUBLIC_PLATFORM as Platform) ?? 'ADAC',
+  approverEmails: process.env.NEXT_PUBLIC_APPROVER_EMAILS
+    ? process.env.NEXT_PUBLIC_APPROVER_EMAILS.split(';')
+        .map((email) => email.trim())
+        .filter(Boolean)
+    : ['97.rramirez@gmail.com'],
   /**
    * Auth
    * @method jwt | amplify | firebase | supabase | auth0

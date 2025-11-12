@@ -33,6 +33,9 @@ export interface ComponentWithToolbarProps {
   onClick: (e: React.MouseEvent) => void;
   isViewOnly?: boolean;
   onAIClick?: () => void;
+  // Props para guardar notas de IA en newsletters
+  isAIGeneratedNote?: boolean;
+  onSaveClick?: () => void;
 }
 
 // Tipo para categoría

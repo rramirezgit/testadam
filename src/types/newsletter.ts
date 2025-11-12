@@ -30,6 +30,12 @@ export interface NewsletterNote {
   noteId: string;
   order: number;
   noteData: any; // SavedNote
+  // Metadata para tracking de notas generadas por IA
+  _aiMetadata?: {
+    taskId: string;
+    isSaved: boolean;
+    savedPostId?: string;
+  };
 }
 
 export interface Newsletter {

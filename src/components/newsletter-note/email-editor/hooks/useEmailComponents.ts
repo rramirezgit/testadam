@@ -2,6 +2,7 @@ import type { EmailComponent } from 'src/types/saved-note';
 
 import { useState, useCallback } from 'react';
 
+import { buildListHtml, normaliseListStyle } from '../email-components/utils';
 import { debugComponents, findComponentById } from '../utils/componentHelpers';
 import {
   newsComponents,
@@ -30,46 +31,135 @@ import {
 // Crear una plantilla vacía
 const emptyTemplate: EmailComponent[] = [];
 
+function ensureMeta(components: EmailComponent[] = []): EmailComponent[] {
+  return components.map(ensureComponentMeta);
+}
+
+function ensureComponentMeta(component: EmailComponent): EmailComponent {
+  const isBulletList = component.type === 'bulletList';
+  const listStyle = isBulletList ? normaliseListStyle(component.props?.listStyle) : undefined;
+  const items = isBulletList ? component.props?.items || ['Elemento de lista'] : undefined;
+
+  const normalizedComponent =
+    isBulletList && items
+      ? {
+          ...component,
+          content:
+            component.content && component.content.trim().length > 0
+              ? component.content
+              : buildListHtml(items, listStyle),
+          props: {
+            ...component.props,
+            listStyle,
+            items,
+          },
+        }
+      : component;
+
+  const children = component.props?.componentsData;
+  const preparedChildren = Array.isArray(children) ? ensureMeta(children) : undefined;
+
+  const hasMeta =
+    normalizedComponent.meta &&
+    normalizedComponent.meta.defaultContentSnapshot !== undefined &&
+    normalizedComponent.meta.defaultPropsSnapshot !== undefined;
+
+  const baseComponent = hasMeta
+    ? normalizedComponent
+    : {
+        ...normalizedComponent,
+        meta: {
+          isDefaultContent: false,
+          defaultContentSnapshot: normalizedComponent.content,
+          defaultPropsSnapshot: normalizedComponent.props,
+          defaultStyleSnapshot: normalizedComponent.style,
+        },
+      };
+
+  if (preparedChildren) {
+    return {
+      ...baseComponent,
+      props: {
+        ...baseComponent.props,
+        componentsData: preparedChildren,
+      },
+    };
+  }
+
+  return baseComponent;
+}
+
 export const useEmailComponents = () => {
   // Estados para los componentes de cada plantilla
-  const [blankComponentsState, setBlankComponents] = useState<EmailComponent[]>(emptyTemplate);
-  const [blankComponentsWebState, setBlankComponentsWeb] =
-    useState<EmailComponent[]>(emptyTemplate);
-  const [notionComponentsState, setNotionComponents] = useState<EmailComponent[]>(notionComponents);
-  const [notionComponentsWebState, setNotionComponentsWeb] =
-    useState<EmailComponent[]>(notionComponentsWeb);
-  const [plaidComponentsState, setPlaidComponents] = useState<EmailComponent[]>(plaidComponents);
-  const [plaidComponentsWebState, setPlaidComponentsWeb] =
-    useState<EmailComponent[]>(plaidComponentsWeb);
-  const [stripeComponentsState, setStripeComponents] = useState<EmailComponent[]>(stripeComponents);
-  const [stripeComponentsWebState, setStripeComponentsWeb] =
-    useState<EmailComponent[]>(stripeComponentsWeb);
-  const [vercelComponentsState, setVercelComponents] = useState<EmailComponent[]>(vercelComponents);
-  const [vercelComponentsWebState, setVercelComponentsWeb] =
-    useState<EmailComponent[]>(vercelComponentsWeb);
-  const [newsComponentsState, setNewsComponents] = useState<EmailComponent[]>(newsComponents);
-  const [newsComponentsWebState, setNewsComponentsWeb] =
-    useState<EmailComponent[]>(newsComponentsWeb);
-  const [marketComponentsState, setMarketComponents] = useState<EmailComponent[]>(marketComponents);
-  const [marketComponentsWebState, setMarketComponentsWeb] =
-    useState<EmailComponent[]>(marketComponentsWeb);
-  const [featureComponentsState, setFeatureComponents] =
-    useState<EmailComponent[]>(featureComponents);
-  const [newsletterComponentsState, setNewsletterComponents] =
-    useState<EmailComponent[]>(newsletterComponents);
-  const [newsletterComponentsWebState, setNewsletterComponentsWeb] =
-    useState<EmailComponent[]>(newsletterComponentsWeb);
-  const [storyboardComponentsState, setStoryboardComponents] =
-    useState<EmailComponent[]>(storyboardComponents);
-  const [storyboardComponentsWebState, setStoryboardComponentsWeb] =
-    useState<EmailComponent[]>(storyboardComponentsWeb);
-  const [skillupComponentsState, setSkillupComponents] =
-    useState<EmailComponent[]>(skillupComponents);
-  const [skillupComponentsWebState, setSkillupComponentsWeb] =
-    useState<EmailComponent[]>(skillupComponentsWeb);
-  const [howtoComponentsState, setHowtoComponents] = useState<EmailComponent[]>(howtoComponents);
-  const [howtoComponentsWebState, setHowtoComponentsWeb] =
-    useState<EmailComponent[]>(howtoComponentsWeb);
+  const [blankComponentsState, setBlankComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(emptyTemplate)
+  );
+  const [blankComponentsWebState, setBlankComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(emptyTemplate)
+  );
+  const [notionComponentsState, setNotionComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(notionComponents)
+  );
+  const [notionComponentsWebState, setNotionComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(notionComponentsWeb)
+  );
+  const [plaidComponentsState, setPlaidComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(plaidComponents)
+  );
+  const [plaidComponentsWebState, setPlaidComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(plaidComponentsWeb)
+  );
+  const [stripeComponentsState, setStripeComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(stripeComponents)
+  );
+  const [stripeComponentsWebState, setStripeComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(stripeComponentsWeb)
+  );
+  const [vercelComponentsState, setVercelComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(vercelComponents)
+  );
+  const [vercelComponentsWebState, setVercelComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(vercelComponentsWeb)
+  );
+  const [newsComponentsState, setNewsComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(newsComponents)
+  );
+  const [newsComponentsWebState, setNewsComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(newsComponentsWeb)
+  );
+  const [marketComponentsState, setMarketComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(marketComponents)
+  );
+  const [marketComponentsWebState, setMarketComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(marketComponentsWeb)
+  );
+  const [featureComponentsState, setFeatureComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(featureComponents)
+  );
+  const [newsletterComponentsState, setNewsletterComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(newsletterComponents)
+  );
+  const [newsletterComponentsWebState, setNewsletterComponentsWeb] = useState<EmailComponent[]>(
+    () => ensureMeta(newsletterComponentsWeb)
+  );
+  const [storyboardComponentsState, setStoryboardComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(storyboardComponents)
+  );
+  const [storyboardComponentsWebState, setStoryboardComponentsWeb] = useState<EmailComponent[]>(
+    () => ensureMeta(storyboardComponentsWeb)
+  );
+  const [skillupComponentsState, setSkillupComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(skillupComponents)
+  );
+  const [skillupComponentsWebState, setSkillupComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(skillupComponentsWeb)
+  );
+  const [howtoComponentsState, setHowtoComponents] = useState<EmailComponent[]>(() =>
+    ensureMeta(howtoComponents)
+  );
+  const [howtoComponentsWebState, setHowtoComponentsWeb] = useState<EmailComponent[]>(() =>
+    ensureMeta(howtoComponentsWeb)
+  );
 
   // Obtener los componentes activos según la plantilla seleccionada y la versión activa
   const getActiveComponents = useCallback(
@@ -339,43 +429,45 @@ export const useEmailComponents = () => {
   // Actualizar los componentes activos según la versión
   const updateActiveComponents = useCallback(
     (activeTemplate: string, activeVersion: 'newsletter' | 'web', components: EmailComponent[]) => {
+      const preparedComponents = ensureMeta(components);
+
       if (activeVersion === 'web') {
         switch (activeTemplate) {
           case 'blank':
-            setBlankComponentsWeb(components);
+            setBlankComponentsWeb(preparedComponents);
             break;
           case 'news':
-            setNewsComponentsWeb(components);
+            setNewsComponentsWeb(preparedComponents);
             break;
           case 'notion':
-            setNotionComponentsWeb(components);
+            setNotionComponentsWeb(preparedComponents);
             break;
           case 'plaid':
-            setPlaidComponentsWeb(components);
+            setPlaidComponentsWeb(preparedComponents);
             break;
           case 'stripe':
-            setStripeComponentsWeb(components);
+            setStripeComponentsWeb(preparedComponents);
             break;
           case 'vercel':
-            setVercelComponentsWeb(components);
+            setVercelComponentsWeb(preparedComponents);
             break;
           case 'market':
-            setMarketComponentsWeb(components);
+            setMarketComponentsWeb(preparedComponents);
             break;
           case 'feature':
-            setFeatureComponents(components); // Feature solo tiene versión newsletter, actualizar la misma
+            setFeatureComponents(preparedComponents); // Feature solo tiene versión newsletter, actualizar la misma
             break;
           case 'newsletter':
-            setNewsletterComponentsWeb(components);
+            setNewsletterComponentsWeb(preparedComponents);
             break;
           case 'storyboard':
-            setStoryboardComponentsWeb(components);
+            setStoryboardComponentsWeb(preparedComponents);
             break;
           case 'skillup':
-            setSkillupComponentsWeb(components);
+            setSkillupComponentsWeb(preparedComponents);
             break;
           case 'howto':
-            setHowtoComponentsWeb(components);
+            setHowtoComponentsWeb(preparedComponents);
             break;
           default:
             break;
@@ -383,40 +475,40 @@ export const useEmailComponents = () => {
       } else {
         switch (activeTemplate) {
           case 'blank':
-            setBlankComponents(components);
+            setBlankComponents(preparedComponents);
             break;
           case 'news':
-            setNewsComponents(components);
+            setNewsComponents(preparedComponents);
             break;
           case 'notion':
-            setNotionComponents(components);
+            setNotionComponents(preparedComponents);
             break;
           case 'plaid':
-            setPlaidComponents(components);
+            setPlaidComponents(preparedComponents);
             break;
           case 'stripe':
-            setStripeComponents(components);
+            setStripeComponents(preparedComponents);
             break;
           case 'vercel':
-            setVercelComponents(components);
+            setVercelComponents(preparedComponents);
             break;
           case 'market':
-            setMarketComponents(components);
+            setMarketComponents(preparedComponents);
             break;
           case 'feature':
-            setFeatureComponents(components);
+            setFeatureComponents(preparedComponents);
             break;
           case 'newsletter':
-            setNewsletterComponents(components);
+            setNewsletterComponents(preparedComponents);
             break;
           case 'storyboard':
-            setStoryboardComponents(components);
+            setStoryboardComponents(preparedComponents);
             break;
           case 'skillup':
-            setSkillupComponents(components);
+            setSkillupComponents(preparedComponents);
             break;
           case 'howto':
-            setHowtoComponents(components);
+            setHowtoComponents(preparedComponents);
             break;
           default:
             break;

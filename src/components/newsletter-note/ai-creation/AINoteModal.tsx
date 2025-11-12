@@ -19,9 +19,10 @@ import {
   DialogContent,
 } from '@mui/material';
 
-import useAiGenerationStore from 'src/store/AiGenerationStore';
+import useAuthStore from 'src/store/AuthStore';
+import useTaskManagerStore from 'src/store/TaskManagerStore';
+import { initiateNoteGeneration } from 'src/services/ai-service';
 
-import AIGenerationProgress from './AIGenerationProgress';
 import {
   getUniqueCategories,
   getPromptsByCategory,
@@ -61,17 +62,12 @@ export default function AINoteModal({
   selectedTemplate,
   onInjectAIData = () => {},
 }: AINoteModalProps) {
-  // Store de generación IA
-  const {
-    loading,
-    status: generationStatus,
-    progress,
-    message: progressMessage,
-    error: generationError,
-    generateNote,
-    cancelGeneration,
-    clearCurrentGeneration,
-  } = useAiGenerationStore();
+  // Store de tareas en background
+  const addTask = useTaskManagerStore((state) => state.addTask);
+  const startPolling = useTaskManagerStore((state) => state.startPolling);
+
+  // Auth store para obtener userId y plan
+  const user = useAuthStore((state) => state.user);
 
   // Estado del formulario
   const [formState, setFormState] = useState<NoteFormState>({
@@ -86,45 +82,12 @@ export default function AINoteModal({
   const [promptMenuOpen, setPromptMenuOpen] = useState<boolean>(false);
   const [selectedSuggestionCategory, setSelectedSuggestionCategory] = useState<string>('Todos');
 
-  // Ref para el contenedor del diálogo (para auto-scroll)
+  // Ref para el contenedor del diálogo
   const dialogContentRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll suave cuando aparece el progreso
+  // Limpiar formulario cuando se cierra el modal
   useEffect(() => {
-    if (loading && generationStatus && dialogContentRef.current) {
-      // Pequeño delay para asegurar que el componente se haya renderizado
-      setTimeout(() => {
-        dialogContentRef.current?.scrollTo({
-          top: dialogContentRef.current.scrollHeight,
-          behavior: 'smooth',
-        });
-      }, 300);
-    }
-  }, [loading, generationStatus]);
-
-  // Detectar cuando la generación termina exitosamente (si el modal está abierto)
-  useEffect(() => {
-    if (open && generationStatus === 'COMPLETED' && !loading) {
-      // Pequeño delay para que el usuario vea el 100%
-      setTimeout(() => {
-        onClose();
-        // Limpiar formulario después de completar exitosamente
-        setFormState({
-          title: '',
-          category: '',
-          prompt: '',
-          status: 'idle',
-          error: null,
-        });
-      }, 1000);
-    }
-  }, [open, generationStatus, loading, onClose]);
-
-  // Limpiar formulario y store cuando se cierra el modal (solo si NO está generando)
-  useEffect(() => {
-    if (!open && !loading) {
-      // Solo limpiar si NO está generando
-      // Así el usuario puede reabrir el modal y ver lo que había escrito
+    if (!open) {
       setFormState({
         title: '',
         category: '',
@@ -132,9 +95,8 @@ export default function AINoteModal({
         status: 'idle',
         error: null,
       });
-      clearCurrentGeneration();
     }
-  }, [open, loading, clearCurrentGeneration]);
+  }, [open]);
 
   // Actualizar campos
   const handleChange = (field: keyof NoteFormState, value: string) => {
@@ -194,6 +156,14 @@ export default function AINoteModal({
       return;
     }
 
+    if (!user?.id) {
+      setFormState({
+        ...formState,
+        error: 'Usuario no autenticado',
+      });
+      return;
+    }
+
     setFormState({
       ...formState,
       status: 'generating',
@@ -201,52 +171,55 @@ export default function AINoteModal({
     });
 
     try {
-      // Llamar al store para generar (con polling automático)
-      const result = await generateNote(
-        formState.prompt,
-        formState.title || undefined,
-        formState.category || undefined,
-        'NEWS'
-      );
+      // Construir request
+      const request = {
+        prompt: formState.prompt,
+        title: formState.title || undefined,
+        category: formState.category || undefined,
+        template: 'NEWS' as const,
+        userId: user.id,
+        plan: user.plan?.name || null,
+      };
 
-      // Verificar que se haya completado exitosamente
-      if (!result) {
-        throw new Error(generationError || 'Error al generar la nota');
-      }
+      // Iniciar generación (obtener taskId)
+      const response = await initiateNoteGeneration(request);
 
-      // Inyectar los datos generados en el editor
-      onInjectAIData({
-        objData: result.objData,
-        objDataWeb: result.objDataWeb,
-        title: result.title,
-        description: result.description,
-        coverImageUrl: result.coverImageUrl,
-        origin: result.origin,
+      console.log('✅ Tarea iniciada:', response.taskId);
+
+      // Registrar tarea en TaskManagerStore
+      addTask({
+        taskId: response.taskId,
+        status: 'PENDING',
+        progress: 0,
+        message: 'Iniciando generación...',
+        title: formState.title || formState.prompt,
+        category: formState.category,
+        prompt: formState.prompt,
+        createdAt: new Date().toISOString(),
       });
 
-      // El cierre automático del modal se maneja en el useEffect que detecta COMPLETED
+      // Iniciar polling en background
+      startPolling(response.taskId);
+
+      // Cerrar modal inmediatamente
+      onClose();
+
+      // Limpiar formulario
+      setFormState({
+        title: '',
+        category: '',
+        prompt: '',
+        status: 'idle',
+        error: null,
+      });
     } catch (error: any) {
-      console.error('Error generando nota con IA:', error);
+      console.error('Error iniciando generación de nota:', error);
       setFormState({
         ...formState,
         status: 'error',
-        error: error.message || 'Error al generar la nota. Por favor, intenta de nuevo.',
+        error: error.message || 'Error al iniciar la generación. Por favor, intenta de nuevo.',
       });
     }
-  };
-
-  // Cancelar generación
-  const handleCancel = () => {
-    cancelGeneration();
-
-    // Limpiar el formulario cuando se cancela
-    setFormState({
-      title: '',
-      category: '',
-      prompt: '',
-      status: 'idle',
-      error: null,
-    });
   };
 
   // Obtener sugerencias filtradas
@@ -379,19 +352,6 @@ export default function AINoteModal({
           />
         </Box>
 
-        {/* Loading state con progreso */}
-        {formState.status === 'generating' && loading && generationStatus && (
-          <Box sx={{ mt: 3 }}>
-            <AIGenerationProgress
-              status={generationStatus}
-              progress={progress}
-              message={progressMessage}
-              onCancel={handleCancel}
-              showCancel
-            />
-          </Box>
-        )}
-
         {/* Dialog de sugerencias centrado */}
         <Dialog
           open={promptMenuOpen}
@@ -487,28 +447,21 @@ export default function AINoteModal({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
-        {formState.status === 'generating' ? (
-          <>
-            {/* Cuando está generando: botón para cancelar generación */}
-            <Button onClick={handleCancel} color="error" variant="outlined" sx={{ minWidth: 140 }}>
-              Cancelar Generación
-            </Button>
-            {/* Botón para cerrar modal sin cancelar */}
-            <Button onClick={onClose} variant="contained" sx={{ minWidth: 100 }}>
-              Cerrar
-            </Button>
-          </>
-        ) : (
-          <>
-            {/* Cuando no está generando: flujo normal */}
-            <Button onClick={onClose} sx={{ minWidth: 100 }}>
-              Cancelar
-            </Button>
-            <Button variant="contained" onClick={handleGenerate} sx={{ minWidth: 140 }}>
-              Generar Nota
-            </Button>
-          </>
-        )}
+        <Button
+          onClick={onClose}
+          disabled={formState.status === 'generating'}
+          sx={{ minWidth: 100 }}
+        >
+          Cancelar
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleGenerate}
+          disabled={formState.status === 'generating'}
+          sx={{ minWidth: 140 }}
+        >
+          {formState.status === 'generating' ? 'Iniciando...' : 'Generar Nota'}
+        </Button>
       </DialogActions>
     </Dialog>
   );

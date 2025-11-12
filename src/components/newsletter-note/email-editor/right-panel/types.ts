@@ -3,6 +3,8 @@ import type { PostStatus } from 'src/types/post';
 import type { EmailComponent } from 'src/types/saved-note';
 import type { BannerOption } from 'src/components/newsletter-note/banner-selector';
 
+import type { NoteConfigurationViewHandle } from './views/NoteConfigurationView';
+
 export interface RightPanelProps {
   selectedComponentId: string | null;
   setSelectedComponentId: (id: string | null) => void;
@@ -54,10 +56,6 @@ export interface RightPanelProps {
   bannerOptions: BannerOption[];
   setSelectedAlignment: (alignment: string) => void;
   hasTextSelection: boolean;
-  listStyle?: string;
-  updateListStyle: (listId: string, listStyleType: string) => void;
-  listColor?: string;
-  updateListColor: (listId: string, color: string) => void;
   convertTextToList: (componentId: string | null, listType: 'ordered' | 'unordered') => void;
   setShowIconPicker: (show: boolean) => void;
   isContainerSelected: boolean;
@@ -129,14 +127,7 @@ export interface RightPanelProps {
   onNewsletterUpdate?: () => void;
   // Prop para modo view-only
   isViewOnly?: boolean;
-}
-
-export interface ListStyleOptionsProps {
-  selectedComponentId: string | null;
-  listStyle?: string;
-  updateListStyle: (listId: string, listStyleType: string) => void;
-  listColor?: string;
-  updateListColor: (listId: string, color: string) => void;
+  noteConfigurationViewRef?: React.Ref<NoteConfigurationViewHandle>;
 }
 
 export interface TextOptionsProps
@@ -207,6 +198,8 @@ export interface ImageCropDialogProps {
   initialImage: string;
   currentAspectRatio?: number;
   initialTab?: 'edit' | 'ai';
+  userId?: string;
+  plan?: string;
 }
 
 export interface CropRatio {

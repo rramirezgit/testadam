@@ -36,9 +36,6 @@ interface EmailContentProps {
   emailBackground: string;
   showGradient: boolean;
   gradientColors: string[];
-  addListItem: (listId: string) => void;
-  removeListItem: (listId: string, itemIndex: number) => void;
-  updateListItem: (listId: string, itemIndex: number, content: string) => void;
   onContainerClick: () => void;
   isContainerSelected: boolean;
   containerBorderWidth: number;
@@ -95,6 +92,9 @@ interface EmailContentProps {
   // Props para mostrar skeleton durante generación
   generatingEmail?: boolean;
   generatingNewsletterHtml?: boolean;
+  // Props para guardar notas individuales de AI en newsletters
+  aiNewsletterId?: string;
+  onSaveAINote?: (noteIndex: number, taskId: string) => void;
 }
 
 // Componente para el header del newsletter
@@ -402,9 +402,6 @@ const EmailContent = memo(
     emailBackground,
     showGradient,
     gradientColors,
-    addListItem,
-    removeListItem,
-    updateListItem,
     onContainerClick,
     isContainerSelected,
     containerBorderWidth,
@@ -445,6 +442,9 @@ const EmailContent = memo(
     // Props para mostrar skeleton durante generación
     generatingEmail = false,
     generatingNewsletterHtml = false,
+    // Props para guardar notas individuales de AI en newsletters
+    aiNewsletterId,
+    onSaveAINote = () => {},
   }: EmailContentProps) => {
     // Memoizar los componentes para evitar recálculos innecesarios
     const components = useMemo(() => getActiveComponents(), [getActiveComponents]);
@@ -604,13 +604,11 @@ const EmailContent = memo(
       () => (component: EmailComponent) => (
         <EmailList
           component={component}
-          updateListItem={updateListItem}
-          removeListItem={removeListItem}
-          addListItem={addListItem}
+          updateComponentContent={updateComponentContent}
           updateComponentProps={updateComponentProps}
         />
       ),
-      [updateListItem, removeListItem, addListItem, updateComponentProps]
+      [updateComponentContent, updateComponentProps]
     );
 
     const body = (
@@ -676,6 +674,7 @@ const EmailContent = memo(
               getActiveComponents={getActiveComponents}
               onComponentSelect={onComponentSelect}
               selectedComponentId={selectedComponentId}
+          renderCustomContent={component.type === 'bulletList' ? renderBulletList : undefined}
               // Props adicionales para noteContainer
               {...(component.type === 'noteContainer' && {
                 removeNoteContainer,
@@ -688,6 +687,8 @@ const EmailContent = memo(
                 onRemoveNewsletterNote,
                 onEditNewsletterNote,
                 isNewsletterMode,
+                aiNewsletterId,
+                onSaveAINote,
               })}
             />
           ))}

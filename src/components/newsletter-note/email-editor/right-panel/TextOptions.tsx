@@ -1,21 +1,12 @@
+import type { SelectChangeEvent } from '@mui/material/Select';
+
+import { useState } from 'react';
 import { Icon } from '@iconify/react';
 
-import {
-  Box,
-  Paper,
-  Button,
-  Select,
-  Slider,
-  Divider,
-  MenuItem,
-  InputLabel,
-  Typography,
-  FormControl,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
+import * as Mui from '@mui/material';
 
-import ListStyleOptions from './ListStyleOptions';
+import TextColorPicker from '../color-picker/TextColorPicker';
+import { buildListHtml, extractListItemsFromHtml } from '../email-components/utils';
 
 import type { TextOptionsProps } from './types';
 
@@ -40,18 +31,162 @@ const TextOptions = ({
   selectedColor,
   applyTextColor,
   updateComponentStyle,
-  convertTextToList,
-  listStyle,
-  updateListStyle,
-  listColor,
-  updateListColor,
   updateComponentProps,
+  updateComponentContent,
 }: TextOptionsProps) => {
-  // Verificar si el componente seleccionado es un párrafo
-  const isParagraphComponent = selectedComponent?.type === 'paragraph';
+  const {
+    Box,
+    Button,
+    Divider,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Popover,
+    Select,
+    Slider,
+    ToggleButton,
+    ToggleButtonGroup,
+    Typography,
+  } = Mui;
+
+  const isBulletListComponent = selectedComponent?.type === 'bulletList';
+
+  const listStyle = (selectedComponent?.props?.listStyle as string | undefined) || 'disc';
+  const listColor = (selectedComponent?.props?.listColor as string | undefined) || '#000000';
+
+  const isOrderedList =
+    listStyle === 'decimal' ||
+    listStyle === 'lower-alpha' ||
+    listStyle === 'upper-alpha' ||
+    listStyle === 'lower-roman' ||
+    listStyle === 'upper-roman';
+
+  const [listColorAnchor, setListColorAnchor] = useState<null | HTMLElement>(null);
+
+  const resolvedItems = (() => {
+    const items = selectedComponent?.props?.items as string[] | undefined;
+    if (items && items.length > 0) {
+      return items;
+    }
+    const extracted = extractListItemsFromHtml(selectedComponent?.content || '');
+    return extracted.length > 0 ? extracted : ['Elemento de lista'];
+  })();
+
+  const applyListStyle = (nextStyle: string) => {
+    if (!selectedComponentId) return;
+
+    const nextHtml = buildListHtml(resolvedItems, nextStyle);
+
+    updateComponentProps(selectedComponentId, {
+      ...selectedComponent?.props,
+      items: resolvedItems,
+      listStyle: nextStyle,
+    });
+    updateComponentContent(selectedComponentId, nextHtml);
+  };
+
+  const handleListStyleChange = (event: SelectChangeEvent<string>) => {
+    applyListStyle(event.target.value);
+  };
+
+  const handleApplyListColor = (color: string) => {
+    if (!selectedComponentId) return;
+    updateComponentProps(selectedComponentId, {
+      ...selectedComponent?.props,
+      listColor: color,
+    });
+    setListColorAnchor(null);
+  };
 
   return (
     <Box>
+      {isBulletListComponent && (
+        <Paper elevation={1} sx={{ p: 1, mb: 3, bgcolor: 'grey.50' }}>
+          <Typography
+            variant="subtitle2"
+            gutterBottom
+            sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}
+          >
+            <Icon icon="mdi:format-list-bulleted" />
+            Configuración de Lista
+          </Typography>
+
+          <ToggleButtonGroup
+            size="small"
+            value={isOrderedList ? 'ordered' : 'unordered'}
+            exclusive
+            sx={{ mb: 2 }}
+            onChange={(_, value) => {
+              if (!selectedComponentId || !value) return;
+              const nextStyle = value === 'ordered' ? 'decimal' : 'disc';
+              applyListStyle(nextStyle);
+            }}
+          >
+            <ToggleButton value="unordered">
+              <Icon icon="mdi:format-list-bulleted" />
+            </ToggleButton>
+            <ToggleButton value="ordered">
+              <Icon icon="mdi:format-list-numbered" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+            <InputLabel id="list-style-select-label">
+              {isOrderedList ? 'Numeración' : 'Viñetas'}
+            </InputLabel>
+            <Select
+              labelId="list-style-select-label"
+              value={listStyle}
+              label={isOrderedList ? 'Numeración' : 'Viñetas'}
+              onChange={handleListStyleChange}
+            >
+              {(isOrderedList
+                ? [
+                    { value: 'decimal', label: 'Números (1, 2, 3)' },
+                    { value: 'lower-alpha', label: 'Letras minúsculas (a, b, c)' },
+                    { value: 'upper-alpha', label: 'Letras mayúsculas (A, B, C)' },
+                    { value: 'lower-roman', label: 'Romanos i, ii, iii' },
+                    { value: 'upper-roman', label: 'Romanos I, II, III' },
+                  ]
+                : [
+                    { value: 'disc', label: 'Punto (•)' },
+                    { value: 'circle', label: 'Círculo (○)' },
+                    { value: 'square', label: 'Cuadrado (■)' },
+                  ]
+              ).map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Icon icon="mdi:palette" />}
+            onClick={(event) => setListColorAnchor(event.currentTarget)}
+            fullWidth
+            sx={{
+              justifyContent: 'flex-start',
+              textTransform: 'none',
+            }}
+          >
+            Color de viñeta
+            <Box
+              sx={{
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                backgroundColor: listColor,
+                ml: 1,
+              }}
+            />
+          </Button>
+        </Paper>
+      )}
+
       <Box sx={{ mb: 1, display: 'flex', gap: 1 }}>
         <ToggleButtonGroup
           value={textFormat}
@@ -362,16 +497,16 @@ const TextOptions = ({
         </Box>
       </Paper>
 
-      {/* Mostrar opciones de estilo de lista si es un componente de lista */}
-      {selectedComponent?.type === 'bulletList' && (
-        <ListStyleOptions
-          selectedComponentId={selectedComponentId}
-          listStyle={listStyle}
-          updateListStyle={updateListStyle}
-          listColor={listColor}
-          updateListColor={updateListColor}
-        />
-      )}
+      <Popover
+        open={Boolean(listColorAnchor)}
+        anchorEl={listColorAnchor}
+        onClose={() => setListColorAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        PaperProps={{ sx: { p: 1 } }}
+      >
+        <TextColorPicker selectedColor={listColor} applyTextColor={handleApplyListColor} />
+      </Popover>
     </Box>
   );
 };
