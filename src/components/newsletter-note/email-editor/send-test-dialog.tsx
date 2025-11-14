@@ -21,7 +21,7 @@ interface SendTestDialogProps {
   onSendTest: (emails: string[]) => Promise<void>;
   title?: string;
   description?: string;
-  type: 'email' | 'newsletter';
+  type: 'email' | 'newsletter' | 'comunicado';
 }
 
 export default function SendTestDialog({
@@ -100,7 +100,7 @@ export default function SendTestDialog({
       setSuccess(true);
     } catch (error: any) {
       console.error('Error enviando prueba:', error);
-      
+
       // Extraer el mensaje de error
       const errorMessage = error?.message || 'Error al enviar la prueba';
       setSendError(errorMessage);

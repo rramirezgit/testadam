@@ -236,7 +236,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1.5}>
             <Typography variant="h6" fontWeight={600}>
-              Crear Newsletter con IA
+              Crear Comunicado con IA
             </Typography>
           </Box>
           <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
@@ -304,7 +304,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
           Prompts para cada nota
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          Describe qué contenido quieres generar para cada nota del newsletter
+          Describe qué contenido quieres generar para cada nota del comunicado
         </Typography>
 
         <Stack spacing={2}>
@@ -344,7 +344,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
           <Box sx={{ mt: 3 }}>
             <LinearProgress />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
-              Generando newsletter... Esto puede tomar algunos minutos
+              Generando comunicado... Esto puede tomar algunos minutos
             </Typography>
           </Box>
         )}
@@ -458,7 +458,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
           disabled={formState.status === 'generating'}
           sx={{ minWidth: 180 }}
         >
-          Generar Newsletter
+          Generar Comunicado
         </Button>
       </DialogActions>
     </Dialog>

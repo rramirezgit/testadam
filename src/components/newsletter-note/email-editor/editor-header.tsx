@@ -10,13 +10,16 @@ import {
   Box,
   Menu,
   Chip,
+  Fade,
   Stack,
   Alert,
   AppBar,
   Button,
   Dialog,
+  Switch,
   Toolbar,
   Tooltip,
+  Collapse,
   MenuItem,
   Checkbox,
   useTheme,
@@ -428,31 +431,6 @@ export default function EditorHeader({
       showNotification(errorMessage, 'error');
       handleSendMenuClose();
       // No abrir el diálogo si hubo error al guardar
-    }
-  };
-
-  // Función para guardar nota normal antes de enviar
-  const handleSaveNoteAndOpenDialog = () => {
-    try {
-      console.log('💾 Guardando nota antes de enviar...');
-
-      // Guardar la nota (onSave es síncrono)
-      onSave();
-
-      console.log('✅ Nota guardada, abriendo diálogo de prueba');
-
-      // Abrir el diálogo de prueba
-      handleSendMenuClose();
-      setOpenTestDialog(true);
-    } catch (error: any) {
-      console.error('❌ Error guardando nota antes de enviar:', error);
-
-      // Extraer el mensaje de error del backend
-      const errorMessage =
-        error?.response?.data?.message || error?.message || 'Error al guardar la nota';
-
-      showNotification(errorMessage, 'error');
-      handleSendMenuClose();
     }
   };
 
@@ -880,10 +858,11 @@ export default function EditorHeader({
           </Typography>
 
           {/* Selector de versión Web/Newsletter - Para templates con ambas versiones */}
-          {activeTemplate === 'news' ||
-          activeTemplate === 'market' ||
-          activeTemplate === 'skillup' ||
-          activeTemplate === 'howto' ? (
+          {(activeTemplate === 'news' ||
+            activeTemplate === 'market' ||
+            activeTemplate === 'skillup' ||
+            activeTemplate === 'howto') &&
+          !showPreview ? (
             <Box
               sx={{
                 display: 'flex',
@@ -1049,7 +1028,13 @@ export default function EditorHeader({
           )}
 
           {isNewsletterMode ? (
-            <Stack direction="row" spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                transition: 'gap 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
               {/* Chip de status del newsletter */}
               <Chip
                 variant="outlined"
@@ -1078,84 +1063,101 @@ export default function EditorHeader({
                 })()}
               />
 
-              {/* Botón de toggle Preview/Editor - En modo newsletter */}
+              {/* Switch de toggle Preview/Editor - En modo newsletter */}
               {!isViewOnly && (
-                <Button
-                  variant="outlined"
-                  startIcon={<Icon icon={showPreview ? 'mdi:code-tags' : 'mdi:eye'} />}
-                  onClick={onTogglePreview}
-                  sx={{ height: '42px' }}
-                >
-                  {showPreview ? 'Editor' : 'Preview'}
-                </Button>
+                <FormControlLabel
+                  control={
+                    <Switch checked={showPreview} onChange={onTogglePreview} color="primary" />
+                  }
+                  label={showPreview ? 'Preview' : 'Preview'}
+                  sx={{ ml: 1, mr: 1 }}
+                />
               )}
 
               {/* Botón de Revisión Editorial - Solo visible en modo preview */}
-              {showPreview && (
-                <Button
-                  variant="outlined"
-                  startIcon={<Icon icon="mdi:file-document-check" />}
-                  onClick={() => setOpenEditorialAnalysis(true)}
-                  sx={{ height: '42px' }}
-                  color="secondary"
-                >
-                  Revisión con IA
-                </Button>
-              )}
+              <Collapse in={showPreview} orientation="horizontal" timeout={250} unmountOnExit>
+                <Fade in={showPreview} timeout={200}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Icon icon="mdi:file-document-check" />}
+                    onClick={() => setOpenEditorialAnalysis(true)}
+                    sx={{ height: '42px', whiteSpace: 'nowrap', mr: 1 }}
+                    color="secondary"
+                  >
+                    Revisión con IA
+                  </Button>
+                </Fade>
+              </Collapse>
 
-              {/* Botón de guardar newsletter - Ocultar en modo view-only */}
-              {!isViewOnly && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  sx={{ height: '42px' }}
-                  startIcon={<Icon icon="material-symbols:save" />}
-                  onClick={handleSaveNewsletter}
-                  disabled={saving}
-                >
-                  Guardar
-                </Button>
-              )}
+              {/* Botón de guardar newsletter - Ocultar en modo view-only y preview */}
+              <Collapse
+                in={!isViewOnly && !showPreview}
+                orientation="horizontal"
+                timeout={250}
+                unmountOnExit
+              >
+                <Fade in={!isViewOnly && !showPreview} timeout={200}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    sx={{ height: '42px', whiteSpace: 'nowrap', mr: 1 }}
+                    startIcon={<Icon icon="material-symbols:save" />}
+                    onClick={handleSaveNewsletter}
+                    disabled={saving}
+                  >
+                    Guardar
+                  </Button>
+                </Fade>
+              </Collapse>
 
               {/* Botón de crear copia - Solo en modo view-only */}
-              {isViewOnly && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  sx={{ height: '42px' }}
-                  startIcon={<Icon icon="eva:copy-fill" />}
-                  onClick={onCreateCopy}
-                >
-                  Crear Copia
-                </Button>
-              )}
+              <Collapse in={isViewOnly} orientation="horizontal" timeout={250} unmountOnExit>
+                <Fade in={isViewOnly} timeout={200}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    sx={{ height: '42px', whiteSpace: 'nowrap', mr: 1 }}
+                    startIcon={<Icon icon="eva:copy-fill" />}
+                    onClick={onCreateCopy}
+                  >
+                    Crear Copia
+                  </Button>
+                </Fade>
+              </Collapse>
 
-              {/* Botón de enviar newsletter - Ocultar en modo view-only */}
-              {!isViewOnly && (
-                <Tooltip
-                  title={
-                    !currentNewsletterId || currentNewsletterId.trim() === ''
-                      ? 'Debes guardar el newsletter antes de enviarlo'
-                      : ''
-                  }
-                >
-                  <span>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      endIcon={<Icon icon="mdi:chevron-down" />}
-                      sx={{ backgroundColor: '#4f46e5', height: '42px' }}
-                      onClick={handleSendMenuClick}
-                      disabled={!currentNewsletterId || currentNewsletterId.trim() === ''}
-                      aria-controls={openSendMenu ? 'send-menu-newsletter' : undefined}
-                      aria-haspopup="true"
-                      aria-expanded={openSendMenu ? 'true' : undefined}
-                    >
-                      Enviar
-                    </Button>
-                  </span>
-                </Tooltip>
-              )}
+              {/* Botón de enviar newsletter - Ocultar en modo view-only y preview */}
+              <Collapse
+                in={!isViewOnly && !showPreview}
+                orientation="horizontal"
+                timeout={250}
+                unmountOnExit
+              >
+                <Fade in={!isViewOnly && !showPreview} timeout={200}>
+                  <Tooltip
+                    title={
+                      !currentNewsletterId || currentNewsletterId.trim() === ''
+                        ? 'Debes guardar el newsletter antes de enviarlo'
+                        : ''
+                    }
+                  >
+                    <span>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        endIcon={<Icon icon="mdi:chevron-down" />}
+                        sx={{ backgroundColor: '#4f46e5', height: '42px', whiteSpace: 'nowrap' }}
+                        onClick={handleSendMenuClick}
+                        disabled={!currentNewsletterId || currentNewsletterId.trim() === ''}
+                        aria-controls={openSendMenu ? 'send-menu-newsletter' : undefined}
+                        aria-haspopup="true"
+                        aria-expanded={openSendMenu ? 'true' : undefined}
+                      >
+                        Enviar
+                      </Button>
+                    </span>
+                  </Tooltip>
+                </Fade>
+              </Collapse>
 
               {/* Menú de envío para newsletter */}
               <Menu
@@ -1221,7 +1223,13 @@ export default function EditorHeader({
               </Menu>
             </Stack>
           ) : (
-            <Stack direction="row" spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                transition: 'gap 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
               <Chip
                 variant="outlined"
                 sx={{
@@ -1240,124 +1248,51 @@ export default function EditorHeader({
                 }
               />
 
-              {/* Botón de toggle Preview/Editor - Solo para templates con versión newsletter */}
+              {/* Switch de toggle Preview/Editor - Solo para templates con versión newsletter */}
               {(activeTemplate === 'news' ||
                 activeTemplate === 'market' ||
                 activeTemplate === 'skillup' ||
                 activeTemplate === 'howto') &&
                 activeVersion === 'newsletter' &&
                 !isViewOnly && (
-                  <Button
-                    variant="outlined"
-                    startIcon={<Icon icon={showPreview ? 'mdi:code-tags' : 'mdi:eye'} />}
-                    onClick={onTogglePreview}
-                    sx={{ height: '42px' }}
-                  >
-                    {showPreview ? 'Editor' : 'Preview'}
-                  </Button>
+                  <FormControlLabel
+                    control={
+                      <Switch checked={showPreview} onChange={onTogglePreview} color="primary" />
+                    }
+                    label={showPreview ? 'Preview' : 'Editor'}
+                    sx={{ ml: 1, mr: 1 }}
+                  />
                 )}
 
               {/* Botón de Revisión Editorial - Solo visible en modo preview */}
-              {showPreview && (
-                <Button
-                  variant="outlined"
-                  startIcon={<Icon icon="mdi:file-document-check" />}
-                  onClick={() => setOpenEditorialAnalysis(true)}
-                  sx={{ height: '42px' }}
-                  color="secondary"
-                >
-                  Revisión con IA
-                </Button>
-              )}
+              <Collapse in={showPreview} orientation="horizontal" timeout={250} unmountOnExit>
+                <Fade in={showPreview} timeout={200}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Icon icon="mdi:file-document-check" />}
+                    onClick={() => setOpenEditorialAnalysis(true)}
+                    sx={{ height: '42px', whiteSpace: 'nowrap', mr: 1 }}
+                    color="secondary"
+                  >
+                    Revisión con IA
+                  </Button>
+                </Fade>
+              </Collapse>
 
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ height: '42px' }}
-                startIcon={<Icon icon="material-symbols:save" />}
-                onClick={onSave}
-              >
-                Guardar
-              </Button>
-              <Tooltip
-                title={!isEditingExistingNote ? 'Debes guardar la nota antes de enviarla' : ''}
-              >
-                <span>
+              {/* Botón de guardar - Ocultar en modo preview */}
+              <Collapse in={!showPreview} orientation="horizontal" timeout={250} unmountOnExit>
+                <Fade in={!showPreview} timeout={200}>
                   <Button
                     variant="contained"
                     color="primary"
-                    endIcon={<Icon icon="mdi:chevron-down" />}
-                    sx={{ backgroundColor: '#4f46e5', height: '42px' }}
-                    onClick={handleSendMenuClick}
-                    disabled={!isEditingExistingNote}
-                    aria-controls={openSendMenu ? 'send-menu' : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={openSendMenu ? 'true' : undefined}
+                    sx={{ height: '42px', whiteSpace: 'nowrap' }}
+                    startIcon={<Icon icon="material-symbols:save" />}
+                    onClick={onSave}
                   >
-                    Enviar
+                    Guardar
                   </Button>
-                </span>
-              </Tooltip>
-
-              {/* Menú de envío */}
-              <Menu
-                id="send-menu"
-                anchorEl={sendMenuAnchor}
-                open={openSendMenu}
-                onClose={handleSendMenuClose}
-                MenuListProps={{
-                  'aria-labelledby': 'send-button',
-                }}
-                PaperProps={{
-                  sx: { minWidth: '200px' },
-                }}
-              >
-                <MenuItem disabled={disableOption('Prueba')} onClick={handleSaveNoteAndOpenDialog}>
-                  <ListItemIcon>
-                    <Icon icon="mdi:test-tube" width={24} height={24} />
-                  </ListItemIcon>
-                  <ListItemText>Prueba</ListItemText>
-                </MenuItem>
-
-                {/* <MenuItem
-                  disabled={disableOption('Aprobacion')}
-                  onClick={() => {
-                    setOpenAprob?.(true);
-                    handleSendMenuClose();
-                  }}
-                >
-                  <ListItemIcon>
-                    <Icon icon="mdi:check-circle-outline" width={24} height={24} />
-                  </ListItemIcon>
-                  <ListItemText>Aprobación</ListItemText>
-                </MenuItem> */}
-
-                {/* <MenuItem
-                  disabled={disableOption('schedule')}
-                  onClick={() => {
-                    setOpenSchedule?.(true);
-                    handleSendMenuClose();
-                  }}
-                >
-                  <ListItemIcon>
-                    <Icon icon="material-symbols:schedule-outline" width={24} height={24} />
-                  </ListItemIcon>
-                  <ListItemText>Programar</ListItemText>
-                </MenuItem> */}
-
-                {/* <MenuItem
-                  disabled={disableOption('Subscriptores')}
-                  onClick={() => {
-                    setOpenSendSubs?.(true);
-                    handleSendMenuClose();
-                  }}
-                >
-                  <ListItemIcon>
-                    <Icon icon="fluent-mdl2:group" width={24} height={24} />
-                  </ListItemIcon>
-                  <ListItemText>Enviar ahora</ListItemText>
-                </MenuItem> */}
-              </Menu>
+                </Fade>
+              </Collapse>
             </Stack>
           )}
         </Toolbar>
@@ -1368,7 +1303,7 @@ export default function EditorHeader({
         open={openTestDialog}
         setOpen={setOpenTestDialog}
         onSendTest={handleSendTest}
-        type={isNewsletterMode ? 'newsletter' : 'email'}
+        type={isNewsletterMode ? 'comunicado' : 'email'}
         title="Enviar prueba"
         description="A los siguientes correos le llegará el contenido para su revisión:"
       />

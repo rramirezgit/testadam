@@ -16,6 +16,19 @@ interface NoteContainerOptionsProps {
   getActiveComponents: () => any[];
   updateComponentProps: (id: string, props: Record<string, any>) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
+
+  // NUEVAS PROPS para newsletter
+  isNewsletterMode?: boolean;
+  updateNewsletterNoteComponentProps?: (
+    noteId: string,
+    componentId: string,
+    props: Record<string, any>
+  ) => void;
+  updateNewsletterNoteComponentStyle?: (
+    noteId: string,
+    componentId: string,
+    style: React.CSSProperties
+  ) => void;
 }
 
 export default function NoteContainerOptions({
@@ -23,6 +36,9 @@ export default function NoteContainerOptions({
   getActiveComponents,
   updateComponentProps,
   updateComponentStyle,
+  isNewsletterMode = false,
+  updateNewsletterNoteComponentProps,
+  updateNewsletterNoteComponentStyle,
 }: NoteContainerOptionsProps) {
   if (!selectedComponentId) return null;
 
@@ -31,6 +47,63 @@ export default function NoteContainerOptions({
 
   const noteTitle = component.props?.noteTitle || 'Nota Inyectada';
   const componentsData = component.props?.componentsData || [];
+
+  // Detectar si este noteContainer está en un newsletter
+  // Los noteContainers en newsletters tienen IDs con formato especial
+  const isInNewsletter = isNewsletterMode && component.id.includes('-note-');
+
+  // Extraer noteId y componentId real si está en newsletter
+  const extractNewsletterInfo = () => {
+    if (!isInNewsletter) return null;
+
+    // Formato esperado: "noteId-note-componentId" o similar
+    const parts = component.id.split('-note-');
+    if (parts.length >= 2) {
+      return {
+        noteId: parts[0],
+        componentId: parts[1],
+      };
+    }
+    return null;
+  };
+
+  const newsletterInfo = extractNewsletterInfo();
+
+  // Wrapper para updateComponentProps que usa la función correcta
+  const handleUpdateProps = (props: Record<string, any>) => {
+    if (newsletterInfo && updateNewsletterNoteComponentProps) {
+      console.log('📝 Updating newsletter note props:', {
+        noteId: newsletterInfo.noteId,
+        componentId: newsletterInfo.componentId,
+        props,
+      });
+      updateNewsletterNoteComponentProps(newsletterInfo.noteId, newsletterInfo.componentId, props);
+    } else {
+      console.log('📝 Updating regular component props:', {
+        componentId: selectedComponentId,
+        props,
+      });
+      updateComponentProps(selectedComponentId!, props);
+    }
+  };
+
+  // Wrapper para updateComponentStyle que usa la función correcta
+  const handleUpdateStyle = (style: React.CSSProperties) => {
+    if (newsletterInfo && updateNewsletterNoteComponentStyle) {
+      console.log('🎨 Updating newsletter note style:', {
+        noteId: newsletterInfo.noteId,
+        componentId: newsletterInfo.componentId,
+        style,
+      });
+      updateNewsletterNoteComponentStyle(newsletterInfo.noteId, newsletterInfo.componentId, style);
+    } else {
+      console.log('🎨 Updating regular component style:', {
+        componentId: selectedComponentId,
+        style,
+      });
+      updateComponentStyle(selectedComponentId!, style);
+    }
+  };
 
   return (
     <Box>
@@ -43,7 +116,7 @@ export default function NoteContainerOptions({
         label="Título de la nota"
         value={noteTitle}
         onChange={(e) => {
-          updateComponentProps(selectedComponentId, {
+          handleUpdateProps({
             ...component.props,
             noteTitle: e.target.value,
           });
@@ -79,7 +152,7 @@ export default function NoteContainerOptions({
           label="Color del borde"
           value={component.style?.borderColor || '#e0e0e0'}
           onChange={(e) => {
-            updateComponentStyle(selectedComponentId, {
+            handleUpdateStyle({
               ...component.style,
               borderColor: e.target.value,
             });
@@ -101,7 +174,7 @@ export default function NoteContainerOptions({
         type="number"
         value={component.style?.borderWidth?.toString().replace('px', '') || '2'}
         onChange={(e) => {
-          updateComponentStyle(selectedComponentId, {
+          handleUpdateStyle({
             ...component.style,
             borderWidth: `${e.target.value}px`,
           });
@@ -117,7 +190,7 @@ export default function NoteContainerOptions({
         type="number"
         value={component.style?.borderRadius?.toString().replace('px', '') || '12'}
         onChange={(e) => {
-          updateComponentStyle(selectedComponentId, {
+          handleUpdateStyle({
             ...component.style,
             borderRadius: `${e.target.value}px`,
           });
@@ -133,7 +206,7 @@ export default function NoteContainerOptions({
         type="number"
         value={component.style?.padding?.toString().replace('px', '') || '20'}
         onChange={(e) => {
-          updateComponentStyle(selectedComponentId, {
+          handleUpdateStyle({
             ...component.style,
             padding: `${e.target.value}px`,
           });
@@ -148,7 +221,7 @@ export default function NoteContainerOptions({
           label="Color de fondo"
           value={component.style?.backgroundColor || '#ffffff'}
           onChange={(e) => {
-            updateComponentStyle(selectedComponentId, {
+            handleUpdateStyle({
               ...component.style,
               backgroundColor: e.target.value,
             });

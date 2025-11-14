@@ -16,8 +16,10 @@ import {
   Dialog,
   Typography,
   DialogTitle,
+  ToggleButton,
   DialogContent,
   DialogActions,
+  ToggleButtonGroup,
 } from '@mui/material';
 
 import { usePost } from 'src/hooks/use-posts';
@@ -248,6 +250,47 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   const [newsletterHtml, setNewsletterHtml] = useState<string>('');
   const [generatingNewsletterHtml, setGeneratingNewsletterHtml] = useState<boolean>(false);
   const [generatedPreviewHtml, setGeneratedPreviewHtml] = useState<string>('');
+  const [previewViewMode, setPreviewViewMode] = useState<'mobile' | 'desktop'>('desktop');
+
+  // HTML del preview con estilos de scrollbar personalizados
+  const previewHtmlWithScrollbar = useMemo(() => {
+    const htmlContent = generatedPreviewHtml || newsletterHtmlPreview;
+    if (!htmlContent) return '';
+
+    // Estilos CSS para el scrollbar
+    const scrollbarStyles = `
+      <style>
+        /* Ocultar scrollbar en vista mobile, sutil en desktop */
+        ::-webkit-scrollbar {
+          width: ${previewViewMode === 'mobile' ? '0px' : '8px'};
+        }
+        ::-webkit-scrollbar-track {
+          background: ${previewViewMode === 'mobile' ? 'transparent' : '#f1f5f9'};
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: ${previewViewMode === 'mobile' ? 'transparent' : '#cbd5e0'};
+          border-radius: 4px;
+          transition: background 0.2s;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: ${previewViewMode === 'mobile' ? 'transparent' : '#94a3b8'};
+        }
+        /* Para Firefox */
+        * {
+          scrollbar-width: ${previewViewMode === 'mobile' ? 'none' : 'thin'};
+          scrollbar-color: ${previewViewMode === 'mobile' ? 'transparent transparent' : '#cbd5e0 #f1f5f9'};
+        }
+      </style>
+    `;
+
+    // Inyectar estilos en el head del HTML
+    if (htmlContent.includes('</head>')) {
+      return htmlContent.replace('</head>', `${scrollbarStyles}</head>`);
+    }
+    // Si no hay head, agregar al inicio
+    return `${scrollbarStyles}${htmlContent}`;
+  }, [generatedPreviewHtml, newsletterHtmlPreview, previewViewMode]);
 
   // ESTADOS PARA GENERACIÓN CON IA
   const [showAIModal, setShowAIModal] = useState<boolean>(false);
@@ -3093,29 +3136,62 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
+            flexDirection: 'column',
+            alignItems: 'center',
             width: '100%',
             height: '100%',
             overflow: 'auto',
-            p: 3,
+            p: 1,
             backgroundColor: '#f5f5f5',
           }}
         >
+          {/* Toggle para cambiar entre mobile y desktop */}
+          <Box sx={{ mb: 1 }}>
+            <ToggleButtonGroup
+              value={previewViewMode}
+              exclusive
+              size="small"
+              onChange={(_, newMode) => {
+                if (newMode !== null) {
+                  setPreviewViewMode(newMode);
+                }
+              }}
+              sx={{
+                backgroundColor: 'white',
+                boxShadow: 1,
+              }}
+            >
+              <ToggleButton value="mobile" sx={{ px: 3, py: 1 }}>
+                <Icon
+                  icon="material-symbols:smartphone"
+                  style={{ marginRight: '8px' }}
+                  width={20}
+                />
+                Móvil
+              </ToggleButton>
+              <ToggleButton value="desktop" sx={{ px: 3, py: 1 }}>
+                <Icon icon="material-symbols:computer" style={{ marginRight: '8px' }} width={20} />
+                Desktop
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {/* Canvas del preview */}
           <Box
             sx={{
               width: '100%',
-              maxWidth: '800px',
+              maxWidth: previewViewMode === 'mobile' ? '450px' : '800px',
               backgroundColor: 'white',
               boxShadow: 3,
               borderRadius: 1,
+              transition: 'max-width 0.3s ease',
             }}
           >
             <iframe
-              srcDoc={generatedPreviewHtml || newsletterHtmlPreview}
+              srcDoc={previewHtmlWithScrollbar}
               style={{
                 width: '100%',
-                height: 'calc(100vh - 150px)',
+                height: 'calc(100vh - 220px)',
                 border: 'none',
                 padding: '16px',
               }}
@@ -3422,6 +3498,9 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               // Prop para modo view-only
               isViewOnly={isViewOnly}
               noteConfigurationViewRef={noteConfigurationViewRef}
+              // Funciones para actualizar componentes dentro de newsletters
+              updateNewsletterNoteComponentProps={updateNewsletterNoteComponentProps}
+              updateNewsletterNoteComponentStyle={updateNewsletterNoteComponentStyle}
             />
           </Box>
         </Box>

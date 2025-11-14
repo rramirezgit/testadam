@@ -108,6 +108,8 @@ export default function RightPanel({
   onNewsletterUpdate = () => {},
   isViewOnly = false,
   noteConfigurationViewRef,
+  updateNewsletterNoteComponentProps,
+  updateNewsletterNoteComponentStyle,
 }: RightPanelProps) {
   // Hook para subida de imágenes
   const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
@@ -175,6 +177,18 @@ export default function RightPanel({
     setNotification((prev) => ({ ...prev, open: false }));
   };
 
+  // Estados para manejo de errores de publicación web
+  const [webPublishError, setWebPublishError] = useState<string | null>(null);
+
+  // Callbacks para publicación web
+  const handleWebPublishError = (errorMessage: string) => {
+    setWebPublishError(errorMessage);
+  };
+
+  const handleWebPublishSuccess = () => {
+    setWebPublishError(null);
+  };
+
   // Hook para handlers de newsletter
   const {
     handleLogoFileChange,
@@ -192,6 +206,8 @@ export default function RightPanel({
     noteStatus,
     showNotification,
     setOpenDeleteDialog,
+    onWebPublishError: handleWebPublishError,
+    onWebPublishSuccess: handleWebPublishSuccess,
   });
 
   // Obtener todos los componentes activos
@@ -310,6 +326,7 @@ export default function RightPanel({
           noteStatus={noteStatus}
           handleStatusChange={handleStatusChange}
           checkStatusDisabled={checkStatus}
+          webPublishError={webPublishError}
           contentTypeId={contentTypeId}
           setContentTypeId={setContentTypeId}
           audienceId={audienceId}
@@ -445,6 +462,9 @@ export default function RightPanel({
         openDeleteDialog={openDeleteDialog}
         setOpenDeleteDialog={setOpenDeleteDialog}
         handleDeleteNote={handleDeleteNote}
+        isNewsletterMode={isNewsletterMode}
+        updateNewsletterNoteComponentProps={updateNewsletterNoteComponentProps}
+        updateNewsletterNoteComponentStyle={updateNewsletterNoteComponentStyle}
       />
 
       {/* Snackbar para notificaciones */}

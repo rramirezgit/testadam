@@ -283,8 +283,8 @@ export default function NotesView() {
     <DashboardContent>
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
-          heading="Notas"
-          subheading="Crea, personaliza y publica tus notas en MICHIN"
+          heading="Bloques Web"
+          subheading="Crea, personaliza y publica tus bloques web en MICHIN"
           sx={{ mb: { xs: 3, md: 5 } }}
         />
 
@@ -300,7 +300,7 @@ export default function NotesView() {
         >
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
             <TextField
-              placeholder="Buscar notas..."
+              placeholder="Buscar bloques web..."
               name="search-note"
               variant="filled"
               value={searchTerm}
@@ -365,7 +365,7 @@ export default function NotesView() {
             </Button> */}
             <Button variant="contained" color="primary" onClick={() => handleOpenEditor()}>
               <Iconify icon="mingcute:add-line" style={{ marginRight: '8px', height: '45px' }} />
-              Crear Nota
+              Crear bloque web
             </Button>
           </Box>
         </Box>

@@ -6,6 +6,7 @@
 import type { Article } from 'src/store/PostStore';
 import type { Newsletter } from 'src/types/newsletter';
 
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Icon } from '@iconify/react';
@@ -196,9 +197,11 @@ export default function ContentCard({ content, type, onOpen, onDelete }: Content
         }}
       >
         {coverImage ? (
-          <img
+          <Image
             src={coverImage}
             alt="Cover"
+            width={100}
+            height={100}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : (

@@ -5,16 +5,42 @@ import { Icon } from '@iconify/react';
 
 import Box from '@mui/material/Box';
 import Badge from '@mui/material/Badge';
+import { keyframes } from '@mui/system';
+import Tooltip from '@mui/material/Tooltip';
 import SpeedDial from '@mui/material/SpeedDial';
-import SpeedDialIcon from '@mui/material/SpeedDialIcon';
+import Typography from '@mui/material/Typography';
 import SpeedDialAction from '@mui/material/SpeedDialAction';
 
+import { CONFIG } from 'src/global-config';
 import useTaskManagerStore from 'src/store/TaskManagerStore';
 
 import AINoteModal from 'src/components/newsletter-note/ai-creation/AINoteModal';
 import AINewsletterModal from 'src/components/newsletter-note/ai-creation/AINewsletterModal';
 
 import TasksDrawer from './TasksDrawer';
+import { SvgColor } from '../svg-color';
+
+// ============================================================================
+// ANIMACIONES
+// ============================================================================
+
+const rotateGradient = keyframes`
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+`;
+
+const pulse = keyframes`
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+`;
 
 // ============================================================================
 // COMPONENTE PRINCIPAL
@@ -29,10 +55,11 @@ export default function AISpeedDial() {
   // Suscribirse directamente a tasks para actualización en tiempo real
   const tasks = useTaskManagerStore((state) => state.tasks);
 
-  // Filtrar tareas activas localmente
+  // Filtrar solo tareas en progreso (no completadas ni con error)
   const activeTasks = tasks.filter(
     (t) => t.status !== 'COMPLETED' && t.status !== 'ERROR' && t.status !== 'FAILED'
   );
+  const hasActiveTasks = activeTasks.length > 0;
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -53,13 +80,13 @@ export default function AISpeedDial() {
 
   const actions = [
     {
-      icon: <Icon icon="solar:magic-stick-3-bold" width={24} />,
-      name: 'Crear Nota con IA',
+      icon: <SvgColor src={`${CONFIG.assetsDir}/assets/icons/navbar/ic-bloque-web.svg`} />,
+      name: 'Crear Bloque Web con IA',
       onClick: handleCreateNote,
     },
     {
-      icon: <Icon icon="solar:document-text-bold" width={24} />,
-      name: 'Crear Newsletter con IA',
+      icon: <SvgColor src={`${CONFIG.assetsDir}/assets/icons/navbar/ic-comunicado.svg`} />,
+      name: 'Crear Comunicado con IA',
       onClick: handleCreateNewsletter,
     },
   ];
@@ -77,28 +104,22 @@ export default function AISpeedDial() {
         <SpeedDial
           ariaLabel="AI Actions"
           icon={
-            <Badge
-              badgeContent={activeTasks.length}
-              color="primary"
-              invisible={activeTasks.length === 0}
-              sx={{
-                '& .MuiBadge-badge': {
-                  top: -4,
-                  right: -4,
-                },
-              }}
-            >
-              <SpeedDialIcon />
-            </Badge>
+            <Tooltip title={hasActiveTasks ? 'Tarea en proceso' : ''} placement="left" arrow>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  color: 'white',
+                  userSelect: 'none',
+                  ...(hasActiveTasks && {
+                    animation: `${pulse} 2s ease-in-out infinite`,
+                  }),
+                }}
+              >
+                IA
+              </Typography>
+            </Tooltip>
           }
-          onClose={(event, reason) => {
-            // Solo cerrar si es por el backdrop, no por blur/mouseLeave
-            if (reason === 'toggle' || reason === 'blur' || reason === 'mouseLeave') {
-              return;
-            }
-            handleClose();
-          }}
-          onOpen={handleOpen}
           open={open}
           FabProps={{
             onClick: () => {
@@ -113,6 +134,25 @@ export default function AISpeedDial() {
               '&:hover': {
                 bgcolor: 'primary.dark',
               },
+              ...(hasActiveTasks && {
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: -4,
+                  left: -4,
+                  right: -4,
+                  bottom: -4,
+                  borderRadius: '50%',
+                  padding: '3px',
+                  background:
+                    'conic-gradient(from 0deg, #10b981, #84cc16, #fbbf24, #f97316, #10b981)',
+                  animation: `${rotateGradient} 3s linear infinite`,
+                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                  WebkitMaskComposite: 'xor',
+                  maskComposite: 'exclude',
+                  zIndex: -1,
+                },
+              }),
             },
           }}
         >

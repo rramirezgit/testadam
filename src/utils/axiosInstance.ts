@@ -90,6 +90,7 @@ export const endpoints = {
     sendForReview: '/email/send',
     sendEmail: '/email/send',
     updateStatus: (id: string, status: string) => `/posts/status/${id}/${status}`,
+    publishOnWebsite: (id: string) => `/posts/status/${id}/publish-on-website`,
   },
   newsletter: {
     create: '/newsletters',

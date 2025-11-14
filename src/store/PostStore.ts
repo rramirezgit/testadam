@@ -76,6 +76,7 @@ interface PostState {
   create: (data: CreatePostData) => Promise<Post | null>;
   update: (id: string, data: UpdatePostData) => Promise<Post | null>;
   updateStatus: (id: string, status: PostStatus) => Promise<Post | null>;
+  publishOnWebsite: (id: string) => Promise<boolean>;
   delete: (id: string) => Promise<boolean>;
   sendEmail: (postId: string, emails: string[], htmlContent: string) => Promise<boolean>;
 
@@ -332,6 +333,27 @@ const usePostStore = create<PostState>()(
               error: errorMessage,
             });
             return null;
+          }
+        },
+
+        publishOnWebsite: async (id: string) => {
+          try {
+            set({ loading: true, error: null });
+            const axiosInstance = createAxiosInstance();
+
+            await axiosInstance.patch(endpoints.post.publishOnWebsite(id));
+
+            set({ loading: false });
+            return true;
+          } catch (error: any) {
+            console.error('Error al publicar en la web:', error);
+            const errorMessage =
+              error.response?.data?.message || 'Error al publicar la nota en la web';
+            set({
+              loading: false,
+              error: errorMessage,
+            });
+            return false;
           }
         },
 

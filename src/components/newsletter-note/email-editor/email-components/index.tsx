@@ -11,7 +11,7 @@ import CategoryComponent from './CategoryComponent';
 import ParagraphComponent from './ParagraphComponent';
 import ImageTextComponent from './ImageTextComponent';
 import BulletListComponent from './BulletListComponent';
-import TwoColumnsComponent from './TwoColumnsComponent';
+import MultiColumnsComponent from './MultiColumnsComponent';
 import TextWithIconComponent from './TextWithIconComponent';
 import HerramientasComponent from './HerramientasComponent';
 import RespaldadoPorComponent from './RespaldadoPorComponent';
@@ -58,7 +58,7 @@ const EmailComponentRenderer = (props: EmailComponentProps) => {
     case 'imageText':
       return <ImageTextComponent {...props} />;
     case 'twoColumns':
-      return <TwoColumnsComponent {...props} />;
+      return <MultiColumnsComponent {...props} />;
     case 'textWithIcon':
       return <TextWithIconComponent {...props} />;
     case 'tituloConIcono':

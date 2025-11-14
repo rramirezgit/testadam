@@ -301,8 +301,8 @@ export default function NewsletterView() {
     <DashboardContent>
       <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <CustomBreadcrumbs
-          heading="Newsletters"
-          subheading="Crea, personaliza y envía tus newsletters"
+          heading="Comunicados"
+          subheading="Crea, personaliza y envía tus comunicados"
           sx={{ mb: { xs: 3, md: 5 } }}
         />
         <Box
@@ -317,7 +317,7 @@ export default function NewsletterView() {
         >
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
             <TextField
-              placeholder="Buscar newsletters..."
+              placeholder="Buscar comunicados..."
               name="search-newsletter"
               variant="filled"
               onChange={(e) => handleSearch(e.target.value)}
@@ -380,7 +380,7 @@ export default function NewsletterView() {
               onClick={() => handleOpenNewsletterEditor()}
             >
               <Iconify icon="mingcute:add-line" style={{ marginRight: '8px', height: '45px' }} />
-              Crear Newsletter
+              Crear comunicado
             </Button>
           </Box>
         </Box>
@@ -435,7 +435,7 @@ export default function NewsletterView() {
                   startIcon={<Iconify icon="mingcute:add-line" />}
                   onClick={() => handleOpenNewsletterEditor()}
                 >
-                  Crear Newsletter
+                  Crear Comunicado
                 </Button>
               }
             />

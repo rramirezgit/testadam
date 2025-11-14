@@ -236,7 +236,7 @@ export default function AINoteModal({
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Box display="flex" alignItems="center" gap={1.5}>
             <Typography variant="h6" fontWeight={600}>
-              Crear Nota con IA
+              Crear Bloque Web con IA
             </Typography>
           </Box>
           <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
@@ -267,8 +267,8 @@ export default function AINoteModal({
           <CardContent sx={{ py: 1.5 }}>
             <Stack direction="row" spacing={1.5} alignItems="flex-start">
               <Typography variant="body2" color="primary.dark">
-                La IA generará contenido especializado sobre acuariofilia, vida marina y cuidado de
-                especies. Puedes editar el contenido después de la generación.
+                La IA generará contenido especializado sobre vida marina y el cuidado de especies.
+                Puedes editar el contenido después de la generación.
               </Typography>
             </Stack>
           </CardContent>
@@ -277,7 +277,7 @@ export default function AINoteModal({
         {/* Título (opcional) */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Título de la nota (opcional)
+            Título (opcional)
           </Typography>
           <Typography variant="body2" color="text.secondary" paragraph>
             Si no lo completas, la IA generará un título basado en el prompt
@@ -293,7 +293,7 @@ export default function AINoteModal({
         </Box>
 
         {/* Categoría */}
-        <Box sx={{ mb: 3 }}>
+        {/* <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" fontWeight={600} gutterBottom>
             Categoría (opcional)
           </Typography>
@@ -320,7 +320,7 @@ export default function AINoteModal({
               />
             )}
           </Stack>
-        </Box>
+        </Box> */}
 
         {/* Prompt */}
         <Box sx={{ mb: 2 }}>
@@ -460,7 +460,7 @@ export default function AINoteModal({
           disabled={formState.status === 'generating'}
           sx={{ minWidth: 140 }}
         >
-          {formState.status === 'generating' ? 'Iniciando...' : 'Generar Nota'}
+          {formState.status === 'generating' ? 'Iniciando...' : 'Generar Bloque Web'}
         </Button>
       </DialogActions>
     </Dialog>

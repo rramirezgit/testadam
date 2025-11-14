@@ -128,6 +128,18 @@ export interface RightPanelProps {
   // Prop para modo view-only
   isViewOnly?: boolean;
   noteConfigurationViewRef?: React.Ref<NoteConfigurationViewHandle>;
+  
+  // NUEVAS PROPS para actualizar componentes dentro de newsletters
+  updateNewsletterNoteComponentProps?: (
+    noteId: string,
+    componentId: string,
+    props: Record<string, any>
+  ) => void;
+  updateNewsletterNoteComponentStyle?: (
+    noteId: string,
+    componentId: string,
+    style: React.CSSProperties
+  ) => void;
 }
 
 export interface TextOptionsProps

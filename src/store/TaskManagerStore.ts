@@ -41,6 +41,7 @@ interface TaskManagerState {
   startPolling: (taskId: string) => void;
   stopPolling: (taskId: string) => void;
   stopAllPolling: () => void;
+  stopNewsletterOnTaskFailure: (taskId: string, errorMessage: string) => void;
   recoverTasksFromStorage: () => void;
   clearCompletedTasks: () => void;
 
@@ -272,6 +273,12 @@ const useTaskManagerStore = create<TaskManagerState>()(
                 error: errorMsg,
               });
 
+              // SI ES PARTE DE UN NEWSLETTER, DETENER TODO
+              const task = get().getTaskById(taskId);
+              if (task?.newsletterId) {
+                get().stopNewsletterOnTaskFailure(taskId, errorMsg);
+              }
+
               // Detener polling
               stopPolling(taskId);
             }
@@ -289,6 +296,12 @@ const useTaskManagerStore = create<TaskManagerState>()(
                 status: 'ERROR',
                 error: errorMsg,
               });
+
+              // SI ES PARTE DE UN NEWSLETTER, DETENER TODO
+              const task = get().getTaskById(taskId);
+              if (task?.newsletterId) {
+                get().stopNewsletterOnTaskFailure(taskId, errorMsg);
+              }
 
               // Detener polling
               stopPolling(taskId);
@@ -346,6 +359,35 @@ const useTaskManagerStore = create<TaskManagerState>()(
         });
 
         set({ pollingIntervals: new Map() });
+      },
+
+      stopNewsletterOnTaskFailure: (taskId, errorMessage) => {
+        const { tasks, stopPolling, updateTask } = get();
+        const failedTask = tasks.find((t) => t.taskId === taskId);
+
+        // Si no es una tarea de newsletter, no hacer nada
+        if (!failedTask?.newsletterId) {
+          return;
+        }
+
+        console.log('🚨 Deteniendo newsletter por fallo en tarea:', taskId);
+
+        // Obtener todas las tareas del mismo newsletter
+        const newsletterTasks = tasks.filter((t) => t.newsletterId === failedTask.newsletterId);
+
+        // Detener y marcar como fallidas todas las tareas activas del newsletter (excepto la que ya falló)
+        newsletterTasks.forEach((task) => {
+          if (task.status !== 'COMPLETED' && task.taskId !== taskId) {
+            stopPolling(task.taskId);
+            updateTask(task.taskId, {
+              status: 'FAILED',
+              error: `Newsletter detenido porque la nota "${failedTask.title || 'sin título'}" falló: ${errorMessage}`,
+            });
+            console.log(`❌ Tarea ${task.taskId} marcada como FAILED por fallo en newsletter`);
+          }
+        });
+
+        console.log(`🛑 Newsletter ${failedTask.newsletterId} completamente detenido`);
       },
 
       recoverTasksFromStorage: () => {

@@ -26,7 +26,6 @@ import { generateCategoryHtml } from './components/category.generator';
 import { generateParagraphHtml } from './components/paragraph.generator';
 import { generateImageTextHtml } from './components/image-text.generator';
 import { generateBulletListHtml } from './components/bulletlist.generator';
-import { generateTwoColumnsHtml } from './components/two-columns.generator';
 import { generateHerramientasHtml } from './components/herramientas.generator';
 import { generateTextWithIconHtml } from './components/text-with-icon.generator';
 import { generateRespaldadoPorHtml } from './components/respaldado-por.generator';
@@ -34,6 +33,10 @@ import { generateTituloConIconoHtml } from './components/titulo-con-icono.genera
 // ===== GENERADORES ESTRUCTURALES =====
 import { generateNewsletterHeaderHtml } from './components/newsletter-header.generator';
 import { generateNewsletterFooterHtml } from './components/newsletter-footer.generator';
+import {
+  generateTwoColumnsHtml,
+  generateMultiColumnsHtml,
+} from './components/multi-columns.generator';
 import {
   setRenderComponentToHtml,
   generateNoteContainerHtml,
@@ -106,7 +109,7 @@ export function renderComponentToHtml(component: EmailComponent): string {
       return generateTextWithIconHtml(component);
 
     case 'twoColumns':
-      return generateTwoColumnsHtml(component);
+      return generateMultiColumnsHtml(component);
 
     // ===== COMPONENTES ESTRUCTURALES =====
     case 'newsletterHeaderReusable':
@@ -153,6 +156,7 @@ export {
   generateTwoColumnsHtml,
   generateHerramientasHtml,
   generateTextWithIconHtml,
+  generateMultiColumnsHtml,
   generateRespaldadoPorHtml,
   generateNoteContainerHtml,
   generateTituloConIconoHtml,

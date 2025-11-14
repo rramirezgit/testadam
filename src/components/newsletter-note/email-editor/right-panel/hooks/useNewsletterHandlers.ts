@@ -2,6 +2,8 @@ import type { PostStatus } from 'src/types/post';
 
 import usePostStore from 'src/store/PostStore';
 
+import { POST_STATUS } from 'src/types/post';
+
 import { isBase64Image } from '../../utils/imageValidation';
 
 import type { NewsletterHeader } from '../../types';
@@ -15,6 +17,8 @@ interface UseNewsletterHandlersProps {
   noteStatus: string;
   showNotification: (message: string, severity: 'success' | 'error' | 'info' | 'warning') => void;
   setOpenDeleteDialog: (open: boolean) => void;
+  onWebPublishError?: (errorMessage: string) => void;
+  onWebPublishSuccess?: () => void;
 }
 
 export function useNewsletterHandlers({
@@ -26,8 +30,10 @@ export function useNewsletterHandlers({
   noteStatus,
   showNotification,
   setOpenDeleteDialog,
+  onWebPublishError,
+  onWebPublishSuccess,
 }: UseNewsletterHandlersProps) {
-  const { delete: deletePost } = usePostStore();
+  const { delete: deletePost, publishOnWebsite } = usePostStore();
 
   // Función para manejar selección de archivo de logo
   const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,11 +116,29 @@ export function useNewsletterHandlers({
     }
 
     try {
+      // Primero actualizar el status
       await updateStatus(newStatus as PostStatus);
-      // No necesitamos llamar setNoteStatus aquí porque updateStatus ya lo hace internamente
+      showNotification('Estado actualizado correctamente', 'success');
+
+      // Si el nuevo estado es PUBLISHED, intentar publicar en la web
+      if (newStatus === POST_STATUS.PUBLISHED) {
+        const publishSuccess = await publishOnWebsite(currentNoteId);
+
+        if (publishSuccess) {
+          showNotification('Nota publicada en la web exitosamente', 'success');
+          if (onWebPublishSuccess) {
+            onWebPublishSuccess();
+          }
+        } else {
+          // Error al publicar en la web
+          if (onWebPublishError) {
+            onWebPublishError('No se pudo publicar la nota en la web');
+          }
+        }
+      }
     } catch (error) {
       console.error('Error al actualizar el status:', error);
-      // Mantener el status actual en caso de error
+      showNotification('Error al actualizar el estado', 'error');
     }
   };
 

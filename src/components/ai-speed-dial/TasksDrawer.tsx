@@ -16,10 +16,13 @@ import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import Collapse from '@mui/material/Collapse';
+import Accordion from '@mui/material/Accordion';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CardContent from '@mui/material/CardContent';
 import LinearProgress from '@mui/material/LinearProgress';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
 
 import { paths } from 'src/routes/paths';
 
@@ -93,6 +96,11 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
   // Estado para controlar qué newsletters están expandidas
   const [expandedNewsletters, setExpandedNewsletters] = useState<Set<string>>(new Set());
 
+  // Estado para controlar acordeones expandidos (solo Comunicados expandido por defecto)
+  const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(
+    new Set(['comunicados-progress', 'comunicados-completed', 'comunicados-error'])
+  );
+
   // Estado para el tab activo
   const [activeTab, setActiveTab] = useState(0);
 
@@ -125,17 +133,24 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
   const errorTasks = individualTasks.filter((t) => t.status === 'ERROR' || t.status === 'FAILED');
 
   // Filtrar newsletters por estado
-  const activeNewsletters = Array.from(newsletterTasksMap.entries()).filter(
-    ([id]) => !areAllNewsletterTasksCompleted(id)
-  );
+  const activeNewsletters = Array.from(newsletterTasksMap.entries()).filter(([id, tasksList]) => {
+    const hasError = tasksList.some((t) => t.status === 'ERROR' || t.status === 'FAILED');
+    const allCompleted = areAllNewsletterTasksCompleted(id);
+    return !allCompleted && !hasError;
+  });
   const completedNewsletters = Array.from(newsletterTasksMap.entries()).filter(([id]) =>
     areAllNewsletterTasksCompleted(id)
   );
+  const errorNewsletters = Array.from(newsletterTasksMap.entries()).filter(([id, tasksList]) => {
+    const hasError = tasksList.some((t) => t.status === 'ERROR' || t.status === 'FAILED');
+    const allCompleted = areAllNewsletterTasksCompleted(id);
+    return hasError && !allCompleted;
+  });
 
   const totalTasks = tasks.length;
   const totalActive = activeTasks.length + activeNewsletters.length;
   const totalCompleted = completedTasks.length + completedNewsletters.length;
-  const totalErrors = errorTasks.length;
+  const totalErrors = errorTasks.length + errorNewsletters.length;
 
   const handleRemoveTask = (taskId: string) => {
     removeTask(taskId);
@@ -189,6 +204,19 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
       return newSet;
     });
   };
+
+  const handleAccordionChange =
+    (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
+      setExpandedAccordions((prev) => {
+        const newSet = new Set(prev);
+        if (isExpanded) {
+          newSet.add(panel);
+        } else {
+          newSet.delete(panel);
+        }
+        return newSet;
+      });
+    };
 
   // Componente helper para renderizar Newsletter Card
   const renderNewsletterCard = (newsletterId: string, newsletterTasks: typeof tasks) => {
@@ -662,6 +690,132 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
     );
   };
 
+  // Componente helper para renderizar Newsletter con Error
+  const renderErrorNewsletterCard = (newsletterId: string, newsletterTasks: typeof tasks) => {
+    const progress = getNewsletterProgress(newsletterId);
+    const isExpanded = expandedNewsletters.has(newsletterId);
+    const erroredTasks = newsletterTasks.filter(
+      (t) => t.status === 'ERROR' || t.status === 'FAILED'
+    );
+
+    return (
+      <Card
+        key={newsletterId}
+        variant="outlined"
+        sx={{
+          borderColor: 'error.main',
+          borderWidth: 1.5,
+          borderRadius: 1.5,
+        }}
+      >
+        <CardContent>
+          <Stack spacing={2}>
+            {/* Header del newsletter */}
+            <Stack direction="row" alignItems="flex-start" spacing={1.5}>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 1,
+                  bgcolor: 'error.lighter',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Icon icon="solar:document-text-bold" width={24} color="error.main" />
+              </Box>
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Newsletter (Con Errores)
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {erroredTasks.length}{' '}
+                  {erroredTasks.length === 1 ? 'nota falló' : 'notas fallaron'} de {progress.total}
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={0.5}>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleNewsletterExpansion(newsletterId);
+                  }}
+                  sx={{ flexShrink: 0 }}
+                >
+                  <Icon
+                    icon={isExpanded ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'}
+                    width={20}
+                  />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveNewsletter(newsletterId);
+                  }}
+                  sx={{ flexShrink: 0 }}
+                >
+                  <Icon icon="solar:trash-bin-minimalistic-linear" width={20} />
+                </IconButton>
+              </Stack>
+            </Stack>
+
+            <Chip label="Error en Newsletter" color="error" size="small" />
+
+            {/* Lista de notas (colapsable) */}
+            <Collapse in={isExpanded}>
+              <Stack spacing={1} sx={{ mt: 1 }}>
+                {newsletterTasks
+                  .sort((a, b) => (a.noteIndexInNewsletter || 0) - (b.noteIndexInNewsletter || 0))
+                  .map((task) => {
+                    const statusConfig = STATUS_CONFIG[task.status] || STATUS_CONFIG.PENDING;
+                    const hasError = task.status === 'ERROR' || task.status === 'FAILED';
+
+                    return (
+                      <Card
+                        key={task.taskId}
+                        variant="outlined"
+                        sx={{
+                          borderColor: hasError ? 'error.main' : 'success.light',
+                          bgcolor: hasError ? 'error.lighter' : 'background.paper',
+                        }}
+                      >
+                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                          <Stack spacing={1}>
+                            <Stack
+                              direction="row"
+                              justifyContent="space-between"
+                              alignItems="center"
+                            >
+                              <Typography variant="caption" fontWeight={600}>
+                                {task.title || `Nota ${(task.noteIndexInNewsletter || 0) + 1}`}
+                              </Typography>
+                              <Chip
+                                label={statusConfig.label}
+                                size="small"
+                                color={statusConfig.color}
+                              />
+                            </Stack>
+                            {hasError && task.error && (
+                              <Typography variant="caption" color="error.main">
+                                {task.error}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+              </Stack>
+            </Collapse>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Drawer
       anchor="right"
@@ -777,31 +931,71 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
                     </Typography>
                   </Box>
                 ) : (
-                  <Stack spacing={3}>
-                    {/* Newsletters en progreso */}
+                  <Stack spacing={2}>
+                    {/* Acordeón de Comunicados */}
                     {activeNewsletters.length > 0 && (
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2, px: 1 }}>
-                          Newsletters ({activeNewsletters.length})
-                        </Typography>
-                        <Stack spacing={2}>
-                          {activeNewsletters.map(([newsletterId, newsletterTasks]) =>
-                            renderNewsletterCard(newsletterId, newsletterTasks)
-                          )}
-                        </Stack>
-                      </Box>
+                      <Accordion
+                        expanded={expandedAccordions.has('comunicados-progress')}
+                        onChange={handleAccordionChange('comunicados-progress')}
+                        sx={{
+                          boxShadow: 'none',
+                          '&:before': { display: 'none' },
+                          '& .MuiAccordionSummary-root': {
+                            px: 2,
+                            minHeight: 48,
+                          },
+                          '& .MuiAccordionDetails-root': {
+                            px: 2,
+                            pt: 0,
+                            pb: 2,
+                          },
+                        }}
+                      >
+                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Comunicados ({activeNewsletters.length})
+                          </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Stack spacing={2}>
+                            {activeNewsletters.map(([newsletterId, newsletterTasks]) =>
+                              renderNewsletterCard(newsletterId, newsletterTasks)
+                            )}
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
                     )}
 
-                    {/* Notas individuales en progreso */}
+                    {/* Acordeón de Bloques Web */}
                     {activeTasks.length > 0 && (
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2, px: 1 }}>
-                          Notas ({activeTasks.length})
-                        </Typography>
-                        <Stack spacing={2}>
-                          {activeTasks.map((task) => renderActiveTaskCard(task))}
-                        </Stack>
-                      </Box>
+                      <Accordion
+                        expanded={expandedAccordions.has('bloques-progress')}
+                        onChange={handleAccordionChange('bloques-progress')}
+                        sx={{
+                          boxShadow: 'none',
+                          '&:before': { display: 'none' },
+                          '& .MuiAccordionSummary-root': {
+                            px: 2,
+                            minHeight: 48,
+                          },
+                          '& .MuiAccordionDetails-root': {
+                            px: 2,
+                            pt: 0,
+                            pb: 2,
+                          },
+                        }}
+                      >
+                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Bloques Web ({activeTasks.length})
+                          </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Stack spacing={2}>
+                            {activeTasks.map((task) => renderActiveTaskCard(task))}
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
                     )}
                   </Stack>
                 )}
@@ -823,31 +1017,71 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
                     </Typography>
                   </Box>
                 ) : (
-                  <Stack spacing={3}>
-                    {/* Newsletters completados */}
+                  <Stack spacing={2}>
+                    {/* Acordeón de Comunicados */}
                     {completedNewsletters.length > 0 && (
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2, px: 1 }}>
-                          Newsletters ({completedNewsletters.length})
-                        </Typography>
-                        <Stack spacing={2}>
-                          {completedNewsletters.map(([newsletterId, newsletterTasks]) =>
-                            renderNewsletterCard(newsletterId, newsletterTasks)
-                          )}
-                        </Stack>
-                      </Box>
+                      <Accordion
+                        expanded={expandedAccordions.has('comunicados-completed')}
+                        onChange={handleAccordionChange('comunicados-completed')}
+                        sx={{
+                          boxShadow: 'none',
+                          '&:before': { display: 'none' },
+                          '& .MuiAccordionSummary-root': {
+                            px: 2,
+                            minHeight: 48,
+                          },
+                          '& .MuiAccordionDetails-root': {
+                            px: 2,
+                            pt: 0,
+                            pb: 2,
+                          },
+                        }}
+                      >
+                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Comunicados ({completedNewsletters.length})
+                          </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Stack spacing={2}>
+                            {completedNewsletters.map(([newsletterId, newsletterTasks]) =>
+                              renderNewsletterCard(newsletterId, newsletterTasks)
+                            )}
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
                     )}
 
-                    {/* Notas individuales completadas */}
+                    {/* Acordeón de Bloques Web */}
                     {completedTasks.length > 0 && (
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 2, px: 1 }}>
-                          Notas ({completedTasks.length})
-                        </Typography>
-                        <Stack spacing={2}>
-                          {completedTasks.map((task) => renderCompletedTaskCard(task))}
-                        </Stack>
-                      </Box>
+                      <Accordion
+                        expanded={expandedAccordions.has('bloques-completed')}
+                        onChange={handleAccordionChange('bloques-completed')}
+                        sx={{
+                          boxShadow: 'none',
+                          '&:before': { display: 'none' },
+                          '& .MuiAccordionSummary-root': {
+                            px: 2,
+                            minHeight: 48,
+                          },
+                          '& .MuiAccordionDetails-root': {
+                            px: 2,
+                            pt: 0,
+                            pb: 2,
+                          },
+                        }}
+                      >
+                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Bloques Web ({completedTasks.length})
+                          </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Stack spacing={2}>
+                            {completedTasks.map((task) => renderCompletedTaskCard(task))}
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
                     )}
                   </Stack>
                 )}
@@ -873,10 +1107,71 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
                   </Box>
                 ) : (
                   <Stack spacing={2}>
-                    <Typography variant="subtitle2" fontWeight={600} sx={{ px: 1 }}>
-                      Notas con Error ({totalErrors})
-                    </Typography>
-                    {errorTasks.map((task) => renderErrorTaskCard(task))}
+                    {/* Acordeón de Comunicados */}
+                    {errorNewsletters.length > 0 && (
+                      <Accordion
+                        expanded={expandedAccordions.has('comunicados-error')}
+                        onChange={handleAccordionChange('comunicados-error')}
+                        sx={{
+                          boxShadow: 'none',
+                          '&:before': { display: 'none' },
+                          '& .MuiAccordionSummary-root': {
+                            px: 2,
+                            minHeight: 48,
+                          },
+                          '& .MuiAccordionDetails-root': {
+                            px: 2,
+                            pt: 0,
+                            pb: 2,
+                          },
+                        }}
+                      >
+                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Comunicados ({errorNewsletters.length})
+                          </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Stack spacing={2}>
+                            {errorNewsletters.map(([newsletterId, newsletterTasks]) =>
+                              renderErrorNewsletterCard(newsletterId, newsletterTasks)
+                            )}
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
+                    )}
+
+                    {/* Acordeón de Bloques Web */}
+                    {errorTasks.length > 0 && (
+                      <Accordion
+                        expanded={expandedAccordions.has('bloques-error')}
+                        onChange={handleAccordionChange('bloques-error')}
+                        sx={{
+                          boxShadow: 'none',
+                          '&:before': { display: 'none' },
+                          '& .MuiAccordionSummary-root': {
+                            px: 2,
+                            minHeight: 48,
+                          },
+                          '& .MuiAccordionDetails-root': {
+                            px: 2,
+                            pt: 0,
+                            pb: 2,
+                          },
+                        }}
+                      >
+                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            Bloques Web ({errorTasks.length})
+                          </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                          <Stack spacing={2}>
+                            {errorTasks.map((task) => renderErrorTaskCard(task))}
+                          </Stack>
+                        </AccordionDetails>
+                      </Accordion>
+                    )}
                   </Stack>
                 )}
               </>

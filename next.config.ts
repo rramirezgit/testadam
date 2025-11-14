@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
   env: {
     BUILD_STATIC_EXPORT: JSON.stringify(isStaticExport),
   },
+  images: {
+    domains: ['s3.amazonaws.com', 's3.condoor.ai'],
+    formats: ['image/avif', 'image/webp'], // Formatos modernos optimizados
+  },
   // Without --turbopack (next dev)
   webpack(config) {
     config.module.rules.push({

@@ -14,7 +14,7 @@ export interface EmailComponentProps {
   removeComponent: (id: string) => void;
   totalComponents: number;
   renderCustomContent?: (component: EmailComponent) => React.ReactNode;
-  onColumnSelect?: (componentId: string, column: 'left' | 'right') => void;
+  onColumnSelect?: (componentId: string, column: string) => void;
   removeNoteContainer?: (containerId: string) => void;
   getActiveComponents?: () => any[];
   onComponentSelect?: (componentId: string) => void; // Nueva prop para selección de componentes

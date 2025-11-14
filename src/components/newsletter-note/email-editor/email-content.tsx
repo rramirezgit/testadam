@@ -496,7 +496,7 @@ const EmailContent = memo(
       } else {
         return {
           backgroundColor: emailBackground,
-          padding: '24px',
+          padding: isNewsletterMode ? '0px' : '24px',
           borderRadius: '12px',
         };
       }
@@ -674,7 +674,7 @@ const EmailContent = memo(
               getActiveComponents={getActiveComponents}
               onComponentSelect={onComponentSelect}
               selectedComponentId={selectedComponentId}
-          renderCustomContent={component.type === 'bulletList' ? renderBulletList : undefined}
+              renderCustomContent={component.type === 'bulletList' ? renderBulletList : undefined}
               // Props adicionales para noteContainer
               {...(component.type === 'noteContainer' && {
                 removeNoteContainer,

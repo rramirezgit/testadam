@@ -33,7 +33,7 @@ import GalleryOptions from '../GalleryOptions';
 import SummaryOptions from '../SummaryOptions';
 import CategoryOptions from '../CategoryOptions';
 import ImageTextOptions from '../ImageTextOptions';
-import TwoColumnsOptions from '../TwoColumnsOptions';
+import MultiColumnsOptions from '../MultiColumnsOptions';
 import HerramientasOptions from '../HerramientasOptions';
 import TextWithIconOptions from '../TextWithIconOptions';
 import NoteContainerOptions from '../NoteContainerOptions';
@@ -140,6 +140,19 @@ interface ComponentOptionsViewProps {
   openDeleteDialog: boolean;
   setOpenDeleteDialog: (open: boolean) => void;
   handleDeleteNote: () => Promise<void>;
+  
+  // NUEVAS PROPS para newsletter
+  isNewsletterMode?: boolean;
+  updateNewsletterNoteComponentProps?: (
+    noteId: string,
+    componentId: string,
+    props: Record<string, any>
+  ) => void;
+  updateNewsletterNoteComponentStyle?: (
+    noteId: string,
+    componentId: string,
+    style: React.CSSProperties
+  ) => void;
 }
 
 export default function ComponentOptionsView({
@@ -221,6 +234,9 @@ export default function ComponentOptionsView({
   openDeleteDialog,
   setOpenDeleteDialog,
   handleDeleteNote,
+  isNewsletterMode = false,
+  updateNewsletterNoteComponentProps,
+  updateNewsletterNoteComponentStyle,
 }: ComponentOptionsViewProps) {
   // Estados para el modal de IA
   const [showAIModal, setShowAIModal] = useState(false);
@@ -461,7 +477,7 @@ export default function ComponentOptionsView({
                 )}
 
                 {componentType === 'twoColumns' && (
-                  <TwoColumnsOptions
+                  <MultiColumnsOptions
                     component={selectedComponent}
                     updateComponentProps={updateComponentProps}
                     selectedColumn={selectedColumn}
@@ -633,6 +649,9 @@ export default function ComponentOptionsView({
                     getActiveComponents={getActiveComponents}
                     updateComponentProps={updateComponentProps}
                     updateComponentStyle={updateComponentStyle}
+                    isNewsletterMode={isNewsletterMode}
+                    updateNewsletterNoteComponentProps={updateNewsletterNoteComponentProps}
+                    updateNewsletterNoteComponentStyle={updateNewsletterNoteComponentStyle}
                   />
                 )}
 

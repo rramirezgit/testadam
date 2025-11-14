@@ -97,7 +97,7 @@ export function generateNewsletterTemplate(
       color: ${header.textColor};
       text-align: ${header.alignment};
       padding: 40px 30px;
-      border-radius: 0px 0px 4px 4px;
+      border-radius: 8px;
       margin-bottom: 24px;
     }
     
@@ -121,7 +121,7 @@ export function generateNewsletterTemplate(
     
     /* Content */
     .email-content {
-      padding: 0 30px;
+      padding: 0px;
     }
     
     .newsletter-description {
@@ -157,7 +157,7 @@ export function generateNewsletterTemplate(
       text-align: center;
       padding: 40px 30px;
       margin-top: 50px;
-      border-top: 1px solid #e5e7eb;
+      border-radius: 8px;
     }
     
     .footer-company {
@@ -209,7 +209,7 @@ export function generateNewsletterTemplate(
     @media screen and (max-width: 600px) {
       .email-container { width: 100% !important; }
       .email-header { padding: 30px 20px !important; }
-      .email-content { padding: 0 20px !important; }
+      // .email-content { padding: 0px !important; }
       .email-footer { padding: 30px 20px !important; }
       .newsletter-description { padding: 20px 0 !important; }
       .header-title { font-size: 28px !important; }

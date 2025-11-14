@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@iconify/react';
-import { useRef, useState, forwardRef, useCallback, useImperativeHandle } from 'react';
+import { useRef, useState, useEffect, forwardRef, useCallback, useImperativeHandle } from 'react';
 
 import {
   Box,
@@ -101,6 +101,7 @@ interface NoteConfigurationViewProps {
   noteStatus: string;
   handleStatusChange: (status: string) => Promise<void>;
   checkStatusDisabled: (status: string) => boolean;
+  webPublishError?: string | null;
   contentTypeId: string;
   setContentTypeId: (id: string) => void;
   audienceId: string;
@@ -168,6 +169,7 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
       noteStatus,
       handleStatusChange,
       checkStatusDisabled,
+      webPublishError,
       contentTypeId,
       setContentTypeId,
       audienceId,
@@ -217,10 +219,22 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
     const [showApprovalConfirmation, setShowApprovalConfirmation] = useState(false);
     const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | null>(null);
 
+    // Estados para el modal de confirmación de cambio de estado
+    const [openStatusConfirmDialog, setOpenStatusConfirmDialog] = useState(false);
+    const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+    const [openWebPublishErrorDialog, setOpenWebPublishErrorDialog] = useState(false);
+
     // Estados para modales de imagen de portada
     const [showImageSourceModal, setShowImageSourceModal] = useState(false);
     const [showImageCropDialog, setShowImageCropDialog] = useState(false);
     const [imageCropDialogTab, setImageCropDialogTab] = useState<'edit' | 'ai'>('edit');
+
+    // Efecto para abrir modal de error cuando hay un error de publicación web
+    useEffect(() => {
+      if (webPublishError) {
+        setOpenWebPublishErrorDialog(true);
+      }
+    }, [webPublishError]);
 
     const focusElement = useCallback((element: HTMLElement | null | undefined) => {
       if (!element) {
@@ -304,6 +318,65 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
           `Error al ${pendingAction === 'approve' ? 'aprobar' : 'rechazar'} el newsletter`,
           'error'
         );
+      }
+    };
+
+    // Función para obtener el mensaje de confirmación según el estado
+    const getStatusConfirmationMessage = (status: string): string => {
+      switch (status) {
+        case POST_STATUS.DRAFT:
+          return '¿Confirmas cambiar a Borrador?';
+        case POST_STATUS.REVIEW:
+          return '¿Confirmas enviar a Revisión?';
+        case POST_STATUS.APPROVED:
+          return '¿Confirmas aprobar esta nota?';
+        case POST_STATUS.PUBLISHED:
+          return '¿Confirmas publicar esta nota?';
+        case POST_STATUS.REJECTED:
+          return '¿Confirmas rechazar esta nota?';
+        default:
+          return '¿Confirmas cambiar el estado?';
+      }
+    };
+
+    // Handler para solicitar cambio de estado (abre modal de confirmación)
+    const handleRequestStatusChange = (newStatus: string) => {
+      setPendingStatus(newStatus);
+      setOpenStatusConfirmDialog(true);
+    };
+
+    // Handler para confirmar cambio de estado
+    const handleConfirmStatusChange = async () => {
+      if (!pendingStatus) return;
+
+      setOpenStatusConfirmDialog(false);
+      await handleStatusChange(pendingStatus);
+      setPendingStatus(null);
+    };
+
+    // Handler para cancelar cambio de estado
+    const handleCancelStatusChange = () => {
+      setOpenStatusConfirmDialog(false);
+      setPendingStatus(null);
+    };
+
+    // Handler para reintentar publicación web
+    const handleRetryWebPublish = async () => {
+      if (!currentNoteId) return;
+
+      try {
+        const { publishOnWebsite } = usePostStore.getState();
+        const success = await publishOnWebsite(currentNoteId);
+
+        if (success) {
+          showNotification('Nota publicada en la web exitosamente', 'success');
+          setOpenWebPublishErrorDialog(false);
+        } else {
+          showNotification('Error al publicar en la web. Por favor, intenta de nuevo.', 'error');
+        }
+      } catch (error) {
+        console.error('Error al reintentar publicación web:', error);
+        showNotification('Error al publicar en la web. Por favor, intenta de nuevo.', 'error');
       }
     };
 
@@ -626,7 +699,7 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
                     variant="filled"
                     value={noteStatus}
                     label="Estado"
-                    onChange={(e) => handleStatusChange(e.target.value)}
+                    onChange={(e) => handleRequestStatusChange(e.target.value)}
                   >
                     <MenuItem
                       value={POST_STATUS.DRAFT}
@@ -1017,6 +1090,58 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
           userId={user?.id}
           plan={user?.plan?.name}
         />
+
+        {/* Modal de confirmación para cambio de estado */}
+        <Dialog
+          open={openStatusConfirmDialog}
+          onClose={handleCancelStatusChange}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Confirmar cambio de estado</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              {pendingStatus && getStatusConfirmationMessage(pendingStatus)}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelStatusChange} color="inherit">
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmStatusChange} variant="contained" color="primary">
+              Confirmar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Modal de error de publicación web */}
+        <Dialog
+          open={openWebPublishErrorDialog}
+          onClose={() => setOpenWebPublishErrorDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Error al publicar en la web</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ mb: 2 }}>
+              La nota ha sido marcada como publicada, pero no se pudo publicar en la web.
+            </DialogContentText>
+            <DialogContentText>¿Deseas reintentar?</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setOpenWebPublishErrorDialog(false);
+              }}
+              color="inherit"
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleRetryWebPublish} variant="contained" color="primary">
+              Reintentar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     );
   }
