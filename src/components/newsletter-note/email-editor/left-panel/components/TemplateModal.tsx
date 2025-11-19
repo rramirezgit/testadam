@@ -14,6 +14,8 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import { CONFIG } from 'src/global-config';
+
 import AINoteModal from '../../../ai-creation/AINoteModal';
 
 interface TemplateModalProps {
@@ -32,6 +34,9 @@ interface TemplateModalProps {
   isAICreation?: boolean; // Si está en modo creación con IA
   onInjectAIData?: (data: { objData: any[]; objDataWeb: any[] }) => void; // Callback para inyectar datos de IA
 }
+
+const isMichinPlatform = CONFIG.platform === 'MICHIN';
+const MICHIN_ALLOWED_TEMPLATES = new Set(['blank', 'news']);
 
 export default function TemplateModal({
   open,
@@ -52,6 +57,7 @@ export default function TemplateModal({
     if (template.id === 'storyboard') return false;
     if (excludeTemplates.includes(template.id)) return false;
     if (isAICreation && template.id !== 'news') return false;
+    if (isMichinPlatform && !MICHIN_ALLOWED_TEMPLATES.has(template.id)) return false;
     return true;
   });
 
