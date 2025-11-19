@@ -61,8 +61,7 @@ const ComponentToolbar = memo(
     );
 
     // Mostrar botón de IA solo para párrafos, headings y títulos con icono
-    const showAIButton =
-      componentType && ['paragraph', 'heading', 'tituloConIcono'].includes(componentType);
+    const showAIButton = componentType && ['paragraph', 'heading'].includes(componentType);
 
     return (
       <Box
@@ -164,7 +163,8 @@ const ComponentWithToolbar = memo(
     onAIClick,
     isAIGeneratedNote = false,
     onSaveClick,
-  }: ComponentWithToolbarProps) => {
+    mb,
+  }: ComponentWithToolbarProps & { mb?: string }) => {
     const showToolbar = isSelected && !isViewOnly;
     // noteContainer tiene su propio borde, no agregar borde adicional
 
@@ -179,7 +179,7 @@ const ComponentWithToolbar = memo(
         sx={{
           position: 'relative',
           zIndex: 1,
-          mb: 2,
+          mb: mb ? mb : 2,
           // No agregar borde para noteContainer ya que tiene su propio estilo
           border: isSelected && !isViewOnly ? '2px dashed #1976d2' : '2px dashed transparent',
           borderRadius: '8px',

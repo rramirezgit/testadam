@@ -16,13 +16,12 @@ import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import Collapse from '@mui/material/Collapse';
-import Accordion from '@mui/material/Accordion';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CardContent from '@mui/material/CardContent';
+import ToggleButton from '@mui/material/ToggleButton';
 import LinearProgress from '@mui/material/LinearProgress';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { paths } from 'src/routes/paths';
 
@@ -96,13 +95,11 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
   // Estado para controlar qué newsletters están expandidas
   const [expandedNewsletters, setExpandedNewsletters] = useState<Set<string>>(new Set());
 
-  // Estado para controlar acordeones expandidos (solo Comunicados expandido por defecto)
-  const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(
-    new Set(['comunicados-progress', 'comunicados-completed', 'comunicados-error'])
-  );
-
   // Estado para el tab activo
   const [activeTab, setActiveTab] = useState(0);
+
+  // Estado para el filtro de categorías (todos, comunicados, bloques)
+  const [activeFilter, setActiveFilter] = useState<'all' | 'newsletters' | 'blocks'>('all');
 
   // Suscribirse directamente a tasks para que se actualice en tiempo real
   const tasks = useTaskManagerStore((state) => state.tasks);
@@ -205,18 +202,14 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
     });
   };
 
-  const handleAccordionChange =
-    (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
-      setExpandedAccordions((prev) => {
-        const newSet = new Set(prev);
-        if (isExpanded) {
-          newSet.add(panel);
-        } else {
-          newSet.delete(panel);
-        }
-        return newSet;
-      });
-    };
+  const handleFilterChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newFilter: typeof activeFilter
+  ) => {
+    if (newFilter !== null) {
+      setActiveFilter(newFilter);
+    }
+  };
 
   // Componente helper para renderizar Newsletter Card
   const renderNewsletterCard = (newsletterId: string, newsletterTasks: typeof tasks) => {
@@ -895,7 +888,7 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
         </Tabs>
       </Box>
 
-      <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
         {totalTasks === 0 ? (
           <Box
             sx={{
@@ -931,73 +924,129 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
                     </Typography>
                   </Box>
                 ) : (
-                  <Stack spacing={2}>
-                    {/* Acordeón de Comunicados */}
-                    {activeNewsletters.length > 0 && (
-                      <Accordion
-                        expanded={expandedAccordions.has('comunicados-progress')}
-                        onChange={handleAccordionChange('comunicados-progress')}
+                  <>
+                    {/* Toggle de filtros - Siempre visible */}
+                    <Box sx={{ px: 2, pt: 2, pb: 1.5 }}>
+                      <ToggleButtonGroup
+                        value={activeFilter}
+                        exclusive
+                        onChange={handleFilterChange}
+                        fullWidth
+                        size="small"
                         sx={{
-                          boxShadow: 'none',
-                          '&:before': { display: 'none' },
-                          '& .MuiAccordionSummary-root': {
-                            px: 2,
-                            minHeight: 48,
-                          },
-                          '& .MuiAccordionDetails-root': {
-                            px: 2,
-                            pt: 0,
-                            pb: 2,
+                          '& .MuiToggleButton-root': {
+                            py: 1,
+                            textTransform: 'none',
+                            fontWeight: 500,
+                            fontSize: '0.8125rem',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '&.Mui-selected': {
+                              bgcolor: 'primary.main',
+                              color: 'primary.contrastText',
+                              '&:hover': {
+                                bgcolor: 'primary.dark',
+                              },
+                            },
                           },
                         }}
                       >
-                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            Comunicados ({activeNewsletters.length})
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Stack spacing={2}>
-                            {activeNewsletters.map(([newsletterId, newsletterTasks]) =>
-                              renderNewsletterCard(newsletterId, newsletterTasks)
-                            )}
+                        <ToggleButton value="all">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:list-bold-duotone" width={18} />
+                            <span>Todos</span>
+                            <Chip
+                              label={totalActive}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
                           </Stack>
-                        </AccordionDetails>
-                      </Accordion>
-                    )}
+                        </ToggleButton>
+                        <ToggleButton value="newsletters">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:document-text-bold-duotone" width={18} />
+                            <span>Comunicados</span>
+                            <Chip
+                              label={activeNewsletters.length}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
+                          </Stack>
+                        </ToggleButton>
+                        <ToggleButton value="blocks">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:widget-5-bold-duotone" width={18} />
+                            <span>Bloques</span>
+                            <Chip
+                              label={activeTasks.length}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
+                          </Stack>
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </Box>
 
-                    {/* Acordeón de Bloques Web */}
-                    {activeTasks.length > 0 && (
-                      <Accordion
-                        expanded={expandedAccordions.has('bloques-progress')}
-                        onChange={handleAccordionChange('bloques-progress')}
-                        sx={{
-                          boxShadow: 'none',
-                          '&:before': { display: 'none' },
-                          '& .MuiAccordionSummary-root': {
-                            px: 2,
-                            minHeight: 48,
-                          },
-                          '& .MuiAccordionDetails-root': {
-                            px: 2,
-                            pt: 0,
-                            pb: 2,
-                          },
-                        }}
-                      >
-                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            Bloques Web ({activeTasks.length})
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Stack spacing={2}>
-                            {activeTasks.map((task) => renderActiveTaskCard(task))}
-                          </Stack>
-                        </AccordionDetails>
-                      </Accordion>
-                    )}
-                  </Stack>
+                    <Box sx={{ px: 2, pb: 2 }}>
+                      <Stack spacing={2.5}>
+                        {/* Comunicados en progreso */}
+                        {(activeFilter === 'all' || activeFilter === 'newsletters') &&
+                          activeNewsletters.length > 0 && (
+                            <>
+                              {activeFilter === 'all' && (
+                                <Box sx={{ pt: 1.5 }}>
+                                  <Typography
+                                    variant="overline"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, letterSpacing: 1.2 }}
+                                  >
+                                    Comunicados en progreso
+                                  </Typography>
+                                </Box>
+                              )}
+                              <Stack spacing={2}>
+                                {activeNewsletters.map(([newsletterId, newsletterTasks]) =>
+                                  renderNewsletterCard(newsletterId, newsletterTasks)
+                                )}
+                              </Stack>
+                            </>
+                          )}
+
+                        {/* Bloques Web en progreso */}
+                        {(activeFilter === 'all' || activeFilter === 'blocks') &&
+                          activeTasks.length > 0 && (
+                            <>
+                              {activeFilter === 'all' && activeNewsletters.length > 0 && (
+                                <Box sx={{ pt: 1.5 }}>
+                                  <Typography
+                                    variant="overline"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, letterSpacing: 1.2 }}
+                                  >
+                                    Bloques Web en progreso
+                                  </Typography>
+                                </Box>
+                              )}
+                              <Stack spacing={2}>
+                                {activeTasks.map((task) => renderActiveTaskCard(task))}
+                              </Stack>
+                            </>
+                          )}
+                      </Stack>
+                    </Box>
+                  </>
                 )}
               </>
             )}
@@ -1017,73 +1066,129 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
                     </Typography>
                   </Box>
                 ) : (
-                  <Stack spacing={2}>
-                    {/* Acordeón de Comunicados */}
-                    {completedNewsletters.length > 0 && (
-                      <Accordion
-                        expanded={expandedAccordions.has('comunicados-completed')}
-                        onChange={handleAccordionChange('comunicados-completed')}
+                  <>
+                    {/* Toggle de filtros - Siempre visible */}
+                    <Box sx={{ px: 2, pt: 2, pb: 1.5 }}>
+                      <ToggleButtonGroup
+                        value={activeFilter}
+                        exclusive
+                        onChange={handleFilterChange}
+                        fullWidth
+                        size="small"
                         sx={{
-                          boxShadow: 'none',
-                          '&:before': { display: 'none' },
-                          '& .MuiAccordionSummary-root': {
-                            px: 2,
-                            minHeight: 48,
-                          },
-                          '& .MuiAccordionDetails-root': {
-                            px: 2,
-                            pt: 0,
-                            pb: 2,
+                          '& .MuiToggleButton-root': {
+                            py: 1,
+                            textTransform: 'none',
+                            fontWeight: 500,
+                            fontSize: '0.8125rem',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '&.Mui-selected': {
+                              bgcolor: 'success.main',
+                              color: 'success.contrastText',
+                              '&:hover': {
+                                bgcolor: 'success.dark',
+                              },
+                            },
                           },
                         }}
                       >
-                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            Comunicados ({completedNewsletters.length})
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Stack spacing={2}>
-                            {completedNewsletters.map(([newsletterId, newsletterTasks]) =>
-                              renderNewsletterCard(newsletterId, newsletterTasks)
-                            )}
+                        <ToggleButton value="all">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:list-bold-duotone" width={18} />
+                            <span>Todos</span>
+                            <Chip
+                              label={totalCompleted}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
                           </Stack>
-                        </AccordionDetails>
-                      </Accordion>
-                    )}
+                        </ToggleButton>
+                        <ToggleButton value="newsletters">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:document-text-bold-duotone" width={18} />
+                            <span>Comunicados</span>
+                            <Chip
+                              label={completedNewsletters.length}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
+                          </Stack>
+                        </ToggleButton>
+                        <ToggleButton value="blocks">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:widget-5-bold-duotone" width={18} />
+                            <span>Bloques</span>
+                            <Chip
+                              label={completedTasks.length}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
+                          </Stack>
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </Box>
 
-                    {/* Acordeón de Bloques Web */}
-                    {completedTasks.length > 0 && (
-                      <Accordion
-                        expanded={expandedAccordions.has('bloques-completed')}
-                        onChange={handleAccordionChange('bloques-completed')}
-                        sx={{
-                          boxShadow: 'none',
-                          '&:before': { display: 'none' },
-                          '& .MuiAccordionSummary-root': {
-                            px: 2,
-                            minHeight: 48,
-                          },
-                          '& .MuiAccordionDetails-root': {
-                            px: 2,
-                            pt: 0,
-                            pb: 2,
-                          },
-                        }}
-                      >
-                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            Bloques Web ({completedTasks.length})
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Stack spacing={2}>
-                            {completedTasks.map((task) => renderCompletedTaskCard(task))}
-                          </Stack>
-                        </AccordionDetails>
-                      </Accordion>
-                    )}
-                  </Stack>
+                    <Box sx={{ px: 2, pb: 2 }}>
+                      <Stack spacing={2.5}>
+                        {/* Comunicados completados */}
+                        {(activeFilter === 'all' || activeFilter === 'newsletters') &&
+                          completedNewsletters.length > 0 && (
+                            <>
+                              {activeFilter === 'all' && (
+                                <Box sx={{ pt: 1.5 }}>
+                                  <Typography
+                                    variant="overline"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, letterSpacing: 1.2 }}
+                                  >
+                                    Comunicados completados
+                                  </Typography>
+                                </Box>
+                              )}
+                              <Stack spacing={2}>
+                                {completedNewsletters.map(([newsletterId, newsletterTasks]) =>
+                                  renderNewsletterCard(newsletterId, newsletterTasks)
+                                )}
+                              </Stack>
+                            </>
+                          )}
+
+                        {/* Bloques Web completados */}
+                        {(activeFilter === 'all' || activeFilter === 'blocks') &&
+                          completedTasks.length > 0 && (
+                            <>
+                              {activeFilter === 'all' && completedNewsletters.length > 0 && (
+                                <Box sx={{ pt: 1.5 }}>
+                                  <Typography
+                                    variant="overline"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, letterSpacing: 1.2 }}
+                                  >
+                                    Bloques Web completados
+                                  </Typography>
+                                </Box>
+                              )}
+                              <Stack spacing={2}>
+                                {completedTasks.map((task) => renderCompletedTaskCard(task))}
+                              </Stack>
+                            </>
+                          )}
+                      </Stack>
+                    </Box>
+                  </>
                 )}
               </>
             )}
@@ -1106,73 +1211,129 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
                     </Typography>
                   </Box>
                 ) : (
-                  <Stack spacing={2}>
-                    {/* Acordeón de Comunicados */}
-                    {errorNewsletters.length > 0 && (
-                      <Accordion
-                        expanded={expandedAccordions.has('comunicados-error')}
-                        onChange={handleAccordionChange('comunicados-error')}
+                  <>
+                    {/* Toggle de filtros - Siempre visible */}
+                    <Box sx={{ px: 2, pt: 2, pb: 1.5 }}>
+                      <ToggleButtonGroup
+                        value={activeFilter}
+                        exclusive
+                        onChange={handleFilterChange}
+                        fullWidth
+                        size="small"
                         sx={{
-                          boxShadow: 'none',
-                          '&:before': { display: 'none' },
-                          '& .MuiAccordionSummary-root': {
-                            px: 2,
-                            minHeight: 48,
-                          },
-                          '& .MuiAccordionDetails-root': {
-                            px: 2,
-                            pt: 0,
-                            pb: 2,
+                          '& .MuiToggleButton-root': {
+                            py: 1,
+                            textTransform: 'none',
+                            fontWeight: 500,
+                            fontSize: '0.8125rem',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            '&.Mui-selected': {
+                              bgcolor: 'error.main',
+                              color: 'error.contrastText',
+                              '&:hover': {
+                                bgcolor: 'error.dark',
+                              },
+                            },
                           },
                         }}
                       >
-                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            Comunicados ({errorNewsletters.length})
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Stack spacing={2}>
-                            {errorNewsletters.map(([newsletterId, newsletterTasks]) =>
-                              renderErrorNewsletterCard(newsletterId, newsletterTasks)
-                            )}
+                        <ToggleButton value="all">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:list-bold-duotone" width={18} />
+                            <span>Todos</span>
+                            <Chip
+                              label={totalErrors}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
                           </Stack>
-                        </AccordionDetails>
-                      </Accordion>
-                    )}
+                        </ToggleButton>
+                        <ToggleButton value="newsletters">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:document-text-bold-duotone" width={18} />
+                            <span>Comunicados</span>
+                            <Chip
+                              label={errorNewsletters.length}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
+                          </Stack>
+                        </ToggleButton>
+                        <ToggleButton value="blocks">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Icon icon="solar:widget-5-bold-duotone" width={18} />
+                            <span>Bloques</span>
+                            <Chip
+                              label={errorTasks.length}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                minWidth: 20,
+                                '& .MuiChip-label': { px: 0.75, fontSize: '0.7rem' },
+                              }}
+                            />
+                          </Stack>
+                        </ToggleButton>
+                      </ToggleButtonGroup>
+                    </Box>
 
-                    {/* Acordeón de Bloques Web */}
-                    {errorTasks.length > 0 && (
-                      <Accordion
-                        expanded={expandedAccordions.has('bloques-error')}
-                        onChange={handleAccordionChange('bloques-error')}
-                        sx={{
-                          boxShadow: 'none',
-                          '&:before': { display: 'none' },
-                          '& .MuiAccordionSummary-root': {
-                            px: 2,
-                            minHeight: 48,
-                          },
-                          '& .MuiAccordionDetails-root': {
-                            px: 2,
-                            pt: 0,
-                            pb: 2,
-                          },
-                        }}
-                      >
-                        <AccordionSummary expandIcon={<Icon icon="solar:alt-arrow-down-linear" />}>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            Bloques Web ({errorTasks.length})
-                          </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Stack spacing={2}>
-                            {errorTasks.map((task) => renderErrorTaskCard(task))}
-                          </Stack>
-                        </AccordionDetails>
-                      </Accordion>
-                    )}
-                  </Stack>
+                    <Box sx={{ px: 2, pb: 2 }}>
+                      <Stack spacing={2.5}>
+                        {/* Comunicados con error */}
+                        {(activeFilter === 'all' || activeFilter === 'newsletters') &&
+                          errorNewsletters.length > 0 && (
+                            <>
+                              {activeFilter === 'all' && (
+                                <Box sx={{ pt: 1.5 }}>
+                                  <Typography
+                                    variant="overline"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, letterSpacing: 1.2 }}
+                                  >
+                                    Comunicados con error
+                                  </Typography>
+                                </Box>
+                              )}
+                              <Stack spacing={2}>
+                                {errorNewsletters.map(([newsletterId, newsletterTasks]) =>
+                                  renderErrorNewsletterCard(newsletterId, newsletterTasks)
+                                )}
+                              </Stack>
+                            </>
+                          )}
+
+                        {/* Bloques Web con error */}
+                        {(activeFilter === 'all' || activeFilter === 'blocks') &&
+                          errorTasks.length > 0 && (
+                            <>
+                              {activeFilter === 'all' && errorNewsletters.length > 0 && (
+                                <Box sx={{ pt: 1.5 }}>
+                                  <Typography
+                                    variant="overline"
+                                    color="text.secondary"
+                                    sx={{ fontWeight: 600, letterSpacing: 1.2 }}
+                                  >
+                                    Bloques Web con error
+                                  </Typography>
+                                </Box>
+                              )}
+                              <Stack spacing={2}>
+                                {errorTasks.map((task) => renderErrorTaskCard(task))}
+                              </Stack>
+                            </>
+                          )}
+                      </Stack>
+                    </Box>
+                  </>
                 )}
               </>
             )}

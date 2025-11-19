@@ -17,7 +17,7 @@ import {
 interface EmailListProps {
   component: EmailComponent;
   updateComponentContent: (id: string, content: string) => void;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: (id: string, props: Record<string, any>, options?: { content?: string }) => void;
 }
 
 export const EmailList: React.FC<EmailListProps> = ({

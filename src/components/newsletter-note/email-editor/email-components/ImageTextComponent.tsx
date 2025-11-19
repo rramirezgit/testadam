@@ -9,6 +9,7 @@ import { isBase64Image } from '../utils/imageValidation';
 import ComponentWithToolbar from './ComponentWithToolbar';
 import SimpleTipTapEditor from '../../simple-tiptap-editor';
 import { useImageUpload } from '../right-panel/useImageUpload';
+import { getVariantConfig } from '../constants/image-text-variants';
 import { DEFAULT_PLACEHOLDER_COLOR, shouldUsePlaceholderColor } from './utils';
 
 import type { EmailComponentProps } from './types';
@@ -22,6 +23,7 @@ interface ImageUploaderProps {
   backgroundColor: string;
   containerBackgroundColor: string;
   borderRadius: number;
+  width?: string;
   onImageClick: (e: React.MouseEvent) => void;
 }
 
@@ -34,6 +36,7 @@ const ImageUploader = memo(
     backgroundColor,
     containerBackgroundColor,
     borderRadius,
+    width,
     onImageClick,
   }: ImageUploaderProps) => (
     <div
@@ -49,6 +52,7 @@ const ImageUploader = memo(
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
+        width: width || '100%',
       }}
       onClick={onImageClick}
     >
@@ -233,21 +237,30 @@ const ImageTextComponent = memo(
     const imageFileInputRef = useRef<HTMLInputElement>(null);
     const { uploadImageToS3 } = useImageUpload();
 
-    // Props del componente
-    const imageUrl = component.props?.imageUrl || '';
+    // Obtener configuración de la variante seleccionada
+    const variant = component.props?.variant || 'default';
+    const variantConfig = getVariantConfig(variant);
+
+    // Props del componente (con fallback a valores de la variante)
+    const imageUrl = component.props?.imageUrl || variantConfig.defaultImageUrl || '';
     const imageAlt = component.props?.imageAlt || 'Imagen';
     const imageWidth = component.props?.imageWidth || 40; // Porcentaje de ancho de la imagen
-    const spacing = component.props?.spacing || 16;
-    const borderRadius = component.props?.borderRadius || 8;
-    const backgroundColor = component.props?.backgroundColor || '#ffffff';
-    const baseTextColor = component.props?.textColor || '#333333';
-    const baseTitleColor = component.props?.titleColor || '#000000';
+    const spacing = component.props?.spacing ?? variantConfig.spacing;
+    const borderRadius = component.props?.borderRadius ?? variantConfig.borderRadius;
+    const backgroundColor = component.props?.backgroundColor ?? variantConfig.backgroundColor;
+    const baseTextColor = component.props?.textColor ?? variantConfig.textColor;
+    const baseTitleColor = component.props?.titleColor ?? variantConfig.titleColor;
     const fontSize = component.props?.fontSize || 14;
     const titleSize = component.props?.titleSize || 20;
-    const padding = component.props?.padding || 16;
+    const padding = component.props?.padding ?? variantConfig.padding;
+
+    // Props específicos de variante
+    const borderColor = component.props?.borderColor ?? variantConfig.borderColor;
+    const borderWidth = component.props?.borderWidth ?? variantConfig.borderWidth;
 
     // Props de imagen (nuevas)
-    const imageHeight = component.props?.imageHeight || 'auto';
+    const imageHeight = component.props?.imageHeight ?? variantConfig.imageHeight ?? 'auto';
+    const imageFixedWidth = component.props?.imageFixedWidth ?? variantConfig.imageFixedWidth;
     const imageObjectFit = component.props?.imageObjectFit || 'contain';
     const imageBackgroundColor = component.props?.imageBackgroundColor || 'transparent';
     const imageContainerBackgroundColor = component.props?.imageContainerBackgroundColor || '';
@@ -426,8 +439,16 @@ const ImageTextComponent = memo(
     const imageElement = (
       <Box
         sx={{
-          width: isHorizontal ? { xs: '100%', sm: `${imageWidth}%` } : '100%',
+          width: imageFixedWidth || (isHorizontal ? { xs: '100%', sm: `${imageWidth}%` } : '100%'),
           flexShrink: 0,
+          ...(imageFixedWidth
+            ? {
+                maxWidth: imageFixedWidth,
+                display: 'flex',
+                justifyContent: 'center',
+                mx: isHorizontal ? 0 : 'auto',
+              }
+            : {}),
         }}
       >
         <ImageUploader
@@ -438,6 +459,7 @@ const ImageTextComponent = memo(
           backgroundColor={imageBackgroundColor}
           containerBackgroundColor={imageContainerBackgroundColor}
           borderRadius={borderRadius}
+          width={imageFixedWidth}
           onImageClick={handleImageClick}
         />
       </Box>
@@ -492,6 +514,7 @@ const ImageTextComponent = memo(
             borderRadius: `${borderRadius}px`,
             overflow: 'hidden',
             p: `${padding}px`,
+            border: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
             ...(component.style || {}),
           }}
         >

@@ -81,251 +81,135 @@ export function generateNewsletterTemplate(
   <style type="text/css">
     ${EMAIL_RESET_CSS}
     
-    /* Container */
-    .email-container {
-      max-width: 600px;
-      margin: 0 auto;
-      background-color: #ffffff;
-    }
-    
-    ${
-      header
-        ? `
-    /* Header */
-    .email-header {
-      ${headerBackgroundStyle}
-      color: ${header.textColor};
-      text-align: ${header.alignment};
-      padding: 40px 30px;
-      border-radius: 8px;
-      margin-bottom: 24px;
-    }
-    
-    .header-title {
-      font-size: 32px;
-      font-weight: 700;
-      margin: 0 0 8px 0;
-      line-height: 1.2;
-      letter-spacing: -0.5px;
-    }
-    
-    .header-subtitle {
-      font-size: 18px;
-      margin: 0;
-      opacity: 0.85;
-      font-weight: 400;
-    }
-    `
-        : ''
-    }
-    
-    /* Content */
-    .email-content {
-      padding: 0px;
-    }
-    
-    .newsletter-description {
-      padding: 30px 0;
-      text-align: center;
-      border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 40px;
-    }
-    
-    .newsletter-description p {
-      font-size: 18px;
-      color: #6b7280;
-      margin: 0;
-      line-height: 1.5;
-    }
-    
-    /* Notes */
-    .note-section {
-      margin-bottom: 24px;
-    }
-    
-    .note-section:last-child {
-      margin-bottom: 40px;
-    }
-    
-    /* Footer */
-    ${
-      footer
-        ? `
-    .email-footer {
-      ${footerBackgroundStyle}
-      color: ${footer.textColor};
-      text-align: center;
-      padding: 40px 30px;
-      margin-top: 50px;
-      border-radius: 8px;
-    }
-    
-    .footer-company {
-      font-weight: 600;
-      margin-bottom: 12px;
-      font-size: 16px;
-    }
-    
-    .footer-address {
-      margin: 8px 0;
-      opacity: 0.75;
-      font-size: 14px;
-    }
-    
-    .footer-links {
-      margin: 20px 0;
-    }
-    
-    .footer-links a {
-      color: ${footer.textColor} !important;
-      text-decoration: none;
-      margin: 0 12px;
-      font-size: 14px;
-    }
-    
-    .footer-links a:hover {
-      text-decoration: underline;
-    }
-    
-    .footer-unsubscribe {
-      margin-top: 25px;
-      font-size: 12px;
-      opacity: 0.6;
-    }
-    
-    .footer-unsubscribe a {
-      color: ${footer.textColor} !important;
-      text-decoration: none;
-    }
-    
-    .footer-unsubscribe a:hover {
-      text-decoration: underline;
-    }
-    `
-        : ''
-    }
-    
     /* Responsive */
     @media screen and (max-width: 600px) {
       .email-container { width: 100% !important; }
-      .email-header { padding: 30px 20px !important; }
-      // .email-content { padding: 0px !important; }
-      .email-footer { padding: 30px 20px !important; }
-      .newsletter-description { padding: 20px 0 !important; }
       .header-title { font-size: 28px !important; }
     }
   </style>
 </head>
-<body>
-  <table ${tableAttrs()} width="100%">
+<body style="margin: 0; padding: 0; background-color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;">
+  <!-- Wrapper principal centrado -->
+  <table ${tableAttrs()} width="100%" style="background-color: #ffffff;">
     <tr>
-      <td>
-        <div class="email-container">
-          ${
-            header
-              ? `
-          <!-- Header -->
-          <table ${tableAttrs()} width="100%" style="margin-bottom: 24px;">
-            <tr>
-              <td class="email-header">
-                ${header.logo ? `<img src="${header.logo}" alt="Logo" style="max-height: 60px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">` : ''}
-                ${
-                  header.sponsor && header.sponsor.enabled
-                    ? `<div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;">
-                  <span style="font-size: 16px; color: #333; margin-bottom: 4px;">${header.sponsor.label || 'Juntos con'}</span>
-                  <img src="${header.sponsor.image || ''}" alt="${header.sponsor.imageAlt || 'Sponsor'}" style="max-height: 48px; display: block;" />
-                </div>`
-                    : ''
-                }
-                ${header.title ? `<p class="header-title">${escapeHtml(header.title)}</p>` : ''}
-                ${header.subtitle ? `<p class="header-subtitle">${escapeHtml(header.subtitle)}</p>` : ''}
-                ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 20px; border-radius: 8px;">` : ''}
-              </td>
-            </tr>
-          </table>
-          `
-              : ''
-          }
-          
-          <!-- Content -->
-          <table ${tableAttrs()} width="100%">
-            <tr>
-              <td class="email-content">
-                ${notesHtmlContent}
-              </td>
-            </tr>
-          </table>
-          
-          ${
-            footer
-              ? `
-          <!-- Footer -->
-          <table ${tableAttrs()} width="100%">
-            <tr>
-              <td class="email-footer" style="text-align: left;">
-                ${footer.logo ? `<img src="${footer.logo}" alt="Logo" style="height: ${footer.logoHeight || 40.218}px; margin-bottom: 16px; display: block;">` : ''}
-                
-                <div style="margin-bottom: 16px;">
-                  ${
-                    footer.socialLinks
-                      ?.filter((link) => link.enabled)
-                      ?.map((link) => {
-                        const iconUrl = getSocialIconUrlForTemplate(link.platform.toLowerCase());
-                        return iconUrl
-                          ? `<a href="${link.url}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-right: 12px; text-decoration: none;">
-                              <img src="${iconUrl}" alt="${link.platform}" style="width: 24px; height: 24px; display: block;" />
-                            </a>`
-                          : '';
-                      })
-                      .join('') || ''
-                  }
-                </div>
-                
-                <div style="color: ${footer.textColor}; font-size: 14px; line-height: 1.5;">
-                  ${footer.footerText || ''}
-                </div>
-              </td>
-            </tr>
-          </table>
-          `
-              : ''
-          }
-          
-          ${
-            approvalButtons
-              ? `
-          <!-- Approval Buttons -->
-          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 40px;">
-            <tr>
-              <td style="padding: 0 30px;">
-                <div style="background-color: #f9fafb; padding: 32px; border-radius: 12px; text-align: center; border: 1px solid #e5e7eb;">
-                  <p style="font-size: 16px; color: #374151; margin: 0 0 24px 0; font-weight: 500;">
-                    ¿Deseas aprobar este newsletter?
-                  </p>
-                  <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
-                    <tr>
-                      <td style="padding: 0 8px;">
-                        <a href="${approvalButtons.baseUrl}/edit/newsletter/${approvalButtons.newsletterId}?action=approve" 
-                           style="display: inline-block; padding: 14px 32px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
-                          ✓ Aprobar
-                        </a>
-                      </td>
-                      <td style="padding: 0 8px;">
-                        <a href="${approvalButtons.baseUrl}/edit/newsletter/${approvalButtons.newsletterId}?action=reject" 
-                           style="display: inline-block; padding: 14px 32px; background-color: #ef4444; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
-                          ✕ Rechazar
-                        </a>
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-              </td>
-            </tr>
-          </table>
-          `
-              : ''
-          }
-        </div>
+      <td align="center" style="padding: 0;">
+        <!-- Contenedor de 600px -->
+        <table ${tableAttrs()} class="email-container" width="600" style="width: 600px; max-width: 600px; margin: 0 auto;">
+          <tr>
+            <td style="padding: 0;">
+              ${
+                header
+                  ? `
+              <!-- Header con estilos inline -->
+              <table ${tableAttrs()} width="100%" style="${headerBackgroundStyle} margin-bottom: 24px; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 40px 30px; text-align: ${header.alignment}; color: ${header.textColor};">
+                    ${header.logo ? `<img src="${header.logo}" alt="Logo" style="max-height: 60px; margin: 0 auto 20px auto; display: block; border: 0;">` : ''}
+                    ${
+                      header.sponsor && header.sponsor.enabled
+                        ? `<div style="text-align: center; margin-bottom: 10px;">
+                      <span style="font-size: 16px; color: #333; display: block; margin-bottom: 4px;">${header.sponsor.label || 'Juntos con'}</span>
+                      <img src="${header.sponsor.image || ''}" alt="${header.sponsor.imageAlt || 'Sponsor'}" style="max-height: 48px; display: inline-block; border: 0;" />
+                    </div>`
+                        : ''
+                    }
+                    ${header.title ? `<p style="font-size: 32px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.2; letter-spacing: -0.5px; color: ${header.textColor};">${escapeHtml(header.title)}</p>` : ''}
+                    ${header.subtitle ? `<p style="font-size: 18px; margin: 0; opacity: 0.85; font-weight: 400; color: ${header.textColor};">${escapeHtml(header.subtitle)}</p>` : ''}
+                    ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 20px; border-radius: 8px; display: block; border: 0;">` : ''}
+                  </td>
+                </tr>
+              </table>
+              `
+                  : ''
+              }
+              
+              <!-- Content -->
+              <table ${tableAttrs()} width="100%">
+                <tr>
+                  <td style="padding: 0;">
+                    ${notesHtmlContent}
+                  </td>
+                </tr>
+              </table>
+              
+              ${
+                footer
+                  ? `
+              <!-- Footer con estilos inline -->
+              <table ${tableAttrs()} width="100%" style="${footerBackgroundStyle} margin-top: 50px; border-radius: 8px;">
+                <tr>
+                  <td style="padding: 40px 30px; text-align: left; color: ${footer.textColor};">
+                    ${footer.logo ? `<img src="${footer.logo}" alt="Logo" style="height: ${footer.logoHeight || 40.218}px; margin-bottom: 16px; display: block; border: 0;">` : ''}
+                    
+                    <div style="margin-bottom: 16px;">
+                      ${
+                        footer.socialLinks
+                          ?.filter((link) => link.enabled)
+                          ?.map((link) => {
+                            const iconUrl = getSocialIconUrlForTemplate(
+                              link.platform.toLowerCase()
+                            );
+                            return iconUrl
+                              ? `<a href="${link.url}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-right: 12px; text-decoration: none;">
+                                  <img src="${iconUrl}" alt="${link.platform}" style="width: 24px; height: 24px; display: block; border: 0;" />
+                                </a>`
+                              : '';
+                          })
+                          .join('') || ''
+                      }
+                    </div>
+                    
+                    <div style="color: ${footer.textColor}; font-size: 14px; line-height: 1.5;">
+                      ${footer.footerText || ''}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              `
+                  : ''
+              }
+              
+              ${
+                approvalButtons
+                  ? `
+              <!-- Approval Buttons -->
+              <table ${tableAttrs()} width="100%" style="margin-top: 40px;">
+                <tr>
+                  <td style="padding: 0 30px;">
+                    <table ${tableAttrs()} width="100%" style="background-color: #f9fafb; border-radius: 12px; border: 1px solid #e5e7eb;">
+                      <tr>
+                        <td style="padding: 32px; text-align: center;">
+                          <p style="font-size: 16px; color: #374151; margin: 0 0 24px 0; font-weight: 500;">
+                            ¿Deseas aprobar este newsletter?
+                          </p>
+                          <table ${tableAttrs()} align="center">
+                            <tr>
+                              <td style="padding: 0 8px;">
+                                <a href="${approvalButtons.baseUrl}/edit/newsletter/${approvalButtons.newsletterId}?action=approve" 
+                                   style="display: inline-block; padding: 14px 32px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                                  ✓ Aprobar
+                                </a>
+                              </td>
+                              <td style="padding: 0 8px;">
+                                <a href="${approvalButtons.baseUrl}/edit/newsletter/${approvalButtons.newsletterId}?action=reject" 
+                                   style="display: inline-block; padding: 14px 32px; background-color: #ef4444; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                                  ✕ Rechazar
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              `
+                  : ''
+              }
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>

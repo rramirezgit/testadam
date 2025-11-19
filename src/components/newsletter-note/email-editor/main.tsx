@@ -500,29 +500,71 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     }
   }, [isNewsletterMode, activeVersion]);
 
-  // Cargar componentes iniciales cuando se abre un newsletter existente
+  // Ref para rastrear si ya cargamos los componentes iniciales (evitar sobrescribir cambios)
+  const initialComponentsLoadedRef = useRef(false);
+  const lastInitialComponentsRef = useRef<any>(null);
+
+  // Resetear el ref cuando cambia la nota actual (para permitir cargar la nueva nota)
   useEffect(() => {
-    if (initialComponents && isNewsletterMode) {
-      console.log('📦 Cargando componentes iniciales del newsletter:', {
+    console.log('🔄 [Initial Components] Nota cambió, reseteando ref:', noteData.currentNoteId);
+    initialComponentsLoadedRef.current = false;
+    lastInitialComponentsRef.current = null;
+  }, [noteData.currentNoteId]);
+
+  // Cargar componentes iniciales cuando se abre un newsletter existente (SOLO LA PRIMERA VEZ)
+  useEffect(() => {
+    // Solo cargar si:
+    // 1. Tenemos initialComponents
+    // 2. Estamos en modo newsletter
+    // 3. NO hemos cargado ya los componentes O los initialComponents cambiaron (nueva nota)
+    const initialComponentsChanged = initialComponents !== lastInitialComponentsRef.current;
+
+    console.log('🔍 [Initial Components] useEffect triggered:', {
+      hasInitialComponents: !!initialComponents,
+      isNewsletterMode,
+      alreadyLoaded: initialComponentsLoadedRef.current,
+      componentsChanged: initialComponentsChanged,
+      willLoad:
+        initialComponents &&
+        isNewsletterMode &&
+        (!initialComponentsLoadedRef.current || initialComponentsChanged),
+    });
+
+    if (
+      initialComponents &&
+      isNewsletterMode &&
+      (!initialComponentsLoadedRef.current || initialComponentsChanged)
+    ) {
+      console.log('📦 [Initial Components] CARGANDO componentes iniciales del newsletter:', {
         componentsCount: initialComponents.length,
         components: initialComponents,
         activeTemplate,
         activeVersion,
         componentTypes: initialComponents.map((c) => ({ id: c.id, type: c.type })),
+        isFirstLoad: !initialComponentsLoadedRef.current,
+        componentsChanged: initialComponentsChanged,
       });
 
       emailComponents.updateActiveComponents(activeTemplate, 'newsletter', initialComponents);
 
+      // Marcar como cargados
+      initialComponentsLoadedRef.current = true;
+      lastInitialComponentsRef.current = initialComponents;
+
       // Verificar que se cargaron correctamente
       setTimeout(() => {
         const loadedComponents = emailComponents.getActiveComponents(activeTemplate, 'newsletter');
-        console.log('✅ Componentes cargados verificación:', {
+        console.log('✅ [Initial Components] Componentes cargados verificación:', {
           loadedCount: loadedComponents.length,
           loadedTypes: loadedComponents.map((c) => ({ id: c.id, type: c.type })),
         });
       }, 100);
+    } else {
+      console.log(
+        '⏭️ [Initial Components] SKIP - No se cargarán componentes (ya cargados o condiciones no cumplidas)'
+      );
     }
-  }, [initialComponents, isNewsletterMode, activeTemplate]);
+  }, [initialComponents, isNewsletterMode, activeTemplate, emailComponents, activeVersion]);
 
   // Ref para rastrear si ya cargamos los datos de IA (evitar bucle infinito)
   const aiDataLoadedRef = useRef(false);
@@ -572,6 +614,51 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       noteData.setNoteDescription(task.data.description || '');
       if (task.data.coverImageUrl) {
         noteData.setNoteCoverImageUrl(task.data.coverImageUrl);
+      }
+
+      // Cargar metadatos (contentTypeId, categoryId, subcategoryId)
+      if (task.data.contentTypeId) {
+        console.log('📝 Cargando contentTypeId:', task.data.contentTypeId);
+        noteData.setContentTypeId(task.data.contentTypeId);
+
+        // Esperar a que se carguen las categorías antes de setear categoryId y subcategoryId
+        // El useEffect en useRightPanelState automáticamente cargará las categorías
+        // cuando cambie contentTypeId, así que esperamos un poco más
+        if (task.data.categoryId) {
+          const waitForCategories = setInterval(() => {
+            // Verificar si las categorías ya están cargadas desde PostStore
+            const postStore = usePostStore.getState();
+            const categoriesLoaded = postStore.categories && postStore.categories.length > 0;
+
+            if (categoriesLoaded) {
+              clearInterval(waitForCategories);
+              console.log('📝 Categorías cargadas, seteando categoryId:', task.data.categoryId);
+              noteData.setCategoryId(task.data.categoryId);
+
+              // Cargar subcategoría después de un breve delay
+              if (task.data.subcategoryId) {
+                setTimeout(() => {
+                  console.log('📝 Cargando subcategoryId:', task.data.subcategoryId);
+                  noteData.setSubcategoryId(task.data.subcategoryId);
+                }, 200);
+              }
+            }
+          }, 100); // Verificar cada 100ms
+
+          // Timeout de seguridad: si después de 5 segundos no se cargaron, forzar
+          setTimeout(() => {
+            clearInterval(waitForCategories);
+            if (task.data.categoryId && !noteData.categoryId) {
+              console.warn('⚠️ Timeout esperando categorías, forzando carga');
+              noteData.setCategoryId(task.data.categoryId);
+              if (task.data.subcategoryId) {
+                setTimeout(() => {
+                  noteData.setSubcategoryId(task.data.subcategoryId);
+                }, 200);
+              }
+            }
+          }, 5000);
+        }
       }
 
       // Inyectar componentes (objData es para newsletter, objDataWeb es para web)
@@ -660,12 +747,16 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       const currentHeader = newsletterHeader || defaultNewsletterHeader;
       const currentFooter = newsletterFooter || defaultNewsletterFooter;
 
+      const activeComponents = getActiveComponents();
+
       const html = generateNewsletterHtml(
         newsletterTitle || 'Newsletter',
         newsletterDescription || '',
         newsletterNotes,
         currentHeader,
-        currentFooter
+        currentFooter,
+        undefined,
+        activeComponents
       );
 
       setNewsletterHtml(html);
@@ -811,15 +902,49 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   // Auto-generar preview cuando cambian las notas o se activa el preview
   useEffect(() => {
     if (showPreview && (isNewsletterMode || activeVersion === 'newsletter')) {
+      console.log('👁️ [Preview Toggle] showPreview activado, generando HTML...');
+      const currentComponents = getActiveComponents();
+      console.log('📦 [Preview Toggle] Componentes actuales antes de generar preview:', {
+        totalComponents: currentComponents.length,
+        componentTypes: currentComponents.map((c) => ({
+          id: c.id,
+          type: c.type,
+          content: c.content?.substring(0, 50),
+          props: c.props,
+        })),
+      });
       handleGeneratePreviewHtml();
+    } else if (!showPreview) {
+      console.log('✏️ [Preview Toggle] Volviendo a modo editor...');
+      const currentComponents = getActiveComponents();
+      console.log('📦 [Preview Toggle] Componentes actuales al volver al editor:', {
+        totalComponents: currentComponents.length,
+        componentTypes: currentComponents.map((c) => ({
+          id: c.id,
+          type: c.type,
+          content: c.content?.substring(0, 50),
+          props: c.props,
+        })),
+      });
     }
-  }, [showPreview, isNewsletterMode, activeVersion]);
+  }, [showPreview, isNewsletterMode, activeVersion, getActiveComponents]);
 
   // Wrapper para onTogglePreview que también genera el HTML
   const handleTogglePreviewWrapper = useCallback(() => {
+    console.log(
+      '🔄 [Preview Toggle] handleTogglePreviewWrapper called, showPreview actual:',
+      showPreview
+    );
+    const componentsBeforeToggle = getActiveComponents();
+    console.log('📸 [Preview Toggle] Snapshot de componentes ANTES del toggle:', {
+      totalComponents: componentsBeforeToggle.length,
+      tituloConIcono: componentsBeforeToggle.find((c) => c.type === 'tituloConIcono'),
+      category: componentsBeforeToggle.find((c) => c.type === 'category'),
+    });
+
     handleGeneratePreviewHtml();
     onTogglePreview();
-  }, [handleGeneratePreviewHtml, onTogglePreview]);
+  }, [handleGeneratePreviewHtml, onTogglePreview, showPreview, getActiveComponents]);
 
   const handleHeaderChange = (newHeader: NewsletterHeader) => {
     const currentHeader = newsletterHeader || defaultNewsletterHeader;
@@ -1050,10 +1175,12 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     (id: string, content: string) => {
       console.log('🟡 updateComponentContent called:', {
         id,
-        content: content.substring(0, 50) + '...',
+        content,
+        contentLength: content?.length,
       });
 
       const components = getActiveComponents();
+      console.log('📦 Active components:', components.length);
 
       // Solo actualizar si el contenido realmente cambió
       // Buscar recursivamente el componente actual
@@ -1069,8 +1196,16 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       };
       const currentComponent = findComponentById(components);
       if (!currentComponent) {
+        console.error('❌ Component not found:', id);
         return;
       }
+
+      console.log('📍 Current component found:', {
+        id: currentComponent.id,
+        type: currentComponent.type,
+        currentContent: currentComponent.content,
+        newContent: content,
+      });
 
       if (currentComponent.content === content) {
         console.log('🔵 No changes detected, skipping update');
@@ -1100,8 +1235,11 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         meta: updatedMeta,
       };
 
+      console.log('🔄 Updating component with:', updates);
       const updatedComponents = updateComponentInArrayRecursive(components, id, updates);
+      console.log('✅ Component updated, calling updateActiveComponents');
       updateActiveComponents(updatedComponents);
+      console.log('💾 updateActiveComponents completed');
 
       // Sincronizar automáticamente si está habilitado
       versionSync.syncComponentUpdate(id, updates);
@@ -1114,8 +1252,12 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   );
 
   // Actualizar las propiedades de un componente con sincronización
+  type UpdateComponentPropsOptions = {
+    content?: string;
+  };
+
   const updateComponentProps = useCallback(
-    (id: string, props: Record<string, any>) => {
+    (id: string, props: Record<string, any>, options: UpdateComponentPropsOptions = {}) => {
       const components = getActiveComponents();
       // Buscar recursivamente el componente actual
       const findComponentById = (comps: any[]): any => {
@@ -1132,6 +1274,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       if (!component) return;
 
       const updatedProps = { ...component.props, ...props };
+      const nextContent = options.content ?? component.content;
       const baseMeta = component.meta ?? {
         isDefaultContent: false,
         defaultContentSnapshot: component.content,
@@ -1143,7 +1286,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         ...baseMeta,
         isDefaultContent: computeIsDefaultContent(
           baseMeta,
-          component.content,
+          nextContent,
           updatedProps,
           component.style
         ),
@@ -1154,6 +1297,10 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         meta: updatedMeta,
       };
 
+      if (options.content !== undefined) {
+        updates.content = nextContent;
+      }
+
       const updatedComponents = updateComponentInArrayRecursive(components, id, updates);
       updateActiveComponents(updatedComponents);
 
@@ -1161,7 +1308,12 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       versionSync.syncComponentUpdate(id, updates);
 
       // Notificar al auto-guardado
-      notifyChange('component-props-updated');
+      if (Object.keys(props).length > 0) {
+        notifyChange('component-props-updated');
+      }
+      if (options.content !== undefined) {
+        notifyChange('component-content-updated');
+      }
     },
     [getActiveComponents, updateActiveComponents, versionSync, notifyChange]
   );
@@ -1616,11 +1768,12 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           });
 
           // Preparar botones de aprobación si se solicita
+          const { getAppBaseUrl } = await import('src/global-config');
           const approvalButtonsConfig =
             options?.includeApprovalButtons && currentNewsletterId
               ? {
                   newsletterId: currentNewsletterId,
-                  baseUrl: typeof window !== 'undefined' ? window.location.origin : '',
+                  baseUrl: getAppBaseUrl(),
                 }
               : undefined;
 
@@ -2755,13 +2908,18 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           return;
         }
 
-        // Verificar si es un contenedor de nota
+        // Verificar si es un contenedor de nota o un componente suelto
         const components = getActiveComponents();
         const selectedComponent = components.find((c) => c.id === selectedComponentId);
 
-        if (selectedComponent && selectedComponent.props?.isNoteContainer) {
-          console.log('✅ Es un contenedor de nota, usando funciones normales');
-          // Es un contenedor de nota, usar las funciones normales
+        // Si encontramos el componente directamente en el nivel superior (componentes sueltos o contenedores)
+        if (selectedComponent) {
+          console.log('✅ Componente encontrado en nivel superior, usando funciones normales:', {
+            componentId: selectedComponentId,
+            componentType: selectedComponent.type,
+            isNoteContainer: selectedComponent.props?.isNoteContainer,
+          });
+          // Usar las funciones normales para componentes en nivel superior
           switch (updateType) {
             case 'content':
               updateComponentContent(id, data);
@@ -2773,7 +2931,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               updateComponentStyle(id, data);
               break;
             default:
-              console.warn('Unknown update type for note container component:', updateType);
+              console.warn('Unknown update type for top-level component:', updateType);
           }
           return;
         }
@@ -3302,6 +3460,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               containerMaxWidth={activeVersion === 'web' ? undefined : containerMaxWidth}
               activeTemplate={activeTemplate}
               activeVersion={activeVersion}
+              // Para TituloConIcono
+              categoryId={noteData.categoryId}
               // Nuevas props para newsletter
               isNewsletterMode={isNewsletterMode}
               // Props para mostrar skeleton durante generación

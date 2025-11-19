@@ -85,7 +85,8 @@ interface PostState {
   sendNewsletterForReview: (
     newsletterId: string,
     emails: string[],
-    htmlContent: string
+    htmlContent: string,
+    subject: string
   ) => Promise<boolean>;
   sendNewsletter: (newsletterId: string, htmlContent: string) => Promise<boolean>;
   requestNewsletterApproval: (
@@ -461,7 +462,8 @@ const usePostStore = create<PostState>()(
         sendNewsletterForReview: async (
           newsletterId: string,
           emails: string[],
-          htmlContent: string
+          htmlContent: string,
+          subject: string
         ) => {
           try {
             console.log('🔄 sendNewsletterForReview called:', {
@@ -477,7 +479,7 @@ const usePostStore = create<PostState>()(
             // No escapar el HTML para envío normal de emails
             const content = htmlContent;
             const sendData: SendTestData = {
-              subject: `Newsletter ${newsletterId} - Prueba`,
+              subject,
               content,
               reviewerEmails: emails,
             };

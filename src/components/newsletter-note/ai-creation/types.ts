@@ -184,11 +184,24 @@ export interface PromptSuggestion {
 /**
  * Estado del formulario de newsletter
  */
+export interface NewsletterNoteForm {
+  /** Prompt para la nota */
+  prompt: string;
+  /** Tipo de contenido seleccionado */
+  contentTypeId: string;
+  /** Categoría seleccionada */
+  categoryId: string;
+  /** Subcategoría seleccionada */
+  subcategoryId: string;
+  /** Controla si la IA debe generar recursos multimedia */
+  mediaGenerationAI: boolean;
+}
+
 export interface NewsletterFormState {
   /** Cantidad de notas a generar */
   notesCount: number;
-  /** Prompts para cada nota */
-  prompts: string[];
+  /** Datos de cada nota */
+  notes: NewsletterNoteForm[];
   /** Estado de generación */
   status: GenerationStatus;
   /** Mensaje de error si aplica */
@@ -203,10 +216,16 @@ export interface NewsletterFormState {
 export interface NoteFormState {
   /** Título de la nota */
   title: string;
-  /** Categoría seleccionada */
-  category: string;
   /** Prompt detallado */
   prompt: string;
+  /** Tipo de contenido seleccionado */
+  contentTypeId: string;
+  /** Categoría seleccionada */
+  categoryId: string;
+  /** Subcategoría seleccionada */
+  subcategoryId: string;
+  /** Controla si la IA debe generar recursos multimedia */
+  mediaGenerationAI: boolean;
   /** Estado de generación */
   status: GenerationStatus;
   /** Mensaje de error si aplica */

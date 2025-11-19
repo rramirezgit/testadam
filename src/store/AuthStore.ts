@@ -69,6 +69,8 @@ interface AuthState {
   subscriber: Subscriber | null;
   onboarding: Onboarding | null;
   error: string | null;
+  isHydrated: boolean; // Flag para saber si el store ya se hidrato desde localStorage
+  isVerifyingSession: boolean; // Flag para saber si estamos verificando la sesión con /profile
 
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -94,7 +96,7 @@ const useAuthStore = create<AuthState>()(
               return null;
             }
 
-            set({ loading: true });
+            set({ loading: true, isVerifyingSession: true });
             const axiosInstance = createAxiosInstance();
 
             // CAMBIO: Nuevo endpoint
@@ -112,12 +114,13 @@ const useAuthStore = create<AuthState>()(
                 subscriber,
                 onboarding,
                 loading: false,
+                isVerifyingSession: false,
               });
 
               return user;
             }
 
-            set({ loading: false });
+            set({ loading: false, isVerifyingSession: false });
             return null;
           } catch (error: any) {
             console.error('Error al obtener información del usuario:', error);
@@ -128,7 +131,7 @@ const useAuthStore = create<AuthState>()(
               get().logout();
             }
 
-            set({ loading: false });
+            set({ loading: false, isVerifyingSession: false });
             return null;
           }
         };
@@ -141,6 +144,8 @@ const useAuthStore = create<AuthState>()(
           subscriber: null,
           onboarding: null,
           error: null,
+          isHydrated: false,
+          isVerifyingSession: false,
 
           setLoading: (loading: boolean) => set({ loading }),
 
@@ -234,6 +239,7 @@ const useAuthStore = create<AuthState>()(
               subscriber: null,
               onboarding: null,
               error: null,
+              isVerifyingSession: false,
             });
             console.log('Sesión cerrada con éxito - todos los datos eliminados');
           },
@@ -252,12 +258,17 @@ const useAuthStore = create<AuthState>()(
           () =>
           // Retornamos una función que se ejecutará cuando termine la rehidratación
           (state) => {
-            if (state && state.isAuthenticated) {
-              console.log('Store rehidratado. Actualizando información de usuario...');
-              // Actualizar la información del usuario después de rehidratar
-              setTimeout(() => {
+            if (state) {
+              // Marcar que el store ya está hidratado
+              state.isHydrated = true;
+              
+              if (state.isAuthenticated) {
+                console.log('Store rehidratado con sesión activa. Verificando sesión con /profile...');
+                // Verificar que la sesión siga válida
                 state.getUserInfo();
-              }, 1000); // Pequeño retraso para asegurar que todo está inicializado
+              } else {
+                console.log('Store rehidratado sin sesión activa.');
+              }
             }
           },
       }

@@ -37,37 +37,58 @@ export function generateNewsletterHtml(
   selectedNotes: NewsletterNote[],
   header: HeaderConfig,
   footer: FooterConfig,
-  approvalButtons?: { newsletterId: string; baseUrl: string }
+  approvalButtons?: { newsletterId: string; baseUrl: string },
+  components?: EmailComponent[]
 ): string {
   // ✅ Generar HTML de todas las notas usando los nuevos generadores modulares
+  const wrapComponentHtml = (
+    html: string,
+    component?: EmailComponent,
+    note?: NewsletterNote['noteData']
+  ) => {
+    const containerBorderWidth = note?.containerBorderWidth ?? 1;
+    const containerBorderColor = note?.containerBorderColor ?? '#e0e0e0';
+    const containerBorderRadius = note?.containerBorderRadius ?? 12;
+    const containerPadding = note?.containerPadding ?? 10;
+    const containerMaxWidth = note?.containerMaxWidth ?? 560;
+
+    const shouldWrapWithContainer = component?.type !== 'noteContainer';
+
+    if (!shouldWrapWithContainer) {
+      return `<div class="note-section">${html}</div>`;
+    }
+
+    return `<div class="note-section">
+      <div style="max-width: ${containerMaxWidth}px; margin: 0 auto; padding: ${containerPadding}px; border-radius: ${containerBorderRadius}px; border: ${containerBorderWidth}px solid ${containerBorderColor};">
+        ${html}
+      </div>
+    </div>`;
+  };
+
   let notesHtml = '';
 
-  selectedNotes.forEach((newsletterNote) => {
-    const note = newsletterNote.noteData;
-    notesHtml += `<div class="note-section">`;
+  if (components && components.length > 0) {
+    notesHtml = components
+      .map((component) => {
+        const componentHtml = renderComponentToHtml(component);
+        return wrapComponentHtml(componentHtml, component);
+      })
+      .join('');
+  } else {
+    selectedNotes.forEach((newsletterNote) => {
+      const note = newsletterNote.noteData;
+      let noteHtml = '';
 
-    // Añadir el contenedor interno con borde personalizable
-    const containerBorderWidth = note.containerBorderWidth ?? 1;
-    const containerBorderColor = note.containerBorderColor ?? '#e0e0e0';
-    const containerBorderRadius = note.containerBorderRadius ?? 12;
-    const containerPadding = note.containerPadding ?? 10;
-    const containerMaxWidth = note.containerMaxWidth ?? 560;
+      // Verificar si objData ya es un objeto o es un string JSON
+      const objData = typeof note.objData === 'string' ? JSON.parse(note.objData) : note.objData;
 
-    notesHtml += `<div style="max-width: ${containerMaxWidth}px; margin: 0 auto; padding: ${containerPadding}px; border-radius: ${containerBorderRadius}px; border: ${containerBorderWidth}px solid ${containerBorderColor};">`;
+      objData.forEach((component: EmailComponent) => {
+        noteHtml += renderComponentToHtml(component);
+      });
 
-    // Renderizar cada componente usando el sistema unificado
-    // Verificar si objData ya es un objeto o es un string JSON
-    const objData = typeof note.objData === 'string' 
-      ? JSON.parse(note.objData) 
-      : note.objData;
-    
-    objData.forEach((component: EmailComponent) => {
-      notesHtml += renderComponentToHtml(component);
+      notesHtml += wrapComponentHtml(noteHtml, undefined, note);
     });
-
-    notesHtml += `</div>`; // Cerrar contenedor interno
-    notesHtml += `</div>`;
-  });
+  }
 
   // ✅ Usar el nuevo template modular
   return generateNewsletterTemplate(title, description, notesHtml, header, footer, approvalButtons);

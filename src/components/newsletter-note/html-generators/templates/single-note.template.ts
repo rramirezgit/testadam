@@ -36,44 +36,6 @@ export function generateSingleNoteTemplate(
   <style type="text/css">
     ${EMAIL_RESET_CSS}
     
-    body {
-      background-color: #f8f9fa !important;
-    }
-    
-    /* Container principal - CONFIGURABLE */
-    .email-container {
-      max-width: ${config.maxWidth}px;
-      margin: 40px auto;
-      background-color: #ffffff;
-      border-radius: ${config.borderRadius}px;
-      border: ${config.borderWidth}px solid ${config.borderColor};
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
-    
-    /* Contenido de la nota - CONFIGURABLE */
-    .note-content {
-      padding: ${config.padding}px;
-    }
-    
-    /* Note title */
-    .note-title {
-      font-size: 24px;
-      font-weight: 600;
-      color: #111827;
-      margin: 0 0 20px 0;
-      line-height: 1.3;
-      letter-spacing: -0.25px;
-    }
-    
-    /* Note description */
-    .note-description {
-      font-size: 16px;
-      color: #6b7280;
-      margin: 0 0 32px 0;
-      line-height: 1.5;
-    }
-    
     /* Responsive */
     @media only screen and (max-width: 600px) {
       .email-container {
@@ -96,14 +58,20 @@ export function generateSingleNoteTemplate(
     }
   </style>
 </head>
-<body>
-  <div class="email-container">
-    <div class="note-content">
-      <div class="components">
-        ${componentsHtml}
-      </div>
-    </div>
-  </div>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fa;">
+    <tr>
+      <td align="center" style="padding: 40px 20px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="email-container" width="${config.maxWidth}" style="width: ${config.maxWidth}px; max-width: ${config.maxWidth}px; background-color: #ffffff; border-radius: ${config.borderRadius}px; border: ${config.borderWidth}px solid ${config.borderColor}; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <tr>
+            <td class="note-content" style="padding: ${config.padding}px;">
+              ${componentsHtml}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 }

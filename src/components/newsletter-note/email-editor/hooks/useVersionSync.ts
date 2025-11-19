@@ -19,12 +19,9 @@ const computeIsDefaultContent = (
   const propsSnapshot = meta.defaultPropsSnapshot;
   const styleSnapshot = meta.defaultStyleSnapshot;
 
-  const contentMatches =
-    contentSnapshot !== undefined ? contentSnapshot === nextContent : false;
-  const propsMatches =
-    propsSnapshot !== undefined ? deepEqual(propsSnapshot, nextProps) : true;
-  const styleMatches =
-    styleSnapshot !== undefined ? deepEqual(styleSnapshot, nextStyle) : true;
+  const contentMatches = contentSnapshot !== undefined ? contentSnapshot === nextContent : false;
+  const propsMatches = propsSnapshot !== undefined ? deepEqual(propsSnapshot, nextProps) : true;
+  const styleMatches = styleSnapshot !== undefined ? deepEqual(styleSnapshot, nextStyle) : true;
 
   return contentMatches && propsMatches && styleMatches;
 };
@@ -53,19 +50,15 @@ export const useVersionSync = ({
   getOtherVersionComponents,
   onShowNotification,
 }: UseVersionSyncProps) => {
-  // Estado para la sincronización automática
-  const [syncEnabled, setSyncEnabled] = useState<boolean>(false);
+  // Estado para la sincronización automática - SIEMPRE ACTIVA
+  const syncEnabled = true; // Forzado a true, no se puede desactivar
   const [lastSyncedVersion, setLastSyncedVersion] = useState<'newsletter' | 'web' | null>(null);
 
-  // Función para activar/desactivar la sincronización
+  // Función para activar/desactivar la sincronización (ahora es no-op)
   const toggleSync = useCallback(() => {
-    if (!syncEnabled) {
-      onShowNotification?.('Sincronización automática activada', 'success');
-    } else {
-      onShowNotification?.('Sincronización automática desactivada', 'info');
-    }
-    setSyncEnabled(!syncEnabled);
-  }, [syncEnabled, onShowNotification]);
+    // No hacer nada - la sincronización está siempre activa
+    onShowNotification?.('La sincronización automática está siempre activa', 'info');
+  }, [onShowNotification]);
 
   // Función para sincronizar contenido entre versiones
   const syncContent = useCallback(
@@ -123,11 +116,6 @@ export const useVersionSync = ({
 
       // Actualizar los componentes de destino (manteniendo la estructura)
       updateActiveComponents(activeTemplate, targetVersion, updatedTargetComponents);
-
-      onShowNotification?.(
-        `Valores sincronizados de ${sourceVersion === 'newsletter' ? 'Newsletter' : 'Web'} a ${targetVersion === 'newsletter' ? 'Newsletter' : 'Web'}`,
-        'success'
-      );
     },
     [
       activeTemplate,
@@ -217,13 +205,12 @@ export const useVersionSync = ({
             if (updateData.style) {
               updatedComponent.style = { ...updatedComponent.style, ...updateData.style };
             }
-            const baseMeta =
-              updatedComponent.meta ?? {
-                isDefaultContent: false,
-                defaultContentSnapshot: updatedComponent.content,
-                defaultPropsSnapshot: updatedComponent.props,
-                defaultStyleSnapshot: updatedComponent.style,
-              };
+            const baseMeta = updatedComponent.meta ?? {
+              isDefaultContent: false,
+              defaultContentSnapshot: updatedComponent.content,
+              defaultPropsSnapshot: updatedComponent.props,
+              defaultStyleSnapshot: updatedComponent.style,
+            };
 
             updatedComponent.meta = {
               ...baseMeta,
@@ -243,7 +230,7 @@ export const useVersionSync = ({
         updateActiveComponents(activeTemplate, otherVersion, updatedOtherVersionComponents);
 
         // Mostrar notificación sutil
-        showSyncNotification(activeVersion, otherVersion);
+        // showSyncNotification(activeVersion, otherVersion);
       }
     },
     [
@@ -252,7 +239,7 @@ export const useVersionSync = ({
       activeTemplate,
       getOtherVersionComponents,
       updateActiveComponents,
-      showSyncNotification,
+      // showSyncNotification,
     ]
   );
 

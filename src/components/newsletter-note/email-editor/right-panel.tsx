@@ -133,6 +133,7 @@ export default function RightPanel({
     categories,
     loadingMetadata,
     subcategories,
+    loadCategories,
   } = useRightPanelState({
     noteTitle,
     noteDescription,
@@ -359,6 +360,8 @@ export default function RightPanel({
           setContainerPadding={setContainerPadding}
           containerMaxWidth={containerMaxWidth}
           setContainerMaxWidth={setContainerMaxWidth}
+          getActiveComponents={getActiveComponents}
+          updateComponentProps={updateComponentProps}
         />
 
         {/* Snackbar para notificaciones */}
@@ -465,6 +468,11 @@ export default function RightPanel({
         isNewsletterMode={isNewsletterMode}
         updateNewsletterNoteComponentProps={updateNewsletterNoteComponentProps}
         updateNewsletterNoteComponentStyle={updateNewsletterNoteComponentStyle}
+        contentTypes={contentTypes}
+        categories={categories}
+        subcategories={subcategories}
+        loadingMetadata={loadingMetadata}
+        loadCategories={loadCategories}
       />
 
       {/* Snackbar para notificaciones */}

@@ -21,6 +21,7 @@ export type ConfigValue = {
   serverUrlIA: string;
   platform: Platform;
   approverEmails: string[];
+  appBaseUrl: string;
   auth: {
     method: 'jwt' | 'amplify' | 'firebase' | 'auth0';
     skip: boolean;
@@ -58,6 +59,7 @@ export const CONFIG: ConfigValue = {
         .map((email) => email.trim())
         .filter(Boolean)
     : ['97.rramirez@gmail.com'],
+  appBaseUrl: process.env.NEXT_PUBLIC_APP_BASE_URL ?? '',
   /**
    * Auth
    * @method jwt | amplify | firebase | supabase | auth0
@@ -127,3 +129,31 @@ export const SOCIAL_ICONS: Record<string, string> = {
   tiktok: 'https://s3.amazonaws.com/s3.condoor.ai/adam/8ffcbf79bb.png',
   linkedin: 'https://s3.amazonaws.com/s3.condoor.ai/adam/ee993e33c6e.png',
 };
+
+// ----------------------------------------------------------------------
+
+/**
+ * Get the application base URL
+ * Priority:
+ * 1. NEXT_PUBLIC_APP_BASE_URL environment variable
+ * 2. window.location.origin (client-side fallback)
+ * 3. Empty string (server-side fallback)
+ *
+ * @returns Base URL without trailing slash
+ */
+export function getAppBaseUrl(): string {
+  // Prioridad 1: Variable de entorno
+  if (CONFIG.appBaseUrl) {
+    // Remover trailing slash si existe
+    return CONFIG.appBaseUrl.replace(/\/$/, '');
+  }
+
+  // Prioridad 2: window.location.origin (solo en cliente)
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+
+  // Prioridad 3: Fallback vacío (no debería llegar aquí en producción)
+  console.warn('⚠️ getAppBaseUrl: No se pudo determinar la URL base de la aplicación');
+  return '';
+}

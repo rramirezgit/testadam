@@ -1,5 +1,7 @@
 'use client';
 
+import type { EmailComponent } from 'src/types/saved-note';
+
 import { Icon } from '@iconify/react';
 import { useRef, useState, useEffect, forwardRef, useCallback, useImperativeHandle } from 'react';
 
@@ -39,7 +41,9 @@ import ImageCropDialog from '../ImageCropDialog';
 import ImageSourceModal from '../ImageSourceModal';
 import ContainerOptions from '../ContainerOptions';
 import ApprovalConfirmationModal from '../../ApprovalConfirmationModal';
+import { generateTituloConIconoPropsFromCategory } from '../../constants/category-icons';
 
+import type { Categoria } from '../../components/Categorias';
 import type { NewsletterFooter, NewsletterHeader } from '../../types';
 
 // Tipos para metadatos
@@ -60,6 +64,22 @@ interface Category {
 
 // Definición de temas predefinidos para newsletter
 const NEWSLETTER_THEMES = CONFIG.defaultThemesNewsletter;
+
+// Colores para las categorías
+const COLORES_SUAVES = [
+  { colorFondo: '#e3f2fd', colorTexto: '#1565c0' },
+  { colorFondo: '#f3e5f5', colorTexto: '#7b1fa2' },
+  { colorFondo: '#e8f5e8', colorTexto: '#388e3c' },
+  { colorFondo: '#fce4ec', colorTexto: '#c2185b' },
+  { colorFondo: '#fff8e1', colorTexto: '#f57c00' },
+  { colorFondo: '#e1f5fe', colorTexto: '#0277bd' },
+  { colorFondo: '#fff3e0', colorTexto: '#e65100' },
+  { colorFondo: '#f1f8e9', colorTexto: '#558b2f' },
+  { colorFondo: '#e0f2f1', colorTexto: '#00695c' },
+  { colorFondo: '#e8eaf6', colorTexto: '#3f51b5' },
+  { colorFondo: '#fce4ec', colorTexto: '#ad1457' },
+  { colorFondo: '#e8f5e8', colorTexto: '#2e7d32' },
+];
 
 export type NoteConfigurationField =
   | 'newsletterTitle'
@@ -137,6 +157,13 @@ interface NoteConfigurationViewProps {
   setContainerPadding: (padding: number) => void;
   containerMaxWidth: number;
   setContainerMaxWidth: (maxWidth: number) => void;
+  // Nuevas props para sincronizar con componentes
+  getActiveComponents?: () => EmailComponent[];
+  updateComponentProps?: (
+    id: string,
+    props: Record<string, any>,
+    options?: { content?: string }
+  ) => void;
 }
 
 const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfigurationViewProps>(
@@ -202,6 +229,8 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
       setContainerPadding,
       containerMaxWidth,
       setContainerMaxWidth,
+      getActiveComponents,
+      updateComponentProps,
     },
     ref
   ) => {
@@ -293,6 +322,78 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
         focusField,
       }),
       [focusField]
+    );
+
+    // Helper para buscar el primer componente de un tipo específico
+    const findFirstComponentByType = useCallback(
+      (components: EmailComponent[], type: string): EmailComponent | null => {
+        for (const comp of components) {
+          if (comp.type === type) {
+            return comp;
+          }
+          if (comp.props?.componentsData && Array.isArray(comp.props.componentsData)) {
+            const found = findFirstComponentByType(comp.props.componentsData, type);
+            if (found) {
+              return found;
+            }
+          }
+        }
+        return null;
+      },
+      []
+    );
+
+    // Sincronizar componente TituloConIcono cuando cambia la categoría
+    const syncTituloConIconoComponent = useCallback(
+      (category: { id: string; name: string; imageUrl?: string }) => {
+        if (!getActiveComponents || !updateComponentProps) return;
+
+        const tituloComponent = findFirstComponentByType(getActiveComponents(), 'tituloConIcono');
+        if (!tituloComponent) {
+          return;
+        }
+
+        const tituloProps = generateTituloConIconoPropsFromCategory(category);
+        updateComponentProps(tituloComponent.id, tituloProps, { content: category.name });
+      },
+      [getActiveComponents, updateComponentProps, findFirstComponentByType]
+    );
+
+    // Sincronizar componente Category cuando cambia la subcategoría
+    const syncCategoryComponent = useCallback(
+      (subcategory: { id: string; name: string }) => {
+        if (!getActiveComponents || !updateComponentProps) return;
+
+        const categoryComponent = findFirstComponentByType(getActiveComponents(), 'categoria');
+        if (!categoryComponent) {
+          return;
+        }
+
+        const currentCategorias = categoryComponent.props?.categorias || [];
+
+        // Crear la nueva categoría con color del primer slot
+        const colores = COLORES_SUAVES[0]; // Usar el primer color
+        const nuevaCategoria: Categoria = {
+          id: `cat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          texto: subcategory.name,
+          colorFondo: colores.colorFondo,
+          colorTexto: colores.colorTexto,
+        };
+
+        // Si hay categorías, reemplazar la primera; si no, agregar una nueva
+        const nuevasCategorias =
+          currentCategorias.length > 0
+            ? [nuevaCategoria, ...currentCategorias.slice(1)]
+            : [nuevaCategoria];
+
+        const textosCategorias = nuevasCategorias.map((cat) => cat.texto).join(', ');
+        updateComponentProps(
+          categoryComponent.id,
+          { categorias: nuevasCategorias },
+          { content: textosCategorias }
+        );
+      },
+      [getActiveComponents, updateComponentProps, findFirstComponentByType]
     );
 
     // Handler para confirmar aprobación/rechazo
@@ -836,7 +937,18 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
                           backgroundColor: 'background.neutral',
                         },
                       }}
-                      onChange={(e) => setCategoryId(e.target.value)}
+                      onChange={(e) => {
+                        const nextCategoryId = e.target.value;
+                        setCategoryId(nextCategoryId);
+
+                        // Sincronizar con TituloConIcono si existe
+                        const selectedCategory = categories.find(
+                          (cat) => cat.id === nextCategoryId
+                        );
+                        if (selectedCategory) {
+                          syncTituloConIconoComponent(selectedCategory);
+                        }
+                      }}
                       disabled={!contentTypeId || loadingMetadata}
                       inputRef={categoryRef}
                     >
@@ -878,7 +990,18 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
                           backgroundColor: 'background.neutral',
                         },
                       }}
-                      onChange={(e) => setSubcategoryId(e.target.value)}
+                      onChange={(e) => {
+                        const nextSubcategoryId = e.target.value;
+                        setSubcategoryId(nextSubcategoryId);
+
+                        // Sincronizar con componente Category si existe
+                        const selectedSubcategory = subcategories.find(
+                          (sub) => sub.id === nextSubcategoryId
+                        );
+                        if (selectedSubcategory) {
+                          syncCategoryComponent(selectedSubcategory);
+                        }
+                      }}
                       disabled={!categoryId || loadingMetadata}
                       inputRef={subcategoryRef}
                     >

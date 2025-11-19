@@ -25,6 +25,7 @@ export function generateImageTextHtml(component: EmailComponent): string {
 
   // ✅ Props de estilo de imagen
   const imageHeight = component.props?.imageHeight || 'auto';
+  const imageFixedWidth = component.props?.imageFixedWidth || '';
   const imageObjectFit = component.props?.imageObjectFit || 'contain';
   const imageBackgroundColor = component.props?.imageBackgroundColor || 'transparent';
   const imageContainerBackgroundColor = component.props?.imageContainerBackgroundColor || '';
@@ -37,7 +38,9 @@ export function generateImageTextHtml(component: EmailComponent): string {
   const titleSize = component.props?.titleSize || 20;
   const margin = component.style?.margin || '20px 0';
 
-  const textWidth = 100 - imageWidth;
+  // ✅ Props de variantes (bordes)
+  const borderColor = component.props?.borderColor || 'transparent';
+  const borderWidth = component.props?.borderWidth || 0;
 
   // ✅ Determinar si el layout es horizontal o vertical
   const isHorizontal = layout === 'image-left' || layout === 'image-right';
@@ -54,6 +57,8 @@ export function generateImageTextHtml(component: EmailComponent): string {
     `align-items: center`,
     `justify-content: center`,
     imageHeight !== 'auto' ? `height: ${imageHeight}` : null,
+    imageFixedWidth ? `width: ${imageFixedWidth}` : null,
+    // NO centrar con margin auto, dejar alineación natural
   ]
     .filter(Boolean)
     .join('; ');
@@ -61,8 +66,8 @@ export function generateImageTextHtml(component: EmailComponent): string {
   // ✅ Estilos para la imagen
   const imageStyles = [
     `max-width: 100%`,
-    `width: 100%`,
-    imageHeight !== 'auto' ? `height: 100%` : `height: auto`,
+    imageFixedWidth ? `width: ${imageFixedWidth}` : `width: 100%`,
+    imageHeight !== 'auto' ? `height: ${imageHeight}` : `height: auto`,
     `object-fit: ${imageObjectFit}`,
     !imageContainerBackgroundColor ? `background-color: ${imageBackgroundColor}` : null,
     `border-radius: ${borderRadius}px`,
@@ -93,10 +98,15 @@ export function generateImageTextHtml(component: EmailComponent): string {
   // ✅ Generar HTML según el layout
   if (isHorizontal) {
     // Layouts horizontales: imagen y texto en columnas
+    // Si hay imageFixedWidth, usar ese ancho en lugar del porcentaje
+    const imageColumnStyle = imageFixedWidth
+      ? `width: ${imageFixedWidth}; min-width: ${imageFixedWidth}; max-width: ${imageFixedWidth};`
+      : `width: ${imageWidth}%;`;
+
     const imageColumn = `<!--[if mso | IE]>
-          <td style="width: ${imageWidth}%; vertical-align: top;">
+          <td style="${imageColumnStyle} vertical-align: top;">
           <![endif]-->
-          <td style="width: ${imageWidth}%; vertical-align: top; padding-right: ${isImageFirst ? spacing : 0}px; padding-left: ${!isImageFirst ? spacing : 0}px; padding-top: 0;" class="mobile-stack">
+          <td style="${imageColumnStyle} vertical-align: top; padding-right: ${isImageFirst ? spacing : 0}px; padding-left: ${!isImageFirst ? spacing : 0}px; padding-top: 0;" class="mobile-stack">
             ${imageHtml}
           </td>
           <!--[if mso | IE]>
@@ -104,16 +114,17 @@ export function generateImageTextHtml(component: EmailComponent): string {
           <![endif]-->`;
 
     const textColumn = `<!--[if mso | IE]>
-          <td style="width: ${textWidth}%; vertical-align: top;">
+          <td style="vertical-align: top;">
           <![endif]-->
-          <td style="width: ${textWidth}%; vertical-align: top; padding-top: 0;" class="mobile-stack">
+          <td style="vertical-align: top; padding-top: 0;" class="mobile-stack">
             ${textHtml}
           </td>
           <!--[if mso | IE]>
           </td>
           <![endif]-->`;
 
-    return `<table ${tableAttrs()} width="100%" style="margin: ${margin}; background-color: ${backgroundColor}; border-radius: ${borderRadius}px;">
+    const borderStyle = borderWidth > 0 ? `border: ${borderWidth}px solid ${borderColor};` : '';
+    return `<table ${tableAttrs()} width="100%" style="margin: ${margin}; background-color: ${backgroundColor}; border-radius: ${borderRadius}px; ${borderStyle}">
   <tr>
     <td style="padding: ${padding}px;">
       <table ${tableAttrs()} width="100%">
@@ -150,7 +161,8 @@ export function generateImageTextHtml(component: EmailComponent): string {
     </td>
   </tr>`;
 
-  return `<table ${tableAttrs()} width="100%" style="margin: ${margin}; background-color: ${backgroundColor}; border-radius: ${borderRadius}px;">
+  const borderStyle = borderWidth > 0 ? `border: ${borderWidth}px solid ${borderColor};` : '';
+  return `<table ${tableAttrs()} width="100%" style="margin: ${margin}; background-color: ${backgroundColor}; border-radius: ${borderRadius}px; ${borderStyle}">
   <tr>
     <td style="padding: ${padding}px;">
       <table ${tableAttrs()} width="100%">

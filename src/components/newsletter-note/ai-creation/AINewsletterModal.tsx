@@ -11,27 +11,35 @@ import {
   Stack,
   Button,
   Dialog,
+  Select,
+  Switch,
+  MenuItem,
   TextField,
   IconButton,
+  InputLabel,
   Typography,
   CardContent,
   DialogTitle,
+  FormControl,
   DialogActions,
   DialogContent,
   LinearProgress,
+  CircularProgress,
+  FormControlLabel,
 } from '@mui/material';
 
 import useAuthStore from 'src/store/AuthStore';
 import useTaskManagerStore from 'src/store/TaskManagerStore';
 import { initiateNoteGeneration } from 'src/services/ai-service';
 
+import { useContentMetadataOptions } from './hooks/useContentMetadataOptions';
 import {
   getUniqueCategories,
   getPromptsByCategory,
   getAllPromptSuggestions,
 } from './prompt-suggestions';
 
-import type { PromptSuggestion, NewsletterFormState } from './types';
+import type { PromptSuggestion, NewsletterNoteForm, NewsletterFormState } from './types';
 
 interface AINewsletterModalProps {
   open: boolean;
@@ -40,6 +48,14 @@ interface AINewsletterModalProps {
 
 const MIN_NOTES = 1;
 const MAX_NOTES = 10;
+
+const createEmptyNote = (): NewsletterNoteForm => ({
+  prompt: '',
+  contentTypeId: '',
+  categoryId: '',
+  subcategoryId: '',
+  mediaGenerationAI: true,
+});
 
 export default function AINewsletterModal({ open, onClose }: AINewsletterModalProps) {
   // Auth store para obtener userId y plan
@@ -52,11 +68,20 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
   // Estado del formulario
   const [formState, setFormState] = useState<NewsletterFormState>({
     notesCount: 3,
-    prompts: ['', '', ''],
+    notes: Array.from({ length: 3 }, () => createEmptyNote()),
     status: 'idle',
     error: null,
     progress: 0,
   });
+
+  const {
+    contentTypes,
+    loadingContentTypes,
+    ensureCategories,
+    getCategories,
+    getSubcategories,
+    isLoadingCategories,
+  } = useContentMetadataOptions();
 
   // Estado para menús de sugerencias
   const [promptMenuOpen, setPromptMenuOpen] = useState<number | null>(null);
@@ -67,7 +92,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
     if (!open) {
       setFormState({
         notesCount: 3,
-        prompts: ['', '', ''],
+        notes: Array.from({ length: 3 }, () => createEmptyNote()),
         status: 'idle',
         error: null,
         progress: 0,
@@ -75,25 +100,67 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
     }
   }, [open]);
 
-  // Actualizar array de prompts cuando cambia la cantidad
+  // Actualizar array de notas cuando cambia la cantidad
   const handleNotesCountChange = (count: number) => {
     const validCount = Math.max(MIN_NOTES, Math.min(MAX_NOTES, count));
-    const newPrompts = Array(validCount)
-      .fill('')
-      .map((_, i) => formState.prompts[i] || '');
+    setFormState((prev) => {
+      const nextNotes =
+        prev.notes.length >= validCount
+          ? prev.notes.slice(0, validCount)
+          : [
+              ...prev.notes,
+              ...Array.from({ length: validCount - prev.notes.length }, () => createEmptyNote()),
+            ];
 
-    setFormState({
-      ...formState,
-      notesCount: validCount,
-      prompts: newPrompts,
+      return {
+        ...prev,
+        notesCount: validCount,
+        notes: nextNotes,
+      };
     });
   };
 
   // Actualizar un prompt específico
   const handlePromptChange = (index: number, value: string) => {
-    const newPrompts = [...formState.prompts];
-    newPrompts[index] = value;
-    setFormState({ ...formState, prompts: newPrompts });
+    setFormState((prev) => {
+      const nextNotes = [...prev.notes];
+      nextNotes[index] = { ...nextNotes[index], prompt: value };
+      return { ...prev, notes: nextNotes };
+    });
+  };
+
+  const handleNoteMetadataChange = (index: number, changes: Partial<NewsletterNoteForm>): void => {
+    setFormState((prev) => {
+      const nextNotes = [...prev.notes];
+      nextNotes[index] = { ...nextNotes[index], ...changes };
+      return { ...prev, notes: nextNotes };
+    });
+  };
+
+  const handleNoteContentTypeChange = async (index: number, value: string) => {
+    handleNoteMetadataChange(index, {
+      contentTypeId: value,
+      categoryId: '',
+      subcategoryId: '',
+    });
+    if (value) {
+      await ensureCategories(value);
+    }
+  };
+
+  const handleNoteCategoryChange = (index: number, value: string) => {
+    handleNoteMetadataChange(index, {
+      categoryId: value,
+      subcategoryId: '',
+    });
+  };
+
+  const handleNoteSubcategoryChange = (index: number, value: string) => {
+    handleNoteMetadataChange(index, { subcategoryId: value });
+  };
+
+  const handleNoteMediaToggle = (index: number, checked: boolean) => {
+    handleNoteMetadataChange(index, { mediaGenerationAI: checked });
   };
 
   // Abrir menú de sugerencias
@@ -117,16 +184,31 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
 
   // Validar formulario
   const validateForm = (): string | null => {
-    if (formState.prompts.every((p) => !p.trim())) {
+    if (formState.notes.every((note) => !note.prompt.trim())) {
       return 'Debes ingresar al menos un prompt';
     }
 
-    const emptyPrompts = formState.prompts.filter((p) => !p.trim()).length;
+    const emptyPrompts = formState.notes.filter((note) => !note.prompt.trim()).length;
     if (emptyPrompts > 0) {
       return `Tienes ${emptyPrompts} prompt(s) vacío(s). Completa todos los campos o reduce la cantidad de notas.`;
     }
 
-    // Sin validaciones de longitud - se permite cualquier tamaño de prompt
+    for (let index = 0; index < formState.notes.length; index += 1) {
+      const note = formState.notes[index];
+      const noteNumber = index + 1;
+
+      if (!note.contentTypeId) {
+        return `Selecciona el tipo de contenido para la nota ${noteNumber}`;
+      }
+
+      if (!note.categoryId) {
+        return `Selecciona una categoría para la nota ${noteNumber}`;
+      }
+
+      if (!note.subcategoryId) {
+        return `Selecciona una subcategoría para la nota ${noteNumber}`;
+      }
+    }
 
     return null;
   };
@@ -160,20 +242,35 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
     try {
       // Generar un ID único para este newsletter
       const newsletterId = nanoid();
-      const validPrompts = formState.prompts.filter((p) => p.trim());
+      const notesToGenerate = formState.notes;
 
-      console.log('🚀 Iniciando generación de newsletter con', validPrompts.length, 'notas');
+      console.log('🚀 Iniciando generación de newsletter con', notesToGenerate.length, 'notas');
       console.log('📝 Newsletter ID:', newsletterId);
 
       // Iniciar generación de cada nota como tarea independiente
-      const taskPromises = validPrompts.map(async (prompt, index) => {
+      const taskPromises = notesToGenerate.map(async (note, index) => {
         try {
+          if (note.contentTypeId) {
+            await ensureCategories(note.contentTypeId);
+          }
+
+          const categoriesSnapshot = getCategories(note.contentTypeId);
+          const categoryName = categoriesSnapshot.find(
+            (category) => category.id === note.categoryId
+          )?.name;
+          const prompt = note.prompt.trim();
+
           // Iniciar generación en el backend (SIN newsletterId ni noteIndexInNewsletter)
           const response = await initiateNoteGeneration({
-            prompt: prompt.trim(),
+            prompt,
             template: 'NEWS',
             userId: user.id,
             plan: user.plan?.name || null,
+            contentTypeId: note.contentTypeId,
+            categoryId: note.categoryId,
+            subcategoryId: note.subcategoryId,
+            category: categoryName,
+            mediaGenerationAI: note.mediaGenerationAI,
           });
 
           // Crear tarea en el store (AQUÍ sí agregamos newsletterId e index para agrupar en frontend)
@@ -182,9 +279,10 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
             status: response.status,
             progress: 0,
             message: response.message,
-            prompt: prompt.trim(),
+            prompt,
             title: `Nota ${index + 1}`,
             createdAt: new Date().toISOString(),
+            category: categoryName,
             // Campos solo para uso del frontend
             newsletterId,
             noteIndexInNewsletter: index,
@@ -194,7 +292,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
           addTask(task);
           startPolling(response.taskId);
 
-          console.log(`✅ Tarea ${index + 1}/${validPrompts.length} iniciada:`, response.taskId);
+          console.log(`✅ Tarea ${index + 1}/${notesToGenerate.length} iniciada:`, response.taskId);
 
           return response.taskId;
         } catch (error: any) {
@@ -246,20 +344,6 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
       </DialogTitle>
 
       <DialogContent sx={{ p: 3 }}>
-        {/* Error message */}
-        {formState.error && (
-          <Card sx={{ mb: 3, border: 1, borderColor: 'error.main', bgcolor: 'error.lighter' }}>
-            <CardContent sx={{ py: 1.5 }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Icon icon="solar:danger-circle-bold" width={20} color="#d32f2f" />
-                <Typography variant="body2" color="error.dark">
-                  {formState.error}
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Cantidad de notas */}
         <Card sx={{ mb: 3, border: 1, borderColor: 'divider' }}>
           <CardContent>
@@ -308,35 +392,196 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
         </Typography>
 
         <Stack spacing={2}>
-          {formState.prompts.map((prompt, index) => (
-            <Card key={`prompt-${index}`} sx={{ border: 1, borderColor: 'divider' }}>
-              <CardContent>
-                <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    Nota {index + 1}
-                  </Typography>
-                  <Button
-                    size="small"
-                    startIcon={<Icon icon="solar:lightbulb-bolt-linear" />}
-                    onClick={() => handleOpenPromptMenu(index)}
+          {formState.notes.map((note, index) => {
+            const categoriesForNote = getCategories(note.contentTypeId);
+            const subcategoriesForNote = getSubcategories(note.contentTypeId, note.categoryId);
+            const loadingCategoriesForNote = note.contentTypeId
+              ? isLoadingCategories(note.contentTypeId)
+              : false;
+
+            return (
+              <Card key={`note-${index}`} sx={{ border: 1, borderColor: 'divider' }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Nota {index + 1}
+                    </Typography>
+                    <Button
+                      size="small"
+                      startIcon={<Icon icon="solar:lightbulb-bolt-linear" />}
+                      onClick={() => handleOpenPromptMenu(index)}
+                      disabled={formState.status === 'generating'}
+                    >
+                      Sugerencias
+                    </Button>
+                  </Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={3}
+                    placeholder="Ej: Escribe sobre una nueva especie de coral descubierta en la Gran Barrera de Coral, incluyendo sus características únicas y su importancia para el ecosistema marino..."
+                    value={note.prompt}
+                    onChange={(e) => handlePromptChange(index, e.target.value)}
                     disabled={formState.status === 'generating'}
-                  >
-                    Sugerencias
-                  </Button>
-                </Box>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  placeholder="Ej: Escribe sobre una nueva especie de coral descubierta en la Gran Barrera de Coral, incluyendo sus características únicas y su importancia para el ecosistema marino..."
-                  value={prompt}
-                  onChange={(e) => handlePromptChange(index, e.target.value)}
-                  disabled={formState.status === 'generating'}
-                  helperText={`${prompt.length} caracteres`}
-                />
-              </CardContent>
-            </Card>
-          ))}
+                    helperText={`${note.prompt.length} caracteres`}
+                  />
+
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} mt={1}>
+                    <Box flex={1}>
+                      <FormControl
+                        fullWidth
+                        variant="filled"
+                        disabled={formState.status === 'generating' || loadingContentTypes}
+                      >
+                        <InputLabel>
+                          {loadingContentTypes ? 'Cargando tipos...' : 'Tipo de contenido *'}
+                        </InputLabel>
+                        <Select
+                          value={note.contentTypeId}
+                          label="Tipo de contenido *"
+                          onChange={(e) => handleNoteContentTypeChange(index, e.target.value)}
+                          endAdornment={
+                            loadingContentTypes ? (
+                              <CircularProgress
+                                size={20}
+                                sx={{ position: 'absolute', right: 32, pointerEvents: 'none' }}
+                              />
+                            ) : null
+                          }
+                        >
+                          <MenuItem value="">
+                            <em>Selecciona</em>
+                          </MenuItem>
+                          {contentTypes.map((type) => (
+                            <MenuItem key={type.id} value={type.id}>
+                              {type.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      {loadingContentTypes && (
+                        <Typography variant="caption" color="primary.main" sx={{ mt: 0.5 }}>
+                          Cargando tipos de contenido...
+                        </Typography>
+                      )}
+                    </Box>
+
+                    <Box flex={1}>
+                      <FormControl
+                        fullWidth
+                        variant="filled"
+                        disabled={
+                          formState.status === 'generating' ||
+                          !note.contentTypeId ||
+                          loadingCategoriesForNote
+                        }
+                      >
+                        <InputLabel>
+                          {loadingCategoriesForNote ? 'Cargando categorías...' : 'Categoría *'}
+                        </InputLabel>
+                        <Select
+                          value={note.categoryId}
+                          label="Categoría *"
+                          onChange={(e) => handleNoteCategoryChange(index, e.target.value)}
+                          endAdornment={
+                            loadingCategoriesForNote ? (
+                              <CircularProgress
+                                size={20}
+                                sx={{ position: 'absolute', right: 32, pointerEvents: 'none' }}
+                              />
+                            ) : null
+                          }
+                        >
+                          <MenuItem value="">
+                            <em>Selecciona</em>
+                          </MenuItem>
+                          {categoriesForNote.map((category) => (
+                            <MenuItem key={category.id} value={category.id}>
+                              {category.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      {loadingCategoriesForNote ? (
+                        <Typography variant="caption" color="primary.main" sx={{ mt: 0.5 }}>
+                          Cargando categorías...
+                        </Typography>
+                      ) : !note.contentTypeId ? (
+                        <Typography variant="caption" color="text.secondary">
+                          Selecciona un tipo de contenido primero.
+                        </Typography>
+                      ) : note.contentTypeId &&
+                        categoriesForNote.length === 0 &&
+                        !loadingCategoriesForNote ? (
+                        <Typography variant="caption" color="text.secondary">
+                          No hay categorías disponibles para este tipo.
+                        </Typography>
+                      ) : null}
+                    </Box>
+
+                    <Box flex={1}>
+                      <FormControl
+                        fullWidth
+                        variant="filled"
+                        disabled={
+                          formState.status === 'generating' ||
+                          !note.categoryId ||
+                          subcategoriesForNote.length === 0
+                        }
+                      >
+                        <InputLabel>Subcategoría *</InputLabel>
+                        <Select
+                          value={note.subcategoryId}
+                          label="Subcategoría *"
+                          onChange={(e) => handleNoteSubcategoryChange(index, e.target.value)}
+                        >
+                          <MenuItem value="">
+                            <em>Selecciona</em>
+                          </MenuItem>
+                          {subcategoriesForNote.map((subcategory) => (
+                            <MenuItem key={subcategory.id} value={subcategory.id}>
+                              {subcategory.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      {!note.categoryId ? (
+                        <Typography variant="caption" color="text.secondary">
+                          Selecciona una categoría para ver las opciones disponibles.
+                        </Typography>
+                      ) : note.categoryId && subcategoriesForNote.length === 0 ? (
+                        <Typography variant="caption" color="warning.main">
+                          Esta categoría no tiene subcategorías configuradas.
+                        </Typography>
+                      ) : null}
+                    </Box>
+                  </Stack>
+
+                  <FormControlLabel
+                    sx={{ mt: 1.5 }}
+                    control={
+                      <Switch
+                        color="primary"
+                        checked={note.mediaGenerationAI}
+                        onChange={(e) => handleNoteMediaToggle(index, e.target.checked)}
+                        disabled={formState.status === 'generating'}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Incluir imágenes generadas por IA
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Desactívalo para generar solo texto en esta nota.
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
         </Stack>
 
         {/* Loading state */}
@@ -443,6 +688,27 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
           </DialogActions>
         </Dialog>
       </DialogContent>
+
+      {/* Error message - Siempre visible arriba de los botones */}
+      {formState.error && (
+        <Box sx={{ px: 3, pb: 2 }}>
+          <Card sx={{ border: 1.5, borderColor: 'error.main', bgcolor: 'error.lighter' }}>
+            <CardContent sx={{ py: 1.5, px: 2 }}>
+              <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                <Icon icon="solar:danger-circle-bold" width={22} color="#d32f2f" />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600} color="error.dark" gutterBottom>
+                    Error en la validación
+                  </Typography>
+                  <Typography variant="body2" color="error.dark">
+                    {formState.error}
+                  </Typography>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
 
       <DialogActions sx={{ px: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
         <Button

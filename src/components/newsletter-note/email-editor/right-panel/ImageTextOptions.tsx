@@ -38,6 +38,7 @@ import ImageSourceModal from './ImageSourceModal';
 import { useImageUpload } from './useImageUpload';
 import { isBase64Image } from '../utils/imageValidation';
 import { convertImageToOptimalFormat } from './imgPreview';
+import { VARIANT_OPTIONS } from '../constants/image-text-variants';
 
 interface ImageTextOptionsProps {
   component: EmailComponent;
@@ -152,12 +153,13 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Estados para acordeones (todos abiertos por defecto)
-  const [expandedAccordion, setExpandedAccordion] = useState<string | false>('imagen');
+  const [expandedAccordion, setExpandedAccordion] = useState<string | false>('variantes');
 
   // Hook para subida de imágenes
   const { uploadImageToS3, uploading, uploadProgress } = useImageUpload();
 
   // Props del componente
+  const variant = component.props?.variant || 'default';
   const imageUrl = component.props?.imageUrl || '';
   const imageAlt = component.props?.imageAlt || 'Imagen';
   const imageLink = component.props?.imageLink || '';
@@ -187,6 +189,31 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
   // Handler para aplicar un preset completo
   const handleApplyPreset = (preset: Record<string, any>) => {
     updateComponentProps(component.id, preset);
+  };
+
+  // Handler para aplicar una variante
+  const handleApplyVariant = (variantName: string) => {
+    const selectedVariant = VARIANT_OPTIONS.find((v) => v.name === variantName);
+    if (!selectedVariant) return;
+
+    updateComponentProps(component.id, {
+      variant: selectedVariant.name,
+      backgroundColor: selectedVariant.backgroundColor,
+      borderColor: selectedVariant.borderColor,
+      borderWidth: selectedVariant.borderWidth,
+      textColor: selectedVariant.textColor,
+      titleColor: selectedVariant.titleColor,
+      padding: selectedVariant.padding,
+      spacing: selectedVariant.spacing,
+      borderRadius: selectedVariant.borderRadius,
+      // Actualizar la imagen con la imagen predefinida de la variante
+      imageUrl: selectedVariant.defaultImageUrl,
+      // Aplicar altura fija si la variante lo especifica
+      imageHeight: selectedVariant.imageHeight || 'auto',
+      imageFixedWidth: selectedVariant.imageFixedWidth,
+      // Asegurar que se vea bien contenida
+      imageObjectFit: 'contain',
+    });
   };
 
   // Función para manejar selección desde PC
@@ -330,6 +357,114 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
           {uploadMessage}
         </Alert>
       )}
+
+      {/* ======================== */}
+      {/* ACORDEÓN: VARIANTES */}
+      {/* ======================== */}
+      <Accordion
+        expanded={expandedAccordion === 'variantes'}
+        onChange={handleAccordionChange('variantes')}
+      >
+        <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Variantes
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Stack spacing={1.5}>
+            {VARIANT_OPTIONS.map((variantOption) => (
+              <Card
+                key={variantOption.name}
+                elevation={0}
+                onClick={() => handleApplyVariant(variantOption.name)}
+                sx={{
+                  p: 1.5,
+                  cursor: 'pointer',
+                  border: '2px solid',
+                  borderColor:
+                    variant === variantOption.name ? variantOption.borderColor : 'divider',
+                  borderRadius: 2,
+                  transition: 'all 0.2s ease',
+                  backgroundColor: variantOption.backgroundColor,
+                  '&:hover': {
+                    borderColor: variantOption.borderColor,
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2,
+                  },
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  {/* Preview de imagen si existe */}
+                  {variantOption.defaultImageUrl && (
+                    <Box
+                      sx={{
+                        width: 50,
+                        height: 50,
+                        borderRadius: 1,
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        border: `1px solid ${variantOption.borderColor}`,
+                      }}
+                    >
+                      <img
+                        src={variantOption.defaultImageUrl}
+                        alt={variantOption.displayName}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </Box>
+                  )}
+
+                  {/* Color indicator si no hay imagen */}
+                  {!variantOption.defaultImageUrl && (
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 1,
+                        border: `2px solid ${variantOption.borderColor}`,
+                        backgroundColor: variantOption.backgroundColor,
+                      }}
+                    />
+                  )}
+
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                        color: variantOption.titleColor,
+                      }}
+                    >
+                      {variantOption.displayName}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: variantOption.textColor,
+                      }}
+                    >
+                      {variant === variantOption.name ? '✓ Activa' : 'Clic para aplicar'}
+                    </Typography>
+                  </Box>
+
+                  {variant === variantOption.name && (
+                    <Icon
+                      icon="mdi:check-circle"
+                      width={24}
+                      style={{ color: variantOption.borderColor }}
+                    />
+                  )}
+                </Stack>
+              </Card>
+            ))}
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
+
       {/* ======================== */}
       {/* ACORDEÓN: IMAGEN */}
       {/* ======================== */}

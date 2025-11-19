@@ -266,7 +266,7 @@ export default function ComponentCategories({
                   >
                     <Icon icon="mdi:view-column" style={{ fontSize: '1.5rem' }} />
                     <Typography variant="caption" sx={{ fontSize: '0.7rem', mt: 0.5 }}>
-                      Dos Columnas
+                      Columnas
                     </Typography>
                   </Button>
                 </Grid>
@@ -374,7 +374,7 @@ export default function ComponentCategories({
                   onClick={() => addComponent('category')}
                 >
                   <Icon icon="mdi:tag" />
-                  Añadir Categoría
+                  Subcategorías
                 </Button>
               )}
               {enabledComponents.author && (

@@ -7,7 +7,7 @@ export interface EmailComponentProps {
   isSelected: boolean;
   onSelect: () => void;
   updateComponentContent: (id: string, content: string) => void;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: (id: string, props: Record<string, any>, options?: { content?: string }) => void;
   updateComponentStyle?: (id: string, style: React.CSSProperties) => void;
   handleSelectionUpdate: (editor: Editor) => void;
   moveComponent: (id: string, direction: 'up' | 'down') => void;

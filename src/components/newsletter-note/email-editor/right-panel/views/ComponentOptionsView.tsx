@@ -140,7 +140,7 @@ interface ComponentOptionsViewProps {
   openDeleteDialog: boolean;
   setOpenDeleteDialog: (open: boolean) => void;
   handleDeleteNote: () => Promise<void>;
-  
+
   // NUEVAS PROPS para newsletter
   isNewsletterMode?: boolean;
   updateNewsletterNoteComponentProps?: (
@@ -153,6 +153,18 @@ interface ComponentOptionsViewProps {
     componentId: string,
     style: React.CSSProperties
   ) => void;
+
+  // Props para metadata (contentTypes y categories)
+  contentTypes: Array<{ id: string; name: string }>;
+  categories: Array<{
+    id: string;
+    name: string;
+    imageUrl?: string;
+    subcategories?: Array<{ id: string; name: string }>;
+  }>;
+  subcategories: Array<{ id: string; name: string }>;
+  loadingMetadata: boolean;
+  loadCategories: (contentTypeId: string) => void;
 }
 
 export default function ComponentOptionsView({
@@ -237,6 +249,11 @@ export default function ComponentOptionsView({
   isNewsletterMode = false,
   updateNewsletterNoteComponentProps,
   updateNewsletterNoteComponentStyle,
+  contentTypes,
+  categories,
+  subcategories,
+  loadingMetadata,
+  loadCategories,
 }: ComponentOptionsViewProps) {
   // Estados para el modal de IA
   const [showAIModal, setShowAIModal] = useState(false);
@@ -631,6 +648,15 @@ export default function ComponentOptionsView({
                     selectedComponentId={selectedComponentId}
                     getActiveComponents={getActiveComponents}
                     updateComponentProps={updateComponentProps}
+                    updateComponentContent={updateComponentContent}
+                    categoryId={categoryId}
+                    setCategoryId={setCategoryId}
+                    subcategoryId={subcategoryId}
+                    setSubcategoryId={setSubcategoryId}
+                    categories={categories}
+                    subcategories={subcategories}
+                    contentTypeId={contentTypeId}
+                    loadingMetadata={loadingMetadata}
                   />
                 )}
 
@@ -640,6 +666,14 @@ export default function ComponentOptionsView({
                     getActiveComponents={getActiveComponents}
                     updateComponentProps={updateComponentProps}
                     setShowIconPicker={setShowIconPicker}
+                    contentTypeId={contentTypeId}
+                    setContentTypeId={setContentTypeId}
+                    categoryId={categoryId}
+                    setCategoryId={setCategoryId}
+                    contentTypes={contentTypes}
+                    categories={categories}
+                    loadingMetadata={loadingMetadata}
+                    loadCategories={loadCategories}
                   />
                 )}
 

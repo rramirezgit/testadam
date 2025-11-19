@@ -20,7 +20,7 @@ import {
 interface NewsletterFooterOptionsProps {
   selectedComponentId: string;
   selectedComponent: any;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: (id: string, props: Record<string, any>, options?: { content?: string }) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
   isViewOnly?: boolean;
 }

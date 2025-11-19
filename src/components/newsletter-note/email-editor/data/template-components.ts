@@ -413,7 +413,7 @@ export const newsComponents: EmailComponent[] = applyDefaultMeta([
   withDefaultMeta({
     id: 'tituloConIcono-1',
     type: 'tituloConIcono',
-    content: 'Título de la noticia',
+    content: 'Categoria',
     props: {
       icon: 'https://img.icons8.com/color/48/line-chart.png',
       gradientColor1: 'rgba(255, 184, 77, 0.08)',
@@ -436,7 +436,7 @@ export const newsComponents: EmailComponent[] = applyDefaultMeta([
   withDefaultMeta({
     id: 'category-1',
     type: 'category',
-    content: 'Tecnología',
+    content: 'Subcategoría',
     props: { color: '#e3f2fd', textColor: '#1565c0' },
   }),
   withDefaultMeta({
@@ -508,7 +508,7 @@ export const newsComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'category-1-web',
     type: 'category',
-    content: 'Tecnología',
+    content: 'Subcategoría',
     props: { color: '#e3f2fd', textColor: '#1565c0' },
   },
   {

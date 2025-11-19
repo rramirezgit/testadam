@@ -15,7 +15,7 @@ interface SmartDesignOptionsProps {
   selectedComponentId: string;
   selectedComponent: any;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: (id: string, props: Record<string, any>, options?: { content?: string }) => void;
 }
 
 const SmartDesignOptions: React.FC<SmartDesignOptionsProps> = ({

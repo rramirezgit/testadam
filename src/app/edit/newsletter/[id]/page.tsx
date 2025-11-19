@@ -58,12 +58,21 @@ export default function EditNewsletterPage() {
 
   // Detectar parámetros de acción y validar estado
   useEffect(() => {
+    // No procesar acción hasta que el newsletter esté cargado
+    if (loading || !newsletter) {
+      console.log('EditNewsletterPage - Esperando carga del newsletter antes de validar acción');
+      return;
+    }
+
     const action = searchParams.get('action');
     if (action === 'approve' || action === 'reject') {
+      console.log('EditNewsletterPage - Validando acción:', { action, status: newsletter.status });
+
       // Verificar estado del newsletter
-      if (newsletter?.status !== 'PENDING_APPROVAL') {
+      if (newsletter.status !== 'PENDING_APPROVAL') {
         const actionText = action === 'approve' ? 'aprobado' : 'rechazado';
-        const statusText = getStatusText(newsletter?.status);
+        const statusText = getStatusText(newsletter.status);
+        console.log('EditNewsletterPage - Estado incorrecto, mostrando modal de error');
         setStateErrorMessage(
           `Este newsletter ya no puede ser ${actionText} porque su estado actual es "${statusText}".`
         );
@@ -72,10 +81,11 @@ export default function EditNewsletterPage() {
       }
 
       // Si está en el estado correcto, proceder normalmente
+      console.log('EditNewsletterPage - Estado correcto, mostrando modal de confirmación');
       setActionType(action);
       setShowConfirmationModal(true);
     }
-  }, [searchParams, newsletter]);
+  }, [searchParams, newsletter, loading]);
 
   const handleConfirmAction = async () => {
     const id = params.id as string;

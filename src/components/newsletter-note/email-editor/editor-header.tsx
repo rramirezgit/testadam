@@ -1,11 +1,18 @@
 'use client';
 
+import 'dayjs/locale/es';
+
+import type { Dayjs } from 'dayjs';
 import type { SavedNote } from 'src/types/saved-note';
 
+import dayjs from 'dayjs';
 import Image from 'next/image';
 import { Icon } from '@iconify/react';
 import { useState, useCallback } from 'react';
 
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 import {
   Box,
   Menu,
@@ -23,7 +30,6 @@ import {
   MenuItem,
   Checkbox,
   useTheme,
-  TextField,
   Typography,
   IconButton,
   DialogTitle,
@@ -155,9 +161,7 @@ export default function EditorHeader({
   onSaveNewsletter,
   focusConfigurationField,
 }: EditorHeaderProps) {
-  // Estado para el menú de transferencia
-  const [transferMenuAnchor, setTransferMenuAnchor] = useState<null | HTMLElement>(null);
-  const openTransferMenu = Boolean(transferMenuAnchor);
+  // Estado para el menú de transferencia - ELIMINADO (sincronización siempre activa)
 
   // Estado para el menú de envío
   const [sendMenuAnchor, setSendMenuAnchor] = useState<null | HTMLElement>(null);
@@ -176,7 +180,7 @@ export default function EditorHeader({
   const [openApprovalDialog, setOpenApprovalDialog] = useState(false);
   const [openSendNowDialog, setOpenSendNowDialog] = useState(false);
   const [openScheduleDialog, setOpenScheduleDialog] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleDate, setScheduleDate] = useState<Dayjs | null>(null);
   const [selectedApproverEmails, setSelectedApproverEmails] = useState<string[]>([]);
   const [loadingApproval, setLoadingApproval] = useState(false);
 
@@ -314,15 +318,7 @@ export default function EditorHeader({
     onClose();
   }, [cancelGeneration, onClose]);
 
-  // Abrir el menú de transferencia
-  const handleTransferMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setTransferMenuAnchor(event.currentTarget);
-  };
-
-  // Cerrar el menú de transferencia
-  const handleTransferMenuClose = () => {
-    setTransferMenuAnchor(null);
-  };
+  // Handlers del menú de transferencia - ELIMINADOS (sincronización siempre activa)
 
   // Abrir el menú de envío
   const handleSendMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -357,7 +353,7 @@ export default function EditorHeader({
         }
 
         // Enviar newsletter existente para revisión
-        await sendNewsletterForReview(currentNewsletterId, emails, content);
+        await sendNewsletterForReview(currentNewsletterId, emails, content, newsletterTitle);
       } else if (currentNoteId) {
         // Enviar post para revisión (nota existente)
         await sendEmail(currentNoteId, emails, content);
@@ -453,8 +449,35 @@ export default function EditorHeader({
 
       if (!isNewsletterMode) {
         console.log('❌ No es modo newsletter, usando onSave');
-        onSave();
-        return true;
+        try {
+          await onSave();
+          return true;
+        } catch (saveError: any) {
+          console.error('❌ Error al guardar post:', saveError);
+
+          // Extraer información del error
+          const statusCode = saveError?.response?.status;
+          const backendMessage = saveError?.response?.data?.message;
+          const errorMsg = saveError?.message;
+
+          // Manejar errores específicos
+          let errorMessage = 'Error al guardar el post';
+
+          if (statusCode === 413 || errorMsg?.toLowerCase().includes('request entity too large')) {
+            errorMessage =
+              'El post es demasiado grande para guardarse. Por favor, reduce el tamaño de las imágenes o la cantidad de contenido.';
+          } else if (statusCode === 413 || errorMsg?.toLowerCase().includes('payload too large')) {
+            errorMessage =
+              'El contenido del post excede el límite permitido. Intenta reducir el número de imágenes o componentes.';
+          } else if (backendMessage) {
+            errorMessage = backendMessage;
+          } else if (errorMsg) {
+            errorMessage = errorMsg;
+          }
+
+          showNotification(errorMessage, 'error');
+          return false;
+        }
       }
 
       // MICHIN: Verificar targetStores antes de guardar por primera vez
@@ -474,9 +497,41 @@ export default function EditorHeader({
     } catch (error: any) {
       console.error('❌ Error en handleSaveNewsletter:', error);
 
-      // Extraer el mensaje de error del backend
-      const errorMessage =
-        error?.response?.data?.message || error?.message || 'Error al guardar el newsletter';
+      // Extraer información del error
+      const statusCode = error?.response?.status;
+      const backendMessage = error?.response?.data?.message;
+      const errorMsg = error?.message;
+
+      // Manejar errores específicos
+      let errorMessage = 'Error al guardar el newsletter';
+
+      if (statusCode === 413 || errorMsg?.toLowerCase().includes('request entity too large')) {
+        errorMessage =
+          'El newsletter es demasiado grande para guardarse. Por favor, reduce el tamaño de las imágenes o la cantidad de contenido.';
+
+        // Log información útil para debugging
+        console.error('📊 Error 413 - Payload demasiado grande. Considera:', {
+          sugerencia:
+            'Reducir tamaño de imágenes, usar menos componentes o dividir en múltiples newsletters',
+          statusCode,
+          errorDetails: errorMsg,
+        });
+      } else if (statusCode === 413 || errorMsg?.toLowerCase().includes('payload too large')) {
+        errorMessage =
+          'El contenido del newsletter excede el límite permitido. Intenta reducir el número de imágenes o componentes.';
+
+        // Log información útil para debugging
+        console.error('📊 Error 413 - Payload demasiado grande. Considera:', {
+          sugerencia:
+            'Reducir tamaño de imágenes, usar menos componentes o dividir en múltiples newsletters',
+          statusCode,
+          errorDetails: errorMsg,
+        });
+      } else if (backendMessage) {
+        errorMessage = backendMessage;
+      } else if (errorMsg) {
+        errorMessage = errorMsg;
+      }
 
       showNotification(errorMessage, 'error');
 
@@ -646,9 +701,41 @@ export default function EditorHeader({
     } catch (error: any) {
       console.error('❌ Error guardando newsletter:', error);
 
-      // Extraer el mensaje de error del backend
-      const errorMessage =
-        error?.response?.data?.message || error?.message || 'Error al guardar el newsletter';
+      // Extraer información del error
+      const statusCode = error?.response?.status;
+      const backendMessage = error?.response?.data?.message;
+      const errorMsg = error?.message;
+
+      // Manejar errores específicos
+      let errorMessage = 'Error al guardar el newsletter';
+
+      if (statusCode === 413 || errorMsg?.toLowerCase().includes('request entity too large')) {
+        errorMessage =
+          'El newsletter es demasiado grande para guardarse. Por favor, reduce el tamaño de las imágenes o la cantidad de contenido.';
+
+        // Log información útil para debugging
+        console.error('📊 Error 413 - Payload demasiado grande:', {
+          sugerencia:
+            'Reducir tamaño de imágenes, comprimir contenido o dividir en múltiples newsletters',
+          statusCode,
+          errorDetails: errorMsg,
+        });
+      } else if (statusCode === 413 || errorMsg?.toLowerCase().includes('payload too large')) {
+        errorMessage =
+          'El contenido del newsletter excede el límite permitido. Intenta reducir el número de imágenes o componentes.';
+
+        // Log información útil para debugging
+        console.error('📊 Error 413 - Payload demasiado grande:', {
+          sugerencia:
+            'Reducir tamaño de imágenes, comprimir contenido o dividir en múltiples newsletters',
+          statusCode,
+          errorDetails: errorMsg,
+        });
+      } else if (backendMessage) {
+        errorMessage = backendMessage;
+      } else if (errorMsg) {
+        errorMessage = errorMsg;
+      }
 
       showNotification(errorMessage, 'error');
       throw error;
@@ -758,11 +845,16 @@ export default function EditorHeader({
   // Handler para programar envío
   const handleSchedule = async () => {
     try {
-      console.log('🔄 Programando newsletter...', { scheduleDate });
+      if (!scheduleDate) {
+        console.error('No hay fecha seleccionada');
+        return;
+      }
+
+      console.log('🔄 Programando newsletter...', { scheduleDate: scheduleDate.toISOString() });
 
       // Validar que la fecha sea futura
-      const scheduledTime = new Date(scheduleDate).getTime();
-      const now = new Date().getTime();
+      const scheduledTime = scheduleDate.valueOf();
+      const now = dayjs().valueOf();
 
       if (scheduledTime <= now) {
         showNotification('La fecha debe ser futura', 'error');
@@ -782,7 +874,7 @@ export default function EditorHeader({
       }
 
       // Programar newsletter (convertir a ISO string)
-      const isoDate = new Date(scheduleDate).toISOString();
+      const isoDate = scheduleDate.toISOString();
       await scheduleNewsletter(currentNewsletterId || '', isoDate, newsletterTitle, content);
 
       // Recargar newsletter para obtener el estado actualizado
@@ -797,7 +889,7 @@ export default function EditorHeader({
 
       showNotification('Newsletter programado correctamente', 'success');
       setOpenScheduleDialog(false);
-      setScheduleDate(''); // Limpiar fecha
+      setScheduleDate(null); // Limpiar fecha
     } catch (error: any) {
       console.error('❌ Error al programar newsletter:', error);
 
@@ -889,7 +981,13 @@ export default function EditorHeader({
                 size="small"
               >
                 <ToggleButton value="web" aria-label="web version">
-                  <Image src="/assets/icons/apps/ic-notes.svg" alt="web" width={20} height={20} />
+                  <Image
+                    src="/assets/icons/apps/ic-notes.svg"
+                    alt="web"
+                    width={20}
+                    height={20}
+                    style={{ marginRight: '8px' }}
+                  />{' '}
                   Web
                 </ToggleButton>
                 <ToggleButton value="newsletter" aria-label="newsletter version">
@@ -898,8 +996,9 @@ export default function EditorHeader({
                     alt="newsletter"
                     width={20}
                     height={20}
+                    style={{ marginRight: '8px' }}
                   />
-                  Newsletter
+                  Comunicado
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
@@ -908,124 +1007,8 @@ export default function EditorHeader({
           )}
 
           {/* Indicador de sincronización - Solo para template 'news' y 'market' */}
-          {(activeTemplate === 'news' || activeTemplate === 'market') && syncEnabled && (
-            <Tooltip title="Sincronización automática activa: Se sincroniza solo el contenido">
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  mr: 1,
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  backgroundColor: 'info.light',
-                  color: 'info.dark',
-                }}
-              >
-                <Icon icon="mdi:sync" style={{ fontSize: '16px', marginRight: '4px' }} />
-                <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
-                  Sync
-                </Typography>
-              </Box>
-            </Tooltip>
-          )}
 
-          {/* Botón de transferencia con menú desplegable - Solo para template 'news' y 'market' */}
-          {(activeTemplate === 'news' || activeTemplate === 'market') && (
-            <Tooltip title="Transferir y sincronizar contenido entre versiones">
-              <IconButton
-                color="primary"
-                onClick={handleTransferMenuClick}
-                sx={{
-                  mr: 2,
-                  backgroundColor: syncEnabled ? 'info.light' : 'transparent',
-                }}
-                aria-controls={openTransferMenu ? 'transfer-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={openTransferMenu ? 'true' : undefined}
-              >
-                <Icon icon="mingcute:transfer-line" />
-              </IconButton>
-            </Tooltip>
-          )}
-
-          {/* Menú de transferencia - Solo para template 'news' y 'market' */}
-          {(activeTemplate === 'news' || activeTemplate === 'market') && (
-            <Menu
-              id="transfer-menu"
-              anchorEl={transferMenuAnchor}
-              open={openTransferMenu}
-              onClose={handleTransferMenuClose}
-              MenuListProps={{
-                'aria-labelledby': 'transfer-button',
-              }}
-              PaperProps={{
-                sx: { minWidth: '280px' },
-              }}
-            >
-              {/* Sección: Copiar solo contenido */}
-              <Typography
-                variant="overline"
-                sx={{ px: 2, py: 1, color: 'text.secondary', fontSize: '0.75rem' }}
-              >
-                Copiar solo contenido
-              </Typography>
-              <MenuItem
-                onClick={() => {
-                  transferToNewsletter();
-                  handleTransferMenuClose();
-                }}
-                disabled={activeVersion === 'newsletter'}
-              >
-                <ListItemIcon>
-                  <Icon icon="mdi:content-copy" />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Copiar contenido a Newsletter"
-                  secondary="Solo el texto de componentes existentes"
-                />
-              </MenuItem>
-              <MenuItem
-                onClick={() => {
-                  transferToWeb();
-                  handleTransferMenuClose();
-                }}
-                disabled={activeVersion === 'web'}
-              >
-                <ListItemIcon>
-                  <Icon icon="mdi:content-copy" />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Copiar contenido a Web"
-                  secondary="Solo el texto de componentes existentes"
-                />
-              </MenuItem>
-
-              <Box sx={{ my: 1, mx: 2, borderTop: '1px solid', borderColor: 'divider' }} />
-
-              {/* Sección: Sincronización */}
-              <Typography
-                variant="overline"
-                sx={{ px: 2, py: 1, color: 'text.secondary', fontSize: '0.75rem' }}
-              >
-                Sincronización automática
-              </Typography>
-              <MenuItem
-                onClick={() => {
-                  toggleSync();
-                  handleTransferMenuClose();
-                }}
-              >
-                <ListItemIcon>
-                  <Icon icon={syncEnabled ? 'mdi:sync-off' : 'mdi:sync'} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={syncEnabled ? 'Desactivar sincronización' : 'Activar sincronización'}
-                  secondary="Solo actualiza el contenido de componentes existentes"
-                />
-              </MenuItem>
-            </Menu>
-          )}
+          {/* Botón y menú de transferencia ELIMINADOS - sincronización siempre activa */}
 
           {isNewsletterMode ? (
             <Stack
@@ -1446,17 +1429,28 @@ export default function EditorHeader({
       >
         <DialogTitle>Programar Envío</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ mb: 3, mt: 1 }}>
             Selecciona la fecha y hora en que deseas enviar este newsletter:
           </Typography>
-          <TextField
-            fullWidth
-            type="datetime-local"
-            value={scheduleDate}
-            onChange={(e) => setScheduleDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ mt: 2 }}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+            <MobileDateTimePicker
+              label="Fecha y hora de envío"
+              value={scheduleDate}
+              onChange={(newValue) => setScheduleDate(newValue)}
+              disablePast
+              minutesStep={5}
+              ampm={false}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  required: true,
+                },
+                actionBar: {
+                  actions: ['clear', 'accept'],
+                },
+              }}
+            />
+          </LocalizationProvider>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenScheduleDialog(false)}>Cancelar</Button>

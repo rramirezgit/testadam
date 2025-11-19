@@ -14,7 +14,11 @@ import { findComponentById } from '../utils/componentHelpers';
 interface NoteContainerOptionsProps {
   selectedComponentId: string | null;
   getActiveComponents: () => any[];
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: (
+    id: string,
+    props: Record<string, any>,
+    options?: { content?: string }
+  ) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
 
   // NUEVAS PROPS para newsletter

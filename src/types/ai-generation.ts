@@ -56,11 +56,15 @@ export const TASK_STATUS_MESSAGES: Record<TaskStatus, string> = {
  */
 export interface GenerateNoteRequest {
   prompt: string;
-  category?: string;
   title?: string;
   template?: 'NEWS' | 'ARTICLE' | 'GUIDE' | 'TUTORIAL';
   userId: string;
   plan: string | null;
+  category?: string;
+  contentTypeId: string;
+  categoryId: string;
+  subcategoryId: string;
+  mediaGenerationAI?: boolean;
 }
 
 /**
@@ -135,6 +139,11 @@ export interface ParsedGeneratedContent {
   origin: string;
   coverImageUrl: string;
   metadata: GenerationMetadata;
+  // Metadatos de la nota
+  contentTypeId?: string;
+  categoryId?: string;
+  subcategoryId?: string;
+  highlight?: boolean;
 }
 
 // ============================================================================

@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Box } from '@mui/material';
 
 import IconPicker from '../icon-picker';
 import ComponentWithToolbar from './ComponentWithToolbar';
 import TituloConIcono from '../components/TituloConIcono';
-import AIAssistantModal from '../ai-menu/AIAssistantModal';
 
 import type { EmailComponentProps } from './types';
 
@@ -20,9 +19,26 @@ const TituloConIconoComponent = ({
   moveComponent,
   removeComponent,
   totalComponents,
-}: EmailComponentProps) => {
+  categoryId, // Nueva prop para el categoryId de la nota actual
+}: EmailComponentProps & { categoryId?: string }) => {
   const [showIconPickerTitulo, setShowIconPickerTitulo] = useState(false);
-  const [showAIModal, setShowAIModal] = useState(false);
+
+  // 🔍 LOGGING: Detectar cuando el componente se monta/desmonta o sus props cambian
+  useEffect(() => {
+    console.log('🔄 [TituloConIconoComponent] Component mounted/updated:', {
+      componentId: component.id,
+      content: component.content,
+      categoryId: component.props?.categoryId,
+      categoryName: component.props?.categoryName,
+      icon: component.props?.icon,
+      textColor: component.props?.textColor,
+      effectiveCategoryId: component.props?.categoryId || categoryId,
+    });
+
+    return () => {
+      console.log('🔻 [TituloConIconoComponent] Component will unmount:', component.id);
+    };
+  }, [component.id, component.content, component.props, categoryId]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -50,26 +66,12 @@ const TituloConIconoComponent = ({
     updateComponentProps(component.id, { icon: newIcon });
   };
 
-  const handleGradientChange = (type: 'linear' | 'radial', color1: string, color2: string) => {
-    updateComponentProps(component.id, {
-      gradientType: type,
-      gradientColor1: color1,
-      gradientColor2: color2,
-    });
-  };
-
   const handleAIClick = () => {
-    setShowAIModal(true);
+    // IA support puede ser añadido en el futuro
   };
 
-  const handleAIModalClose = () => {
-    setShowAIModal(false);
-  };
-
-  const handleApplyAIResult = (newText: string) => {
-    updateComponentContent(component.id, newText);
-    setShowAIModal(false);
-  };
+  // Priorizar el categoryId guardado en las props del componente sobre el de la nota
+  const effectiveCategoryId = component.props?.categoryId || categoryId;
 
   return (
     <Box
@@ -89,22 +91,18 @@ const TituloConIconoComponent = ({
         removeComponent={removeComponent}
         onClick={handleClick}
         onAIClick={handleAIClick}
+        mb="0px"
       >
         <Box sx={{ overflow: 'visible' }}>
           <TituloConIcono
             titulo={component.content}
             icon={component.props?.icon || 'mdi:chart-line'}
-            gradientColor1={component.props?.gradientColor1 || 'rgba(255, 184, 77, 0.08)'}
-            gradientColor2={component.props?.gradientColor2 || 'rgba(243, 156, 18, 0.00)'}
-            gradientType={component.props?.gradientType || 'linear'}
-            gradientAngle={component.props?.gradientAngle || 180}
-            colorDistribution={component.props?.colorDistribution || 0}
             textColor={component.props?.textColor || '#E67E22'}
             onTituloChange={handleTituloChange}
             onIconChange={handleIconChangeTitulo}
-            onGradientChange={handleGradientChange}
             setShowIconPicker={setShowIconPickerTitulo}
             isSelected={isSelected}
+            categoryId={effectiveCategoryId}
           />
         </Box>
       </ComponentWithToolbar>
@@ -120,14 +118,6 @@ const TituloConIconoComponent = ({
           currentIcon={component.props?.icon || 'mdi:chart-line'}
         />
       )}
-
-      {/* Modal de Asistente de IA */}
-      <AIAssistantModal
-        open={showAIModal}
-        onClose={handleAIModalClose}
-        selectedText={component.content || ''}
-        onApply={handleApplyAIResult}
-      />
     </Box>
   );
 };

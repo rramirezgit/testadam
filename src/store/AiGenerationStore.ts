@@ -12,6 +12,7 @@ import type {
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
+import { MICHIN_DEFAULTS } from 'src/global-config';
 import { generateNoteComplete } from 'src/services/ai-service';
 
 import useAuthStore from './AuthStore';
@@ -127,6 +128,10 @@ const useAiGenerationStore = create<AiGenerationState>()(
             template,
             userId: authState.user.id,
             plan: authState.user?.plan?.name || null,
+            contentTypeId: MICHIN_DEFAULTS.contentTypeId,
+            categoryId: MICHIN_DEFAULTS.categoryId,
+            subcategoryId: MICHIN_DEFAULTS.subcategoryId,
+            mediaGenerationAI: true,
           };
 
           // Generar nota con polling automático

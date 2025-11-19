@@ -170,9 +170,9 @@ Etiqueta de categoría.
 
 ```typescript
 {
-  id: "category-1",
+  id: "subcategoria-1",
   type: "category",
-  content: "Tecnología",
+  content: "Subcategoría",
   props: {
     color: "#e3f2fd",
     textColor: "#1565c0"

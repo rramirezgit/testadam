@@ -476,7 +476,7 @@ interface NewsletterComponentProps {
   isSelected: boolean;
   onSelect: () => void;
   updateComponentContent: (id: string, content: string) => void;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: (id: string, props: Record<string, any>, options?: { content?: string }) => void;
   removeComponent: (id: string) => void;
 }
 

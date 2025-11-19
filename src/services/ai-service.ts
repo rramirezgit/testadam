@@ -234,6 +234,10 @@ export function parseGeneratedContent(data: {
   origin: string;
   coverImageUrl: string;
   metadata: any;
+  contentTypeId?: string;
+  categoryId?: string;
+  subcategoryId?: string;
+  highlight?: boolean;
 }): ParsedGeneratedContent {
   try {
     console.log('🔍 Parseando contenido generado...');
@@ -245,6 +249,9 @@ export function parseGeneratedContent(data: {
     console.log('✅ Contenido parseado:', {
       objDataLength: objData.length,
       objDataWebLength: objDataWeb.length,
+      contentTypeId: data.contentTypeId,
+      categoryId: data.categoryId,
+      subcategoryId: data.subcategoryId,
     });
 
     return {
@@ -256,6 +263,11 @@ export function parseGeneratedContent(data: {
       origin: data.origin,
       coverImageUrl: data.coverImageUrl,
       metadata: data.metadata,
+      // Incluir metadatos de la nota
+      contentTypeId: data.contentTypeId,
+      categoryId: data.categoryId,
+      subcategoryId: data.subcategoryId,
+      highlight: data.highlight,
     };
   } catch (error: any) {
     console.error('❌ Error al parsear contenido generado:', error);
@@ -291,6 +303,18 @@ export function validateNoteRequest(request: GenerateNoteRequest): ValidationRes
   // Validar userId
   if (!request.userId) {
     errors.push({ field: 'userId', message: 'userId es obligatorio' });
+  }
+
+  if (!request.contentTypeId) {
+    errors.push({ field: 'contentTypeId', message: 'El tipo de contenido es obligatorio' });
+  }
+
+  if (!request.categoryId) {
+    errors.push({ field: 'categoryId', message: 'La categoría es obligatoria' });
+  }
+
+  if (!request.subcategoryId) {
+    errors.push({ field: 'subcategoryId', message: 'La subcategoría es obligatoria' });
   }
 
   return {

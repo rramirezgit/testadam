@@ -1,6 +1,6 @@
 /**
  * Generador de HTML para componente TituloConIcono
- * Título con icono y gradiente de fondo personalizable
+ * Título con icono personalizable (sin fondo)
  * Compatible con Gmail, Outlook y Apple Mail
  */
 
@@ -10,21 +10,8 @@ import { escapeHtml, getIconUrl, cleanTipTapHtml } from '../utils/html-utils';
 import type { EmailComponent } from '../types';
 
 export function generateTituloConIconoHtml(component: EmailComponent): string {
-  // ✅ TODAS las configuraciones de gradiente
-  const gradientColor1 = component.props?.gradientColor1 || 'rgba(78, 205, 196, 0.06)';
-  const gradientColor2 = component.props?.gradientColor2 || 'rgba(38, 166, 154, 0.00)';
-  const gradientType = component.props?.gradientType || 'linear';
-  const gradientAngle = component.props?.gradientAngle || 180;
-  const colorDistribution = component.props?.colorDistribution || 0;
+  // ✅ Props configurables
   const textColor = component.props?.textColor || '#00C3C3';
-
-  // ✅ Generar estilo de gradiente
-  const gradientStyle =
-    gradientType === 'linear'
-      ? `background: linear-gradient(${gradientAngle}deg, ${gradientColor1} ${colorDistribution}%, ${gradientColor2} 100%);`
-      : `background: radial-gradient(circle, ${gradientColor1} ${colorDistribution}%, ${gradientColor2} 100%);`;
-
-  // ✅ Props adicionales configurables
   const borderRadius = component.props?.borderRadius || '8px';
   const padding = component.props?.padding || '16px 20px';
   const iconSize = component.props?.iconSize || 24;
@@ -44,7 +31,7 @@ export function generateTituloConIconoHtml(component: EmailComponent): string {
 
   return `<table ${tableAttrs()} width="100%" style="margin: ${margin};">
   <tr>
-    <td style="${gradientStyle} border-radius: ${borderRadius}; padding: ${padding}; text-align: left;">
+    <td style="border-radius: ${borderRadius}; padding: ${padding}; text-align: left;">
       <table ${tableAttrs()}>
         <tr>
           <td style="vertical-align: middle; padding-right: 12px;">

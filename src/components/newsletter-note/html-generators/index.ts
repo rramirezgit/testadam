@@ -43,8 +43,15 @@ import {
 } from './components/note-container.generator';
 
 export { generateSingleNoteTemplate } from './templates/single-note.template';
+// ===== ADAPTADORES =====
+export {
+  generateHtmlFromObjDataWeb,
+  generateNewsletterFromObjDataWeb,
+  generateSingleNoteFromObjDataWeb,
+} from './adapters/objdataweb-adapter';
 // ===== TIPOS =====
 export type * from './types';
+
 export type { NewsletterNote } from './templates/newsletter.template';
 
 import { escapeHtml } from './utils/html-utils';

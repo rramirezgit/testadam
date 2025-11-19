@@ -24,7 +24,7 @@ interface EmailContentProps {
   onComponentSelect?: (id: string | null) => void;
   onColumnSelect?: (componentId: string, column: 'left' | 'right') => void;
   updateComponentContent: (id: string, content: string) => void;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: (id: string, props: Record<string, any>, options?: { content?: string }) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
   handleSelectionUpdate: (editor: Editor) => void;
   moveComponent: (id: string, direction: 'up' | 'down') => void;
@@ -45,6 +45,8 @@ interface EmailContentProps {
   containerMaxWidth: number;
   activeTemplate: string;
   activeVersion: 'newsletter' | 'web';
+  // Para TituloConIcono
+  categoryId?: string;
   // Nuevas props para newsletter
   isNewsletterMode?: boolean;
   newsletterNotes?: NewsletterNote[];
@@ -411,6 +413,8 @@ const EmailContent = memo(
     containerMaxWidth,
     activeTemplate,
     activeVersion,
+    // Para TituloConIcono
+    categoryId,
     // Nuevas props para newsletter
     isNewsletterMode = false,
     newsletterNotes = [],
@@ -675,6 +679,10 @@ const EmailContent = memo(
               onComponentSelect={onComponentSelect}
               selectedComponentId={selectedComponentId}
               renderCustomContent={component.type === 'bulletList' ? renderBulletList : undefined}
+              // Props adicionales para tituloConIcono
+              {...(component.type === 'tituloConIcono' && {
+                categoryId,
+              })}
               // Props adicionales para noteContainer
               {...(component.type === 'noteContainer' && {
                 removeNoteContainer,

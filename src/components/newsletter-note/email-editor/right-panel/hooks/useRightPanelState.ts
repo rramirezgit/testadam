@@ -186,5 +186,6 @@ export function useRightPanelState({
     categories,
     loadingMetadata,
     subcategories,
+    loadCategories,
   };
 }

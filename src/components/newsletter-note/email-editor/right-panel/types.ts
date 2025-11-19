@@ -5,13 +5,23 @@ import type { BannerOption } from 'src/components/newsletter-note/banner-selecto
 
 import type { NoteConfigurationViewHandle } from './views/NoteConfigurationView';
 
+export interface UpdateComponentPropsOptions {
+  content?: string;
+}
+
+export type UpdateComponentPropsFn = (
+  id: string,
+  props: Record<string, any>,
+  options?: UpdateComponentPropsOptions
+) => void;
+
 export interface RightPanelProps {
   selectedComponentId: string | null;
   setSelectedComponentId: (id: string | null) => void;
   rightPanelTab: number;
   setRightPanelTab: (tab: number) => void;
   getActiveComponents: () => EmailComponent[];
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
   updateComponentContent: (id: string, content: string) => void;
   selectedColor: string;
@@ -128,7 +138,7 @@ export interface RightPanelProps {
   // Prop para modo view-only
   isViewOnly?: boolean;
   noteConfigurationViewRef?: React.Ref<NoteConfigurationViewHandle>;
-  
+
   // NUEVAS PROPS para actualizar componentes dentro de newsletters
   updateNewsletterNoteComponentProps?: (
     noteId: string,
@@ -151,21 +161,21 @@ export interface TextOptionsProps
 export interface ImageOptionsProps {
   selectedComponentId: string | null;
   selectedComponent: EmailComponent;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
 }
 
 export interface GalleryOptionsProps {
   selectedComponentId: string | null;
   selectedComponent: EmailComponent;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
 }
 
 export interface ButtonOptionsProps {
   selectedComponentId: string | null;
   selectedComponent: EmailComponent;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
   updateComponentContent: (id: string, content: string) => void;
 }
@@ -173,34 +183,56 @@ export interface ButtonOptionsProps {
 export interface SummaryOptionsProps {
   selectedComponentId: string | null;
   getActiveComponents: () => EmailComponent[];
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
   setShowIconPicker: (show: boolean) => void;
 }
 
 export interface CategoryOptionsProps {
   selectedComponentId: string | null;
   getActiveComponents: () => EmailComponent[];
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
+  updateComponentContent: (id: string, content: string) => void;
+  categoryId: string;
+  setCategoryId: (id: string) => void;
+  subcategoryId: string;
+  setSubcategoryId: (id: string) => void;
+  categories: Array<{
+    id: string;
+    name: string;
+    subcategories?: Array<{ id: string; name: string }>;
+  }>;
+  subcategories: Array<{ id: string; name: string }>;
+  contentTypeId: string;
+  loadingMetadata: boolean;
 }
 
 export interface TituloConIconoOptionsProps {
   selectedComponentId: string | null;
   getActiveComponents: () => EmailComponent[];
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
   setShowIconPicker: (show: boolean) => void;
+  // Nuevas props para sincronización con categorías
+  contentTypeId: string;
+  setContentTypeId: (id: string) => void;
+  categoryId: string;
+  setCategoryId: (id: string) => void;
+  contentTypes: Array<{ id: string; name: string }>;
+  categories: Array<{ id: string; name: string; imageUrl?: string }>;
+  loadingMetadata: boolean;
+  loadCategories: (contentTypeId: string) => void;
 }
 
 export interface RespaldadoPorOptionsProps {
   selectedComponentId: string | null;
   getActiveComponents: () => EmailComponent[];
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
 }
 
 export interface DividerOptionsProps {
   selectedComponentId: string | null;
   selectedComponent: EmailComponent | null;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
-  updateComponentProps: (id: string, props: Record<string, any>) => void;
+  updateComponentProps: UpdateComponentPropsFn;
 }
 
 export interface ImageCropDialogProps {

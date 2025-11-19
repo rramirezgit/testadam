@@ -28,7 +28,7 @@ const handleSendTest = async (emails: string[]) => {
 
     if (isNewsletterMode && currentNewsletterId) {
       // Enviar newsletter para revisión
-      await sendNewsletterForReview(currentNewsletterId, emails, content);
+      await sendNewsletterForReview(currentNewsletterId, emails, content, newsletterTitle);
     } else if (initialNote?.id) {
       // Enviar post para revisión (nota existente)
       await sendPostForReview(initialNote.id, emails, content);
