@@ -23,6 +23,24 @@ export function generateNoteContainerHtml(component: EmailComponent): string {
   const noteTitle = component.props?.noteTitle || 'Nota';
   const containerStyle = component.props?.containerStyle || {};
 
+  // ✅ Leer estilos configurables desde props o component.style
+  const borderWidth =
+    component.props?.containerBorderWidth?.toString().replace('px', '') ||
+    component.style?.borderWidth?.toString().replace('px', '') ||
+    '2';
+  const borderColor =
+    component.props?.containerBorderColor || component.style?.borderColor || '#e0e0e0';
+  const borderRadius =
+    component.props?.containerBorderRadius?.toString().replace('px', '') ||
+    component.style?.borderRadius?.toString().replace('px', '') ||
+    '12';
+  const padding =
+    component.props?.containerPadding?.toString().replace('px', '') ||
+    component.style?.padding?.toString().replace('px', '') ||
+    '24';
+  const backgroundColor =
+    component.props?.containerBackgroundColor || component.style?.backgroundColor || '#ffffff';
+
   // ✅ Convertir estilos del contenedor a CSS inline
   const containerCss = Object.entries(containerStyle)
     .map(([key, value]) => {
@@ -31,16 +49,17 @@ export function generateNoteContainerHtml(component: EmailComponent): string {
     })
     .join('; ');
 
-  // ✅ Estilos por defecto del contenedor
-  const defaultStyles = [
-    'border: 2px solid #e0e0e0',
-    'border-radius: 12px',
-    'padding: 24px',
-    'margin: 24px 0',
-    'background-color: #ffffff',
+  // ✅ Estilos configurables del contenedor (maxWidth fijo en 560px)
+  const configurableStyles = [
+    `border: ${borderWidth}px solid ${borderColor}`,
+    `border-radius: ${borderRadius}px`,
+    `padding: ${padding}px`,
+    `max-width: 560px`,
+    `margin: 24px auto`,
+    `background-color: ${backgroundColor}`,
   ].join('; ');
 
-  const finalStyles = containerCss || defaultStyles;
+  const finalStyles = containerCss || configurableStyles;
 
   // ✅ Renderizar los componentes internos
   let innerComponentsHtml = '';

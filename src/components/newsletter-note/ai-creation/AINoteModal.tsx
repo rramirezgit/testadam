@@ -369,15 +369,12 @@ export default function AINoteModal({
 
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                 <Box flex={1}>
-                  <FormControl
-                    fullWidth
-                    variant="filled"
-                    disabled={isGenerating || loadingContentTypes}
-                  >
+                  <FormControl fullWidth disabled={isGenerating || loadingContentTypes}>
                     <InputLabel>
                       {loadingContentTypes ? 'Cargando tipos...' : 'Tipo de contenido *'}
                     </InputLabel>
                     <Select
+                      variant="filled"
                       value={formState.contentTypeId}
                       label="Tipo de contenido *"
                       onChange={(e) => handleContentTypeSelect(e.target.value)}
@@ -416,7 +413,6 @@ export default function AINoteModal({
                 <Box flex={1}>
                   <FormControl
                     fullWidth
-                    variant="filled"
                     disabled={
                       isGenerating ||
                       !formState.contentTypeId ||
@@ -429,6 +425,7 @@ export default function AINoteModal({
                         : 'Categoría *'}
                     </InputLabel>
                     <Select
+                      variant="filled"
                       value={formState.categoryId}
                       label="Categoría *"
                       onChange={(e) => handleCategorySelect(e.target.value)}
@@ -473,7 +470,6 @@ export default function AINoteModal({
                 <Box flex={1}>
                   <FormControl
                     fullWidth
-                    variant="filled"
                     disabled={
                       isGenerating ||
                       !formState.categoryId ||
@@ -482,6 +478,7 @@ export default function AINoteModal({
                   >
                     <InputLabel>Subcategoría *</InputLabel>
                     <Select
+                      variant="filled"
                       value={formState.subcategoryId}
                       label="Subcategoría *"
                       onChange={(e) => handleSubcategorySelect(e.target.value)}

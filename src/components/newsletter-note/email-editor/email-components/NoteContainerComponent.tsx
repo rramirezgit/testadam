@@ -48,6 +48,24 @@ export default function NoteContainerComponent({
     aiMetadata?.taskId ? state.getTaskById(aiMetadata.taskId) : null
   );
 
+  // Obtener estilos configurables desde props o usar defaults
+  const borderWidth =
+    component.props?.containerBorderWidth?.toString().replace('px', '') ||
+    component.style?.borderWidth?.toString().replace('px', '') ||
+    '2';
+  const borderColor =
+    component.props?.containerBorderColor || component.style?.borderColor || '#e0e0e0';
+  const borderRadius =
+    component.props?.containerBorderRadius?.toString().replace('px', '') ||
+    component.style?.borderRadius?.toString().replace('px', '') ||
+    '12';
+  const padding =
+    component.props?.containerPadding?.toString().replace('px', '') ||
+    component.style?.padding?.toString().replace('px', '') ||
+    '24';
+  const backgroundColor =
+    component.props?.containerBackgroundColor || component.style?.backgroundColor || '#ffffff';
+
   const handleRemove = () => {
     if (removeNoteContainer) {
       removeNoteContainer(component.id);
@@ -107,10 +125,11 @@ export default function NoteContainerComponent({
       <Box
         sx={{
           position: 'relative',
-          border: '2px solid #e0e0e0',
-          borderRadius: '12px',
-          padding: '24px',
-          backgroundColor: '#ffffff',
+          border: `${borderWidth}px solid ${borderColor}`,
+          borderRadius: `${borderRadius}px`,
+          padding: `${padding}px`,
+          backgroundColor,
+          margin: '0 auto',
           transition: 'all 0.3s ease',
         }}
       >

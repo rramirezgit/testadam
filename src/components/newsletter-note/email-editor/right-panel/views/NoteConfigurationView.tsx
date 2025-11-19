@@ -164,6 +164,9 @@ interface NoteConfigurationViewProps {
     props: Record<string, any>,
     options?: { content?: string }
   ) => void;
+  // Nuevas props para mostrar ContainerOptions en modo nota-Comunicado
+  activeVersion?: 'newsletter' | 'web';
+  isContainerSelected?: boolean;
 }
 
 const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfigurationViewProps>(
@@ -231,6 +234,8 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
       setContainerMaxWidth,
       getActiveComponents,
       updateComponentProps,
+      activeVersion,
+      isContainerSelected,
     },
     ref
   ) => {
@@ -552,8 +557,8 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
           },
         })}
       >
-        {/* Toggle de tabs - Solo en modo Newsletter */}
-        {isNewsletterMode && (
+        {/* Toggle de tabs - En modo Newsletter O en modo nota-Comunicado */}
+        {(isNewsletterMode || (!isNewsletterMode && activeVersion === 'newsletter')) && (
           <AppBar position="static" color="default" elevation={0} sx={{ flexShrink: 0 }}>
             {/* ToggleButtonGroup para tabs */}
             <Box
@@ -585,11 +590,11 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
                   },
                 }}
               >
-                <ToggleButton value={1} aria-label="diseno-contenedor">
-                  Diseño
-                </ToggleButton>
                 <ToggleButton value={0} aria-label="informacion-basica">
                   Configuración
+                </ToggleButton>
+                <ToggleButton value={1} aria-label="diseno-contenedor">
+                  Diseño
                 </ToggleButton>
               </ToggleButtonGroup>
             </Box>
@@ -597,9 +602,8 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
         )}
 
         <Box sx={{ overflowY: 'auto', overflowX: 'hidden', flexGrow: 1, height: 0 }}>
-          {/* En modo Web: Mostrar siempre configuración (sin tabs) */}
-          {/* En modo Newsletter: Mostrar según containerTab */}
-          {(!isNewsletterMode || containerTab === 0) && (
+          {/* Tab 0: Configuración - Mostrar en modo Web sin tabs, o en tab 0 cuando hay tabs */}
+          {((!isNewsletterMode && activeVersion !== 'newsletter') || containerTab === 0) && (
             <Box sx={{ p: 2 }}>
               <Chip label="General" variant="filled" sx={{ mb: 2 }} size="small" />
 
@@ -1053,11 +1057,11 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
             </Box>
           )}
 
-          {/* Tab 1: Diseño del Contenedor / Temas de Color - Solo en Newsletter */}
-          {isNewsletterMode && containerTab === 1 && (
+          {/* Tab 1: Diseño del Contenedor / Temas de Color */}
+          {containerTab === 1 && (
             <Box sx={{ p: 2 }}>
-              {/* Si está en modo Newsletter, mostrar Temas de Color */}
-              {newsletterHeader && newsletterFooter ? (
+              {/* Si está en modo Newsletter, mostrar Temas de Color. Si está en modo nota-Comunicado, mostrar ContainerOptions */}
+              {isNewsletterMode && newsletterHeader && newsletterFooter ? (
                 <Box>
                   <Chip label="Temas de Color" variant="filled" sx={{ mb: 2 }} size="small" />
                   <Box
@@ -1138,19 +1142,27 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
                   </Box>
                 </Box>
               ) : (
-                /* Modo normal: Opciones de diseño del contenedor */
-                <ContainerOptions
-                  containerBorderWidth={containerBorderWidth}
-                  setContainerBorderWidth={setContainerBorderWidth}
-                  containerBorderColor={containerBorderColor}
-                  setContainerBorderColor={setContainerBorderColor}
-                  containerBorderRadius={containerBorderRadius}
-                  setContainerBorderRadius={setContainerBorderRadius}
-                  containerPadding={containerPadding}
-                  setContainerPadding={setContainerPadding}
-                  containerMaxWidth={containerMaxWidth}
-                  setContainerMaxWidth={setContainerMaxWidth}
-                />
+                /* Modo nota-Comunicado: Opciones de diseño del contenedor */
+                <Box>
+                  <Chip
+                    label="Diseño del Contenedor"
+                    variant="filled"
+                    sx={{ mb: 2 }}
+                    size="small"
+                  />
+                  <ContainerOptions
+                    containerBorderWidth={containerBorderWidth}
+                    setContainerBorderWidth={setContainerBorderWidth}
+                    containerBorderColor={containerBorderColor}
+                    setContainerBorderColor={setContainerBorderColor}
+                    containerBorderRadius={containerBorderRadius}
+                    setContainerBorderRadius={setContainerBorderRadius}
+                    containerPadding={containerPadding}
+                    setContainerPadding={setContainerPadding}
+                    containerMaxWidth={containerMaxWidth}
+                    setContainerMaxWidth={setContainerMaxWidth}
+                  />
+                </Box>
               )}
             </Box>
           )}

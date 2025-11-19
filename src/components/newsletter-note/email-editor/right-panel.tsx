@@ -362,6 +362,8 @@ export default function RightPanel({
           setContainerMaxWidth={setContainerMaxWidth}
           getActiveComponents={getActiveComponents}
           updateComponentProps={updateComponentProps}
+          activeVersion={activeVersion}
+          isContainerSelected={isContainerSelected}
         />
 
         {/* Snackbar para notificaciones */}

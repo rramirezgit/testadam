@@ -1,8 +1,12 @@
 import type { EmailComponent } from 'src/types/saved-note';
 
+import { CONFIG } from 'src/global-config';
+
 import { buildListHtml } from '../email-components/utils';
 
 import type { ComponentType } from '../types';
+
+const isMichinPlatform = CONFIG.platform === 'MICHIN';
 
 // Función para crear un nuevo componente
 export const createNewComponent = (
@@ -27,7 +31,9 @@ export const createNewComponent = (
                 : type === 'author'
                   ? 'Autor'
                   : type === 'summary'
-                    ? 'Resumen de la noticia'
+                    ? isMichinPlatform
+                      ? '<p>Resumen de la noticia</p>'
+                      : 'Resumen de la noticia'
                     : type === 'tituloConIcono'
                       ? 'Título con Icono'
                       : type === 'respaldadoPor'
@@ -47,13 +53,21 @@ export const createNewComponent = (
             : type === 'bulletList'
               ? { items: ['Elemento de lista'], listStyle: 'disc' }
               : type === 'summary'
-                ? {
-                    summaryType: 'resumen',
-                    label: 'Resumen',
-                    icon: 'https://img.icons8.com/color/48/note.png',
-                    backgroundColor: '#f8f9fa',
-                    textColor: '#495057',
-                  }
+                ? isMichinPlatform
+                  ? {
+                      variant: 'amarillo',
+                      titleContent: '<p>Resumen</p>',
+                      imageUrl: '',
+                      imageAlt: 'Imagen',
+                      layout: 'image-left',
+                    }
+                  : {
+                      summaryType: 'resumen',
+                      label: 'Resumen',
+                      icon: 'https://img.icons8.com/color/48/note.png',
+                      backgroundColor: '#f8f9fa',
+                      textColor: '#495057',
+                    }
                 : type === 'tituloConIcono'
                   ? {
                       icon: 'https://img.icons8.com/color/48/line-chart.png',

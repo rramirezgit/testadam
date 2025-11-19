@@ -1,14 +1,17 @@
 import {
   Box,
+  Button,
   Select,
+  Slider,
   Divider,
   MenuItem,
   TextField,
-  Typography,
   InputLabel,
+  Typography,
   FormControl,
 } from '@mui/material';
 
+import GeneralColorPicker from '../../general-color-picker';
 import { findComponentById } from '../utils/componentHelpers';
 
 interface NoteContainerOptionsProps {
@@ -100,12 +103,32 @@ export default function NoteContainerOptions({
         style,
       });
       updateNewsletterNoteComponentStyle(newsletterInfo.noteId, newsletterInfo.componentId, style);
+
+      // También actualizar props para que los cambios persistan
+      if (updateNewsletterNoteComponentProps) {
+        updateNewsletterNoteComponentProps(newsletterInfo.noteId, newsletterInfo.componentId, {
+          ...component.props,
+          containerBorderWidth: style.borderWidth,
+          containerBorderColor: style.borderColor,
+          containerBorderRadius: style.borderRadius,
+          containerPadding: style.padding,
+        });
+      }
     } else {
       console.log('🎨 Updating regular component style:', {
         componentId: selectedComponentId,
         style,
       });
       updateComponentStyle(selectedComponentId!, style);
+
+      // También actualizar props para componentes regulares
+      updateComponentProps(selectedComponentId!, {
+        ...component.props,
+        containerBorderWidth: style.borderWidth,
+        containerBorderColor: style.borderColor,
+        containerBorderRadius: style.borderRadius,
+        containerPadding: style.padding,
+      });
     }
   };
 
@@ -150,74 +173,138 @@ export default function NoteContainerOptions({
         Estilos del contenedor
       </Typography>
 
-      <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-        <InputLabel>Color del borde</InputLabel>
-        <Select
-          label="Color del borde"
-          value={component.style?.borderColor || '#e0e0e0'}
-          onChange={(e) => {
+      {/* Grosor del borde */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
+          Grosor del borde
+        </Typography>
+        <Slider
+          value={parseInt(
+            (component.props?.containerBorderWidth || component.style?.borderWidth)
+              ?.toString()
+              .replace('px', '') || '2'
+          )}
+          onChange={(_, newValue) => {
             handleUpdateStyle({
               ...component.style,
-              borderColor: e.target.value,
+              borderWidth: `${newValue}px`,
             });
           }}
-        >
-          <MenuItem value="#e0e0e0">Gris claro</MenuItem>
-          <MenuItem value="#1976d2">Azul</MenuItem>
-          <MenuItem value="#2e7d32">Verde</MenuItem>
-          <MenuItem value="#ed6c02">Naranja</MenuItem>
-          <MenuItem value="#d32f2f">Rojo</MenuItem>
-          <MenuItem value="#9c27b0">Púrpura</MenuItem>
-        </Select>
-      </FormControl>
+          min={0}
+          max={10}
+          step={1}
+          marks
+          valueLabelDisplay="auto"
+          sx={{ mb: 1 }}
+        />
+        <Typography variant="caption" color="text.secondary">
+          {parseInt(
+            (component.props?.containerBorderWidth || component.style?.borderWidth)
+              ?.toString()
+              .replace('px', '') || '2'
+          )}
+          px
+        </Typography>
+      </Box>
 
-      <TextField
-        fullWidth
-        size="small"
-        label="Grosor del borde (px)"
-        type="number"
-        value={component.style?.borderWidth?.toString().replace('px', '') || '2'}
-        onChange={(e) => {
-          handleUpdateStyle({
-            ...component.style,
-            borderWidth: `${e.target.value}px`,
-          });
-        }}
-        sx={{ mb: 2 }}
-        InputProps={{ inputProps: { min: 1, max: 10 } }}
-      />
+      {/* Color del borde */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
+          Color del borde
+        </Typography>
+        <GeneralColorPicker
+          selectedColor={
+            component.props?.containerBorderColor || component.style?.borderColor || '#e0e0e0'
+          }
+          onChange={(newColor) => {
+            handleUpdateStyle({
+              ...component.style,
+              borderColor: newColor,
+            });
+          }}
+          label=""
+          size="small"
+        />
+      </Box>
 
-      <TextField
-        fullWidth
-        size="small"
-        label="Radio del borde (px)"
-        type="number"
-        value={component.style?.borderRadius?.toString().replace('px', '') || '12'}
-        onChange={(e) => {
-          handleUpdateStyle({
-            ...component.style,
-            borderRadius: `${e.target.value}px`,
-          });
-        }}
-        sx={{ mb: 2 }}
-        InputProps={{ inputProps: { min: 0, max: 50 } }}
-      />
+      {/* Radio del borde */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
+          Radio del borde
+        </Typography>
+        <Slider
+          value={parseInt(
+            (component.props?.containerBorderRadius || component.style?.borderRadius)
+              ?.toString()
+              .replace('px', '') || '12'
+          )}
+          onChange={(_, newValue) => {
+            handleUpdateStyle({
+              ...component.style,
+              borderRadius: `${newValue}px`,
+            });
+          }}
+          min={0}
+          max={50}
+          step={1}
+          marks={[
+            { value: 0, label: '0' },
+            { value: 12, label: '12' },
+            { value: 24, label: '24' },
+            { value: 50, label: '50' },
+          ]}
+          valueLabelDisplay="auto"
+          sx={{ mb: 1 }}
+        />
+        <Typography variant="caption" color="text.secondary">
+          {parseInt(
+            (component.props?.containerBorderRadius || component.style?.borderRadius)
+              ?.toString()
+              .replace('px', '') || '12'
+          )}
+          px
+        </Typography>
+      </Box>
 
-      <TextField
-        fullWidth
-        size="small"
-        label="Padding interno (px)"
-        type="number"
-        value={component.style?.padding?.toString().replace('px', '') || '20'}
-        onChange={(e) => {
-          handleUpdateStyle({
-            ...component.style,
-            padding: `${e.target.value}px`,
-          });
-        }}
-        sx={{ mb: 2 }}
-        InputProps={{ inputProps: { min: 0, max: 100 } }}
-      />
+      {/* Padding interno */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
+          Espaciado interno
+        </Typography>
+        <Slider
+          value={parseInt(
+            (component.props?.containerPadding || component.style?.padding)
+              ?.toString()
+              .replace('px', '') || '20'
+          )}
+          onChange={(_, newValue) => {
+            handleUpdateStyle({
+              ...component.style,
+              padding: `${newValue}px`,
+            });
+          }}
+          min={0}
+          max={50}
+          step={1}
+          marks={[
+            { value: 0, label: '0' },
+            { value: 10, label: '10' },
+            { value: 20, label: '20' },
+            { value: 30, label: '30' },
+            { value: 50, label: '50' },
+          ]}
+          valueLabelDisplay="auto"
+          sx={{ mb: 1 }}
+        />
+        <Typography variant="caption" color="text.secondary">
+          {parseInt(
+            (component.props?.containerPadding || component.style?.padding)
+              ?.toString()
+              .replace('px', '') || '20'
+          )}
+          px
+        </Typography>
+      </Box>
 
       <FormControl fullWidth size="small" sx={{ mb: 2 }}>
         <InputLabel>Color de fondo</InputLabel>
@@ -238,6 +325,60 @@ export default function NoteContainerOptions({
           <MenuItem value="#e8f5e8">Verde muy claro</MenuItem>
         </Select>
       </FormControl>
+
+      {/* Presets de estilos */}
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 500 }}>
+          Estilos predefinidos
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              handleUpdateStyle({
+                ...component.style,
+                borderWidth: '1px',
+                borderColor: '#e0e0e0',
+                borderRadius: '12px',
+                padding: '10px',
+              });
+            }}
+          >
+            Predeterminado
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              handleUpdateStyle({
+                ...component.style,
+                borderWidth: '2px',
+                borderColor: '#1976d2',
+                borderRadius: '8px',
+                padding: '20px',
+              });
+            }}
+          >
+            Moderno
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => {
+              handleUpdateStyle({
+                ...component.style,
+                borderWidth: '0px',
+                borderColor: 'transparent',
+                borderRadius: '0px',
+                padding: '0px',
+              });
+            }}
+          >
+            Sin borde
+          </Button>
+        </Box>
+      </Box>
     </Box>
   );
 }

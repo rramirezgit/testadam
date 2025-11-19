@@ -24,6 +24,7 @@ interface ImageUploaderProps {
   containerBackgroundColor: string;
   borderRadius: number;
   width?: string;
+  imageBorderRadius?: string;
   onImageClick: (e: React.MouseEvent) => void;
 }
 
@@ -37,106 +38,111 @@ const ImageUploader = memo(
     containerBackgroundColor,
     borderRadius,
     width,
+    imageBorderRadius,
     onImageClick,
-  }: ImageUploaderProps) => (
-    <div
-      className="image-component-wrapper"
-      style={{
-        position: 'relative',
-        height,
-        overflow: 'hidden',
-        backgroundColor:
-          height !== 'auto' && containerBackgroundColor ? containerBackgroundColor : 'transparent',
-        borderRadius: `${borderRadius}px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        width: width || '100%',
-      }}
-      onClick={onImageClick}
-    >
-      {imageUrl ? (
-        <Box
-          sx={{
-            position: 'relative',
-            backgroundColor: containerBackgroundColor ? 'transparent' : backgroundColor,
-            borderRadius: `${borderRadius}px`,
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            width: '100%',
-          }}
-        >
-          <img
-            src={imageUrl}
-            alt={imageAlt}
-            style={{
-              maxWidth: '100%',
-              width: '100%',
-              height: '100%',
-              objectFit: objectFit as React.CSSProperties['objectFit'],
-              borderRadius: `${borderRadius}px`,
-              display: 'block',
-            }}
-          />
+  }: ImageUploaderProps) => {
+    // Determinar el radio de borde a usar (específico de la imagen o del contenedor)
+    const effectiveImageBorderRadius = imageBorderRadius || `${borderRadius}px`;
 
-          {/* Chip indicador para imágenes base64 */}
-          {isBase64Image(imageUrl) && (
-            <Chip
-              icon={<Icon icon="mdi:cloud-upload-outline" />}
-              label="Subir a S3"
-              color="warning"
-              size="small"
-              sx={{
-                position: 'absolute',
-                top: 8,
-                left: 8,
-                fontSize: '0.75rem',
-                height: '24px',
-                backgroundColor: 'rgba(255, 152, 0, 0.9)',
-                color: 'white',
-                '& .MuiChip-icon': {
-                  color: 'white',
-                  fontSize: '16px',
-                },
-                '& .MuiChip-label': {
-                  padding: '0 6px',
-                },
-                zIndex: 2,
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    return (
+      <div
+        className="image-component-wrapper"
+        style={{
+          position: 'relative',
+          height,
+          overflow: 'hidden',
+          backgroundColor:
+            height !== 'auto' && containerBackgroundColor
+              ? containerBackgroundColor
+              : 'transparent',
+          borderRadius: effectiveImageBorderRadius,
+          display: 'inline-block',
+          cursor: 'pointer',
+          width: width || '100%',
+          flexShrink: 0,
+        }}
+        onClick={onImageClick}
+      >
+        {imageUrl ? (
+          <Box
+            sx={{
+              position: 'relative',
+              backgroundColor: containerBackgroundColor ? 'transparent' : backgroundColor,
+              borderRadius: effectiveImageBorderRadius,
+              overflow: 'hidden',
+              display: 'block',
+              height: '100%',
+              width: '100%',
+            }}
+          >
+            <img
+              src={imageUrl}
+              alt={imageAlt}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: objectFit as React.CSSProperties['objectFit'],
+                borderRadius: effectiveImageBorderRadius,
+                display: 'block',
+                margin: 0,
               }}
             />
-          )}
-        </Box>
-      ) : (
-        <Box
-          sx={{
-            width: '100%',
-            height: '100%',
-            minHeight: 150,
-            backgroundColor: '#f5f5f5',
-            borderRadius: `${borderRadius}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid #e0e0e0',
-            color: '#9e9e9e',
-            transition: 'all 0.2s ease',
-            '&:hover': {
-              backgroundColor: '#eeeeee',
-              borderColor: '#2196f3',
-              color: '#2196f3',
-            },
-          }}
-        >
-          <img src={CONFIG.emptyImageUrl} alt="Imagen vacía" style={{ maxWidth: '80px' }} />
-        </Box>
-      )}
-    </div>
-  )
+
+            {/* Chip indicador para imágenes base64 */}
+            {isBase64Image(imageUrl) && (
+              <Chip
+                icon={<Icon icon="mdi:cloud-upload-outline" />}
+                label="Subir a S3"
+                color="warning"
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  fontSize: '0.75rem',
+                  height: '24px',
+                  backgroundColor: 'rgba(255, 152, 0, 0.9)',
+                  color: 'white',
+                  '& .MuiChip-icon': {
+                    color: 'white',
+                    fontSize: '16px',
+                  },
+                  '& .MuiChip-label': {
+                    padding: '0 6px',
+                  },
+                  zIndex: 2,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                }}
+              />
+            )}
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              width: '100%',
+              height: '100%',
+              minHeight: 150,
+              backgroundColor: '#f5f5f5',
+              borderRadius: `${borderRadius}px`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid #e0e0e0',
+              color: '#9e9e9e',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: '#eeeeee',
+                borderColor: '#2196f3',
+                color: '#2196f3',
+              },
+            }}
+          >
+            <img src={CONFIG.emptyImageUrl} alt="Imagen vacía" style={{ maxWidth: '80px' }} />
+          </Box>
+        )}
+      </div>
+    );
+  }
 );
 
 ImageUploader.displayName = 'ImageUploader';
@@ -261,9 +267,23 @@ const ImageTextComponent = memo(
     // Props de imagen (nuevas)
     const imageHeight = component.props?.imageHeight ?? variantConfig.imageHeight ?? 'auto';
     const imageFixedWidth = component.props?.imageFixedWidth ?? variantConfig.imageFixedWidth;
-    const imageObjectFit = component.props?.imageObjectFit || 'contain';
+    const imageObjectFit =
+      component.props?.imageObjectFit ?? (variantConfig.imageObjectFit || 'contain');
     const imageBackgroundColor = component.props?.imageBackgroundColor || 'transparent';
     const imageContainerBackgroundColor = component.props?.imageContainerBackgroundColor || '';
+    const imageBorderRadius = component.props?.imageBorderRadius ?? variantConfig.imageBorderRadius;
+
+    // Props de fondo con imagen
+    const backgroundImageUrl =
+      component.props?.backgroundImageUrl ?? variantConfig.backgroundImageUrl;
+    const backgroundSize = component.props?.backgroundSize ?? variantConfig.backgroundSize;
+    const backgroundPosition =
+      component.props?.backgroundPosition ?? variantConfig.backgroundPosition;
+    const backgroundRepeat = component.props?.backgroundRepeat ?? variantConfig.backgroundRepeat;
+
+    // Props de contenedor
+    const minHeight = component.props?.minHeight ?? variantConfig.minHeight;
+    const alignItems = component.props?.alignItems ?? variantConfig.alignItems;
 
     // Layout prop (nuevo)
     const layout = component.props?.layout || 'image-left'; // 'image-left', 'image-right', 'image-top', 'image-bottom'
@@ -460,6 +480,7 @@ const ImageTextComponent = memo(
           containerBackgroundColor={imageContainerBackgroundColor}
           borderRadius={borderRadius}
           width={imageFixedWidth}
+          imageBorderRadius={imageBorderRadius}
           onImageClick={handleImageClick}
         />
       </Box>
@@ -515,6 +536,17 @@ const ImageTextComponent = memo(
             overflow: 'hidden',
             p: `${padding}px`,
             border: borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none',
+            ...(backgroundImageUrl && {
+              backgroundImage: `url(${backgroundImageUrl})`,
+              backgroundSize: backgroundSize || 'cover',
+              backgroundPosition: backgroundPosition || 'center',
+              backgroundRepeat: backgroundRepeat || 'no-repeat',
+            }),
+            ...(minHeight && {
+              minHeight,
+              display: 'flex',
+              flexDirection: 'column',
+            }),
             ...(component.style || {}),
           }}
         >
@@ -523,7 +555,11 @@ const ImageTextComponent = memo(
               display: 'flex',
               flexDirection: isHorizontal ? { xs: 'column', sm: 'row' } : 'column',
               gap: `${spacing}px`,
-              alignItems: isHorizontal ? 'flex-start' : 'stretch',
+              alignItems: alignItems || (isHorizontal ? 'flex-start' : 'stretch'),
+              ...(minHeight && {
+                flex: 1,
+                justifyContent: alignItems === 'center' ? 'center' : 'flex-start',
+              }),
             }}
           >
             {/* Renderizar imagen y texto según el layout */}

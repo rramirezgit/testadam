@@ -88,7 +88,8 @@ export function renderComponentToHtml(component: EmailComponent): string {
       return generateCategoryHtml(component);
 
     case 'summary':
-      return generateSummaryHtml(component);
+      return generateImageTextHtml(component);
+    // return generateSummaryHtml(component);
 
     case 'author':
       return generateAuthorHtml(component);

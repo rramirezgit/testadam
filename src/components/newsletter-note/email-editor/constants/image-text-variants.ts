@@ -17,6 +17,17 @@ export interface ImageTextVariantConfig {
   imageFixedWidth?: string; // Ancho fijo opcional
   // Opcional: gradiente de fondo
   backgroundGradient?: string;
+  // Opcionales: imagen de fondo
+  backgroundImageUrl?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundRepeat?: string;
+  // Opcionales: estilos de imagen específicos
+  imageBorderRadius?: string;
+  imageObjectFit?: string;
+  // Opcionales: estilos de contenedor
+  minHeight?: string;
+  alignItems?: string; // 'center', 'flex-start', 'flex-end'
 }
 
 export const IMAGE_TEXT_VARIANTS: Record<string, ImageTextVariantConfig> = {
@@ -38,11 +49,11 @@ export const IMAGE_TEXT_VARIANTS: Record<string, ImageTextVariantConfig> = {
   rojo: {
     name: 'rojo',
     displayName: 'Rojo',
-    backgroundColor: '#fef2f2', // Fondo rojo muy claro
+    backgroundColor: '#FF000029', // Fondo rojo muy claro
     borderColor: '#fca5a5', // Borde rojo claro
     borderWidth: 2,
-    textColor: '#7f1d1d', // Texto rojo oscuro
-    titleColor: '#991b1b', // Título rojo oscuro
+    textColor: '#333333',
+    titleColor: '#000000',
     padding: 20,
     spacing: 16,
     borderRadius: 12,
@@ -53,11 +64,11 @@ export const IMAGE_TEXT_VARIANTS: Record<string, ImageTextVariantConfig> = {
   amarillo: {
     name: 'amarillo',
     displayName: 'Amarillo',
-    backgroundColor: '#fefce8', // Fondo amarillo muy claro
+    backgroundColor: '#FFC83629', // Fondo amarillo muy claro
     borderColor: '#fde047', // Borde amarillo claro
     borderWidth: 2,
-    textColor: '#713f12', // Texto amarillo oscuro/marrón
-    titleColor: '#854d0e', // Título amarillo oscuro/marrón
+    textColor: '#333333',
+    titleColor: '#000000',
     padding: 20,
     spacing: 16,
     borderRadius: 12,
@@ -67,12 +78,12 @@ export const IMAGE_TEXT_VARIANTS: Record<string, ImageTextVariantConfig> = {
   },
   azulClaro: {
     name: 'azulClaro',
-    displayName: 'Azul Claro',
-    backgroundColor: '#eff6ff', // Fondo azul muy claro
+    displayName: 'Azul',
+    backgroundColor: '#00649429', // Fondo azul muy claro
     borderColor: '#93c5fd', // Borde azul claro
     borderWidth: 2,
-    textColor: '#1e3a8a', // Texto azul oscuro
-    titleColor: '#1e40af', // Título azul oscuro
+    textColor: '#333333',
+    titleColor: '#000000',
     padding: 20,
     spacing: 16,
     borderRadius: 12,
@@ -82,18 +93,44 @@ export const IMAGE_TEXT_VARIANTS: Record<string, ImageTextVariantConfig> = {
   },
   azulOscuro: {
     name: 'azulOscuro',
-    displayName: 'Azul Oscuro',
-    backgroundColor: '#1e3a8a', // Fondo azul oscuro
+    displayName: 'Azul 2',
+    backgroundColor: '#00649429', // Fondo azul oscuro
     borderColor: '#3b82f6', // Borde azul medio
     borderWidth: 2,
-    textColor: '#e0e7ff', // Texto claro
-    titleColor: '#f0f9ff', // Título claro
+    textColor: '#333333',
+    titleColor: '#000000',
     padding: 20,
     spacing: 16,
     borderRadius: 12,
     defaultImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/michinadam/4b7c6c19c1.png',
     imageHeight: '112px',
     imageFixedWidth: '112px',
+  },
+  avatarSinBorde: {
+    name: 'avatarSinBorde',
+    displayName: 'Avatar',
+    backgroundColor: 'transparent', // Sin color de fondo
+    borderColor: 'transparent',
+    borderWidth: 0, // Sin borde
+    textColor: '#FFFFFF', // Texto blanco
+    titleColor: '#FFFFFF', // Título blanco
+    padding: 20,
+    spacing: 16,
+    borderRadius: 12,
+    defaultImageUrl: '', // Sin imagen predeterminada
+    imageHeight: '59px', // Avatar pequeño
+    imageFixedWidth: '59px',
+    // Fondo con imagen
+    backgroundImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/michinadam/65bdac4b03.webp',
+    backgroundSize: '100% 100%',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    // Estilo de imagen circular como avatar
+    imageBorderRadius: '100px',
+    imageObjectFit: 'cover',
+    // Estilos de contenedor
+    minHeight: '200px',
+    alignItems: 'center', // Centrado vertical
   },
 };
 

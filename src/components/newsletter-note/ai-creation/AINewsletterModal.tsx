@@ -430,13 +430,13 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
                     <Box flex={1}>
                       <FormControl
                         fullWidth
-                        variant="filled"
                         disabled={formState.status === 'generating' || loadingContentTypes}
                       >
                         <InputLabel>
                           {loadingContentTypes ? 'Cargando tipos...' : 'Tipo de contenido *'}
                         </InputLabel>
                         <Select
+                          variant="filled"
                           value={note.contentTypeId}
                           label="Tipo de contenido *"
                           onChange={(e) => handleNoteContentTypeChange(index, e.target.value)}
@@ -469,7 +469,6 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
                     <Box flex={1}>
                       <FormControl
                         fullWidth
-                        variant="filled"
                         disabled={
                           formState.status === 'generating' ||
                           !note.contentTypeId ||
@@ -480,6 +479,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
                           {loadingCategoriesForNote ? 'Cargando categorías...' : 'Categoría *'}
                         </InputLabel>
                         <Select
+                          variant="filled"
                           value={note.categoryId}
                           label="Categoría *"
                           onChange={(e) => handleNoteCategoryChange(index, e.target.value)}
@@ -522,7 +522,6 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
                     <Box flex={1}>
                       <FormControl
                         fullWidth
-                        variant="filled"
                         disabled={
                           formState.status === 'generating' ||
                           !note.categoryId ||
@@ -531,6 +530,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
                       >
                         <InputLabel>Subcategoría *</InputLabel>
                         <Select
+                          variant="filled"
                           value={note.subcategoryId}
                           label="Subcategoría *"
                           onChange={(e) => handleNoteSubcategoryChange(index, e.target.value)}

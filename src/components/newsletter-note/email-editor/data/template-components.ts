@@ -37,6 +37,8 @@ const withDefaultMeta = (component: EmailComponent): EmailComponent => {
   };
 };
 
+const isMichinPlatform = CONFIG.platform === 'MICHIN';
+
 const applyDefaultMeta = (components: EmailComponent[]): EmailComponent[] =>
   components.map(withDefaultMeta);
 
@@ -464,14 +466,24 @@ export const newsComponents: EmailComponent[] = applyDefaultMeta([
   withDefaultMeta({
     id: 'summary-1',
     type: 'summary',
-    content: 'Resumen breve de la noticia',
-    props: {
-      summaryType: 'resumen',
-      label: 'Resumen',
-      icon: 'https://img.icons8.com/color/48/note.png',
-      backgroundColor: '#f8f9fa',
-      textColor: '#495057',
-    },
+    content: isMichinPlatform
+      ? '<p>Resumen breve de la noticia</p>'
+      : 'Resumen breve de la noticia',
+    props: isMichinPlatform
+      ? {
+          variant: 'amarillo',
+          titleContent: '<p>Resumen</p>',
+          imageUrl: '',
+          imageAlt: 'Imagen',
+          layout: 'image-left',
+        }
+      : {
+          summaryType: 'resumen',
+          label: 'Resumen',
+          icon: 'https://img.icons8.com/color/48/note.png',
+          backgroundColor: '#f8f9fa',
+          textColor: '#495057',
+        },
   }),
   withDefaultMeta({
     id: 'paragraph-1',
@@ -530,15 +542,24 @@ export const newsComponentsWeb: EmailComponent[] = applyDefaultMeta([
   {
     id: 'summary-1-web',
     type: 'summary',
-    content:
-      'Resumen detallado de la noticia que proporciona una visión general del contenido completo que se desarrollará a continuación. Este resumen es más extenso que la versión de newsletter.',
-    props: {
-      summaryType: 'resumen',
-      label: 'Resumen',
-      icon: 'https://img.icons8.com/color/48/note.png',
-      backgroundColor: '#f8f9fa',
-      textColor: '#495057',
-    },
+    content: isMichinPlatform
+      ? '<p>Resumen detallado de la noticia que proporciona una visión general del contenido completo que se desarrollará a continuación. Este resumen es más extenso que la versión de newsletter.</p>'
+      : 'Resumen detallado de la noticia que proporciona una visión general del contenido completo que se desarrollará a continuación. Este resumen es más extenso que la versión de newsletter.',
+    props: isMichinPlatform
+      ? {
+          variant: 'amarillo',
+          titleContent: '<p>Resumen</p>',
+          imageUrl: '',
+          imageAlt: 'Imagen',
+          layout: 'image-left',
+        }
+      : {
+          summaryType: 'resumen',
+          label: 'Resumen',
+          icon: 'https://img.icons8.com/color/48/note.png',
+          backgroundColor: '#f8f9fa',
+          textColor: '#495057',
+        },
   },
   {
     id: 'paragraph-1-web',

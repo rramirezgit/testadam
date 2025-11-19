@@ -25,25 +25,29 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 
+import { CONFIG } from 'src/global-config';
+
 import TextOptions from '../TextOptions';
 import ImageOptions from '../ImageOptions';
 import ButtonOptions from '../ButtonOptions';
-import DividerOptions from '../DividerOptions';
-import GalleryOptions from '../GalleryOptions';
 import SummaryOptions from '../SummaryOptions';
+import GalleryOptions from '../GalleryOptions';
+import DividerOptions from '../DividerOptions';
 import CategoryOptions from '../CategoryOptions';
 import ImageTextOptions from '../ImageTextOptions';
+import TextWithIconOptions from '../TextWithIconOptions';
 import MultiColumnsOptions from '../MultiColumnsOptions';
 import HerramientasOptions from '../HerramientasOptions';
-import TextWithIconOptions from '../TextWithIconOptions';
-import NoteContainerOptions from '../NoteContainerOptions';
 import RespaldadoPorOptions from '../RespaldadoPorOptions';
+import NoteContainerOptions from '../NoteContainerOptions';
 import TituloConIconoOptions from '../TituloConIconoOptions';
 import AIAssistantModal from '../../ai-menu/AIAssistantModal';
 import NewsletterFooterOptions from '../NewsletterFooterOptions';
 import ChartOptions from '../../email-components/options/ChartOptions';
-import NewsletterFooterReusableOptions from '../NewsletterFooterReusableOptions';
 import NewsletterHeaderReusableOptions from '../NewsletterHeaderReusableOptions';
+import NewsletterFooterReusableOptions from '../NewsletterFooterReusableOptions';
+
+const isMichinPlatform = CONFIG.platform === 'MICHIN';
 
 interface ComponentOptionsViewProps {
   componentType: string | undefined;
@@ -450,14 +454,20 @@ export default function ComponentOptionsView({
             {rightPanelTab === 0 && (
               <>
                 {/* Para Summary, mostrar directamente las opciones de configuración */}
-                {componentType === 'summary' && (
-                  <SummaryOptions
-                    selectedComponentId={selectedComponentId}
-                    getActiveComponents={getActiveComponents}
-                    updateComponentProps={updateComponentProps}
-                    setShowIconPicker={setShowIconPicker}
-                  />
-                )}
+                {componentType === 'summary' &&
+                  (isMichinPlatform ? (
+                    <ImageTextOptions
+                      component={selectedComponent}
+                      updateComponentProps={updateComponentProps}
+                    />
+                  ) : (
+                    <SummaryOptions
+                      selectedComponentId={selectedComponentId}
+                      getActiveComponents={getActiveComponents}
+                      updateComponentProps={updateComponentProps}
+                      setShowIconPicker={setShowIconPicker}
+                    />
+                  ))}
 
                 {/* Para RespaldadoPor, mostrar directamente las opciones de configuración */}
                 {componentType === 'respaldadoPor' && (

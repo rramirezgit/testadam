@@ -1,12 +1,14 @@
+import { CONFIG } from 'src/global-config';
+
 import ImageComponent from './ImageComponent';
 import ChartComponent from './ChartComponent';
 import AuthorComponent from './AuthorComponent';
 import ButtonComponent from './ButtonComponent';
 import SpacerComponent from './SpacerComponent';
-import SummaryComponent from './SummaryComponent';
 import HeadingComponent from './HeadingComponent';
 import DividerComponent from './DividerComponent';
 import GalleryComponent from './GalleryComponent';
+import SummaryComponent from './SummaryComponent';
 import CategoryComponent from './CategoryComponent';
 import ParagraphComponent from './ParagraphComponent';
 import ImageTextComponent from './ImageTextComponent';
@@ -25,6 +27,8 @@ import NewsletterFooterReusableComponent from './NewsletterFooterReusableCompone
 import type { ComponentType } from '../types';
 import type { EmailComponentProps } from './types';
 
+const isMichinPlatform = CONFIG.platform === 'MICHIN';
+
 const EmailComponentRenderer = (props: EmailComponentProps) => {
   const { component } = props;
 
@@ -34,7 +38,23 @@ const EmailComponentRenderer = (props: EmailComponentProps) => {
     case 'author':
       return <AuthorComponent {...props} />;
     case 'summary':
-      return <SummaryComponent {...props} />;
+      return isMichinPlatform ? (
+        <ImageTextComponent
+          {...props}
+          component={{
+            ...component,
+            props: {
+              variant: 'amarillo',
+              titleContent: '<p>Resumen</p>',
+              imageAlt: 'Imagen',
+              layout: 'image-left',
+              ...component.props,
+            },
+          }}
+        />
+      ) : (
+        <SummaryComponent {...props} />
+      );
     case 'heading':
       return <HeadingComponent {...props} />;
     case 'paragraph':

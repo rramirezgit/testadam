@@ -211,8 +211,18 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
       // Aplicar altura fija si la variante lo especifica
       imageHeight: selectedVariant.imageHeight || 'auto',
       imageFixedWidth: selectedVariant.imageFixedWidth,
-      // Asegurar que se vea bien contenida
-      imageObjectFit: 'contain',
+      // Aplicar imageObjectFit de la variante o usar 'contain' por defecto
+      imageObjectFit: selectedVariant.imageObjectFit || 'contain',
+      // Aplicar campos de fondo con imagen si existen
+      backgroundImageUrl: selectedVariant.backgroundImageUrl,
+      backgroundSize: selectedVariant.backgroundSize,
+      backgroundPosition: selectedVariant.backgroundPosition,
+      backgroundRepeat: selectedVariant.backgroundRepeat,
+      // Aplicar radio de borde específico para la imagen (avatar circular)
+      imageBorderRadius: selectedVariant.imageBorderRadius,
+      // Aplicar estilos de contenedor
+      minHeight: selectedVariant.minHeight,
+      alignItems: selectedVariant.alignItems,
     });
   };
 
@@ -371,7 +381,7 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Stack spacing={1.5}>
+          <Stack spacing={1}>
             {VARIANT_OPTIONS.map((variantOption) => (
               <Card
                 key={variantOption.name}
@@ -380,12 +390,19 @@ const ImageTextOptions = ({ component, updateComponentProps }: ImageTextOptionsP
                 sx={{
                   p: 1.5,
                   cursor: 'pointer',
-                  border: '2px solid',
+                  border: variantOption.name === 'avatarSinBorde' ? 'none' : '1px solid',
                   borderColor:
                     variant === variantOption.name ? variantOption.borderColor : 'divider',
-                  borderRadius: 2,
+                  borderRadius: 1.5,
                   transition: 'all 0.2s ease',
+                  boxShadow: 'none',
                   backgroundColor: variantOption.backgroundColor,
+                  ...(variantOption.backgroundImageUrl && {
+                    backgroundImage: `url(${variantOption.backgroundImageUrl})`,
+                    backgroundSize: variantOption.backgroundSize || 'cover',
+                    backgroundPosition: variantOption.backgroundPosition || 'center',
+                    backgroundRepeat: variantOption.backgroundRepeat || 'no-repeat',
+                  }),
                   '&:hover': {
                     borderColor: variantOption.borderColor,
                     transform: 'translateY(-2px)',

@@ -7,17 +7,20 @@ import { Icon } from '@iconify/react';
 
 import { Box, Typography } from '@mui/material';
 
+import { CONFIG } from 'src/global-config';
+
 // Importar los componentes reales del editor de emails
 import ImageComponent from './email-editor/email-components/ImageComponent';
 import AuthorComponent from './email-editor/email-components/AuthorComponent';
 import ButtonComponent from './email-editor/email-components/ButtonComponent';
 import SpacerComponent from './email-editor/email-components/SpacerComponent';
-import SummaryComponent from './email-editor/email-components/SummaryComponent';
 import HeadingComponent from './email-editor/email-components/HeadingComponent';
 import DividerComponent from './email-editor/email-components/DividerComponent';
 import GalleryComponent from './email-editor/email-components/GalleryComponent';
+import SummaryComponent from './email-editor/email-components/SummaryComponent';
 import CategoryComponent from './email-editor/email-components/CategoryComponent';
 import ParagraphComponent from './email-editor/email-components/ParagraphComponent';
+import ImageTextComponent from './email-editor/email-components/ImageTextComponent';
 import BulletListComponent from './email-editor/email-components/BulletListComponent';
 import HerramientasComponent from './email-editor/email-components/HerramientasComponent';
 import RespaldadoPorComponent from './email-editor/email-components/RespaldadoPorComponent';
@@ -107,6 +110,8 @@ export default function NewsletterComponentRenderer({
  * Función que renderiza el componente específico
  * Usa exactamente los mismos componentes que el editor de emails
  */
+const isMichinPlatform = CONFIG.platform === 'MICHIN';
+
 function renderComponent(props: any) {
   const { component } = props;
 
@@ -116,7 +121,23 @@ function renderComponent(props: any) {
     case 'author':
       return <AuthorComponent {...props} />;
     case 'summary':
-      return <SummaryComponent {...props} />;
+      return isMichinPlatform ? (
+        <ImageTextComponent
+          {...props}
+          component={{
+            ...component,
+            props: {
+              variant: 'amarillo',
+              titleContent: '<p>Resumen</p>',
+              imageAlt: 'Imagen',
+              layout: 'image-left',
+              ...component.props,
+            },
+          }}
+        />
+      ) : (
+        <SummaryComponent {...props} />
+      );
     case 'heading':
       return <HeadingComponent {...props} />;
     case 'paragraph':
