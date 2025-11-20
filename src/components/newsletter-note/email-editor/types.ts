@@ -38,25 +38,16 @@ export interface NewsletterNote {
 export interface NewsletterHeader {
   title: string;
   subtitle: string;
-  logo: string;
-  logoAlt: string;
-  bannerImage: string;
-  backgroundColor: string;
   textColor: string;
   alignment: string;
-  useGradient: boolean;
-  gradientColors: string[];
-  gradientDirection: number;
-  showLogo: boolean;
-  showBanner: boolean;
-  logoHeight: number;
-  padding: number;
-  sponsor?: {
-    enabled: boolean;
-    label: string;
-    image: string;
-    imageAlt: string;
-  };
+  padding?: number;
+  borderRadius?: string;
+  margin?: string;
+  backgroundImageUrl?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundRepeat?: string;
+  minHeight?: string;
 }
 
 export interface NewsletterFooter {

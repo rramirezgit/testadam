@@ -40,6 +40,15 @@ export interface HeaderTemplate {
   tags: string[];
   isPremium?: boolean;
   template: NewsletterHeader & {
+    // Legacy properties for backwards compatibility with old templates
+    logo?: string;
+    bannerImage?: string;
+    backgroundColor?: string;
+    useGradient?: boolean;
+    logoAlt?: string;
+    showLogo?: boolean;
+    logoHeight?: number;
+    showBanner?: boolean;
     // Extended properties for advanced templates
     showGradient?: boolean;
     gradientColors?: string[];

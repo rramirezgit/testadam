@@ -47,14 +47,14 @@ interface AINewsletterModalProps {
 }
 
 const MIN_NOTES = 1;
-const MAX_NOTES = 10;
+const MAX_NOTES = 4;
 
 const createEmptyNote = (): NewsletterNoteForm => ({
   prompt: '',
   contentTypeId: '',
   categoryId: '',
   subcategoryId: '',
-  mediaGenerationAI: true,
+  mediaGenerationAI: false,
 });
 
 export default function AINewsletterModal({ open, onClose }: AINewsletterModalProps) {
@@ -67,7 +67,7 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
 
   // Estado del formulario
   const [formState, setFormState] = useState<NewsletterFormState>({
-    notesCount: 3,
+    notesCount: 1,
     notes: Array.from({ length: 3 }, () => createEmptyNote()),
     status: 'idle',
     error: null,
@@ -91,8 +91,8 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
   useEffect(() => {
     if (!open) {
       setFormState({
-        notesCount: 3,
-        notes: Array.from({ length: 3 }, () => createEmptyNote()),
+        notesCount: 1,
+        notes: Array.from({ length: 1 }, () => createEmptyNote()),
         status: 'idle',
         error: null,
         progress: 0,
@@ -415,6 +415,27 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
                       Sugerencias
                     </Button>
                   </Box>
+                  <FormControlLabel
+                    sx={{ mb: 1.5 }}
+                    control={
+                      <Switch
+                        color="primary"
+                        checked={note.mediaGenerationAI}
+                        onChange={(e) => handleNoteMediaToggle(index, e.target.checked)}
+                        disabled={formState.status === 'generating'}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={600}>
+                          Incluir imágenes generadas por IA
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Actívalo para acompañar el texto con imágenes generadas automáticamente.
+                        </Typography>
+                      </Box>
+                    }
+                  />
                   <TextField
                     fullWidth
                     multiline
@@ -556,28 +577,6 @@ export default function AINewsletterModal({ open, onClose }: AINewsletterModalPr
                       ) : null}
                     </Box>
                   </Stack>
-
-                  <FormControlLabel
-                    sx={{ mt: 1.5 }}
-                    control={
-                      <Switch
-                        color="primary"
-                        checked={note.mediaGenerationAI}
-                        onChange={(e) => handleNoteMediaToggle(index, e.target.checked)}
-                        disabled={formState.status === 'generating'}
-                      />
-                    }
-                    label={
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          Incluir imágenes generadas por IA
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Desactívalo para generar solo texto en esta nota.
-                        </Typography>
-                      </Box>
-                    }
-                  />
                 </CardContent>
               </Card>
             );

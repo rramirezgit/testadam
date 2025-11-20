@@ -191,14 +191,7 @@ export default function RightPanel({
   };
 
   // Hook para handlers de newsletter
-  const {
-    handleLogoFileChange,
-    handleSponsorFileChange,
-    handleUploadLogoToS3,
-    handleUploadSponsorToS3,
-    handleStatusChange,
-    handleDeleteNote,
-  } = useNewsletterHandlers({
+  const { handleStatusChange, handleDeleteNote } = useNewsletterHandlers({
     newsletterHeader,
     onHeaderChange,
     uploadImageToS3,
@@ -260,12 +253,6 @@ export default function RightPanel({
       <NewsletterHeaderView
         newsletterHeader={newsletterHeader}
         onHeaderChange={onHeaderChange}
-        handleLogoFileChange={handleLogoFileChange}
-        handleSponsorFileChange={handleSponsorFileChange}
-        handleUploadLogoToS3={handleUploadLogoToS3}
-        handleUploadSponsorToS3={handleUploadSponsorToS3}
-        uploading={uploading}
-        uploadProgress={uploadProgress}
         setSelectedComponentId={setSelectedComponentId}
       />
     );

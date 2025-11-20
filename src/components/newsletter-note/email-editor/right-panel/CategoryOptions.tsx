@@ -41,6 +41,33 @@ const findFirstComponentByType = (
   return null;
 };
 
+// Helper para encontrar el noteContainer que contiene un componentId específico
+const findParentNoteContainer = (
+  components: EmailComponent[],
+  targetComponentId: string
+): EmailComponent | null => {
+  for (const component of components) {
+    // Si es un noteContainer, revisar si contiene el componentId objetivo
+    if (component.type === 'noteContainer') {
+      const componentsData = component.props?.componentsData || [];
+      const containsTarget = componentsData.some((c: EmailComponent) => c.id === targetComponentId);
+      if (containsTarget) {
+        return component;
+      }
+    }
+
+    // Búsqueda recursiva en componentes anidados
+    if (component.props?.componentsData && Array.isArray(component.props.componentsData)) {
+      const found = findParentNoteContainer(component.props.componentsData, targetComponentId);
+      if (found) {
+        return found;
+      }
+    }
+  }
+
+  return null;
+};
+
 export default function CategoryOptions({
   selectedComponentId,
   getActiveComponents,
@@ -86,13 +113,59 @@ export default function CategoryOptions({
     name: string;
     imageUrl?: string;
   }) => {
-    const tituloComponent = findFirstComponentByType(getActiveComponents(), 'tituloConIcono');
-    if (!tituloComponent) {
-      return;
-    }
+    const allComponents = getActiveComponents();
 
-    const tituloProps = generateTituloConIconoPropsFromCategory(category);
-    updateComponentProps(tituloComponent.id, tituloProps, { content: category.name });
+    // Buscar el noteContainer que contiene el componente category seleccionado
+    const parentContainer = findParentNoteContainer(allComponents, selectedComponentId);
+
+    if (parentContainer) {
+      // Si está dentro de un noteContainer, sincronizar solo componentes de ese contenedor
+      console.log(
+        '🔄 [CategoryOptions] Sincronizando dentro de noteContainer:',
+        parentContainer.id
+      );
+
+      const componentsData = parentContainer.props?.componentsData || [];
+      const tituloComponent = findFirstComponentByType(componentsData, 'tituloConIcono');
+
+      if (!tituloComponent) {
+        console.log('⚠️ [CategoryOptions] No se encontró TituloConIcono en el contenedor');
+        return;
+      }
+
+      // Actualizar el componente TituloConIcono dentro del contenedor
+      const tituloProps = generateTituloConIconoPropsFromCategory(category);
+      const updatedComponentsData = componentsData.map((comp: EmailComponent) =>
+        comp.id === tituloComponent.id
+          ? {
+              ...comp,
+              props: { ...comp.props, ...tituloProps },
+              content: category.name,
+            }
+          : comp
+      );
+
+      // Actualizar el noteContainer con los metadatos y componentes actualizados
+      updateComponentProps(parentContainer.id, {
+        componentsData: updatedComponentsData,
+        noteMetadata: {
+          ...parentContainer.props?.noteMetadata,
+          categoryId: category.id,
+        },
+      });
+
+      console.log('✅ [CategoryOptions] TituloConIcono sincronizado en contenedor');
+    } else {
+      // Comportamiento legacy: sincronizar globalmente si no hay contenedor
+      console.log('🔄 [CategoryOptions] Sincronizando globalmente (modo legacy)');
+      const tituloComponent = findFirstComponentByType(allComponents, 'tituloConIcono');
+      if (!tituloComponent) {
+        return;
+      }
+
+      const tituloProps = generateTituloConIconoPropsFromCategory(category);
+      updateComponentProps(tituloComponent.id, tituloProps, { content: category.name });
+    }
   };
 
   // Convertir el color único a un array de categorías si es necesario

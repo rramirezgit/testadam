@@ -1,9 +1,9 @@
 /**
  * EJEMPLO DE ADAPTADOR OBJDATAWEB → EmailComponent
- * 
+ *
  * Este archivo muestra cómo convertir tu formato OBJDATAWEB existente
  * al formato EmailComponent que los generadores HTML esperan.
- * 
+ *
  * INSTRUCCIONES:
  * 1. Copia este archivo a tu otro proyecto
  * 2. Ajusta las interfaces según tu estructura real de OBJDATAWEB
@@ -11,8 +11,15 @@
  * 4. Usa las funciones de ejemplo para generar HTML
  */
 
-import type { EmailComponent, HeaderConfig, FooterConfig } from '../src/components/newsletter-note/html-generators/types';
-import { renderComponentToHtml, generateNewsletterTemplate } from '../src/components/newsletter-note/html-generators';
+import type {
+  EmailComponent,
+  HeaderConfig,
+  FooterConfig,
+} from '../src/components/newsletter-note/html-generators/types';
+import {
+  renderComponentToHtml,
+  generateNewsletterTemplate,
+} from '../src/components/newsletter-note/html-generators';
 
 // =============================================================================
 // PASO 1: DEFINE TU ESTRUCTURA OBJDATAWEB
@@ -24,11 +31,11 @@ import { renderComponentToHtml, generateNewsletterTemplate } from '../src/compon
 interface ObjDataWebItem {
   // Ajusta según tu estructura real
   id?: string;
-  tipo: string;                    // Ej: 'titulo', 'parrafo', 'imagen', etc.
-  contenido?: string;              // Contenido de texto
-  configuracion?: Record<string, any>;  // Props específicos
-  estilos?: Record<string, any>;   // Estilos CSS
-  
+  tipo: string; // Ej: 'titulo', 'parrafo', 'imagen', etc.
+  contenido?: string; // Contenido de texto
+  configuracion?: Record<string, any>; // Props específicos
+  estilos?: Record<string, any>; // Estilos CSS
+
   // Propiedades específicas (ajustar según tu caso)
   url?: string;
   alt?: string;
@@ -42,7 +49,7 @@ interface ObjDataWebItem {
 
 /**
  * Mapea tus tipos OBJDATAWEB a los tipos EmailComponent
- * 
+ *
  * Tipos disponibles en EmailComponent:
  * - heading, paragraph, bulletList, divider, image
  * - button, category, summary, author, spacer
@@ -52,40 +59,40 @@ interface ObjDataWebItem {
  */
 const TYPE_MAPPING: Record<string, string> = {
   // Componentes básicos
-  'titulo': 'heading',
-  'parrafo': 'paragraph',
-  'texto': 'paragraph',
-  'lista': 'bulletList',
-  'divisor': 'divider',
-  'linea': 'divider',
-  'imagen': 'image',
-  'espaciador': 'spacer',
-  
+  titulo: 'heading',
+  parrafo: 'paragraph',
+  texto: 'paragraph',
+  lista: 'bulletList',
+  divisor: 'divider',
+  linea: 'divider',
+  imagen: 'image',
+  espaciador: 'spacer',
+
   // Componentes de contenido
-  'boton': 'button',
-  'categoria': 'category',
-  'tag': 'category',
-  'resumen': 'summary',
-  'autor': 'author',
-  'galeria': 'gallery',
-  
+  boton: 'button',
+  categoria: 'category',
+  tag: 'category',
+  resumen: 'summary',
+  autor: 'author',
+  galeria: 'gallery',
+
   // Componentes complejos
   'imagen-texto': 'imageText',
   'texto-imagen': 'imageText',
   'titulo-icono': 'tituloConIcono',
   'texto-icono': 'textWithIcon',
-  'columnas': 'twoColumns',
+  columnas: 'twoColumns',
   'dos-columnas': 'twoColumns',
-  'herramientas': 'herramientas',
-  'respaldado': 'respaldadoPor',
-  
+  herramientas: 'herramientas',
+  respaldado: 'respaldadoPor',
+
   // Contenedores
-  'contenedor': 'noteContainer',
-  'caja': 'noteContainer',
-  
+  contenedor: 'noteContainer',
+  caja: 'noteContainer',
+
   // Estructurales
-  'header': 'newsletterHeaderReusable',
-  'footer': 'newsletterFooterReusable',
+  header: 'newsletterHeaderReusable',
+  footer: 'newsletterFooterReusable',
 };
 
 // =============================================================================
@@ -95,13 +102,10 @@ const TYPE_MAPPING: Record<string, string> = {
 /**
  * Convierte un item OBJDATAWEB a EmailComponent
  */
-export function adaptSingleItem(
-  item: ObjDataWebItem,
-  index: number
-): EmailComponent {
+export function adaptSingleItem(item: ObjDataWebItem, index: number): EmailComponent {
   // 1. Mapear el tipo
   const mappedType = TYPE_MAPPING[item.tipo] || item.tipo;
-  
+
   // 2. Crear componente base
   const component: EmailComponent = {
     id: item.id || `component-${index}`,
@@ -110,7 +114,7 @@ export function adaptSingleItem(
     props: { ...(item.configuracion || {}) },
     style: { ...(item.estilos || {}) },
   };
-  
+
   // 3. Transformaciones específicas por tipo
   switch (mappedType) {
     case 'heading':
@@ -119,7 +123,7 @@ export function adaptSingleItem(
         component.props = { ...component.props, level: item.nivel };
       }
       break;
-      
+
     case 'image':
       // Si tienes propiedades diferentes para imagen
       if (item.url && !component.props?.src) {
@@ -129,25 +133,26 @@ export function adaptSingleItem(
         component.props = { ...component.props, alt: item.alt };
       }
       break;
-      
+
     case 'button':
       // Si tienes 'enlace' en lugar de 'url'
       if (item.configuracion?.enlace && !component.props?.url) {
         component.props = { ...component.props, url: item.configuracion.enlace };
       }
       break;
-      
+
     case 'imageText':
       // Asegurar que tenga las propiedades necesarias
       component.props = {
         imageUrl: item.configuracion?.imagenUrl || item.configuracion?.imageUrl || '',
         imageAlt: item.configuracion?.imagenAlt || item.configuracion?.imageAlt || 'Imagen',
-        titleContent: item.configuracion?.titulo || item.configuracion?.titleContent || '<p>Título</p>',
+        titleContent:
+          item.configuracion?.titulo || item.configuracion?.titleContent || '<p>Título</p>',
         layout: item.configuracion?.layout || 'image-left',
         ...component.props,
       };
       break;
-      
+
     case 'category':
       // Si tienes múltiples categorías
       if (item.configuracion?.categorias) {
@@ -157,7 +162,7 @@ export function adaptSingleItem(
         };
       }
       break;
-      
+
     case 'noteContainer':
       // Si tiene componentes anidados
       if (item.configuracion?.componentes) {
@@ -171,25 +176,21 @@ export function adaptSingleItem(
       }
       break;
   }
-  
+
   return component;
 }
 
 /**
  * Convierte array completo de OBJDATAWEB a EmailComponent[]
  */
-export function adaptObjDataWebArray(
-  objDataWeb: ObjDataWebItem[]
-): EmailComponent[] {
+export function adaptObjDataWebArray(objDataWeb: ObjDataWebItem[]): EmailComponent[] {
   return objDataWeb.map((item, index) => adaptSingleItem(item, index));
 }
 
 /**
  * Parsea string JSON de OBJDATAWEB y lo convierte a EmailComponent[]
  */
-export function parseAndAdaptObjDataWeb(
-  objDataWebString: string
-): EmailComponent[] {
+export function parseAndAdaptObjDataWeb(objDataWebString: string): EmailComponent[] {
   try {
     const parsed = JSON.parse(objDataWebString);
     const dataArray = Array.isArray(parsed) ? parsed : [parsed];
@@ -207,14 +208,12 @@ export function parseAndAdaptObjDataWeb(
 /**
  * Genera HTML de componentes desde OBJDATAWEB (sin template completo)
  */
-export function generateHtmlFromObjDataWeb(
-  objDataWeb: ObjDataWebItem[]
-): string {
+export function generateHtmlFromObjDataWeb(objDataWeb: ObjDataWebItem[]): string {
   // 1. Adaptar a EmailComponent[]
   const components = adaptObjDataWebArray(objDataWeb);
-  
+
   // 2. Renderizar cada componente
-  const htmlParts = components.map(component => {
+  const htmlParts = components.map((component) => {
     try {
       return renderComponentToHtml(component);
     } catch (error) {
@@ -222,7 +221,7 @@ export function generateHtmlFromObjDataWeb(
       return `<!-- Error renderizando componente ${component.type} -->`;
     }
   });
-  
+
   // 3. Unir todo
   return htmlParts.join('\n\n');
 }
@@ -230,13 +229,9 @@ export function generateHtmlFromObjDataWeb(
 /**
  * Genera HTML de componentes desde string JSON de OBJDATAWEB
  */
-export function generateHtmlFromObjDataWebString(
-  objDataWebString: string
-): string {
+export function generateHtmlFromObjDataWebString(objDataWebString: string): string {
   const components = parseAndAdaptObjDataWeb(objDataWebString);
-  return components
-    .map(comp => renderComponentToHtml(comp))
-    .join('\n\n');
+  return components.map((comp) => renderComponentToHtml(comp)).join('\n\n');
 }
 
 /**
@@ -251,7 +246,7 @@ export function generateNewsletterFromObjDataWeb(
 ): string {
   // 1. Generar HTML de componentes
   const componentsHtml = generateHtmlFromObjDataWeb(objDataWeb);
-  
+
   // 2. Envolver en template completo
   return generateNewsletterTemplate(
     title,
@@ -297,13 +292,13 @@ export function ejemplo1_ComponenteIndividual() {
     nivel: 1,
     estilos: {
       color: '#1976d2',
-      textAlign: 'center'
-    }
+      textAlign: 'center',
+    },
   };
-  
+
   const emailComponent = adaptSingleItem(objDataItem, 0);
   const html = renderComponentToHtml(emailComponent);
-  
+
   console.log('HTML generado:', html);
   return html;
 }
@@ -318,17 +313,17 @@ export function ejemplo2_ArrayDeComponentes() {
       contenido: 'Tecnología',
       configuracion: {
         color: '#e3f2fd',
-        textColor: '#1976d2'
-      }
+        textColor: '#1976d2',
+      },
     },
     {
       tipo: 'titulo',
       contenido: 'Nueva Funcionalidad',
-      nivel: 2
+      nivel: 2,
     },
     {
       tipo: 'parrafo',
-      contenido: 'Hemos lanzado una nueva funcionalidad que...'
+      contenido: 'Hemos lanzado una nueva funcionalidad que...',
     },
     {
       tipo: 'boton',
@@ -336,13 +331,13 @@ export function ejemplo2_ArrayDeComponentes() {
       configuracion: {
         url: 'https://example.com/feature',
         backgroundColor: '#1976d2',
-        textColor: '#ffffff'
-      }
-    }
+        textColor: '#ffffff',
+      },
+    },
   ];
-  
+
   const html = generateHtmlFromObjDataWeb(objDataWeb);
-  
+
   console.log('HTML generado:', html);
   return html;
 }
@@ -355,7 +350,7 @@ export function ejemplo3_NewsletterCompleto() {
     {
       tipo: 'titulo',
       contenido: 'Novedades de Enero',
-      nivel: 1
+      nivel: 1,
     },
     {
       tipo: 'imagen-texto',
@@ -368,8 +363,8 @@ export function ejemplo3_NewsletterCompleto() {
         imageWidth: 40,
         spacing: 20,
         borderRadius: 12,
-        backgroundColor: '#f5f5f5'
-      }
+        backgroundColor: '#f5f5f5',
+      },
     },
     {
       tipo: 'dos-columnas',
@@ -381,30 +376,34 @@ export function ejemplo3_NewsletterCompleto() {
             imageUrl: 'https://example.com/col1.jpg',
             imageAlt: 'Columna 1',
             titleContent: '<p>Característica 1</p>',
-            content: '<p>Descripción de la característica 1</p>'
+            content: '<p>Descripción de la característica 1</p>',
           },
           {
             imageUrl: 'https://example.com/col2.jpg',
             imageAlt: 'Columna 2',
             titleContent: '<p>Característica 2</p>',
-            content: '<p>Descripción de la característica 2</p>'
-          }
-        ]
-      }
-    }
+            content: '<p>Descripción de la característica 2</p>',
+          },
+        ],
+      },
+    },
   ];
-  
+
   const headerConfig: HeaderConfig = {
     title: 'Newsletter Semanal',
     subtitle: 'Edición #42',
-    backgroundColor: '#1976d2',
     textColor: '#ffffff',
     alignment: 'center',
-    logo: 'https://example.com/logo.png',
-    showLogo: true,
-    logoHeight: 60
+    padding: 32,
+    borderRadius: '38px 38px 0 0',
+    margin: '0 0 24px 0',
+    backgroundImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/pala/408ef0ed15.webp',
+    backgroundSize: 'cover',
+    backgroundPosition: 'top center',
+    backgroundRepeat: 'no-repeat',
+    minHeight: '331px',
   };
-  
+
   const footerConfig: FooterConfig = {
     companyName: 'Mi Empresa',
     address: 'Calle 123, Ciudad, País',
@@ -416,10 +415,10 @@ export function ejemplo3_NewsletterCompleto() {
     socialLinks: [
       { platform: 'instagram', url: 'https://instagram.com/empresa', enabled: true },
       { platform: 'twitter', url: 'https://twitter.com/empresa', enabled: true },
-      { platform: 'linkedin', url: 'https://linkedin.com/company/empresa', enabled: true }
-    ]
+      { platform: 'linkedin', url: 'https://linkedin.com/company/empresa', enabled: true },
+    ],
   };
-  
+
   const fullHtml = generateNewsletterFromObjDataWeb(
     'Newsletter Enero 2025',
     'Últimas novedades y actualizaciones',
@@ -427,7 +426,7 @@ export function ejemplo3_NewsletterCompleto() {
     headerConfig,
     footerConfig
   );
-  
+
   console.log('Newsletter completo generado');
   return fullHtml;
 }
@@ -448,9 +447,9 @@ export function ejemplo4_DesdeJSON() {
       "contenido": "Párrafo desde JSON"
     }
   ]`;
-  
+
   const html = generateHtmlFromObjDataWebString(objDataWebJSON);
-  
+
   console.log('HTML desde JSON:', html);
   return html;
 }
@@ -465,14 +464,14 @@ export function ejemplo5_CategoriasMultiples() {
       categorias: [
         { texto: 'IA', colorFondo: '#e3f2fd', colorTexto: '#1976d2' },
         { texto: 'Machine Learning', colorFondo: '#f3e5f5', colorTexto: '#8e24aa' },
-        { texto: 'Python', colorFondo: '#e8f5e9', colorTexto: '#388e3c' }
-      ]
-    }
+        { texto: 'Python', colorFondo: '#e8f5e9', colorTexto: '#388e3c' },
+      ],
+    },
   };
-  
+
   const emailComponent = adaptSingleItem(objDataItem, 0);
   const html = renderComponentToHtml(emailComponent);
-  
+
   console.log('Categorías múltiples:', html);
   return html;
 }
@@ -489,17 +488,17 @@ export function ejemplo6_ComponenteAnidado() {
         border: '2px solid #1976d2',
         borderRadius: '16px',
         padding: '24px',
-        backgroundColor: '#f5f5f5'
+        backgroundColor: '#f5f5f5',
       },
       componentes: [
         {
           tipo: 'titulo',
           contenido: 'Título dentro del contenedor',
-          nivel: 3
+          nivel: 3,
         },
         {
           tipo: 'parrafo',
-          contenido: 'Este párrafo está dentro del contenedor'
+          contenido: 'Este párrafo está dentro del contenedor',
         },
         {
           tipo: 'boton',
@@ -507,16 +506,16 @@ export function ejemplo6_ComponenteAnidado() {
           configuracion: {
             url: 'https://example.com',
             backgroundColor: '#1976d2',
-            textColor: '#ffffff'
-          }
-        }
-      ]
-    }
+            textColor: '#ffffff',
+          },
+        },
+      ],
+    },
   };
-  
+
   const emailComponent = adaptSingleItem(objDataItem, 0);
   const html = renderComponentToHtml(emailComponent);
-  
+
   console.log('Contenedor anidado:', html);
   return html;
 }
@@ -546,15 +545,15 @@ export function validateEmailComponent(component: EmailComponent): {
   errors: string[];
 } {
   const errors: string[] = [];
-  
+
   if (!component.id) {
     errors.push('Falta propiedad: id');
   }
-  
+
   if (!component.type) {
     errors.push('Falta propiedad: type');
   }
-  
+
   // Validaciones específicas por tipo
   switch (component.type) {
     case 'image':
@@ -562,13 +561,13 @@ export function validateEmailComponent(component: EmailComponent): {
         errors.push('Imagen requiere props.src');
       }
       break;
-      
+
     case 'button':
       if (!component.props?.url) {
         errors.push('Botón requiere props.url');
       }
       break;
-      
+
     case 'imageText':
       if (!component.props?.imageUrl) {
         errors.push('ImageText requiere props.imageUrl');
@@ -578,10 +577,10 @@ export function validateEmailComponent(component: EmailComponent): {
       }
       break;
   }
-  
+
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -598,11 +597,11 @@ export default {
   generateHtmlFromObjDataWebString,
   generateNewsletterFromObjDataWeb,
   generateNewsletterFromObjDataWebString,
-  
+
   // Helpers
   debugEmailComponent,
   validateEmailComponent,
-  
+
   // Ejemplos
   ejemplos: {
     ejemplo1_ComponenteIndividual,
@@ -611,6 +610,5 @@ export default {
     ejemplo4_DesdeJSON,
     ejemplo5_CategoriasMultiples,
     ejemplo6_ComponenteAnidado,
-  }
+  },
 };
-

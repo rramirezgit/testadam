@@ -167,6 +167,10 @@ export default function NewsletterEditor({
           configNote: '{}',
           objData: note.objData,
           objDataWeb: note.objDataWeb,
+          // Incluir metadatos de categorización
+          contentTypeId: note.contentTypeId,
+          categoryId: note.categoryId,
+          subcategoryId: note.subcategoryId,
         },
         // Metadata para tracking de IA
         _aiMetadata: {
@@ -185,26 +189,16 @@ export default function NewsletterEditor({
   const [header, setHeader] = useState<NewsletterHeader>({
     title: '',
     subtitle: '',
-    logo: CONFIG.defaultLogoUrl,
-    logoAlt: 'Logo',
-    bannerImage: '',
-    backgroundColor: '#FFF9CE',
-    textColor: '#333333',
+    textColor: '#FFFFFF',
     alignment: 'center',
-    useGradient: true,
-    gradientColors: ['#287FA9', '#1E2B62'], //['#FFF9CE', '#E2E5FA'],
-    gradientDirection: 135,
-    showLogo: true,
-    showBanner: false,
-    logoHeight: 60,
     padding: 32,
-    sponsor: {
-      enabled: false,
-      label: 'Juntos con',
-      image:
-        'https://http2.mlstatic.com/frontend-assets/ml-web-navigation/ui-navigation/6.5.1/mercadolibre/logo__large_plus.png',
-      imageAlt: 'Mercado Libre',
-    },
+    borderRadius: '38px 38px 0 0',
+    margin: '0 0 24px 0',
+    backgroundImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/pala/408ef0ed15.webp',
+    backgroundSize: 'cover',
+    backgroundPosition: 'top center',
+    backgroundRepeat: 'no-repeat',
+    minHeight: '331px',
   });
 
   const [footer, setFooter] = useState<NewsletterFooter>({
@@ -231,7 +225,7 @@ export default function NewsletterEditor({
     showLogo: true,
     logo: CONFIG.defaultLogoUrl,
     logoHeight: 40.218,
-    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de Michin. El uso del servicio y del sitio web está sujeto a nuestros <a href="#" style="color: #1976d2;">Términos de uso</a> y <a href="#" style="color: #1976d2;">Declaración de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir mas estos emails <a href="#unsubscribe" style="color: #1976d2;">Unsubscribe</a></p>`,
+    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de Michin. El uso del servicio y del sitio web está sujeto a nuestros <a href="https://info.acuariomichin.com/cdmx-terminos-y-condiciones" style="color: #1976d2;" target="_blank">Términos y condiciones</a> y <a href="https://info.acuariomichin.com/cdmx-aviso-de-privacidad" style="color: #1976d2;" target="_blank">Aviso de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir más estos emails <a href="#unsubscribe" style="color: #1976d2;">Cancelar suscripción</a></p>`,
   });
 
   // Use Zustand store
@@ -304,6 +298,10 @@ export default function NewsletterEditor({
         configNote: fullNote.configPost || '{}',
         objData: fullNote.objData || '[]',
         objDataWeb: fullNote.objDataWeb || '[]',
+        // Incluir metadatos de categorización
+        contentTypeId: (fullNote as any).contentTypeId,
+        categoryId: (fullNote as any).categoryIDs?.[0], // Tomar el primer categoryId del array
+        subcategoryId: (fullNote as any).subcategoryIDs?.[0], // Tomar el primer subcategoryId del array
       };
 
       const isAlreadySelected = selectedNotes.some((selected) => selected.noteId === noteId);

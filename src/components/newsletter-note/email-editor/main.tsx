@@ -310,6 +310,10 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
     title?: string;
     description?: string;
     coverImageUrl?: string;
+    contentTypeId?: string;
+    audienceId?: string;
+    categoryId?: string;
+    subcategoryId?: string;
   } | null>(null);
 
   // Estados de diseño
@@ -393,25 +397,16 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
   const [defaultNewsletterHeader] = useState<NewsletterHeader>({
     title: 'Newsletter Semanal',
     subtitle: 'Las mejores noticias y actualizaciones',
-    logo: '',
-    logoAlt: 'Logo',
-    bannerImage: '',
-    backgroundColor: '#FFF9CE',
-    textColor: '#333333',
+    textColor: '#FFFFFF',
     alignment: 'center',
-    useGradient: true,
-    gradientColors: ['#287FA9', '#1E2B62'], //['#FFF9CE', '#E2E5FA'],
-    gradientDirection: 135,
-    showLogo: true,
-    showBanner: false,
-    logoHeight: 60,
     padding: 32,
-    sponsor: {
-      enabled: false,
-      label: 'Juntos con',
-      image: '',
-      imageAlt: 'Sponsor',
-    },
+    borderRadius: '38px 38px 0 0',
+    margin: '0 0 24px 0',
+    backgroundImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/pala/408ef0ed15.webp',
+    backgroundSize: 'cover',
+    backgroundPosition: 'top center',
+    backgroundRepeat: 'no-repeat',
+    minHeight: '331px',
   });
 
   const [defaultNewsletterFooter] = useState<NewsletterFooter>({
@@ -1401,15 +1396,27 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
 
   // Nueva función para inyectar componentes al newsletter
   const injectComponentsToNewsletter = useCallback(
-    (components: EmailComponent[], noteTitle?: string, aiMetadata?: any) => {
+    (components: EmailComponent[], noteTitle?: string, noteMetadata?: any) => {
       const currentComponents = getActiveComponents();
       const timestamp = Date.now();
 
-      // Generar IDs únicos para los nuevos componentes
-      const newComponents = components.map((component, index) => ({
-        ...component,
-        id: `${component.id}-injected-${timestamp}-${index}`,
-      }));
+      // Generar IDs únicos para los nuevos componentes y propagar metadatos
+      const newComponents = components.map((component, index) => {
+        const newComp = {
+          ...component,
+          id: `${component.id}-injected-${timestamp}-${index}`,
+        };
+
+        // Si el componente es TituloConIcono y tiene metadatos, propagar categoryId
+        if (component.type === 'tituloConIcono' && noteMetadata?.categoryId) {
+          newComp.props = {
+            ...newComp.props,
+            categoryId: noteMetadata.categoryId,
+          };
+        }
+
+        return newComp;
+      });
 
       // Crear un contenedor para toda la nota con bordes
       const noteContainer: EmailComponent = {
@@ -1430,10 +1437,12 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           containedComponents: newComponents.map((comp) => comp.id),
           // Almacenar los componentes completos en el contenedor
           componentsData: newComponents,
+          // Guardar metadatos de la nota en el contenedor
+          noteMetadata,
           // Agregar metadata de IA si existe
-          ...(aiMetadata && {
-            _aiMetadata: aiMetadata._aiMetadata,
-            noteIndex: aiMetadata.noteIndex,
+          ...(noteMetadata?._aiMetadata && {
+            _aiMetadata: noteMetadata._aiMetadata,
+            noteIndex: noteMetadata.noteIndex,
           }),
         },
         style: {
@@ -1482,11 +1491,30 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           const noteTitle = note.noteData?.title || `Nota ${index + 1}`;
           const timestamp = Date.now() + index; // Asegurar IDs únicos
 
-          // Generar IDs únicos para los componentes de esta nota
-          const newComponents = objData.map((component: EmailComponent, idx: number) => ({
-            ...component,
-            id: `${component.id}-injected-${timestamp}-${idx}`,
-          }));
+          // Obtener metadatos de la nota
+          const noteMetadata = {
+            contentTypeId: note.noteData?.contentTypeId,
+            categoryId: note.noteData?.categoryId,
+            subcategoryId: note.noteData?.subcategoryId,
+          };
+
+          // Generar IDs únicos para los componentes de esta nota y propagar metadatos
+          const newComponents = objData.map((component: EmailComponent, idx: number) => {
+            const newComp = {
+              ...component,
+              id: `${component.id}-injected-${timestamp}-${idx}`,
+            };
+
+            // Si el componente es TituloConIcono y tenemos categoryId, propagarlo
+            if (component.type === 'tituloConIcono' && noteMetadata.categoryId) {
+              newComp.props = {
+                ...newComp.props,
+                categoryId: noteMetadata.categoryId,
+              };
+            }
+
+            return newComp;
+          });
 
           // Crear el contenedor para esta nota
           const noteContainer: EmailComponent = {
@@ -1505,6 +1533,8 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
               },
               containedComponents: newComponents.map((comp) => comp.id),
               componentsData: newComponents,
+              // Guardar metadatos de la nota
+              noteMetadata,
               // Agregar metadata de IA
               _aiMetadata: note._aiMetadata,
               noteIndex: index,
@@ -1524,6 +1554,7 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           console.log(`✅ Nota ${index + 1} preparada: ${noteTitle}`, {
             taskId: note._aiMetadata?.taskId,
             isSaved: note._aiMetadata?.isSaved,
+            metadatos: noteMetadata,
           });
         } catch (error) {
           console.error(`❌ Error al preparar nota ${index + 1}:`, error);
@@ -1784,11 +1815,16 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
             newsletterHeader || {
               title: 'Newsletter',
               subtitle: '',
-              logo: '',
-              bannerImage: '',
-              backgroundColor: '#ffffff',
-              textColor: '#333333',
+              textColor: '#FFFFFF',
               alignment: 'center',
+              padding: 32,
+              borderRadius: '38px 38px 0 0',
+              margin: '0 0 24px 0',
+              backgroundImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/pala/408ef0ed15.webp',
+              backgroundSize: 'cover',
+              backgroundPosition: 'top center',
+              backgroundRepeat: 'no-repeat',
+              minHeight: '331px',
             },
             newsletterFooter || {
               companyName: 'Mi Empresa',
@@ -2251,13 +2287,17 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
       const objDataWeb = note.noteData?.objDataWeb || '[]';
       const title = note.noteData?.title || '';
 
-      // Establecer los datos actuales para el modal
+      // Establecer los datos actuales para el modal, incluyendo metadatos
       setCurrentAINoteData({
         taskId,
         noteIndex,
         objData,
         objDataWeb,
         title,
+        contentTypeId: note.noteData?.contentTypeId,
+        audienceId: note.noteData?.audienceId,
+        categoryId: note.noteData?.categoryId,
+        subcategoryId: note.noteData?.subcategoryId,
       });
 
       // Abrir el modal
@@ -3097,8 +3137,13 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         return;
       }
 
+      const isNoteContainer =
+        container.type === 'noteContainer' ||
+        container.props?.isNoteContainer ||
+        Boolean(container.props?.componentsData?.length);
+
       // Si es un contenedor de nota
-      if (container.props?.isNoteContainer) {
+      if (isNoteContainer) {
         // Solo eliminar el contenedor (los componentes están almacenados dentro)
         const updatedComponents = components.filter((comp) => comp.id !== containerId);
 
@@ -3112,8 +3157,11 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         return;
       }
 
+      const isLegacyComponentContainer =
+        container.props?.isComponentContainer || Boolean(container.props?.containedComponentId);
+
       // Si es un contenedor de componente individual (legacy)
-      if (container.props?.isComponentContainer) {
+      if (isLegacyComponentContainer) {
         const containedComponentId = container.props.containedComponentId;
 
         // Filtrar el contenedor y su componente contenido
@@ -3131,7 +3179,11 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
         return;
       }
 
-      console.warn('Tipo de contenedor no reconocido');
+      console.warn('Tipo de contenedor no reconocido', {
+        id: container.id,
+        type: container.type,
+        props: container.props,
+      });
     },
     [getActiveComponents, updateActiveComponents, setSelectedComponentId, notifyChange]
   );
@@ -3194,8 +3246,15 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
           return;
         }
 
-        // Usar la función de inyección existente
-        injectComponentsToNewsletter(noteComponents, fullNote.title);
+        // Preparar metadatos de la nota
+        const noteMetadata = {
+          contentTypeId: (fullNote as any).contentTypeId,
+          categoryId: (fullNote as any).categoryIDs?.[0], // Tomar el primer categoryId
+          subcategoryId: (fullNote as any).subcategoryIDs?.[0], // Tomar el primer subcategoryId
+        };
+
+        // Usar la función de inyección existente con metadatos
+        injectComponentsToNewsletter(noteComponents, fullNote.title, noteMetadata);
         showNotification(`✅ Nota "${fullNote.title}" Agregada exitosamente`, 'success');
         console.log(`✅ Nota "${fullNote.title}" Agregada exitosamente`);
       } catch (error) {
@@ -3867,6 +3926,10 @@ export const EmailEditorMain: React.FC<EmailEditorMainProps> = ({
             coverImageUrl: currentAINoteData.coverImageUrl || '',
             objData: currentAINoteData.objData,
             objDataWeb: currentAINoteData.objDataWeb,
+            contentTypeId: currentAINoteData.contentTypeId,
+            audienceId: currentAINoteData.audienceId,
+            categoryId: currentAINoteData.categoryId,
+            subcategoryId: currentAINoteData.subcategoryId,
           }}
         />
       )}

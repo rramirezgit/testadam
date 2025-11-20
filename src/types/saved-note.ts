@@ -73,4 +73,8 @@ export interface SavedNote {
   aiGenerated?: boolean;
   imageUrl?: string;
   createdAt?: string;
+  // Metadatos de categorización
+  contentTypeId?: string;
+  categoryId?: string;
+  subcategoryId?: string;
 }

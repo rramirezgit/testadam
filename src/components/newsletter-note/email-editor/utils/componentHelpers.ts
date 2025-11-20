@@ -88,30 +88,21 @@ export const createNewComponent = (
                         propietarioNombre: 'Propietario',
                         propietarioAvatarUrl: '',
                       }
-                    : type === 'newsletterHeaderReusable'
-                      ? {
-                          title: 'Newsletter Semanal',
-                          subtitle: 'Las mejores noticias y actualizaciones',
-                          logo: '',
-                          logoAlt: 'Logo',
-                          bannerImage: '',
-                          backgroundColor: '#FFF9CE',
-                          textColor: '#333333',
-                          alignment: 'center',
-                          useGradient: true,
-                          gradientColors: ['#287FA9', '#1E2B62'], // ['#FFF9CE', '#E2E5FA'],
-                          gradientDirection: 135,
-                          showLogo: true,
-                          showBanner: false,
-                          logoHeight: 60,
-                          padding: 32,
-                          sponsor: {
-                            enabled: false,
-                            label: 'Juntos con',
-                            image: '',
-                            imageAlt: 'Sponsor',
-                          },
-                        }
+                : type === 'newsletterHeaderReusable'
+                  ? {
+                      title: 'Newsletter Semanal',
+                      subtitle: 'Las mejores noticias y actualizaciones',
+                      textColor: '#FFFFFF',
+                      alignment: 'center',
+                      padding: 32,
+                      borderRadius: '38px 38px 0 0',
+                      margin: '0 0 24px 0',
+                      backgroundImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/pala/408ef0ed15.webp',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'top center',
+                      backgroundRepeat: 'no-repeat',
+                      minHeight: '331px',
+                    }
                       : type === 'newsletterFooterReusable'
                         ? {
                             companyName: 'Tu Empresa',
@@ -149,9 +140,9 @@ export const createNewComponent = (
             ? {
                 padding: '32px',
                 textAlign: 'center',
-                background: 'linear-gradient(135deg, #FFF9CE 0%, #E2E5FA 100%)',
-                borderRadius: '8px',
+                borderRadius: '38px 38px 0 0',
                 marginBottom: '20px',
+                backgroundColor: 'transparent',
               }
             : type === 'newsletterFooterReusable'
               ? {

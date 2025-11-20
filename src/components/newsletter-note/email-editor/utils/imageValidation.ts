@@ -4,6 +4,39 @@ export const isBase64Image = (src?: string): boolean => {
   return src.startsWith('data:image/') || (src.includes('base64') && !src.startsWith('http'));
 };
 
+// Función para convertir URL de imagen a base64 usando endpoint
+export const convertImageUrlToBase64 = async (imageUrl: string): Promise<string> => {
+  try {
+    const { createAxiosInstance } = await import('src/utils/axiosInstance');
+    const axiosInstance = createAxiosInstance();
+
+    const response = await axiosInstance.get('/media/fetch-base64', {
+      params: {
+        mediaUrl: imageUrl,
+      },
+    });
+
+    if (!response.data) {
+      throw new Error('No se recibió data del servidor');
+    }
+
+    const base64String = response.data;
+
+    if (typeof base64String !== 'string' || !base64String.startsWith('data:image/')) {
+      throw new Error('Formato de base64 inválido recibido del servidor');
+    }
+
+    return base64String;
+  } catch (error) {
+    console.error('Error fetching base64 from endpoint:', error);
+    throw new Error(
+      error instanceof Error
+        ? `Error al descargar la imagen: ${error.message}`
+        : 'Error desconocido al descargar la imagen'
+    );
+  }
+};
+
 // Función para encontrar todas las imágenes en un objeto de componentes
 export const findImagesInComponents = (components: any[]): string[] => {
   const images: string[] = [];

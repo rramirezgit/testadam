@@ -35,77 +35,22 @@ export function useNewsletterHandlers({
 }: UseNewsletterHandlersProps) {
   const { delete: deletePost, publishOnWebsite } = usePostStore();
 
-  // Función para manejar selección de archivo de logo
-  const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && newsletterHeader) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        onHeaderChange({ ...newsletterHeader, logo: base64 });
-      };
-      reader.readAsDataURL(file);
-    }
+  // DEPRECATED: Logo y sponsor ya no se usan en la configuración simplificada del header
+  // Las siguientes funciones se mantienen por compatibilidad pero no se usan
+  const handleLogoFileChange = (_event: React.ChangeEvent<HTMLInputElement>) => {
+    console.warn('handleLogoFileChange: Logo no soportado en la configuración actual del header');
   };
 
-  // Función para manejar selección de archivo de sponsor
-  const handleSponsorFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && newsletterHeader?.sponsor) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        onHeaderChange({
-          ...newsletterHeader,
-          sponsor: {
-            ...newsletterHeader.sponsor,
-            image: base64,
-          },
-        });
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleSponsorFileChange = (_event: React.ChangeEvent<HTMLInputElement>) => {
+    console.warn('handleSponsorFileChange: Sponsor no soportado en la configuración actual del header');
   };
 
-  // Función para subir logo a S3
   const handleUploadLogoToS3 = async () => {
-    if (!newsletterHeader?.logo || !isBase64Image(newsletterHeader.logo)) {
-      alert('No hay imagen de logo para subir o ya está subida');
-      return;
-    }
-
-    try {
-      const s3Url = await uploadImageToS3(newsletterHeader.logo, `newsletter_logo_${Date.now()}`);
-      onHeaderChange({ ...newsletterHeader, logo: s3Url });
-    } catch (error) {
-      alert('Error al subir la imagen del logo a S3');
-      console.error(error);
-    }
+    console.warn('handleUploadLogoToS3: Logo no soportado en la configuración actual del header');
   };
 
-  // Función para subir imagen de sponsor a S3
   const handleUploadSponsorToS3 = async () => {
-    if (!newsletterHeader?.sponsor?.image || !isBase64Image(newsletterHeader.sponsor.image)) {
-      alert('No hay imagen de sponsor para subir o ya está subida');
-      return;
-    }
-
-    try {
-      const s3Url = await uploadImageToS3(
-        newsletterHeader.sponsor.image,
-        `newsletter_sponsor_${Date.now()}`
-      );
-      onHeaderChange({
-        ...newsletterHeader,
-        sponsor: {
-          ...newsletterHeader.sponsor,
-          image: s3Url,
-        },
-      });
-    } catch (error) {
-      alert('Error al subir la imagen del sponsor a S3');
-      console.error(error);
-    }
+    console.warn('handleUploadSponsorToS3: Sponsor no soportado en la configuración actual del header');
   };
 
   // Función para manejar cambio de status

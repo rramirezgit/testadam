@@ -240,7 +240,7 @@ export default function NewsletterContentEditor({
     showLogo: true,
     logo: CONFIG.defaultLogoUrl,
     logoHeight: 40.218,
-    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de MICHIN. El uso del servicio y del sitio web está sujeto a nuestros <a href="#" style="color: #1976d2;">Términos de uso</a> y <a href="#" style="color: #1976d2;">Declaración de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir mas estos emails <a href="#unsubscribe" style="color: #1976d2;">Unsubscribe</a></p>`,
+    footerText: `<p class="tiptap-paragraph">Este correo electrónico se le envió como miembro registrado de MICHIN. El uso del servicio y del sitio web está sujeto a nuestros <a href="https://info.acuariomichin.com/cdmx-terminos-y-condiciones" style="color: #1976d2;" target="_blank">Términos y condiciones</a> y <a href="https://info.acuariomichin.com/cdmx-aviso-de-privacidad" style="color: #1976d2;" target="_blank">Aviso de privacidad</a>.</p><p class="tiptap-paragraph">Si no quieres recibir más estos emails <a href="#unsubscribe" style="color: #1976d2;">Cancelar suscripción</a></p>`,
   });
 
   // Design settings

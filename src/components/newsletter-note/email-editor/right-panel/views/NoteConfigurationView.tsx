@@ -524,17 +524,28 @@ const NoteConfigurationView = forwardRef<NoteConfigurationViewHandle, NoteConfig
       setShowImageCropDialog(true);
     };
 
-    const handleSaveFromCropDialog = async (imageBase64: string) => {
-      setNoteCoverImageUrl(imageBase64);
+    const isBase64Image = (value: string) => /^data:image\/[a-zA-Z+]+;base64,/.test(value);
+
+    const handleSaveFromCropDialog = async (imageSource: string) => {
+      const shouldUpload = isBase64Image(imageSource);
+      setNoteCoverImageUrl(imageSource);
+
+      if (!shouldUpload) {
+        showNotification('Imagen guardada exitosamente', 'success');
+        setShowImageCropDialog(false);
+        return;
+      }
+
       try {
-        const s3Url = await uploadImageToS3(imageBase64, `cover-ai-${Date.now()}`);
+        const s3Url = await uploadImageToS3(imageSource, `cover-ai-${Date.now()}`);
         setNoteCoverImageUrl(s3Url);
         showNotification('Imagen guardada exitosamente', 'success');
       } catch (error) {
         console.error('Error al subir imagen generada:', error);
         showNotification('Error al subir la imagen. Por favor, intenta de nuevo.', 'error');
+      } finally {
+        setShowImageCropDialog(false);
       }
-      setShowImageCropDialog(false);
     };
 
     return (

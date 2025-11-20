@@ -7,7 +7,6 @@ import {
   Box,
   Card,
   TextField,
-  IconButton,
   Pagination,
   Typography,
   CardContent,
@@ -40,7 +39,7 @@ export default function NotesLibrary({ onInjectNote }: NotesLibraryProps) {
     setLoading(true);
     try {
       const response = await findAllPosts({
-        status: 'DRAFT',
+        // status: 'DRAFT',
         page,
         perPage: notesPerPage,
         ...(searchQuery && { title: searchQuery }),
@@ -127,7 +126,7 @@ export default function NotesLibrary({ onInjectNote }: NotesLibraryProps) {
         <TextField
           fullWidth
           size="small"
-          placeholder="Buscar nota"
+          placeholder="Buscar bloque web"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
@@ -136,13 +135,13 @@ export default function NotesLibrary({ onInjectNote }: NotesLibraryProps) {
                 <Icon icon="eva:search-fill" style={{ color: '#919EAB' }} />
               </InputAdornment>
             ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton size="small" edge="end">
-                  <Icon icon="solar:settings-bold" style={{ fontSize: '1.2rem' }} />
-                </IconButton>
-              </InputAdornment>
-            ),
+            // endAdornment: (
+            //   <InputAdornment position="end">
+            //     <IconButton size="small" edge="end">
+            //       <Icon icon="solar:settings-bold" style={{ fontSize: '1.2rem' }} />
+            //     </IconButton>
+            //   </InputAdornment>
+            // ),
           }}
           sx={{
             '& .MuiOutlinedInput-root': {
@@ -299,7 +298,7 @@ export default function NotesLibrary({ onInjectNote }: NotesLibraryProps) {
         >
           {/* Info de resultados */}
           <Typography variant="caption" color="text.secondary">
-            Mostrando {filteredNotes.length} de {totalNotes} notas
+            Mostrando {filteredNotes.length} de {totalNotes} bloques web
           </Typography>
 
           {/* Paginador */}
@@ -343,7 +342,7 @@ export default function NotesLibrary({ onInjectNote }: NotesLibraryProps) {
         >
           <CircularProgress size={48} />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2, fontWeight: 500 }}>
-            Agreando nota...
+            Agregando bloque web...
           </Typography>
         </Box>
       )}

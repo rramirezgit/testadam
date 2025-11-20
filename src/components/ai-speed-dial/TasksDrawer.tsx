@@ -179,6 +179,10 @@ export default function TasksDrawer({ open, onClose }: TasksDrawerProps) {
           objDataWeb: task.data?.objDataWeb || '[]',
           isSaved: task.isSaved || false,
           savedPostId: task.savedPostId,
+          // Incluir metadatos de categorización
+          contentTypeId: task.data?.contentTypeId,
+          categoryId: task.data?.categoryId,
+          subcategoryId: task.data?.subcategoryId,
         })),
     };
 

@@ -14,6 +14,7 @@ import { CONFIG, SOCIAL_ICONS } from 'src/global-config';
 import EmailList from './email-list';
 import SimpleTipTapEditor from '../simple-tiptap-editor';
 import EmailComponentRenderer from './email-component-renderer';
+import { getHeaderConfig } from './constants/newsletter-header-variants';
 
 import type { NewsletterNote, NewsletterHeader, NewsletterFooter } from './types';
 
@@ -24,7 +25,11 @@ interface EmailContentProps {
   onComponentSelect?: (id: string | null) => void;
   onColumnSelect?: (componentId: string, column: 'left' | 'right') => void;
   updateComponentContent: (id: string, content: string) => void;
-  updateComponentProps: (id: string, props: Record<string, any>, options?: { content?: string }) => void;
+  updateComponentProps: (
+    id: string,
+    props: Record<string, any>,
+    options?: { content?: string }
+  ) => void;
   updateComponentStyle: (id: string, style: React.CSSProperties) => void;
   handleSelectionUpdate: (editor: Editor) => void;
   moveComponent: (id: string, direction: 'up' | 'down') => void;
@@ -109,36 +114,43 @@ const NewsletterHeaderComponent = ({
   onSelect: () => void;
   header?: NewsletterHeader;
 }) => {
-  // Extraer valores para aplicar directamente en el sx prop
-  const useGradient = header?.useGradient;
-  const gradientColor1 = header?.gradientColors?.[0];
-  const gradientColor2 = header?.gradientColors?.[1];
-  const gradientDirection = header?.gradientDirection;
-  const backgroundColor = header?.backgroundColor;
+  // Obtener configuración única
+  const config = getHeaderConfig();
+
+  // Props con fallback a configuración
+  const headerTextColor = header?.textColor ?? config.textColor;
+  const padding = header?.padding ?? config.padding;
+  const alignment = header?.alignment ?? config.alignment;
+  const borderRadius = header?.borderRadius ?? config.borderRadius;
+  const backgroundImageUrl = header?.backgroundImageUrl ?? config.backgroundImageUrl;
+  const backgroundSize = header?.backgroundSize ?? config.backgroundSize;
+  const backgroundPosition = header?.backgroundPosition ?? config.backgroundPosition;
+  const backgroundRepeat = header?.backgroundRepeat ?? config.backgroundRepeat;
+  const minHeight = header?.minHeight ?? config.minHeight;
 
   return (
     <Paper
-      key={`header-${useGradient}-${gradientColor1}-${gradientColor2}-${backgroundColor}`}
+      key={`header-${backgroundImageUrl}`}
       elevation={isSelected ? 3 : 1}
       sx={{
         mb: 3,
-        p: header?.padding ? header.padding / 8 : 3,
+        p: padding / 8,
         border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
-        borderRadius: 2,
+        borderRadius,
         cursor: 'pointer',
         transition: 'all 0.2s',
-        textAlign: header?.alignment || 'center',
+        textAlign: alignment,
         position: 'relative',
-        // Aplicar el backgroundStyle
-        ...(useGradient && gradientColor1 && gradientColor2
-          ? {
-              backgroundImage: `linear-gradient(${gradientDirection || 135}deg, ${gradientColor1}, ${gradientColor2})`,
-              backgroundColor: 'transparent',
-            }
-          : {
-              backgroundColor: backgroundColor || '#f5f5f5',
-              backgroundImage: 'none',
-            }),
+        overflow: 'hidden',
+        // Aplicar imagen de fondo
+        backgroundImage: `url(${backgroundImageUrl})`,
+        backgroundSize,
+        backgroundPosition,
+        backgroundRepeat,
+        minHeight,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
         '&:hover': {
           elevation: 2,
           borderColor: '#1976d2',
@@ -149,35 +161,10 @@ const NewsletterHeaderComponent = ({
         onSelect();
       }}
     >
-      <Box sx={{ position: 'relative' }}>
-        {/* Logo si está habilitado */}
-        {header?.showLogo && header?.logo && (
-          <Box sx={{ mb: 2 }}>
-            <img
-              src={header.logo}
-              alt={header.logoAlt || 'Logo'}
-              style={{
-                maxHeight: header.logoHeight || 60,
-                display: 'block',
-                margin: '0 auto',
-              }}
-            />
-          </Box>
-        )}
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Logo deshabilitado en esta configuración */}
 
-        {/* Sponsor si está habilitado */}
-        {header?.sponsor?.enabled && header?.sponsor?.image && (
-          <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ color: header.textColor, mb: 1 }}>
-              {header.sponsor.label || 'Juntos con'}
-            </Typography>
-            <img
-              src={header.sponsor.image}
-              alt={header.sponsor.imageAlt || 'Sponsor'}
-              style={{ maxHeight: 48 }}
-            />
-          </Box>
-        )}
+        {/* Sponsor deshabilitado temporalmente */}
 
         {/* Título solo si no está vacío */}
         {header?.title && header.title.trim() !== '' && (
@@ -185,7 +172,7 @@ const NewsletterHeaderComponent = ({
             variant="h4"
             sx={{
               fontWeight: 700,
-              color: header?.textColor || '#333333',
+              color: headerTextColor,
               mb: 1,
               textShadow: '0 1px 2px rgba(0,0,0,0.1)',
             }}
@@ -199,7 +186,7 @@ const NewsletterHeaderComponent = ({
           <Typography
             variant="subtitle1"
             sx={{
-              color: header?.textColor || '#666666',
+              color: headerTextColor,
               mb: 2,
               fontStyle: 'italic',
             }}
@@ -208,20 +195,7 @@ const NewsletterHeaderComponent = ({
           </Typography>
         )}
 
-        {/* Banner image si está habilitado y existe */}
-        {header?.showBanner && header?.bannerImage && (
-          <Box sx={{ mt: 2 }}>
-            <img
-              src={header.bannerImage}
-              alt="Banner"
-              style={{
-                width: '100%',
-                borderRadius: '8px',
-                display: 'block',
-              }}
-            />
-          </Box>
-        )}
+        {/* Banner deshabilitado en esta configuración */}
 
         {/* Indicador de edición */}
         <Box

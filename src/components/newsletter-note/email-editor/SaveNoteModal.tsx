@@ -45,6 +45,11 @@ interface SaveNoteModalProps {
     coverImageUrl?: string;
     objData: string;
     objDataWeb: string;
+    // Metadatos de categorización
+    contentTypeId?: string;
+    audienceId?: string;
+    categoryId?: string;
+    subcategoryId?: string;
   };
 }
 
@@ -107,6 +112,10 @@ export default function SaveNoteModal({ open, onClose, onSave, initialData }: Sa
         title: initialData.title || '',
         description: initialData.description || '',
         coverImageUrl: coverImage,
+        contentTypeId: initialData.contentTypeId || '',
+        audienceId: initialData.audienceId || '',
+        categoryId: initialData.categoryId || '',
+        subcategoryId: initialData.subcategoryId || '',
       }));
     }
   }, [open, initialData]);
@@ -127,24 +136,12 @@ export default function SaveNoteModal({ open, onClose, onSave, initialData }: Sa
   useEffect(() => {
     if (formData.contentTypeId && open) {
       loadCategories(formData.contentTypeId);
-      // Reset category and subcategory when content type changes
-      setFormData((prev) => ({
-        ...prev,
-        categoryId: '',
-        subcategoryId: '',
-      }));
+      // NO resetear category y subcategory si ya vienen pre-cargadas de initialData
     }
   }, [formData.contentTypeId, open, loadCategories]);
 
-  // Reset subcategory cuando cambia la categoría
-  useEffect(() => {
-    if (formData.categoryId) {
-      setFormData((prev) => ({
-        ...prev,
-        subcategoryId: '',
-      }));
-    }
-  }, [formData.categoryId]);
+  // NO resetear subcategory si ya viene pre-cargada de initialData
+  // Este useEffect se comenta porque interfiere con la pre-carga de datos
 
   // Limpiar formulario al cerrar
   useEffect(() => {

@@ -21,6 +21,26 @@ function getSocialIconUrlForTemplate(platform: string): string {
   return icons[platform] || '';
 }
 
+/**
+ * Reemplaza placeholders dinámicos en el texto
+ * @param text - Texto con placeholders
+ * @param context - Contexto con subscriberId y appBaseUrl
+ * @returns Texto con placeholders reemplazados
+ */
+function replacePlaceholders(text: string, context?: NewsletterGenerationContext): string {
+  if (!text) return '';
+  
+  let result = text;
+  
+  // Reemplazar #unsubscribe con la URL real si tenemos el subscriberId
+  if (context?.subscriberId && context?.appBaseUrl) {
+    const unsubscribeUrl = `${context.appBaseUrl}/unsubscribe/${context.subscriberId}`;
+    result = result.replace(/#unsubscribe/g, unsubscribeUrl);
+  }
+  
+  return result;
+}
+
 export interface NewsletterNote {
   noteId: string;
   order: number;
@@ -43,21 +63,31 @@ export interface ApprovalButtonsConfig {
   baseUrl: string;
 }
 
+export interface NewsletterGenerationContext {
+  subscriberId?: string;
+  appBaseUrl?: string;
+}
+
 export function generateNewsletterTemplate(
   title: string,
   description: string,
   notesHtmlContent: string,
   header: HeaderConfig | null,
   footer: FooterConfig | null,
-  approvalButtons?: ApprovalButtonsConfig
+  approvalButtons?: ApprovalButtonsConfig,
+  context?: NewsletterGenerationContext
 ): string {
-  // ✅ Estilos de fondo del header (solo si existe)
+  // ✅ Estilos de fondo del header con imagen (solo si existe)
   let headerBackgroundStyle = '';
   if (header) {
-    headerBackgroundStyle = `background-color: ${header.backgroundColor};`;
-    if (header.useGradient && header.gradientColors && header.gradientColors.length >= 2) {
-      headerBackgroundStyle = `background: linear-gradient(${header.gradientDirection || 180}deg, ${header.gradientColors[0]}, ${header.gradientColors[1]});`;
-    }
+    const backgroundImageUrl = header.backgroundImageUrl || 'https://s3.amazonaws.com/s3.condoor.ai/pala/408ef0ed15.webp';
+    const backgroundSize = header.backgroundSize || 'cover';
+    const backgroundPosition = header.backgroundPosition || 'top center';
+    const backgroundRepeat = header.backgroundRepeat || 'no-repeat';
+    const minHeight = header.minHeight || '331px';
+    const borderRadius = header.borderRadius || '38px 38px 0 0';
+    
+    headerBackgroundStyle = `background-image: url(${backgroundImageUrl}); background-size: ${backgroundSize}; background-position: ${backgroundPosition}; background-repeat: ${backgroundRepeat}; min-height: ${minHeight}; border-radius: ${borderRadius};`;
   }
 
   // ✅ Estilos de fondo del footer (solo si existe)
@@ -100,22 +130,12 @@ export function generateNewsletterTemplate(
               ${
                 header
                   ? `
-              <!-- Header con estilos inline -->
-              <table ${tableAttrs()} width="100%" style="${headerBackgroundStyle} margin-bottom: 24px; border-radius: 8px;">
+              <!-- Header con imagen de fondo -->
+              <table ${tableAttrs()} width="100%" style="${headerBackgroundStyle} margin-bottom: ${header.margin || '24px'}; border: 1px solid #e0e0e0;">
                 <tr>
-                  <td style="padding: 40px 30px; text-align: ${header.alignment}; color: ${header.textColor};">
-                    ${header.logo ? `<img src="${header.logo}" alt="Logo" style="max-height: 60px; margin: 0 auto 20px auto; display: block; border: 0;">` : ''}
-                    ${
-                      header.sponsor && header.sponsor.enabled
-                        ? `<div style="text-align: center; margin-bottom: 10px;">
-                      <span style="font-size: 16px; color: #333; display: block; margin-bottom: 4px;">${header.sponsor.label || 'Juntos con'}</span>
-                      <img src="${header.sponsor.image || ''}" alt="${header.sponsor.imageAlt || 'Sponsor'}" style="max-height: 48px; display: inline-block; border: 0;" />
-                    </div>`
-                        : ''
-                    }
-                    ${header.title ? `<p style="font-size: 32px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.2; letter-spacing: -0.5px; color: ${header.textColor};">${escapeHtml(header.title)}</p>` : ''}
-                    ${header.subtitle ? `<p style="font-size: 18px; margin: 0; opacity: 0.85; font-weight: 400; color: ${header.textColor};">${escapeHtml(header.subtitle)}</p>` : ''}
-                    ${header.bannerImage ? `<img src="${header.bannerImage}" alt="Banner" style="width: 100%; margin-top: 20px; border-radius: 8px; display: block; border: 0;">` : ''}
+                  <td style="padding: ${header.padding ? header.padding / 8 : 32}px; text-align: ${header.alignment}; color: ${header.textColor};">
+                    ${header.title ? `<p style="font-size: 32px; font-weight: 700; margin: 0 0 8px 0; line-height: 1.2; letter-spacing: -0.5px; color: ${header.textColor}; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">${escapeHtml(header.title)}</p>` : ''}
+                    ${header.subtitle ? `<p style="font-size: 18px; margin: 0; opacity: 0.85; font-weight: 400; color: ${header.textColor}; font-style: italic;">${escapeHtml(header.subtitle)}</p>` : ''}
                   </td>
                 </tr>
               </table>
@@ -160,7 +180,7 @@ export function generateNewsletterTemplate(
                     </div>
                     
                     <div style="color: ${footer.textColor}; font-size: 14px; line-height: 1.5;">
-                      ${footer.footerText || ''}
+                      ${replacePlaceholders(footer.footerText || '', context)}
                     </div>
                   </td>
                 </tr>

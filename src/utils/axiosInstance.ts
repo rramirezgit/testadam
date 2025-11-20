@@ -136,4 +136,8 @@ export const endpoints = {
     generateNewsletter: '/api/v1/ai/generate-newsletter',
     checkStatus: (taskId: string) => `/api/v1/ai/status/${taskId}`,
   },
+  // Subscribers endpoints
+  subscribers: {
+    unsubscribe: (id: string) => `/api/v1/subscribers/${id}`,
+  },
 };

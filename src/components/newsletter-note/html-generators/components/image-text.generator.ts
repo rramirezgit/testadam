@@ -6,56 +6,62 @@
 
 import { tableAttrs } from '../utils/outlook-helpers';
 import { escapeHtml, cleanTipTapHtml } from '../utils/html-utils';
+import { getVariantConfig } from '../../email-editor/constants/image-text-variants';
 
 import type { EmailComponent } from '../types';
 
 export function generateImageTextHtml(component: EmailComponent): string {
-  // ✅ Props del componente
-  const imageUrl = component.props?.imageUrl || '';
+  // ✅ Obtener configuración de la variante seleccionada
+  const variant = component.props?.variant || 'default';
+  const variantConfig = getVariantConfig(variant);
+  const isAvatarVariant = variant === 'avatarSinBorde';
+
+  // ✅ Props del componente con fallback a valores de variante
+  const imageUrl = component.props?.imageUrl || variantConfig.defaultImageUrl || '';
   const imageAlt = component.props?.imageAlt || 'Imagen';
   const titleContent = component.props?.titleContent || '<p>Título</p>';
   const description = component.content || '<p>Descripción</p>';
 
-  // ✅ Identificar variante
-  const variantName = component.props?.variant || 'default';
-  const isAvatarVariant = variantName === 'avatarSinBorde';
-
-  // ✅ Props de configuración de layout
+  // ✅ Props de configuración de layout con fallback a variante
   const layout = component.props?.layout || 'image-left'; // 'image-left', 'image-right', 'image-top', 'image-bottom'
   const imageWidth = component.props?.imageWidth || 40; // Porcentaje
-  const spacing = component.props?.spacing || 16;
-  const borderRadius = component.props?.borderRadius || 8;
-  const padding = component.props?.padding || 16;
+  const spacing = component.props?.spacing ?? variantConfig.spacing;
+  const borderRadius = component.props?.borderRadius ?? variantConfig.borderRadius;
+  const padding = component.props?.padding ?? variantConfig.padding;
 
-  // ✅ Props de estilo de imagen
-  const imageHeight = component.props?.imageHeight || 'auto';
-  const imageFixedWidth = component.props?.imageFixedWidth || '';
-  const imageObjectFit = component.props?.imageObjectFit || 'contain';
+  // ✅ Props de estilo de imagen con fallback a variante
+  const imageHeight = component.props?.imageHeight ?? variantConfig.imageHeight ?? 'auto';
+  const imageFixedWidth = component.props?.imageFixedWidth ?? variantConfig.imageFixedWidth;
+  const imageObjectFit =
+    component.props?.imageObjectFit ?? (variantConfig.imageObjectFit || 'contain');
   const imageBackgroundColor = component.props?.imageBackgroundColor || 'transparent';
   const imageContainerBackgroundColor = component.props?.imageContainerBackgroundColor || '';
-  const imageBorderRadius = component.props?.imageBorderRadius;
+  const imageBorderRadius = component.props?.imageBorderRadius ?? variantConfig.imageBorderRadius;
 
-  // ✅ Props de fondo con imagen
-  const backgroundImageUrl = component.props?.backgroundImageUrl;
-  const backgroundSize = component.props?.backgroundSize || 'cover';
-  const backgroundPosition = component.props?.backgroundPosition || 'center';
-  const backgroundRepeat = component.props?.backgroundRepeat || 'no-repeat';
+  // ✅ Props de fondo con imagen con fallback a variante
+  const backgroundImageUrl =
+    component.props?.backgroundImageUrl ?? variantConfig.backgroundImageUrl;
+  const backgroundSize = component.props?.backgroundSize ?? variantConfig.backgroundSize ?? 'cover';
+  const backgroundPosition =
+    component.props?.backgroundPosition ?? variantConfig.backgroundPosition ?? 'center';
+  const backgroundRepeat =
+    component.props?.backgroundRepeat ?? variantConfig.backgroundRepeat ?? 'no-repeat';
 
-  // ✅ Props de contenedor
-  const minHeight = component.props?.minHeight;
-  const alignItems = component.props?.alignItems;
+  // ✅ Props de contenedor con fallback a variante
+  const minHeight = component.props?.minHeight ?? variantConfig.minHeight;
+  const alignItems = component.props?.alignItems ?? variantConfig.alignItems;
 
-  // ✅ Props de estilo de texto
-  const backgroundColor = component.props?.backgroundColor || '#ffffff';
-  const textColor = component.props?.textColor || '#333333';
-  const titleColor = component.props?.titleColor || '#000000';
+  // ✅ Props de estilo de texto con fallback a variante
+  const backgroundColor = component.props?.backgroundColor ?? variantConfig.backgroundColor;
+  const textColor = component.props?.textColor ?? variantConfig.textColor;
+  const titleColor = component.props?.titleColor ?? variantConfig.titleColor;
   const fontSize = component.props?.fontSize || 14;
   const titleSize = component.props?.titleSize || 20;
   const margin = component.style?.margin || '20px 0';
 
-  // ✅ Props de variantes (bordes)
-  const borderColor = component.props?.borderColor || 'transparent';
-  const borderWidth = component.props?.borderWidth || 0;
+  // ✅ Props de variantes (bordes) con fallback a variante
+  const borderColor = component.props?.borderColor ?? variantConfig.borderColor;
+  const borderWidth = component.props?.borderWidth ?? variantConfig.borderWidth;
 
   // ✅ Determinar si el layout es horizontal o vertical
   const isHorizontal = layout === 'image-left' || layout === 'image-right';
@@ -104,12 +110,20 @@ export function generateImageTextHtml(component: EmailComponent): string {
     .filter(Boolean)
     .join('; ');
 
+  // ✅ Centrar imagen si tiene imageFixedWidth y es layout vertical
+  const shouldCenterImage = imageFixedWidth && !isHorizontal;
+  const imageCenterWrapper = shouldCenterImage ? 'text-align: center;' : '';
+
   // ✅ Renderizar imagen o placeholder
   const imageHtml = imageUrl
-    ? `<div style="${imageContainerStyles}">
-         <img src="${imageUrl}" alt="${escapeHtml(imageAlt)}" style="${imageStyles}">
+    ? `<div style="${imageCenterWrapper}">
+         <div style="${imageContainerStyles}">
+           <img src="${imageUrl}" alt="${escapeHtml(imageAlt)}" style="${imageStyles}">
+         </div>
        </div>`
-    : `<div style="${placeholderStyles}"></div>`;
+    : `<div style="${imageCenterWrapper}">
+         <div style="${placeholderStyles}"></div>
+       </div>`;
 
   // ✅ Renderizar contenido de texto
   const textHtml = `<div style="line-height: 1.2;">

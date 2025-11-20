@@ -298,6 +298,10 @@ export default function NoteContainerComponent({
                 onColumnSelect={onColumnSelect || (() => {})}
                 onComponentSelect={onComponentSelect}
                 selectedComponentId={selectedComponentId}
+                // Pasar categoryId desde los metadatos del contenedor si el componente es TituloConIcono
+                {...(containedComponent.type === 'tituloConIcono' && {
+                  categoryId: component.props?.noteMetadata?.categoryId,
+                })}
               />
               // </ComponentWithToolbar>
             ))

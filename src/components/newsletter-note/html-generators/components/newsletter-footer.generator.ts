@@ -30,7 +30,32 @@ function cleanTipTapHtml(html: string): string {
   return cleaned;
 }
 
-export function generateNewsletterFooterHtml(component: EmailComponent): string {
+/**
+ * Reemplaza placeholders dinámicos en el texto del footer
+ * @param text - Texto con placeholders
+ * @param subscriberId - ID del suscriptor (opcional)
+ * @param appBaseUrl - URL base de la aplicación
+ * @returns Texto con placeholders reemplazados
+ */
+function replacePlaceholders(text: string, subscriberId?: string, appBaseUrl?: string): string {
+  if (!text) return '';
+  
+  let result = text;
+  
+  // Reemplazar #unsubscribe con la URL real si tenemos el subscriberId
+  if (subscriberId && appBaseUrl) {
+    const unsubscribeUrl = `${appBaseUrl}/unsubscribe/${subscriberId}`;
+    result = result.replace(/#unsubscribe/g, unsubscribeUrl);
+  }
+  
+  return result;
+}
+
+export function generateNewsletterFooterHtml(
+  component: EmailComponent,
+  subscriberId?: string,
+  appBaseUrl?: string
+): string {
   const props = component.props || {};
 
   // ✅ Crear el estilo de fondo
@@ -76,10 +101,11 @@ export function generateNewsletterFooterHtml(component: EmailComponent): string 
     }
   }
 
-  // ✅ Texto del footer (HTML de TipTap)
+  // ✅ Texto del footer (HTML de TipTap) con reemplazo de placeholders
   if (props.footerText) {
     const cleanedText = cleanTipTapHtml(props.footerText);
-    footerHtml += `<div style="color: ${textColor}; font-size: 14px; line-height: 1.5;">${cleanedText}</div>`;
+    const textWithPlaceholders = replacePlaceholders(cleanedText, subscriberId, appBaseUrl);
+    footerHtml += `<div style="color: ${textColor}; font-size: 14px; line-height: 1.5;">${textWithPlaceholders}</div>`;
   }
 
   footerHtml += `

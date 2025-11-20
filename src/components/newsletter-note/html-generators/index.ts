@@ -88,7 +88,16 @@ export function renderComponentToHtml(component: EmailComponent): string {
       return generateCategoryHtml(component);
 
     case 'summary':
-      return generateImageTextHtml(component);
+      // Forzar variante amarillo para summary si no tiene variante definida
+      const summaryComponent = {
+        ...component,
+        props: {
+          ...component.props,
+          variant: component.props?.variant || 'amarillo',
+          titleContent: component.props?.titleContent || '<p>Resumen</p>',
+        },
+      };
+      return generateImageTextHtml(summaryComponent);
     // return generateSummaryHtml(component);
 
     case 'author':
@@ -102,7 +111,14 @@ export function renderComponentToHtml(component: EmailComponent): string {
       return generateGalleryHtml(component);
 
     case 'tituloConIcono':
-      return generateTituloConIconoHtml(component);
+      const tituloConIconoComponent = {
+        ...component,
+        props: {
+          ...component.props,
+          categoryName: component.props?.categoryName || component.props?.content || 'Categoria',
+        },
+      };
+      return generateTituloConIconoHtml(tituloConIconoComponent);
 
     case 'herramientas':
       return generateHerramientasHtml(component);

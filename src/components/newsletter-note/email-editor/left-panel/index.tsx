@@ -160,7 +160,7 @@ export default function LeftPanel({
               </ToggleButton>
               {isNewsletterMode && (
                 <ToggleButton value="notes" aria-label="notes">
-                  Notas
+                  Bloques Web
                 </ToggleButton>
               )}
             </ToggleButtonGroup>

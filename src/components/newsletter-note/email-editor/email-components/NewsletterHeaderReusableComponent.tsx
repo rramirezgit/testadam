@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Icon } from '@iconify/react';
 
 import { Box, Paper, Typography } from '@mui/material';
 
 import ComponentWithToolbar from './ComponentWithToolbar';
+import { getHeaderConfig } from '../constants/newsletter-header-variants';
 
 import type { EmailComponentProps } from './types';
 
@@ -22,6 +22,18 @@ const NewsletterHeaderReusableComponent: React.FC<EmailComponentProps> = ({
   totalComponents,
 }) => {
   const props = component.props || {};
+  const config = getHeaderConfig();
+
+  // Props con fallback a configuración
+  const textColor = props.textColor ?? config.textColor;
+  const alignment = props.alignment ?? config.alignment;
+  const padding = props.padding ? props.padding / 8 : config.padding / 8;
+  const borderRadius = props.borderRadius ?? config.borderRadius;
+  const backgroundImageUrl = props.backgroundImageUrl ?? config.backgroundImageUrl;
+  const backgroundSize = props.backgroundSize ?? config.backgroundSize;
+  const backgroundPosition = props.backgroundPosition ?? config.backgroundPosition;
+  const backgroundRepeat = props.backgroundRepeat ?? config.backgroundRepeat;
+  const minHeight = props.minHeight ?? config.minHeight;
 
   const handleSelect = () => {
     onSelect();
@@ -30,17 +42,16 @@ const NewsletterHeaderReusableComponent: React.FC<EmailComponentProps> = ({
     }
   };
 
-  const backgroundStyle = (() => {
-    if (props.useGradient && props.gradientColors && props.gradientColors.length >= 2) {
-      const gradient = `linear-gradient(${props.gradientDirection || 135}deg, ${props.gradientColors[0]}, ${props.gradientColors[1]})`;
-      return {
-        background: gradient,
-      };
-    }
-    return {
-      backgroundColor: props.backgroundColor || '#f5f5f5',
-    };
-  })();
+  const backgroundStyle = {
+    backgroundImage: `url(${backgroundImageUrl})`,
+    backgroundSize,
+    backgroundPosition,
+    backgroundRepeat,
+    minHeight,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+  };
 
   return (
     <ComponentWithToolbar
@@ -55,58 +66,33 @@ const NewsletterHeaderReusableComponent: React.FC<EmailComponentProps> = ({
       <Paper
         elevation={isSelected ? 3 : 1}
         sx={{
-          mb: 3,
-          p: props.padding ? props.padding / 8 : 3,
+          p: padding,
+          textAlign: alignment,
           border: isSelected ? '2px solid #1976d2' : '1px solid #e0e0e0',
-          borderRadius: 2,
+          borderRadius,
           cursor: 'pointer',
           transition: 'all 0.2s',
-          ...backgroundStyle,
-          textAlign: props.alignment || 'center',
           position: 'relative',
+          overflow: 'hidden',
+          ...backgroundStyle,
           '&:hover': {
-            elevation: 2,
             borderColor: '#1976d2',
           },
         }}
+        onClick={handleSelect}
       >
-        <Box sx={{ position: 'relative' }}>
-          {/* Logo si está habilitado */}
-          {props.showLogo && props.logo && (
-            <Box sx={{ mb: 2 }}>
-              <img
-                src={props.logo}
-                alt={props.logoAlt || 'Logo'}
-                style={{
-                  maxHeight: props.logoHeight || 60,
-                  display: 'block',
-                  margin: '0 auto',
-                }}
-              />
-            </Box>
-          )}
+        <Box sx={{ position: 'relative', zIndex: 1 }}>
+          {/* Logo deshabilitado en esta configuración */}
 
-          {/* Sponsor si está habilitado */}
-          {props.sponsor?.enabled && props.sponsor?.image && (
-            <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <Typography variant="body2" sx={{ color: props.textColor, mb: 1 }}>
-                {props.sponsor.label || 'Juntos con'}
-              </Typography>
-              <img
-                src={props.sponsor.image}
-                alt={props.sponsor.imageAlt || 'Sponsor'}
-                style={{ maxHeight: 48 }}
-              />
-            </Box>
-          )}
+          {/* Sponsor deshabilitado temporalmente */}
 
-          {/* Título solo si no está vacío */}
+          {/* Título */}
           {props.title && props.title.trim() !== '' && (
             <Typography
               variant="h4"
               sx={{
                 fontWeight: 700,
-                color: props.textColor || '#333333',
+                color: textColor,
                 mb: 1,
                 textShadow: '0 1px 2px rgba(0,0,0,0.1)',
               }}
@@ -115,12 +101,12 @@ const NewsletterHeaderReusableComponent: React.FC<EmailComponentProps> = ({
             </Typography>
           )}
 
-          {/* Subtítulo solo si no está vacío */}
+          {/* Subtítulo */}
           {props.subtitle && props.subtitle.trim() !== '' && (
             <Typography
               variant="subtitle1"
               sx={{
-                color: props.textColor || '#666666',
+                color: textColor,
                 mb: 2,
                 fontStyle: 'italic',
               }}
@@ -129,46 +115,11 @@ const NewsletterHeaderReusableComponent: React.FC<EmailComponentProps> = ({
             </Typography>
           )}
 
-          {/* Banner image si está habilitado y existe */}
-          {props.showBanner && props.bannerImage && (
-            <Box sx={{ mt: 2 }}>
-              <img
-                src={props.bannerImage}
-                alt="Banner"
-                style={{
-                  width: '100%',
-                  borderRadius: '8px',
-                  display: 'block',
-                }}
-              />
-            </Box>
-          )}
-
-          {/* Indicador de edición */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: -8,
-              right: -8,
-              backgroundColor: '#1976d2',
-              color: 'white',
-              borderRadius: '50%',
-              width: 24,
-              height: 24,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              opacity: isSelected ? 1 : 0,
-              transition: 'opacity 0.2s',
-            }}
-          >
-            <Icon icon="mdi:pencil" width={12} height={12} />
-          </Box>
+          {/* Banner deshabilitado en esta configuración */}
         </Box>
       </Paper>
     </ComponentWithToolbar>
   );
 };
 
-export default NewsletterHeaderReusableComponent;
+export default React.memo(NewsletterHeaderReusableComponent);

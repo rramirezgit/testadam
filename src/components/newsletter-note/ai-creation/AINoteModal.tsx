@@ -59,7 +59,7 @@ const INITIAL_FORM_STATE: NoteFormState = {
   contentTypeId: '',
   categoryId: '',
   subcategoryId: '',
-  mediaGenerationAI: true,
+  mediaGenerationAI: false,
   status: 'idle',
   error: null,
 };
@@ -320,6 +320,29 @@ export default function AINoteModal({
                 />
               </Box>
 
+              <FormControlLabel
+                sx={{ alignItems: 'flex-start' }}
+                control={
+                  <Switch
+                    color="primary"
+                    checked={formState.mediaGenerationAI}
+                    onChange={(e) => handleFieldChange('mediaGenerationAI', e.target.checked)}
+                    disabled={isGenerating}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      Incluir imágenes generadas por IA
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Activa esta opción para acompañar el contenido con imágenes generadas
+                      automáticamente.
+                    </Typography>
+                  </Box>
+                }
+              />
+
               <Box>
                 <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
                   <Typography variant="subtitle1" fontWeight={600}>
@@ -504,29 +527,6 @@ export default function AINoteModal({
                   ) : null}
                 </Box>
               </Stack>
-
-              <FormControlLabel
-                sx={{ mt: 1, alignItems: 'flex-start' }}
-                control={
-                  <Switch
-                    color="primary"
-                    checked={formState.mediaGenerationAI}
-                    onChange={(e) => handleFieldChange('mediaGenerationAI', e.target.checked)}
-                    disabled={isGenerating}
-                  />
-                }
-                label={
-                  <Box>
-                    <Typography variant="subtitle2" fontWeight={600}>
-                      Incluir imágenes generadas por IA
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Desactiva esta opción si prefieres generar solo texto (sin placeholders ni
-                      imágenes automáticas).
-                    </Typography>
-                  </Box>
-                }
-              />
             </Stack>
           </CardContent>
         </Card>

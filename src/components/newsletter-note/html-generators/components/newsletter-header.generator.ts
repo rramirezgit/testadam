@@ -1,51 +1,45 @@
 /**
  * Generador de HTML para componente NewsletterHeader (Header reutilizable)
- * Header configurable con logo, sponsor, título, subtítulo y banner
+ * Header con imagen de fondo
  * Compatible con Gmail, Outlook y Apple Mail
  */
 
 import { escapeHtml } from '../utils/html-utils';
 import { tableAttrs } from '../utils/outlook-helpers';
+import { getHeaderConfig } from '../../email-editor/constants/newsletter-header-variants';
 
 import type { EmailComponent } from '../types';
 
 export function generateNewsletterHeaderHtml(component: EmailComponent): string {
   const props = component.props || {};
+  const config = getHeaderConfig();
 
-  // ✅ Crear el estilo de fondo
-  let backgroundStyle = '';
-  if (props.useGradient && props.gradientColors && props.gradientColors.length >= 2) {
-    backgroundStyle = `background: linear-gradient(${props.gradientDirection || 135}deg, ${props.gradientColors[0]}, ${props.gradientColors[1]});`;
-  } else {
-    backgroundStyle = `background-color: ${props.backgroundColor || '#f5f5f5'};`;
-  }
+  // ✅ Props con fallback a configuración
+  const headerTextColor = props.textColor ?? config.textColor;
+  const padding = props.padding ? `${props.padding / 8}px` : `${config.padding / 8}px`;
+  const alignment = props.alignment ?? config.alignment;
+  const borderRadius = props.borderRadius ?? config.borderRadius;
+  const margin = props.margin ?? config.margin;
+  const backgroundImageUrl = props.backgroundImageUrl ?? config.backgroundImageUrl;
+  const backgroundSize = props.backgroundSize ?? config.backgroundSize;
+  const backgroundPosition = props.backgroundPosition ?? config.backgroundPosition;
+  const backgroundRepeat = props.backgroundRepeat ?? config.backgroundRepeat;
+  const minHeight = props.minHeight ?? config.minHeight;
 
-  // ✅ Props de configuración
-  const headerTextColor = props.textColor || '#333333';
-  const padding = props.padding ? `${props.padding / 8}px` : '24px';
-  const alignment = props.alignment || 'center';
-  const borderRadius = props.borderRadius || '8px';
-  const margin = props.margin || '0 0 24px 0';
+  // ✅ Crear el estilo de fondo con imagen
+  const backgroundStyle = `background-image: url(${backgroundImageUrl}); background-size: ${backgroundSize}; background-position: ${backgroundPosition}; background-repeat: ${backgroundRepeat};`;
+  const additionalStyles = `min-height: ${minHeight};`;
 
-  let headerHtml = `<table ${tableAttrs()} width="100%" style="${backgroundStyle} margin: ${margin}; border-radius: ${borderRadius}; border: 1px solid #e0e0e0;">
+  // ✅ Construir el HTML
+  let headerHtml = `<table ${tableAttrs()} width="100%" style="${backgroundStyle} margin: ${margin}; border-radius: ${borderRadius}; ${additionalStyles} border: 1px solid #e0e0e0;">
   <tr>
     <td style="padding: ${padding}; text-align: ${alignment};">`;
 
-  // ✅ Logo
-  if (props.showLogo && props.logo) {
-    const logoHeight = props.logoHeight || 60;
-    headerHtml += `<div style="margin-bottom: 16px;">
-      <img src="${props.logo}" alt="${props.logoAlt || 'Logo'}" style="max-height: ${logoHeight}px; display: block; margin: 0 auto;">
-    </div>`;
-  }
+  // ✅ Logo (oculto por ahora - no mostrar en header con fondo)
+  // Logo deshabilitado para esta configuración
 
-  // ✅ Sponsor
-  if (props.sponsor?.enabled && props.sponsor?.image) {
-    headerHtml += `<div style="margin-bottom: 16px; text-align: center;">
-      <div style="color: ${headerTextColor}; margin-bottom: 8px; font-size: 14px;">${escapeHtml(props.sponsor.label || 'Juntos con')}</div>
-      <img src="${props.sponsor.image}" alt="${props.sponsor.imageAlt || 'Sponsor'}" style="max-height: 48px; display: block; margin: 0 auto;">
-    </div>`;
-  }
+  // ✅ Sponsor (oculto temporalmente)
+  // Sponsor deshabilitado temporalmente
 
   // ✅ Título
   if (props.title && props.title.trim() !== '') {
@@ -54,8 +48,7 @@ export function generateNewsletterHeaderHtml(component: EmailComponent): string 
 
   // ✅ Subtítulo
   if (props.subtitle && props.subtitle.trim() !== '') {
-    const subtitleColor = props.textColor || '#666666';
-    headerHtml += `<p style="color: ${subtitleColor}; margin: 0 0 16px 0; font-style: italic; font-size: 16px;">${escapeHtml(props.subtitle)}</p>`;
+    headerHtml += `<p style="color: ${headerTextColor}; margin: 0 0 16px 0; font-style: italic; font-size: 16px;">${escapeHtml(props.subtitle)}</p>`;
   }
 
   // ✅ Banner image

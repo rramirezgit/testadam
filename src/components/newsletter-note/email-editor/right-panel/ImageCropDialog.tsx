@@ -21,10 +21,12 @@ import {
   ToggleButton,
   DialogContent,
   ToggleButtonGroup,
+  CircularProgress,
 } from '@mui/material';
 
 import { imgPreview } from './imgPreview';
 import ImageAiGenerator from './ImageAiGenerator';
+import { isBase64Image, convertImageUrlToBase64 } from '../utils/imageValidation';
 
 import type { CropRatio, ImageCropDialogProps } from './types';
 
@@ -66,9 +68,44 @@ export default function ImageCropDialog({
   const [previewImage, setPreviewImage] = useState<string>('');
   const [previewDimensions, setPreviewDimensions] = useState({ width: 0, height: 0 });
 
-  // Sincronizar currentImage con initialImage
+  // Estado para carga de imagen
+  const [loadingImage, setLoadingImage] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState<string | null>(null);
+
+  // Sincronizar currentImage con initialImage, convirtiendo a base64 si es necesario
   useEffect(() => {
-    setCurrentImage(initialImage);
+    const loadImage = async () => {
+      if (!initialImage) {
+        setCurrentImage('');
+        setImageLoadError(null);
+        return;
+      }
+
+      // Si ya es base64, usarla directamente
+      if (isBase64Image(initialImage)) {
+        setCurrentImage(initialImage);
+        setImageLoadError(null);
+        return;
+      }
+
+      // Si es una URL, convertirla a base64
+      setLoadingImage(true);
+      setImageLoadError(null);
+      try {
+        const base64Image = await convertImageUrlToBase64(initialImage);
+        setCurrentImage(base64Image);
+      } catch (error) {
+        console.error('Error convirtiendo imagen a base64:', error);
+        setImageLoadError(
+          error instanceof Error ? error.message : 'Error al cargar la imagen'
+        );
+        setCurrentImage('');
+      } finally {
+        setLoadingImage(false);
+      }
+    };
+
+    loadImage();
   }, [initialImage]);
 
   // Sincronizar activeTab con initialTab cuando se abre el modal
@@ -99,8 +136,7 @@ export default function ImageCropDialog({
   }, [completedCrop, scale, rotate, currentImage]);
 
   // Manejar imagen generada con IA
-  const handleImageGenerated = useCallback((imageUrl: string) => {
-    setCurrentImage(imageUrl);
+  const handleImageGenerated = useCallback(async (imageUrl: string) => {
     setActiveTab('edit');
     // Resetear crop para la nueva imagen
     setCrop(undefined);
@@ -108,6 +144,29 @@ export default function ImageCropDialog({
     setScale(1);
     setRotate(0);
     setPreviewImage('');
+
+    // Si ya es base64, usarla directamente
+    if (isBase64Image(imageUrl)) {
+      setCurrentImage(imageUrl);
+      setImageLoadError(null);
+      return;
+    }
+
+    // Si es una URL, convertirla a base64
+    setLoadingImage(true);
+    setImageLoadError(null);
+    try {
+      const base64Image = await convertImageUrlToBase64(imageUrl);
+      setCurrentImage(base64Image);
+    } catch (error) {
+      console.error('Error convirtiendo imagen generada a base64:', error);
+      setImageLoadError(
+        error instanceof Error ? error.message : 'Error al cargar la imagen generada'
+      );
+      setCurrentImage('');
+    } finally {
+      setLoadingImage(false);
+    }
   }, []);
 
   // Manejar cambio de ratio
@@ -256,7 +315,7 @@ export default function ImageCropDialog({
             variant="contained"
             color="primary"
             onClick={handleApply}
-            disabled={!currentImage}
+            disabled={!currentImage || loadingImage || !!imageLoadError}
             startIcon={<Icon icon="mdi:check" />}
           >
             Aplicar
@@ -313,7 +372,21 @@ export default function ImageCropDialog({
                     overflow: 'auto',
                   }}
                 >
-                  {currentImage ? (
+                  {loadingImage ? (
+                    <Stack spacing={2} alignItems="center">
+                      <CircularProgress size={50} />
+                      <Typography variant="body2" color="text.secondary">
+                        Cargando imagen...
+                      </Typography>
+                    </Stack>
+                  ) : imageLoadError ? (
+                    <Stack spacing={2} alignItems="center" sx={{ maxWidth: 400, textAlign: 'center' }}>
+                      <Icon icon="mdi:alert-circle-outline" width={50} color="#ef4444" />
+                      <Typography variant="body2" color="error">
+                        {imageLoadError}
+                      </Typography>
+                    </Stack>
+                  ) : currentImage ? (
                     <ReactCrop
                       crop={crop}
                       onChange={handleCropChange}

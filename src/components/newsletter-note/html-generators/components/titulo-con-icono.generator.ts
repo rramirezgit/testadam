@@ -5,7 +5,7 @@
  */
 
 import { tableAttrs } from '../utils/outlook-helpers';
-import { escapeHtml, getIconUrl, cleanTipTapHtml } from '../utils/html-utils';
+import { escapeHtml, getIconUrl } from '../utils/html-utils';
 
 import type { EmailComponent } from '../types';
 
@@ -23,11 +23,16 @@ export function generateTituloConIconoHtml(component: EmailComponent): string {
   const icon = component.props?.icon || 'chart-line';
   const iconUrl = getIconUrl(icon);
 
-  // ✅ Manejar contenido HTML de TipTap de forma segura
-  const content =
-    component.content?.includes('<') && component.content?.includes('>')
-      ? cleanTipTapHtml(component.content)
-      : escapeHtml(component.content || '');
+  // ✅ Derivar displayTitle igual que TituloConIcono.tsx (línea 43)
+  // El componente visual busca categoryName desde el store usando categoryId
+  // En el generador, usamos el nombre de categoría guardado en component.content
+
+  // Orden de prioridad corregido basado en los datos reales:
+  // 1. component.content - Nombre de categoría (guardado como contenido del componente)
+  // 2. component.props?.categoryName - Nombre guardado en props (puede ser placeholder 'Categoria')
+  // 3. 'Categoria' - Placeholder si no hay nada
+  const displayTitle = component.content || component.props?.categoryName || 'Categoria';
+  const content = escapeHtml(displayTitle);
 
   return `<table ${tableAttrs()} width="100%" style="margin: ${margin};">
   <tr>

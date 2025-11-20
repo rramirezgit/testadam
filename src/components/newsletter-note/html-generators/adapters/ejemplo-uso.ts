@@ -86,12 +86,16 @@ export function ejemplo2_NewsletterCompleto() {
   const headerConfig: HeaderConfig = {
     title: 'Tech Weekly',
     subtitle: 'Lo mejor de la semana en tecnología',
-    backgroundColor: '#1976d2',
     textColor: '#ffffff',
     alignment: 'center',
-    logo: 'https://example.com/logo.png',
-    showLogo: true,
-    logoHeight: 60,
+    padding: 32,
+    borderRadius: '38px 38px 0 0',
+    margin: '0 0 24px 0',
+    backgroundImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/pala/408ef0ed15.webp',
+    backgroundSize: 'cover',
+    backgroundPosition: 'top center',
+    backgroundRepeat: 'no-repeat',
+    minHeight: '331px',
   };
 
   // Footer config
@@ -243,11 +247,16 @@ export async function ejemplo5_IntegracionReal(newsletterId: string) {
   const headerConfig: HeaderConfig = {
     title: newsletterData.title,
     subtitle: newsletterData.subtitle,
-    backgroundColor: newsletterData.headerBgColor || '#1976d2',
     textColor: '#ffffff',
     alignment: 'center',
-    logo: newsletterData.logoUrl,
-    showLogo: true,
+    padding: 32,
+    borderRadius: '38px 38px 0 0',
+    margin: '0 0 24px 0',
+    backgroundImageUrl: 'https://s3.amazonaws.com/s3.condoor.ai/pala/408ef0ed15.webp',
+    backgroundSize: 'cover',
+    backgroundPosition: 'top center',
+    backgroundRepeat: 'no-repeat',
+    minHeight: '331px',
   };
 
   const footerConfig: FooterConfig = {
@@ -304,3 +313,4 @@ export default {
   ejemplo4_DesdeJSONString,
   ejemplo5_IntegracionReal,
 };
+

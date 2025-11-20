@@ -1,14 +1,16 @@
 export interface NewsletterHeader {
   title: string;
   subtitle?: string;
-  logo?: string;
-  bannerImage?: string;
-  backgroundColor: string;
   textColor: string;
   alignment: string;
-  useGradient?: boolean;
-  gradientColors?: string[];
-  gradientDirection?: number;
+  padding?: number;
+  borderRadius?: string;
+  margin?: string;
+  backgroundImageUrl?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundRepeat?: string;
+  minHeight?: string;
 }
 
 export interface SocialLink {

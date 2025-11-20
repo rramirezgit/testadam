@@ -13,25 +13,16 @@ export interface EmailComponent {
 export interface HeaderConfig {
   title: string;
   subtitle?: string;
-  logo?: string;
-  bannerImage?: string;
-  backgroundColor: string;
   textColor: string;
   alignment: string;
-  useGradient?: boolean;
-  gradientColors?: string[];
-  gradientDirection?: number;
-  sponsor?: {
-    enabled: boolean;
-    label?: string;
-    image?: string;
-    imageAlt?: string;
-  };
-  showLogo?: boolean;
-  logoAlt?: string;
-  logoHeight?: number;
-  showBanner?: boolean;
   padding?: number;
+  borderRadius?: string;
+  margin?: string;
+  backgroundImageUrl?: string;
+  backgroundSize?: string;
+  backgroundPosition?: string;
+  backgroundRepeat?: string;
+  minHeight?: string;
 }
 
 export interface FooterConfig {
